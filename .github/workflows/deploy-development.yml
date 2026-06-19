@@ -143,6 +143,12 @@ jobs:
               docker image prune -af
               exit 0
             fi
+            # Also try through Caddy (API port may not be exposed)
+            if curl -sf http://localhost/healthz >/dev/null 2>&1; then
+              echo "ALL HEALTHY (via Caddy)"
+              docker image prune -af
+              exit 0
+            fi
             echo "Attempt \$i: waiting for API..."
             sleep 10
             i=\$((i + 1))
