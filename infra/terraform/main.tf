@@ -7,10 +7,11 @@ provider "cloudflare" {
 }
 
 resource "digitalocean_droplet" "chat" {
-  image  = "debian-12-x64"
+  image  = "ubuntu-24-04-x64"
   name   = "chat-${var.environment}"
   region = var.region
   size   = var.droplet_size
+  tags   = ["chat-${var.environment}"]
 
   user_data = templatefile("${path.module}/templates/cloud-init.yaml.tftpl", {
     domain          = var.domain
