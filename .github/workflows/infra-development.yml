@@ -38,23 +38,33 @@ jobs:
           TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
         run: |
-          # Import droplet if it exists
-          DROPLET_ID=$(curl -sf -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
-            | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name) | .id')
+          # Import droplet
+          DROPLET_JSON=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200")
+          DROPLET_ID=$(echo "$DROPLET_JSON" | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name) | .id')
           if [ -n "$DROPLET_ID" ]; then
             echo "Importing droplet $DROPLET_ID"
-            terraform import -input=false digitalocean_droplet.chat "$DROPLET_ID" 2>/dev/null || true
+            terraform import -input=false digitalocean_droplet.chat "$DROPLET_ID" 2>/dev/null || echo "Droplet import failed (may already be in state)"
+          else
+            echo "No existing droplet found, will create new one"
           fi
-          # Import DNS records if they exist
+          # Import firewall if it exists
+          FW_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/firewalls?page=1&per_page=200" \
+            | jq -r --arg name "chat-${ENVIRONMENT}" '.firewalls[] | select(.name==$name) | .id')
+          if [ -n "$FW_ID" ]; then
+            echo "Importing firewall $FW_ID"
+            terraform import -input=false digitalocean_firewall.chat "$FW_ID" 2>/dev/null || echo "Firewall import failed"
+          fi
+          # Import DNS records
           for NAME in chat chat-api; do
-            RECORD_ID=$(curl -sf -H "Authorization: Bearer $TF_VAR_cloudflare_api_token" \
-              "https://api.cloudflare.com/client/v4/zones/$TF_VAR_cloudflare_zone_id/dns_records?type=A&name=${NAME}.${{ env.DOMAIN }}" \
-              | jq -r '.result[0].id // empty')
+            RECORD_JSON=$(curl -s -H "Authorization: Bearer $TF_VAR_cloudflare_api_token" \
+              "https://api.cloudflare.com/client/v4/zones/$TF_VAR_cloudflare_zone_id/dns_records?type=A&name=${NAME}.${{ env.DOMAIN }}")
+            RECORD_ID=$(echo "$RECORD_JSON" | jq -r '.result[0].id // empty')
             if [ -n "$RECORD_ID" ]; then
               RESOURCE="cloudflare_dns_record.$([ "$NAME" = "chat" ] && echo "frontend" || echo "api")"
-              echo "Importing DNS record $NAME ($RECORD_ID)"
-              terraform import -input=false "$RESOURCE" "$TF_VAR_cloudflare_zone_id/$RECORD_ID" 2>/dev/null || true
+              echo "Importing DNS $NAME ($RECORD_ID) as $RESOURCE"
+              terraform import -input=false "$RESOURCE" "$TF_VAR_cloudflare_zone_id/$RECORD_ID" 2>/dev/null || echo "DNS import failed"
             fi
           done
 
