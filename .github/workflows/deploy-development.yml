@@ -33,7 +33,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      droplet_ip: ${{ steps.terraform.outputs.droplet_ip }}
       frontend_url: ${{ steps.terraform.outputs.frontend_url }}
       api_url: ${{ steps.terraform.outputs.api_url }}
     steps:
@@ -116,9 +115,12 @@ jobs:
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
         run: |
           terraform apply -auto-approve -input=false
-          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
-          echo "frontend_url=https://chat.${{ env.DOMAIN }}" >> $GITHUB_OUTPUT
-          echo "api_url=https://chat-api.${{ env.DOMAIN }}" >> $GITHUB_OUTPUT
+          terraform output -raw droplet_ip > /tmp/droplet_ip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: droplet-ip
+          path: /tmp/droplet_ip
 
   build-images:
     name: Build and Push Images
@@ -169,13 +171,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: droplet-ip
+          path: /tmp
+
+      - name: Read droplet IP
+        id: ip
+        run: echo "droplet_ip=$(cat /tmp/droplet_ip)" >> $GITHUB_OUTPUT
+
       - name: Set lowercase repo
         run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
       - name: Wait for SSH
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ needs.provision.outputs.droplet_ip }}
+          host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           script: echo "SSH ready"
@@ -183,7 +194,7 @@ jobs:
       - name: Setup droplet
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ needs.provision.outputs.droplet_ip }}
+          host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           script: |
@@ -216,7 +227,7 @@ jobs:
       - name: Deploy containers
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ needs.provision.outputs.droplet_ip }}
+          host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           script: |
@@ -230,7 +241,7 @@ jobs:
       - name: Health check
         run: |
           for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ needs.provision.outputs.api_url }}/healthz || echo "000")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://chat-api.${{ env.DOMAIN }}/healthz || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "API healthy at ${{ needs.provision.outputs.api_url }}"
               exit 0
