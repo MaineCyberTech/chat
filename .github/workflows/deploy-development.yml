@@ -33,9 +33,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      droplet_ip: ${{ steps.terraform.outputs.droplet_ip }}
-      frontend_url: ${{ steps.terraform.outputs.frontend_url }}
-      api_url: ${{ steps.terraform.outputs.api_url }}
+      droplet_ip: ${{ steps.get-ip.outputs.droplet_ip }}
+      frontend_url: ${{ steps.get-ip.outputs.frontend_url }}
+      api_url: ${{ steps.get-ip.outputs.api_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -110,9 +110,21 @@ jobs:
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
         run: |
           terraform apply -auto-approve -input=false
-          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
+
+      - name: Get droplet IP from DO API
+        id: get-ip
+        run: |
+          IP=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
+            | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name) | .networks.v4[0].ip_address')
+          if [ -z "$IP" ]; then
+            echo "ERROR: Could not find droplet chat-${ENVIRONMENT}"
+            exit 1
+          fi
+          echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
           echo "frontend_url=https://chat.${{ env.DOMAIN }}" >> $GITHUB_OUTPUT
           echo "api_url=https://chat-api.${{ env.DOMAIN }}" >> $GITHUB_OUTPUT
+          echo "Resolved droplet IP: $IP"
 
   build-images:
     name: Build and Push Images
