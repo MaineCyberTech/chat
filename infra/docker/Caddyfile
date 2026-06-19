@@ -1,0 +1,7 @@
+chat.mainecybertech.us {
+    reverse_proxy web:3000
+}
+
+chat-api.mainecybertech.us {
+    reverse_proxy api:4000
+}

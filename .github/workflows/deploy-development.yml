@@ -84,9 +84,8 @@ jobs:
             if ! docker compose version >/dev/null 2>&1; then
               apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2 2>/dev/null
             fi
-            mkdir -p ${REPO_DIR}/traefik
-            touch ${REPO_DIR}/traefik/acme.json
-            chmod 600 ${REPO_DIR}/traefik/acme.json
+            mkdir -p ${REPO_DIR}
+            touch ${REPO_DIR}/Caddyfile
             echo \"SUPABASE_URL=${SUPABASE_URL}\" > ${REPO_DIR}/.env.devremote
             echo \"SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}\" >> ${REPO_DIR}/.env.devremote
             echo \"SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}\" >> ${REPO_DIR}/.env.devremote
@@ -106,8 +105,8 @@ jobs:
           echo "=== Transferring compose file ==="
           base64 -w0 infra/docker/docker-compose.devremote.yml | $SSH "base64 -d > ${REPO_DIR}/docker-compose.yml"
 
-          echo "=== Transferring traefik config ==="
-          base64 -w0 infra/docker/traefik/traefik.yml | $SSH "base64 -d > ${REPO_DIR}/traefik/traefik.yml"
+          echo "=== Transferring Caddyfile ==="
+          base64 -w0 infra/docker/Caddyfile | $SSH "base64 -d > ${REPO_DIR}/Caddyfile"
 
           echo "=== Piping images ==="
           for IMG in api web; do

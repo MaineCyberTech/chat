@@ -1,19 +1,17 @@
+name: chat-dev
+
 services:
-  traefik:
-    image: traefik:v3.3
-    container_name: chat-traefik-dev
+  caddy:
+    image: caddy:2-alpine
+    container_name: chat-caddy-dev
     restart: unless-stopped
-    mem_limit: 64m
     ports:
       - "80:80"
       - "443:443"
-    environment:
-      - DOCKER_NETWORK=chat-dev
-      - ACME_EMAIL=${ACME_EMAIL:-admin@mainecybertech.us}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./traefik/acme.json:/acme.json
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
     networks:
       - chat-dev
 
@@ -32,11 +30,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.web-dev.rule=Host(`chat.mainecybertech.us`)"
-      - "traefik.http.routers.web-dev.entrypoints=websecure"
-      - "traefik.http.routers.web-dev.tls.certresolver=le"
     networks:
       - chat-dev
 
@@ -50,20 +43,18 @@ services:
     env_file:
       - .env.devremote
     healthcheck:
-      test:
-        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/healthz"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/healthz"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 5s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.api-dev.rule=Host(`chat-api.mainecybertech.us`)"
-      - "traefik.http.routers.api-dev.entrypoints=websecure"
-      - "traefik.http.routers.api-dev.tls.certresolver=le"
     networks:
       - chat-dev
 
 networks:
   chat-dev:
     driver: bridge
+
+volumes:
+  caddy-data:
+  caddy-config:
