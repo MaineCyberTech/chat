@@ -1,18 +1,6 @@
 # apps/api/Dockerfile
 # Multi-stage production build for the Express API server.
 
-# ---- Deps stage (production only) ----
-FROM node:20-alpine AS deps
-WORKDIR /app
-
-RUN corepack enable && corepack prepare pnpm@9 --activate
-
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
-COPY apps/api/package.json ./apps/api/
-COPY packages/db/package.json ./packages/db/
-
-RUN pnpm install --frozen-lockfile --prod --filter @chat/api
-
 # ---- Build stage ----
 FROM node:20-alpine AS build
 WORKDIR /app
@@ -37,7 +25,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4000
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/package.json ./package.json
 COPY --from=build /app/packages/db/dist ./node_modules/@chat/db/dist
