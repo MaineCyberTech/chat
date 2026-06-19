@@ -82,15 +82,16 @@ jobs:
           TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
           DO_PUBKEY: ${{ secrets.CI_SSH_PUBLIC_KEY }}
+          DO_TOKEN: ${{ secrets.DO_API_TOKEN }}
         run: |
           if [ -n "$DO_PUBKEY" ]; then
             FINGERPRINT=$(ssh-keygen -lf /dev/stdin <<< "$DO_PUBKEY" | awk '{print $2}')
-            EXISTS=$(curl -s -H "Authorization: Bearer $DO_API_TOKEN" \
+            EXISTS=$(curl -s -H "Authorization: Bearer $DO_TOKEN" \
               "https://api.digitalocean.com/v2/account/keys?fingerprint=$FINGERPRINT" \
               | jq -r '.ssh_keys[0].id // empty')
             if [ -z "$EXISTS" ]; then
               echo "Registering CI SSH key with DigitalOcean"
-              curl -s -X POST -H "Authorization: Bearer $DO_API_TOKEN" \
+              curl -s -X POST -H "Authorization: Bearer $DO_TOKEN" \
                 -H "Content-Type: application/json" \
                 -d "$(jq -n --arg pk "$DO_PUBKEY" --arg name "ci-chat" '{name:$name,public_key:$pk}')" \
                 "https://api.digitalocean.com/v2/account/keys" > /dev/null
