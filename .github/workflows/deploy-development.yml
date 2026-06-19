@@ -117,11 +117,14 @@ jobs:
           echo "=== Starting services ==="
           $SSH "
             cd ${REPO_DIR}
-            docker stop chat-api-dev chat-web-dev chat-caddy-dev chat-traefik-dev 2>/dev/null || true
-            docker rm -f chat-api-dev chat-web-dev chat-caddy-dev chat-traefik-dev 2>/dev/null || true
-            docker network rm chat-dev_chat-dev chat-dev 2>/dev/null || true
+            # Kill ALL containers
+            docker stop \$(docker ps -q) 2>/dev/null || true
+            docker rm -f \$(docker ps -aq) 2>/dev/null || true
+            docker network prune -f 2>/dev/null || true
+            # Kill anything on ports 80/443
             fuser -k 80/tcp 2>/dev/null || true
             fuser -k 443/tcp 2>/dev/null || true
+            sleep 2
             docker compose -f docker-compose.yml up -d --remove-orphans
             sleep 5
           "
