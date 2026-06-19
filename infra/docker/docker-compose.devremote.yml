@@ -3,6 +3,7 @@ services:
     image: traefik:v3.3
     container_name: chat-traefik-dev
     restart: unless-stopped
+    mem_limit: 64m
     ports:
       - "80:80"
       - "443:443"
@@ -23,6 +24,9 @@ services:
       dockerfile: apps/web/Dockerfile
     container_name: chat-web-dev
     restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=192
     env_file:
       - .env.devremote
     healthcheck:
@@ -46,6 +50,9 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: chat-api-dev
     restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=96
     env_file:
       - .env.devremote
     healthcheck:

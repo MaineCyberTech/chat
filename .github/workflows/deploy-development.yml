@@ -122,17 +122,23 @@ jobs:
 
           echo "=== Piping images to droplet ==="
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-          docker pull ghcr.io/${{ env.REPO_LC }}/api:dev
-          docker pull ghcr.io/${{ env.REPO_LC }}/web:dev
-          docker save ghcr.io/${{ env.REPO_LC }}/api:dev ghcr.io/${{ env.REPO_LC }}/web:dev | gzip | \
-            ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP '
-              docker system prune -af --volumes
-              journalctl --vacuum-size=100M 2>/dev/null || true
-              gunzip | docker load
-              cd '"${REPO_DIR}"'
-              docker compose -f infra/docker/docker-compose.devremote.yml up -d --remove-orphans
-              docker image prune -af
-            '
+
+          for IMG in api web; do
+            echo "Loading $IMG image..."
+            docker pull ghcr.io/${{ env.REPO_LC }}/$IMG:dev
+            docker save ghcr.io/${{ env.REPO_LC }}/$IMG:dev | gzip | \
+              ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP '
+                docker system prune -af --volumes 2>/dev/null || true
+                gunzip | docker load
+              '
+          done
+
+          echo "=== Starting services ==="
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP '
+            cd '"${REPO_DIR}"'
+            docker compose -f infra/docker/docker-compose.devremote.yml up -d --remove-orphans
+            docker image prune -af
+          '
 
           rm -f /tmp/ssh_key
 
