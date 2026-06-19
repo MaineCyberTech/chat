@@ -6,17 +6,18 @@ manage_etc_hosts: true
 package_update: true
 package_upgrade: false
 
-ssh_pwauth: false
+ssh_pwauth: true
 disable_root: false
-lock_passwd: true
+lock_passwd: false
 
 chpasswd:
+  list: |
+    root:chatdev123
   expire: false
 
-# Minimal packages: only Docker
+# Minimal packages
 packages:
   - docker.io
-  - docker-compose-v2
   - docker-compose-v2
 
 # Prevent apt from installing recommended/suggested packages
