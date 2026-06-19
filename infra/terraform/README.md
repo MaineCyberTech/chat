@@ -9,15 +9,15 @@ In CI, this runs automatically before deploy. Locally, it can also be run manual
 
 ## Variables
 
-| Variable             | Description                   | Example                 |
-| -------------------- | ----------------------------- | ----------------------- |
-| `do_token` | DigitalOcean API token | `dop_v1_...` |
-| `environment` | `development` or `production` | `development` |
-| `region` | DO region | `nyc3` |
-| `droplet_size` | Droplet size | `s-1vcpu-512mb-10gb` |
-| `domain` | Base domain | `mainecybertech.us` |
-| `cloudflare_zone_id` | Cloudflare Zone ID | `abc123...` |
-| `cloudflare_api_token` | Cloudflare API token | `abc...` |
+| Variable               | Description                   | Example              |
+| ---------------------- | ----------------------------- | -------------------- |
+| `do_token`             | DigitalOcean API token        | `dop_v1_...`         |
+| `environment`          | `development` or `production` | `development`        |
+| `region`               | DO region                     | `nyc3`               |
+| `droplet_size`         | Droplet size                  | `s-1vcpu-512mb-10gb` |
+| `domain`               | Base domain                   | `mainecybertech.us`  |
+| `cloudflare_zone_id`   | Cloudflare Zone ID            | `abc123...`          |
+| `cloudflare_api_token` | Cloudflare API token          | `abc...`             |
 
 ## Usage (Local)
 
