@@ -25,6 +25,17 @@ jobs:
         with:
           terraform_version: "~1.10"
 
+      - name: Cleanup duplicate droplets
+        run: |
+          curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
+            | jq -r --arg name "chat-${ENVIRONMENT}" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | .[:-1][] | .id' \
+            | while read OLD_ID; do
+              echo "Destroying old droplet $OLD_ID"
+              curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+                "https://api.digitalocean.com/v2/droplets/$OLD_ID"
+            done
+
       - name: Terraform Init
         working-directory: infra/terraform
         run: terraform init -input=false
@@ -41,6 +52,7 @@ jobs:
           # Import droplet
           DROPLET_JSON=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
             "https://api.digitalocean.com/v2/droplets?page=1&per_page=200")
+          echo "Droplet count: $(echo "$DROPLET_JSON" | jq '.droplets | length')"
           DROPLET_ID=$(echo "$DROPLET_JSON" | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name) | .id')
           if [ -n "$DROPLET_ID" ]; then
             echo "Importing droplet $DROPLET_ID"
