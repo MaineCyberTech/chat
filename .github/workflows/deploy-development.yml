@@ -19,33 +19,9 @@ jobs:
       - name: Set lowercase repo
         run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: droplet-ip
-          path: /tmp
-        continue-on-error: true
-
-      - name: Register CI key with DO
-        run: |
-          DO_PUBKEY="${{ secrets.CI_SSH_PUBLIC_KEY }}"
-          if [ -n "$DO_PUBKEY" ]; then
-            FINGERPRINT=$(ssh-keygen -lf /dev/stdin <<< "$DO_PUBKEY" | awk '{print $2}')
-            EXISTS=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-              "https://api.digitalocean.com/v2/account/keys?fingerprint=$FINGERPRINT" \
-              | jq -r '.ssh_keys[0].id // empty')
-            if [ -z "$EXISTS" ]; then
-              echo "Registering CI SSH key"
-              curl -s -X POST -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-                -H "Content-Type: application/json" \
-                -d "$(jq -n --arg pk "$DO_PUBKEY" --arg name "ci-chat" '{name:$name,public_key:$pk}')" \
-                "https://api.digitalocean.com/v2/account/keys" > /dev/null
-            fi
-          fi
-
       - name: Resolve droplet IP
         id: ip
         run: |
-          # Destroy duplicate droplets (keep newest)
           curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
             "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
             | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | .[:-1][] | .id' \
@@ -54,7 +30,6 @@ jobs:
               curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
                 "https://api.digitalocean.com/v2/droplets/$OLD_ID"
             done
-
           IP=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
             "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
             | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
@@ -70,87 +45,77 @@ jobs:
           for i in $(seq 1 30); do
             if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /tmp/ssh_key root@$IP "echo ready" 2>/dev/null; then
               echo "SSH ready after $((i * 10))s"
-              rm -f /tmp/ssh_key
               exit 0
             fi
             echo "Attempt $i: not ready, retrying in 10s..."
             sleep 10
           done
-          rm -f /tmp/ssh_key
           echo "SSH never became available"
           exit 1
 
-      - name: Setup and deploy
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+      - name: Deploy
         env:
           SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          REPO_DIR: ${{ env.REPO_DIR }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
           echo "$SSH_KEY" > /tmp/ssh_key
           chmod 600 /tmp/ssh_key
           IP="${{ steps.ip.outputs.droplet_ip }}"
+          SSH="ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP"
 
           echo "=== Setting up droplet ==="
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP '
+          $SSH '
             cloud-init status --wait 2>/dev/null || true
-            if [ ! -d '"${REPO_DIR}"' ]; then
-              for i in $(seq 1 10); do apt-get update -qq 2>/dev/null && break; sleep 10; done
-              apt-get install -y -qq git
-              git clone https://github.com/'"${GITHUB_REPOSITORY}"'.git '"${REPO_DIR}"'
-            fi
-            cd '"${REPO_DIR}"'
-            git fetch origin develop && git checkout develop && git pull origin develop
-            echo "SUPABASE_URL='"${SUPABASE_URL}"'" > infra/docker/.env.devremote
-            echo "SUPABASE_ANON_KEY='"${SUPABASE_ANON_KEY}"'" >> infra/docker/.env.devremote
-            echo "SUPABASE_SERVICE_ROLE_KEY='"${SUPABASE_SERVICE_ROLE_KEY}"'" >> infra/docker/.env.devremote
-            echo NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us >> infra/docker/.env.devremote
-            echo "NEXT_PUBLIC_SUPABASE_URL='"${SUPABASE_URL}"'" >> infra/docker/.env.devremote
-            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY='"${SUPABASE_ANON_KEY}"'" >> infra/docker/.env.devremote
-            echo NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us >> infra/docker/.env.devremote
-            echo PORT=4000 >> infra/docker/.env.devremote
-            echo NODE_ENV=development >> infra/docker/.env.devremote
-            echo API_BASE_URL=https://chat-api.mainecybertech.us >> infra/docker/.env.devremote
-            echo FRONTEND_URL=https://chat.mainecybertech.us >> infra/docker/.env.devremote
-            mkdir -p infra/docker/traefik
-            touch infra/docker/traefik/acme.json
-            chmod 600 infra/docker/traefik/acme.json
+            mkdir -p '"${REPO_DIR}"'/infra/docker/traefik
+            touch '"${REPO_DIR}"'/infra/docker/traefik/acme.json
+            chmod 600 '"${REPO_DIR}"'/infra/docker/traefik/acme.json
+
+            # Write .env file
+            cat > '"${REPO_DIR}"'/infra/docker/.env.devremote << ENVEOF
+            SUPABASE_URL='"${SUPABASE_URL}"'
+            SUPABASE_ANON_KEY='"${SUPABASE_ANON_KEY}"'
+            SUPABASE_SERVICE_ROLE_KEY='"${SUPABASE_SERVICE_ROLE_KEY}"'
+            NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us
+            NEXT_PUBLIC_SUPABASE_URL='"${SUPABASE_URL}"'
+            NEXT_PUBLIC_SUPABASE_ANON_KEY='"${SUPABASE_ANON_KEY}"'
+            NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us
+            PORT=4000
+            NODE_ENV=development
+            API_BASE_URL=https://chat-api.mainecybertech.us
+            FRONTEND_URL=https://chat.mainecybertech.us
+            ENVEOF
+
             for i in $(seq 1 12); do docker info >/dev/null 2>&1 && break; echo "Waiting for Docker $i..."; sleep 10; done
+            # Free space before loading images
+            docker image ls -q | xargs -r docker rmi -f 2>/dev/null || true
+            docker system prune -af --volumes 2>/dev/null || true
           '
 
-          echo "=== Piping images to droplet ==="
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+          echo "=== Transferring compose file ==="
+          base64 -w0 infra/docker/docker-compose.devremote.yml | $SSH "base64 -d > ${REPO_DIR}/docker-compose.yml"
 
+          echo "=== Transferring traefik config ==="
+          base64 -w0 infra/docker/traefik/traefik.yml | $SSH "base64 -d > ${REPO_DIR}/infra/docker/traefik/traefik.yml"
+
+          echo "=== Piping images ==="
           for IMG in api web; do
-            echo "Loading $IMG image..."
             docker pull ghcr.io/${{ env.REPO_LC }}/$IMG:dev
-            docker save ghcr.io/${{ env.REPO_LC }}/$IMG:dev | gzip | \
-              ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP '
-                docker system prune -af --volumes 2>/dev/null || true
-                gunzip | docker load
-              '
+            docker save ghcr.io/${{ env.REPO_LC }}/$IMG:dev | gzip | $SSH "gunzip | docker load"
           done
 
           echo "=== Starting services ==="
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP '
+          $SSH '
             cd '"${REPO_DIR}"'
-            docker compose -f infra/docker/docker-compose.devremote.yml up -d --remove-orphans
+            docker compose -f docker-compose.yml up -d --remove-orphans
             docker image prune -af
           '
 
           rm -f /tmp/ssh_key
-
-      - name: Health check
-        run: |
-          for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://chat-api.mainecybertech.us/healthz || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "API healthy"
-              exit 0
-            fi
-            echo "Attempt $i: returned $STATUS, retrying..."
-            sleep 5
-          done
-          exit 1
