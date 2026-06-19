@@ -54,7 +54,6 @@ jobs:
           TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
           TF_VAR_environment: ${{ env.ENVIRONMENT }}
           TF_VAR_domain: ${{ env.DOMAIN }}
-          TF_VAR_ssh_public_key: ${{ secrets.DO_SSH_PUBLIC_KEY }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
         run: |

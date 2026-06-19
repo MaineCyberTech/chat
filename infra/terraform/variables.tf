@@ -31,11 +31,6 @@ variable "domain" {
   type        = string
 }
 
-variable "ssh_public_key" {
-  description = "SSH public key content to register with DigitalOcean"
-  type        = string
-}
-
 variable "cloudflare_zone_id" {
   description = "Cloudflare Zone ID for DNS records"
   type        = string

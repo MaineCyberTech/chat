@@ -6,17 +6,11 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
-resource "digitalocean_ssh_key" "chat" {
-  name       = "chat-${var.environment}"
-  public_key = var.ssh_public_key
-}
-
 resource "digitalocean_droplet" "chat" {
-  image    = "debian-12-x64"
-  name     = "chat-${var.environment}"
-  region   = var.region
-  size     = var.droplet_size
-  ssh_keys = [digitalocean_ssh_key.chat.id]
+  image  = "debian-12-x64"
+  name   = "chat-${var.environment}"
+  region = var.region
+  size   = var.droplet_size
 
   user_data = templatefile("${path.module}/templates/cloud-init.yaml.tftpl", {
     domain          = var.domain
