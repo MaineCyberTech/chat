@@ -16,8 +16,7 @@ RUN pnpm install --frozen-lockfile --filter @chat/api
 COPY packages/db/src ./packages/db/src
 COPY apps/api/src ./apps/api/src
 
-RUN pnpm --filter @chat/db build
-RUN pnpm --filter @chat/api build
+RUN pnpm turbo build --filter @chat/api
 
 # ---- Runtime stage ----
 FROM node:20-alpine AS runtime
