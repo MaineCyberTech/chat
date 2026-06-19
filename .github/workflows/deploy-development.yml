@@ -117,15 +117,45 @@ jobs:
           echo "=== Starting services ==="
           $SSH '
             cd '"${REPO_DIR}"'
-            # Remove all old chat containers and networks
             docker stop chat-api-dev chat-web-dev chat-caddy-dev chat-traefik-dev 2>/dev/null || true
             docker rm -f chat-api-dev chat-web-dev chat-caddy-dev chat-traefik-dev 2>/dev/null || true
             docker network rm chat-dev_chat-dev chat-dev 2>/dev/null || true
-            # Kill anything on ports 80/443
             fuser -k 80/tcp 2>/dev/null || true
             fuser -k 443/tcp 2>/dev/null || true
             docker compose -f docker-compose.yml up -d --remove-orphans
-            docker image prune -af
+            sleep 5
+
+            echo "=== Container health ==="
+            for i in \$(seq 1 12); do
+              if docker compose -f docker-compose.yml ps | grep -q "unhealthy\|restarting"; then
+                echo "Unhealthy containers, retrying..."
+                sleep 10
+                continue
+              fi
+              if curl -sf http://localhost:4000/healthz >/dev/null 2>&1; then
+                echo "ALL HEALTHY"
+                docker image prune -af
+                exit 0
+              fi
+              echo "Attempt \$i: waiting for API..."
+              sleep 10
+            done
+            echo "FAILED: Services did not become healthy"
+            docker compose -f docker-compose.yml logs --tail=50
+            exit 1
           '
 
           rm -f /tmp/ssh_key
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://chat-api.mainecybertech.us/healthz || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "API healthy"
+              exit 0
+            fi
+            echo "Attempt $i: returned $STATUS, retrying..."
+            sleep 5
+          done
+          exit 1
