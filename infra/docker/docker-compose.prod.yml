@@ -18,10 +18,7 @@ services:
       - chat-prod
 
   web:
-    image: ${WEB_IMAGE:-ghcr.io/chat-platform/chat/web:latest}
-    build:
-      context: ../..
-      dockerfile: apps/web/Dockerfile
+    image: ${WEB_IMAGE:-ghcr.io/mainecybertech/chat/web:latest}
     container_name: chat-web-prod
     restart: unless-stopped
     mem_limit: 256m
@@ -46,10 +43,7 @@ services:
       - chat-prod
 
   api:
-    image: ${API_IMAGE:-ghcr.io/chat-platform/chat/api:latest}
-    build:
-      context: ../..
-      dockerfile: apps/api/Dockerfile
+    image: ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:latest}
     container_name: chat-api-prod
     restart: unless-stopped
     mem_limit: 128m

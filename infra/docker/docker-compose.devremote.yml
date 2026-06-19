@@ -18,10 +18,7 @@ services:
       - chat-dev
 
   web:
-    image: ${WEB_IMAGE:-ghcr.io/chat-platform/chat/web:dev}
-    build:
-      context: ../..
-      dockerfile: apps/web/Dockerfile
+    image: ${WEB_IMAGE:-ghcr.io/mainecybertech/chat/web:dev}
     container_name: chat-web-dev
     restart: unless-stopped
     mem_limit: 256m
@@ -44,10 +41,7 @@ services:
       - chat-dev
 
   api:
-    image: ${API_IMAGE:-ghcr.io/chat-platform/chat/api:dev}
-    build:
-      context: ../..
-      dockerfile: apps/api/Dockerfile
+    image: ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:dev}
     container_name: chat-api-dev
     restart: unless-stopped
     mem_limit: 128m
