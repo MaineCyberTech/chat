@@ -10,10 +10,12 @@ RUN corepack enable && corepack prepare pnpm@9 --activate
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./
 COPY apps/web/package.json apps/web/tsconfig.json apps/web/next.config.ts apps/web/postcss.config.js ./apps/web/
 COPY packages/ui/package.json packages/ui/tsconfig.json ./packages/ui/
+COPY packages/db/package.json packages/db/tsconfig.json ./packages/db/
 
 RUN pnpm install --frozen-lockfile
 
 COPY packages/ui/src ./packages/ui/src
+COPY packages/db/src ./packages/db/src
 COPY apps/web/app ./apps/web/app
 COPY apps/web/components ./apps/web/components
 COPY apps/web/lib ./apps/web/lib
