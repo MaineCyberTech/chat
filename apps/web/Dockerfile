@@ -29,7 +29,6 @@ COPY packages/ui/src ./packages/ui/src
 COPY apps/web/app ./apps/web/app
 COPY apps/web/components ./apps/web/components
 COPY apps/web/lib ./apps/web/lib
-COPY apps/web/public ./apps/web/public 2>/dev/null || true
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV STANDALONE=1
@@ -45,7 +44,6 @@ ENV PORT=3000
 
 COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=build /app/apps/web/public ./apps/web/public 2>/dev/null || true
 
 EXPOSE 3000
 CMD ["node", "apps/web/server.js"]
