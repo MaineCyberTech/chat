@@ -74,12 +74,12 @@ jobs:
           echo "=== Setting up droplet ==="
           $SSH '
             cloud-init status --wait 2>/dev/null || true
-            mkdir -p '"${REPO_DIR}"'/infra/docker/traefik
-            touch '"${REPO_DIR}"'/infra/docker/traefik/acme.json
-            chmod 600 '"${REPO_DIR}"'/infra/docker/traefik/acme.json
+            mkdir -p '"${REPO_DIR}"'/traefik
+            touch '"${REPO_DIR}"'/traefik/acme.json
+            chmod 600 '"${REPO_DIR}"'/traefik/acme.json
 
             # Write .env file
-            cat > '"${REPO_DIR}"'/infra/docker/.env.devremote << ENVEOF
+            cat > '"${REPO_DIR}"'/.env.devremote << ENVEOF
             SUPABASE_URL='"${SUPABASE_URL}"'
             SUPABASE_ANON_KEY='"${SUPABASE_ANON_KEY}"'
             SUPABASE_SERVICE_ROLE_KEY='"${SUPABASE_SERVICE_ROLE_KEY}"'
@@ -103,7 +103,7 @@ jobs:
           base64 -w0 infra/docker/docker-compose.devremote.yml | $SSH "base64 -d > ${REPO_DIR}/docker-compose.yml"
 
           echo "=== Transferring traefik config ==="
-          base64 -w0 infra/docker/traefik/traefik.yml | $SSH "base64 -d > ${REPO_DIR}/infra/docker/traefik/traefik.yml"
+          base64 -w0 infra/docker/traefik/traefik.yml | $SSH "base64 -d > ${REPO_DIR}/traefik/traefik.yml"
 
           echo "=== Piping images ==="
           for IMG in api web; do
