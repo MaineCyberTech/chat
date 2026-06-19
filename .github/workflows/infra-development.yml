@@ -48,10 +48,10 @@ jobs:
           else
             echo "No existing droplet found, will create new one"
           fi
-          # Import firewall if it exists
+          # Import firewall if it exists (pick newest)
           FW_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
             "https://api.digitalocean.com/v2/firewalls?page=1&per_page=200" \
-            | jq -r --arg name "chat-${ENVIRONMENT}" '.firewalls[] | select(.name==$name) | .id')
+            | jq -r --arg prefix "chat-${ENVIRONMENT}" '[.firewalls[] | select(.name | startswith($prefix))] | sort_by(.created_at) | last | .id // empty')
           if [ -n "$FW_ID" ]; then
             echo "Importing firewall $FW_ID"
             terraform import -input=false digitalocean_firewall.chat "$FW_ID" 2>/dev/null || echo "Firewall import failed"

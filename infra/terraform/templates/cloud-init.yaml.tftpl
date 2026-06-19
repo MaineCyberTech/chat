@@ -10,6 +10,9 @@ ssh_pwauth: false
 disable_root: false
 lock_passwd: true
 
+chpasswd:
+  expire: false
+
 # Minimal packages: only Docker
 packages:
   - docker.io
