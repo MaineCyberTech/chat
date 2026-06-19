@@ -70,63 +70,48 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_OWNER: ${{ github.repository_owner }}
         run: |
           echo "$SSH_KEY" > /tmp/ssh_key
           chmod 600 /tmp/ssh_key
           IP="${{ steps.ip.outputs.droplet_ip }}"
 
-          echo "=== Cloning repo ==="
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP "
-            # Wait for cloud-init
-            cloud-init status --wait 2>/dev/null
-
-            if [ ! -d '${{ env.REPO_DIR }}' ]; then
-              # Retry apt-get if locked by cloud-init
-              for i in \$(seq 1 10); do
-                apt-get update -qq 2>/dev/null && break
-                echo 'Waiting for apt lock...'
-                sleep 10
-              done
+          echo "=== Setting up droplet ==="
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP '
+            cloud-init status --wait 2>/dev/null || true
+            if [ ! -d '"${REPO_DIR}"' ]; then
+              for i in $(seq 1 10); do apt-get update -qq 2>/dev/null && break; sleep 10; done
               apt-get install -y -qq git
-              git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }}
+              git clone https://github.com/'"${GITHUB_REPOSITORY}"'.git '"${REPO_DIR}"'
             fi
-            cd ${{ env.REPO_DIR }}
-            git fetch origin develop
-            git checkout develop
-            git pull origin develop
-            echo \"SUPABASE_URL=${SUPABASE_URL}\" > infra/docker/.env.devremote
-            echo \"SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}\" >> infra/docker/.env.devremote
-            echo \"SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}\" >> infra/docker/.env.devremote
-            echo 'NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us' >> infra/docker/.env.devremote
-            echo \"NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}\" >> infra/docker/.env.devremote
-            echo \"NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}\" >> infra/docker/.env.devremote
-            echo 'NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us' >> infra/docker/.env.devremote
-            echo 'PORT=4000' >> infra/docker/.env.devremote
-            echo 'NODE_ENV=development' >> infra/docker/.env.devremote
-            echo 'API_BASE_URL=https://chat-api.mainecybertech.us' >> infra/docker/.env.devremote
-            echo 'FRONTEND_URL=https://chat.mainecybertech.us' >> infra/docker/.env.devremote
+            cd '"${REPO_DIR}"'
+            git fetch origin develop && git checkout develop && git pull origin develop
+            echo "SUPABASE_URL='"${SUPABASE_URL}"'" > infra/docker/.env.devremote
+            echo "SUPABASE_ANON_KEY='"${SUPABASE_ANON_KEY}"'" >> infra/docker/.env.devremote
+            echo "SUPABASE_SERVICE_ROLE_KEY='"${SUPABASE_SERVICE_ROLE_KEY}"'" >> infra/docker/.env.devremote
+            echo NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us >> infra/docker/.env.devremote
+            echo "NEXT_PUBLIC_SUPABASE_URL='"${SUPABASE_URL}"'" >> infra/docker/.env.devremote
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY='"${SUPABASE_ANON_KEY}"'" >> infra/docker/.env.devremote
+            echo NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us >> infra/docker/.env.devremote
+            echo PORT=4000 >> infra/docker/.env.devremote
+            echo NODE_ENV=development >> infra/docker/.env.devremote
+            echo API_BASE_URL=https://chat-api.mainecybertech.us >> infra/docker/.env.devremote
+            echo FRONTEND_URL=https://chat.mainecybertech.us >> infra/docker/.env.devremote
             mkdir -p infra/docker/traefik
             touch infra/docker/traefik/acme.json
             chmod 600 infra/docker/traefik/acme.json
-          "
+            for i in $(seq 1 12); do docker info >/dev/null 2>&1 && break; echo "Waiting for Docker $i..."; sleep 10; done
+          '
 
-          echo "=== Deploying containers ==="
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP "
-            cd ${{ env.REPO_DIR }}
-            # Wait for Docker to be available
-            for i in \$(seq 1 12); do
-              docker info >/dev/null 2>&1 && break
-              echo 'Waiting for Docker...'
-              sleep 10
-            done
-            echo '${GHCR_TOKEN}' | docker login ghcr.io -u ${GHCR_OWNER} --password-stdin
-            docker pull ghcr.io/${{ env.REPO_LC }}/api:dev
-            docker pull ghcr.io/${{ env.REPO_LC }}/web:dev
-            docker compose -f infra/docker/docker-compose.devremote.yml up -d --remove-orphans
-            docker image prune -af
-          "
+          echo "=== Piping images to droplet ==="
+          docker pull ghcr.io/${{ env.REPO_LC }}/api:dev
+          docker pull ghcr.io/${{ env.REPO_LC }}/web:dev
+          docker save ghcr.io/${{ env.REPO_LC }}/api:dev ghcr.io/${{ env.REPO_LC }}/web:dev | gzip | \
+            ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP '
+              gunzip | docker load
+              cd '"${REPO_DIR}"'
+              docker compose -f infra/docker/docker-compose.devremote.yml up -d --remove-orphans
+              docker image prune -af
+            '
 
           rm -f /tmp/ssh_key
 
