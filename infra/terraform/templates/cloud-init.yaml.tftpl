@@ -2,23 +2,50 @@
 hostname: chat-${environment}
 manage_etc_hosts: true
 
+# Don't upgrade all packages - saves time and bandwidth
 package_update: true
-package_upgrade: true
+package_upgrade: false
 
 ssh_pwauth: false
 disable_root: false
 lock_passwd: true
 
+# Minimal packages: only Docker
 packages:
   - docker.io
-  - docker-compose-v2
-  - ufw
 
+# Prevent apt from installing recommended/suggested packages
+apt:
+  conf: |
+    APT::Install-Recommends "false";
+    APT::Install-Suggests "false";
+
+# Reduce journald disk usage
+write_files:
+  - path: /etc/systemd/journald.conf
+    content: |
+      [Journal]
+      SystemMaxUse=50M
+      RuntimeMaxUse=10M
+      MaxFileSec=1day
+  - path: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "10m",
+          "max-file": "3"
+        }
+      }
+
+# Disable unnecessary services
 runcmd:
   - systemctl enable docker
-  - systemctl start docker
-  - ufw allow OpenSSH
-  - ufw allow 'Nginx Full'
-  - ufw --force enable
+  - systemctl restart docker  # pick up daemon.json
+  - systemctl restart systemd-journald
+  - systemctl disable --now snapd.service snapd.socket 2>/dev/null || true
+  - systemctl disable --now multipathd.service 2>/dev/null || true
+  - systemctl disable --now accounts-daemon.service 2>/dev/null || true
+  - systemctl disable --now polkit.service 2>/dev/null || true
 
-final_message: "Chat platform droplet ready. Environment: ${environment}. Frontend: ${frontend_domain}, API: ${api_domain}"
+final_message: "Chat droplet ready. ${environment} | ${frontend_domain} | ${api_domain}"
