@@ -5,6 +5,11 @@ manage_etc_hosts: true
 package_update: true
 package_upgrade: true
 
+# Disable password auth, use SSH keys only
+ssh_pwauth: false
+disable_root: false
+lock_passwd: true
+
 packages:
   - curl
   - wget
