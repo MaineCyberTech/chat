@@ -22,17 +22,22 @@ jobs:
       - name: Resolve droplet IP
         id: ip
         run: |
-          curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
-            | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | .[:-1][] | .id' \
+          set -e
+          DO_TOKEN="${{ secrets.DO_API_TOKEN }}"
+          ALL_DROPLETS=$(curl -sf -H "Authorization: Bearer $DO_TOKEN" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200")
+          echo "$ALL_DROPLETS" | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | .[:-1][] | .id' \
             | while read OLD_ID; do
               echo "Destroying old droplet $OLD_ID"
-              curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-                "https://api.digitalocean.com/v2/droplets/$OLD_ID"
+              curl -sf -X DELETE -H "Authorization: Bearer $DO_TOKEN" \
+                "https://api.digitalocean.com/v2/droplets/$OLD_ID" || true
             done
-          IP=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
-            | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
+          IP=$(echo "$ALL_DROPLETS" | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
+          if [ -z "$IP" ]; then
+            echo "ERROR: No chat-development droplet found. Droplets:"
+            echo "$ALL_DROPLETS" | jq '[.droplets[] | {name, ip: .networks.v4[0].ip_address, created: .created_at}]'
+            exit 1
+          fi
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
           echo "Using droplet IP: $IP"
 
