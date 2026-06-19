@@ -16,9 +16,9 @@ resource "digitalocean_droplet" "chat" {
   # Explicitly include CI SSH key alongside account keys
   ssh_keys = var.ci_ssh_fingerprint != "" ? [var.ci_ssh_fingerprint] : []
 
-  # user_data only matters on first boot, never force replace
+  # user_data and ssh_keys only matter on first boot, never force replace
   lifecycle {
-    ignore_changes = [user_data]
+    ignore_changes = [user_data, ssh_keys]
   }
 
   user_data = templatefile("${path.module}/templates/cloud-init.yaml.tftpl", {
