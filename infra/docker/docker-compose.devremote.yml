@@ -19,9 +19,9 @@ services:
     image: ${WEB_IMAGE:-ghcr.io/mainecybertech/chat/web:dev}
     container_name: chat-web-dev
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 192m
     environment:
-      - NODE_OPTIONS=--max-old-space-size=192
+      - NODE_OPTIONS=--max-old-space-size=128
     env_file:
       - .env.devremote
     healthcheck:
@@ -37,9 +37,9 @@ services:
     image: ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:dev}
     container_name: chat-api-dev
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 96m
     environment:
-      - NODE_OPTIONS=--max-old-space-size=96
+      - NODE_OPTIONS=--max-old-space-size=64
     env_file:
       - .env.devremote
     healthcheck:
