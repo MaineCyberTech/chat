@@ -27,6 +27,7 @@ Before the first deploy, complete these steps.
 - [ ] Settings → Secrets and variables → Actions → **Repository secrets**:
   - `DO_API_TOKEN` — DigitalOcean API token (read/write)
   - `DO_SSH_PRIVATE_KEY` — SSH private key
+  - `DO_SSH_PASSPHRASE` — SSH key passphrase (if set)
   - `SUPABASE_URL` — Supabase project URL
   - `SUPABASE_ANON_KEY` — Supabase anon key
   - `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key
