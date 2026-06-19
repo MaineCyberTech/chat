@@ -38,14 +38,17 @@ jobs:
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
           echo "Using droplet IP: $IP"
 
+      - name: Wait for droplet boot
+        run: sleep 30
+
       - name: Setup droplet
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          timeout: 120s
-          command_timeout: 5m
+          timeout: 180s
+          command_timeout: 10m
           script: |
             if [ ! -d "${{ env.REPO_DIR }}" ]; then
               apt-get update -qq && apt-get install -y -qq git
@@ -78,8 +81,8 @@ jobs:
           host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          timeout: 120s
-          command_timeout: 5m
+          timeout: 180s
+          command_timeout: 10m
           script: |
             cd ${{ env.REPO_DIR }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
