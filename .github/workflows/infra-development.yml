@@ -30,7 +30,7 @@ jobs:
         run: terraform init -input=false
 
       - name: Import existing resources
-        id: import
+        working-directory: infra/terraform
         env:
           TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
           TF_VAR_environment: ${{ env.ENVIRONMENT }}
@@ -38,42 +38,29 @@ jobs:
           TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
         run: |
-          cd infra/terraform
+          # Import droplet if it exists
           DROPLET_ID=$(curl -sf -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
             "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
             | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name) | .id')
           if [ -n "$DROPLET_ID" ]; then
-            echo "Importing existing droplet $DROPLET_ID"
-            terraform import digitalocean_droplet.chat "$DROPLET_ID" || true
+            echo "Importing droplet $DROPLET_ID"
+            terraform import -input=false digitalocean_droplet.chat "$DROPLET_ID" 2>/dev/null || true
           fi
-
-      - name: Cleanup old firewalls
-        run: |
-          curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-            "https://api.digitalocean.com/v2/firewalls?page=1&per_page=200" \
-            | jq -r --arg prefix "chat-${ENVIRONMENT}" '.firewalls[] | select(.name | startswith($prefix)) | .id' \
-            | while read FW_ID; do
-              echo "Deleting old firewall $FW_ID"
-              curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-                "https://api.digitalocean.com/v2/firewalls/$FW_ID"
-            done
-
-      - name: Cleanup duplicate DNS records
-        run: |
-          ZONE_ID="${{ secrets.CF_ZONE_ID }}"
-          TOKEN="${{ secrets.CF_API_TOKEN }}"
+          # Import DNS records if they exist
           for NAME in chat chat-api; do
-            curl -s -H "Authorization: Bearer $TOKEN" \
-              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=${NAME}.${DOMAIN}" \
-              | jq -r '.result[]?.id' | while read ID; do
-                echo "Deleting old DNS record $NAME (id=$ID)"
-                curl -s -X DELETE -H "Authorization: Bearer $TOKEN" \
-                  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$ID"
-              done
+            RECORD_ID=$(curl -sf -H "Authorization: Bearer $TF_VAR_cloudflare_api_token" \
+              "https://api.cloudflare.com/client/v4/zones/$TF_VAR_cloudflare_zone_id/dns_records?type=A&name=${NAME}.${{ env.DOMAIN }}" \
+              | jq -r '.result[0].id // empty')
+            if [ -n "$RECORD_ID" ]; then
+              RESOURCE="cloudflare_dns_record.$([ "$NAME" = "chat" ] && echo "frontend" || echo "api")"
+              echo "Importing DNS record $NAME ($RECORD_ID)"
+              terraform import -input=false "$RESOURCE" "$TF_VAR_cloudflare_zone_id/$RECORD_ID" 2>/dev/null || true
+            fi
           done
 
       - name: Terraform Apply
         id: terraform
+        timeout-minutes: 5
         working-directory: infra/terraform
         env:
           TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
@@ -86,20 +73,17 @@ jobs:
         run: |
           FINGERPRINT=""
           if [ -n "$DO_PUBKEY" ]; then
-            # DO requires MD5 fingerprint format for droplet ssh_keys
             FINGERPRINT=$(ssh-keygen -E md5 -lf /dev/stdin <<< "$DO_PUBKEY" | awk '{print $2}' | sed 's/^MD5://')
             EXISTS=$(curl -s -H "Authorization: Bearer $DO_TOKEN" \
               "https://api.digitalocean.com/v2/account/keys?fingerprint=$FINGERPRINT" \
               | jq -r '.ssh_keys[0].id // empty')
             if [ -z "$EXISTS" ]; then
-              echo "Registering CI SSH key with DigitalOcean"
               curl -s -X POST -H "Authorization: Bearer $DO_TOKEN" \
                 -H "Content-Type: application/json" \
                 -d "$(jq -n --arg pk "$DO_PUBKEY" --arg name "ci-chat" '{name:$name,public_key:$pk}')" \
                 "https://api.digitalocean.com/v2/account/keys" > /dev/null
             fi
           fi
-          # Pass MD5 fingerprint to terraform for ssh_keys
           export TF_VAR_ssh_fingerprint="$FINGERPRINT"
           terraform apply -auto-approve -input=false
           terraform output -raw droplet_ip > /tmp/droplet_ip
