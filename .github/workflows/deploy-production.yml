@@ -33,9 +33,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      droplet_ip: ${{ steps.get-ip.outputs.droplet_ip }}
-      frontend_url: ${{ steps.get-ip.outputs.frontend_url }}
-      api_url: ${{ steps.get-ip.outputs.api_url }}
+      droplet_ip: ${{ steps.terraform.outputs.droplet_ip }}
+      frontend_url: ${{ steps.terraform.outputs.frontend_url }}
+      api_url: ${{ steps.terraform.outputs.api_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,28 +43,12 @@ jobs:
         with:
           terraform_version: "~1.10"
 
-      - name: Check for existing droplet
-        id: check
-        run: |
-          DROPLET_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-            "https://api.digitalocean.com/v2/droplets?tag_name=chat-${ENVIRONMENT}" \
-            | jq -r '.droplets[0].id // empty')
-          if [ -n "$DROPLET_ID" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Droplet already exists (id=$DROPLET_ID), skipping Terraform"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "No existing droplet, running Terraform"
-          fi
-
       - name: Terraform Init
-        if: steps.check.outputs.exists == 'false'
         working-directory: infra/terraform
         run: terraform init -input=false
 
       - name: Terraform Apply
         id: terraform
-        if: steps.check.outputs.exists == 'false'
         working-directory: infra/terraform
         env:
           TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
@@ -74,29 +58,9 @@ jobs:
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
         run: |
           terraform apply -auto-approve -input=false
-
-      - name: Get droplet IP
-        id: get-ip
-        run: |
-          IP=$(curl -sf -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-            "https://api.digitalocean.com/v2/droplets?tag_name=chat-${ENVIRONMENT}" \
-            | jq -r '.droplets[0].networks.v4[0].ip_address // empty')
-          if [ -z "$IP" ]; then
-            IP=$(curl -sf -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-              "https://api.digitalocean.com/v2/droplets" \
-              | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name) | .networks.v4[0].ip_address')
-          fi
-          if [ -z "$IP" ]; then
-            echo "ERROR: Could not find droplet IP for chat-${ENVIRONMENT}"
-            echo "Listing all droplets for debugging:"
-            curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-              "https://api.digitalocean.com/v2/droplets" | jq '.droplets[] | {name, ip: .networks.v4[0].ip_address}'
-            exit 1
-          fi
-          echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
+          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
           echo "frontend_url=https://chat.${{ env.DOMAIN }}" >> $GITHUB_OUTPUT
           echo "api_url=https://chat-api.${{ env.DOMAIN }}" >> $GITHUB_OUTPUT
-          echo "Droplet IP: $IP"
 
   build-images:
     name: Build and Push Images
