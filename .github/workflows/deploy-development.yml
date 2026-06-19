@@ -121,6 +121,7 @@ jobs:
           '
 
           echo "=== Piping images to droplet ==="
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
           docker pull ghcr.io/${{ env.REPO_LC }}/api:dev
           docker pull ghcr.io/${{ env.REPO_LC }}/web:dev
           docker save ghcr.io/${{ env.REPO_LC }}/api:dev ghcr.io/${{ env.REPO_LC }}/web:dev | gzip | \
