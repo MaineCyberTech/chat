@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 10
     outputs:
       droplet_ip: ${{ steps.terraform.outputs.droplet_ip }}
+    outputs:
+      droplet_ip: ${{ steps.terraform.outputs.droplet_ip }}
     steps:
       - uses: actions/checkout@v4
 
@@ -97,4 +99,31 @@ jobs:
             fi
           fi
           terraform apply -auto-approve -input=false
-          echo "Droplet IP: $(terraform output -raw droplet_ip)"
+          terraform output -raw droplet_ip > /tmp/droplet_ip
+          echo "droplet_ip=$(cat /tmp/droplet_ip)" >> $GITHUB_OUTPUT
+          echo "Droplet IP: $(cat /tmp/droplet_ip)"
+
+      - name: Health check — wait for SSH
+        run: |
+          IP="${{ steps.terraform.outputs.droplet_ip }}"
+          echo "Waiting for SSH on $IP..."
+          echo "${{ secrets.CI_SSH_PRIVATE_KEY }}" > /tmp/ssh_key
+          chmod 600 /tmp/ssh_key
+          for i in $(seq 1 30); do
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /tmp/ssh_key root@$IP "echo ready" 2>/dev/null; then
+              echo "SSH ready after $((i * 10))s"
+              rm -f /tmp/ssh_key
+              exit 0
+            fi
+            echo "Attempt $i: SSH not ready, retrying in 10s..."
+            sleep 10
+          done
+          rm -f /tmp/ssh_key
+          echo "SSH never became available"
+          exit 1
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: droplet-ip
+          path: /tmp/droplet_ip
