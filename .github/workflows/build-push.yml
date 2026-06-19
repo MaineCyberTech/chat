@@ -2,9 +2,7 @@ name: Build and Push Images
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: [Validate]
-    types: [completed]
+  push:
     branches: [develop]
 
 env:
@@ -13,7 +11,6 @@ env:
 jobs:
   build-images:
     name: Build and Push
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
