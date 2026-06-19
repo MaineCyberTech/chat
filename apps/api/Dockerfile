@@ -2,7 +2,7 @@
 # Multi-stage production build for the Express API server.
 
 # ---- Build stage ----
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
