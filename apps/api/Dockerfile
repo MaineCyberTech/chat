@@ -38,7 +38,6 @@ ENV NODE_ENV=production
 ENV PORT=4000
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/api/node_modules ./node_modules 2>/dev/null || true
 COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/package.json ./package.json
 COPY --from=build /app/packages/db/dist ./node_modules/@chat/db/dist
