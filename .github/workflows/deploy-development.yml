@@ -79,8 +79,17 @@ jobs:
 
           echo "=== Cloning repo ==="
           ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP "
+            # Wait for cloud-init to finish
+            cloud-init status --wait 2>/dev/null || true
+
             if [ ! -d '${{ env.REPO_DIR }}' ]; then
-              apt-get update -qq && apt-get install -y -qq git
+              # Retry apt-get if locked by cloud-init
+              for i in \$(seq 1 10); do
+                apt-get update -qq 2>/dev/null && break
+                echo 'Waiting for apt lock...'
+                sleep 10
+              done
+              apt-get install -y -qq git
               git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }}
             fi
             cd ${{ env.REPO_DIR }}
@@ -106,6 +115,12 @@ jobs:
           echo "=== Deploying containers ==="
           ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP "
             cd ${{ env.REPO_DIR }}
+            # Wait for Docker to be available
+            for i in \$(seq 1 12); do
+              docker info >/dev/null 2>&1 && break
+              echo 'Waiting for Docker...'
+              sleep 10
+            done
             echo '${GHCR_TOKEN}' | docker login ghcr.io -u ${GHCR_OWNER} --password-stdin
             docker pull ghcr.io/${{ env.REPO_LC }}/api:dev
             docker pull ghcr.io/${{ env.REPO_LC }}/web:dev
