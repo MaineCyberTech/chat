@@ -1,4 +1,4 @@
-name: Provision + Deploy — Development
+name: Deploy — Development
 
 on:
   workflow_dispatch:
@@ -11,35 +11,8 @@ env:
   REPO_DIR: /opt/chat
 
 jobs:
-  changes:
-    name: Detect changes
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    outputs:
-      code: ${{ steps.filter.outputs.code }}
-      infra: ${{ steps.filter.outputs.infra }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            code:
-              - 'apps/**'
-              - 'packages/**'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-              - 'turbo.json'
-              - '.npmrc'
-              - 'tsconfig.base.json'
-            infra:
-              - 'infra/**'
-              - '.github/workflows/deploy-development.yml'
-
   validate:
     name: Validate
-    if: ${{ needs.changes.outputs.code == 'true' || needs.changes.outputs.infra == 'true' || github.event_name == 'workflow_dispatch' }}
-    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -56,7 +29,6 @@ jobs:
 
   provision:
     name: Provision Infrastructure
-    if: ${{ needs.changes.outputs.code == 'true' || needs.changes.outputs.infra == 'true' || github.event_name == 'workflow_dispatch' }}
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -168,7 +140,6 @@ jobs:
 
   build-images:
     name: Build and Push Images
-    if: ${{ needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch' }}
     needs: provision
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -210,7 +181,6 @@ jobs:
 
   deploy:
     name: Deploy to Droplet
-    if: ${{ needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch' }}
     needs: build-images
     runs-on: ubuntu-latest
     timeout-minutes: 15
