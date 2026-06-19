@@ -82,7 +82,15 @@ jobs:
             "https://api.digitalocean.com/v2/droplets?tag_name=chat-${ENVIRONMENT}" \
             | jq -r '.droplets[0].networks.v4[0].ip_address // empty')
           if [ -z "$IP" ]; then
-            echo "ERROR: Could not find droplet IP"
+            IP=$(curl -sf -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+              "https://api.digitalocean.com/v2/droplets" \
+              | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name) | .networks.v4[0].ip_address')
+          fi
+          if [ -z "$IP" ]; then
+            echo "ERROR: Could not find droplet IP for chat-${ENVIRONMENT}"
+            echo "Listing all droplets for debugging:"
+            curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+              "https://api.digitalocean.com/v2/droplets" | jq '.droplets[] | {name, ip: .networks.v4[0].ip_address}'
             exit 1
           fi
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
