@@ -1,35 +1,27 @@
-name: CI
+name: Validate
 
 on:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   validate:
-    name: Lint, Typecheck, Test
+    name: Lint, Typecheck, Test, Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile
-
       - run: pnpm format:check
-
       - run: pnpm lint
-
       - run: pnpm typecheck
-
       - run: pnpm test
-
       - run: pnpm build

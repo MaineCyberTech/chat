@@ -1,213 +1,45 @@
-name: Deploy — Development
+name: Deploy to Droplet
 
 on:
   workflow_dispatch:
-  push:
+  workflow_run:
+    workflows: [Build and Push Images]
+    types: [completed]
     branches: [develop]
 
 env:
-  ENVIRONMENT: development
-  DOMAIN: mainecybertech.us
   REPO_DIR: /opt/chat
 
 jobs:
-  validate:
-    name: Validate
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-      - run: pnpm build
-
-  provision:
-    name: Provision Infrastructure
-    needs: validate
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      frontend_url: ${{ steps.terraform.outputs.frontend_url }}
-      api_url: ${{ steps.terraform.outputs.api_url }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "~1.10"
-
-      - name: Terraform Init
-        working-directory: infra/terraform
-        run: terraform init -input=false
-
-      - name: Import existing resources
-        id: import
-        env:
-          TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
-          TF_VAR_environment: ${{ env.ENVIRONMENT }}
-          TF_VAR_domain: ${{ env.DOMAIN }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
-        run: |
-          cd infra/terraform
-          # Check if droplet exists and import it
-          DROPLET_ID=$(curl -sf -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
-            | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name) | .id')
-          if [ -n "$DROPLET_ID" ]; then
-            echo "Importing existing droplet $DROPLET_ID"
-            terraform import digitalocean_droplet.chat "$DROPLET_ID" || true
-            terraform import digitalocean_firewall.chat "$DROPLET_ID" || true
-          fi
-          echo "exists=$([ -n "$DROPLET_ID" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "droplet_id=$DROPLET_ID" >> $GITHUB_OUTPUT
-
-      - name: Destroy old extra droplets
-        if: steps.import.outputs.exists == 'true'
-        run: |
-          # Delete duplicate droplets with same name
-          curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
-            | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name and .id!="${{ steps.import.outputs.droplet_id }}") | .id' \
-            | while read OLD_ID; do
-              echo "Deleting extra droplet $OLD_ID"
-              curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-                "https://api.digitalocean.com/v2/droplets/$OLD_ID"
-            done
-          # Delete all old firewalls for this environment
-          curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-            "https://api.digitalocean.com/v2/firewalls?page=1&per_page=200" \
-            | jq -r --arg prefix "chat-${ENVIRONMENT}" '.firewalls[] | select(.name | startswith($prefix)) | .id' \
-            | while read FW_ID; do
-              echo "Deleting old firewall $FW_ID"
-              curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-                "https://api.digitalocean.com/v2/firewalls/$FW_ID"
-            done
-
-      - name: Cleanup duplicate DNS records
-        run: |
-          ZONE_ID="${{ secrets.CF_ZONE_ID }}"
-          TOKEN="${{ secrets.CF_API_TOKEN }}"
-          for NAME in chat chat-api; do
-            curl -s -H "Authorization: Bearer $TOKEN" \
-              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=${NAME}.${{ env.DOMAIN }}" \
-              | jq -r '.result[]?.id' | while read ID; do
-                echo "Deleting old DNS record $NAME (id=$ID)"
-                curl -s -X DELETE -H "Authorization: Bearer $TOKEN" \
-                  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$ID"
-              done
-          done
-
-      - name: Terraform Apply
-        id: terraform
-        working-directory: infra/terraform
-        env:
-          TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
-          TF_VAR_environment: ${{ env.ENVIRONMENT }}
-          TF_VAR_domain: ${{ env.DOMAIN }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
-          DO_PUBKEY: ${{ secrets.CI_SSH_PUBLIC_KEY }}
-        run: |
-          # Compute fingerprint and pass to terraform
-          FINGERPRINT=""
-          if [ -n "$DO_PUBKEY" ]; then
-            FINGERPRINT=$(ssh-keygen -lf /dev/stdin <<< "$DO_PUBKEY" | awk '{print $2}')
-            EXISTS=$(curl -s -H "Authorization: Bearer $TF_VAR_do_token" \
-              "https://api.digitalocean.com/v2/account/keys?fingerprint=$FINGERPRINT" \
-              | jq -r '.ssh_keys[0].id // empty')
-            if [ -z "$EXISTS" ]; then
-              echo "Registering CI SSH key with DigitalOcean"
-              curl -s -X POST -H "Authorization: Bearer $TF_VAR_do_token" \
-                -H "Content-Type: application/json" \
-                -d "$(jq -n --arg pk "$DO_PUBKEY" --arg name "ci-chat" '{name:$name,public_key:$pk}')" \
-                "https://api.digitalocean.com/v2/account/keys" > /dev/null
-            fi
-          fi
-          terraform apply -auto-approve -input=false
-          terraform output -raw droplet_ip > /tmp/droplet_ip
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: droplet-ip
-          path: /tmp/droplet_ip
-
-  build-images:
-    name: Build and Push Images
-    needs: provision
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set lowercase repo
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/api/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ env.REPO_LC }}/api:dev
-            ghcr.io/${{ env.REPO_LC }}/api:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/web/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ env.REPO_LC }}/web:dev
-            ghcr.io/${{ env.REPO_LC }}/web:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
   deploy:
-    name: Deploy to Droplet
-    needs: build-images
+    name: Deploy
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set lowercase repo
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - uses: actions/download-artifact@v4
         with:
           name: droplet-ip
           path: /tmp
+        continue-on-error: true
 
-      - name: Read droplet IP
+      - name: Resolve droplet IP
         id: ip
-        run: echo "droplet_ip=$(cat /tmp/droplet_ip)" >> $GITHUB_OUTPUT
-
-      - name: Set lowercase repo
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
-
-      - name: Wait for SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ steps.ip.outputs.droplet_ip }}
-          username: root
-          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          timeout: 120s
-          command_timeout: 5m
-          script: echo "SSH ready"
+        run: |
+          if [ -f /tmp/droplet_ip ]; then
+            IP=$(cat /tmp/droplet_ip)
+          else
+            IP=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+              "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
+              | jq -r --arg name "chat-development" '.droplets[] | select(.name==$name) | .networks.v4[0].ip_address')
+          fi
+          echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
+          echo "Using droplet IP: $IP"
 
       - name: Setup droplet
         uses: appleboy/ssh-action@v1
@@ -215,16 +47,17 @@ jobs:
           host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          timeout: 120s
+          command_timeout: 5m
           script: |
             if [ ! -d "${{ env.REPO_DIR }}" ]; then
+              apt-get update -qq && apt-get install -y -qq git
               git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }}
             fi
             cd ${{ env.REPO_DIR }}
             git fetch origin develop
             git checkout develop
             git pull origin develop
-            cp infra/docker/.env.devremote.example infra/docker/.env.devremote
-            # Write env file from GitHub secrets
             cat > infra/docker/.env.devremote << 'EOF'
             SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
@@ -248,6 +81,8 @@ jobs:
           host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          timeout: 120s
+          command_timeout: 5m
           script: |
             cd ${{ env.REPO_DIR }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
@@ -259,13 +94,12 @@ jobs:
       - name: Health check
         run: |
           for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://chat-api.${{ env.DOMAIN }}/healthz || echo "000")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://chat-api.mainecybertech.us/healthz || echo "000")
             if [ "$STATUS" = "200" ]; then
-              echo "API healthy at ${{ needs.provision.outputs.api_url }}"
+              echo "API healthy"
               exit 0
             fi
             echo "Attempt $i: returned $STATUS, retrying..."
             sleep 5
           done
-          echo "Health check failed"
           exit 1
