@@ -63,8 +63,8 @@ resource "cloudflare_dns_record" "frontend" {
   name    = split(".", local.domain_names.frontend)[0]
   content = digitalocean_droplet.chat.ipv4_address
   type    = "A"
-  ttl     = 3600
-  proxied = false
+  ttl     = 1
+  proxied = true
 }
 
 resource "cloudflare_dns_record" "api" {
@@ -72,6 +72,6 @@ resource "cloudflare_dns_record" "api" {
   name    = split(".", local.domain_names.api)[0]
   content = digitalocean_droplet.chat.ipv4_address
   type    = "A"
-  ttl     = 3600
-  proxied = false
+  ttl     = 1
+  proxied = true
 }
