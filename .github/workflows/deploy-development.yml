@@ -190,6 +190,8 @@ jobs:
           username: root
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
+          timeout: 120s
+          command_timeout: 5m
           script: echo "SSH ready"
 
       - name: Setup droplet
