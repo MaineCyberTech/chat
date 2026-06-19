@@ -78,6 +78,18 @@ jobs:
 
           echo "=== Setting up droplet ==="
 
+          # Aggressive cleanup FIRST before any writes
+          $SSH "
+            docker stop \$(docker ps -q) 2>/dev/null || true
+            docker rm -f \$(docker ps -aq) 2>/dev/null || true
+            docker network prune -f 2>/dev/null || true
+            docker system prune -af --volumes 2>/dev/null || true
+            docker builder prune -af 2>/dev/null || true
+            rm -rf /tmp/* 2>/dev/null || true
+            journalctl --vacuum-size=50M 2>/dev/null || true
+            df -h /
+          "
+
           # Write env file
           $SSH "
             cloud-init status --wait 2>/dev/null || true
@@ -85,7 +97,6 @@ jobs:
               apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2 2>/dev/null
             fi
             mkdir -p ${REPO_DIR}
-            touch ${REPO_DIR}/Caddyfile
             echo \"SUPABASE_URL=${SUPABASE_URL}\" > ${REPO_DIR}/.env.devremote
             echo \"SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}\" >> ${REPO_DIR}/.env.devremote
             echo \"SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}\" >> ${REPO_DIR}/.env.devremote
@@ -97,8 +108,6 @@ jobs:
             echo 'API_BASE_URL=https://chat-api.mainecybertech.us' >> ${REPO_DIR}/.env.devremote
             echo 'FRONTEND_URL=https://chat.mainecybertech.us' >> ${REPO_DIR}/.env.devremote
             for i in \$(seq 1 12); do docker info >/dev/null 2>&1 && break; echo 'Waiting for Docker...'; sleep 10; done
-            docker image ls -q | xargs -r docker rmi -f 2>/dev/null || true
-            docker system prune -af --volumes 2>/dev/null || true
           "
 
           echo "=== Transferring compose file ==="
