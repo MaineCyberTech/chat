@@ -47,6 +47,44 @@ jobs:
         working-directory: infra/terraform
         run: terraform init -input=false
 
+      - name: Import existing resources
+        id: import
+        run: |
+          cd infra/terraform
+          # Check if droplet exists and import it
+          DROPLET_ID=$(curl -sf -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
+            | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name) | .id')
+          if [ -n "$DROPLET_ID" ]; then
+            echo "Importing existing droplet $DROPLET_ID"
+            terraform import digitalocean_droplet.chat "$DROPLET_ID" || true
+            terraform import digitalocean_firewall.chat "$DROPLET_ID" || true
+          fi
+          echo "exists=$([ -n "$DROPLET_ID" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "droplet_id=$DROPLET_ID" >> $GITHUB_OUTPUT
+
+      - name: Destroy old extra droplets
+        if: steps.import.outputs.exists == 'true'
+        run: |
+          # Delete duplicate droplets with same name
+          curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
+            | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name and .id!="${{ steps.import.outputs.droplet_id }}") | .id' \
+            | while read OLD_ID; do
+              echo "Deleting extra droplet $OLD_ID"
+              curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+                "https://api.digitalocean.com/v2/droplets/$OLD_ID"
+            done
+          # Delete all old firewalls for this environment
+          curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/firewalls?page=1&per_page=200" \
+            | jq -r --arg prefix "chat-${ENVIRONMENT}" '.firewalls[] | select(.name | startswith($prefix)) | .id' \
+            | while read FW_ID; do
+              echo "Deleting old firewall $FW_ID"
+              curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+                "https://api.digitalocean.com/v2/firewalls/$FW_ID"
+            done
+
       - name: Cleanup duplicate DNS records
         run: |
           ZONE_ID="${{ secrets.CF_ZONE_ID }}"
