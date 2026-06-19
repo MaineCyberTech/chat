@@ -41,3 +41,9 @@ variable "cloudflare_api_token" {
   type        = string
   sensitive   = true
 }
+
+variable "ssh_fingerprint" {
+  description = "SSH key fingerprint registered with DigitalOcean"
+  type        = string
+  default     = ""
+}

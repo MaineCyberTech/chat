@@ -7,15 +7,17 @@ provider "cloudflare" {
 }
 
 resource "digitalocean_droplet" "chat" {
-  image  = "ubuntu-24-04-x64"
-  name   = "chat-${var.environment}"
-  region = var.region
-  size   = var.droplet_size
-  tags   = ["chat-${var.environment}"]
+  image      = "ubuntu-24-04-x64"
+  name       = "chat-${var.environment}"
+  region     = var.region
+  size       = var.droplet_size
+  tags       = ["chat-${var.environment}"]
+  monitoring = true
+  ssh_keys   = var.ssh_fingerprint != "" ? [var.ssh_fingerprint] : null
 
-  # user_data only matters on first boot, never force replace
   lifecycle {
-    ignore_changes = [user_data]
+    prevent_destroy = true
+    ignore_changes  = [user_data]
   }
 
   user_data = templatefile("${path.module}/templates/cloud-init.yaml.tftpl", {

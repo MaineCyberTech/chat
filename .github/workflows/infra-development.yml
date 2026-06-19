@@ -84,8 +84,10 @@ jobs:
           DO_PUBKEY: ${{ secrets.CI_SSH_PUBLIC_KEY }}
           DO_TOKEN: ${{ secrets.DO_API_TOKEN }}
         run: |
+          FINGERPRINT=""
           if [ -n "$DO_PUBKEY" ]; then
-            FINGERPRINT=$(ssh-keygen -lf /dev/stdin <<< "$DO_PUBKEY" | awk '{print $2}')
+            # DO requires MD5 fingerprint format for droplet ssh_keys
+            FINGERPRINT=$(ssh-keygen -E md5 -lf /dev/stdin <<< "$DO_PUBKEY" | awk '{print $2}' | sed 's/^MD5://')
             EXISTS=$(curl -s -H "Authorization: Bearer $DO_TOKEN" \
               "https://api.digitalocean.com/v2/account/keys?fingerprint=$FINGERPRINT" \
               | jq -r '.ssh_keys[0].id // empty')
@@ -97,6 +99,8 @@ jobs:
                 "https://api.digitalocean.com/v2/account/keys" > /dev/null
             fi
           fi
+          # Pass MD5 fingerprint to terraform for ssh_keys
+          export TF_VAR_ssh_fingerprint="$FINGERPRINT"
           terraform apply -auto-approve -input=false
           terraform output -raw droplet_ip > /tmp/droplet_ip
           echo "droplet_ip=$(cat /tmp/droplet_ip)" >> $GITHUB_OUTPUT

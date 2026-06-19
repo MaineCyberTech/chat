@@ -5,31 +5,20 @@ manage_etc_hosts: true
 package_update: true
 package_upgrade: true
 
-# Disable password auth, use SSH keys only
 ssh_pwauth: false
 disable_root: false
 lock_passwd: true
 
 packages:
-  - curl
-  - wget
-  - git
+  - docker.io
+  - docker-compose-v2
   - ufw
-  - fail2ban
-  - ca-certificates
-  - gnupg
 
 runcmd:
+  - systemctl enable docker
+  - systemctl start docker
   - ufw allow OpenSSH
   - ufw allow 'Nginx Full'
   - ufw --force enable
-  - systemctl enable fail2ban
-  - systemctl start fail2ban
 
-  # Install Docker using official script (simpler than Debian apt setup)
-  - curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-  - sh /tmp/get-docker.sh
-  - systemctl enable docker
-  - systemctl start docker
-
-final_message: "Chat platform droplet bootstrapped. Environment: ${environment}. Frontend: ${frontend_domain}, API: ${api_domain}"
+final_message: "Chat platform droplet ready. Environment: ${environment}. Frontend: ${frontend_domain}, API: ${api_domain}"
