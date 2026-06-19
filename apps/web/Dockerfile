@@ -26,7 +26,6 @@ COPY packages/ui/package.json packages/ui/tsconfig.json ./packages/ui/
 RUN pnpm install --frozen-lockfile --filter @chat/web
 
 COPY packages/ui/src ./packages/ui/src
-COPY apps/web/src ./apps/web/src 2>/dev/null || true
 COPY apps/web/app ./apps/web/app
 COPY apps/web/components ./apps/web/components
 COPY apps/web/lib ./apps/web/lib
