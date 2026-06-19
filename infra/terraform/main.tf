@@ -13,6 +13,11 @@ resource "digitalocean_droplet" "chat" {
   size   = var.droplet_size
   tags   = ["chat-${var.environment}"]
 
+  # user_data only matters on first boot, never force replace
+  lifecycle {
+    ignore_changes = [user_data]
+  }
+
   user_data = templatefile("${path.module}/templates/cloud-init.yaml.tftpl", {
     domain          = var.domain
     environment     = var.environment
