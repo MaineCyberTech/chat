@@ -84,7 +84,6 @@ jobs:
                 "https://api.digitalocean.com/v2/account/keys" > /dev/null
             fi
           fi
-          export TF_VAR_ssh_fingerprint="$FINGERPRINT"
           terraform apply -auto-approve -input=false
           terraform output -raw droplet_ip > /tmp/droplet_ip
           echo "droplet_ip=$(cat /tmp/droplet_ip)" >> $GITHUB_OUTPUT

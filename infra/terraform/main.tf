@@ -13,7 +13,6 @@ resource "digitalocean_droplet" "chat" {
   size       = var.droplet_size
   tags       = ["chat-${var.environment}"]
   monitoring = true
-  ssh_keys   = var.ssh_fingerprint != "" ? [var.ssh_fingerprint] : null
 
   lifecycle {
     prevent_destroy = true
