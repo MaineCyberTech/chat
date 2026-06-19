@@ -61,8 +61,24 @@ jobs:
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
           echo "Using droplet IP: $IP"
 
-      - name: Wait for droplet boot
-        run: sleep 30
+      - name: Wait for SSH
+        run: |
+          echo "${{ secrets.CI_SSH_PRIVATE_KEY }}" > /tmp/ssh_key
+          chmod 600 /tmp/ssh_key
+          IP="${{ steps.ip.outputs.droplet_ip }}"
+          echo "Waiting for SSH on $IP..."
+          for i in $(seq 1 30); do
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /tmp/ssh_key root@$IP "echo ready" 2>/dev/null; then
+              echo "SSH ready after $((i * 10))s"
+              rm -f /tmp/ssh_key
+              exit 0
+            fi
+            echo "Attempt $i: not ready, retrying in 10s..."
+            sleep 10
+          done
+          rm -f /tmp/ssh_key
+          echo "SSH never became available"
+          exit 1
 
       - name: Setup and deploy
         env:
