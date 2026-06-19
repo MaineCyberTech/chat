@@ -13,7 +13,6 @@ import messageRoutes from "./modules/messages/routes.js";
 export function createApp(): Express {
   const app = express();
 
-  app.use(helmet());
   app.use(
     cors({
       origin: process.env.FRONTEND_URL ?? "http://localhost:3000",
@@ -22,6 +21,7 @@ export function createApp(): Express {
       allowedHeaders: ["Content-Type", "Authorization"],
     }),
   );
+  app.use(helmet());
   app.use(express.json());
   app.use(requestId);
   app.use(apiLimiter);
