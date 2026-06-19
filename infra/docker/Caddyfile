@@ -4,10 +4,4 @@ chat.mainecybertech.us {
 
 chat-api.mainecybertech.us {
     reverse_proxy api:4000
-    header {
-        Access-Control-Allow-Origin https://chat.mainecybertech.us
-        Access-Control-Allow-Methods "GET, POST, PATCH, DELETE, OPTIONS"
-        Access-Control-Allow-Headers "Authorization, Content-Type"
-        Access-Control-Allow-Credentials true
-    }
 }
