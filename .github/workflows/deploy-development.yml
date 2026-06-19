@@ -25,6 +25,23 @@ jobs:
           path: /tmp
         continue-on-error: true
 
+      - name: Register CI key with DO
+        run: |
+          DO_PUBKEY="${{ secrets.CI_SSH_PUBLIC_KEY }}"
+          if [ -n "$DO_PUBKEY" ]; then
+            FINGERPRINT=$(ssh-keygen -lf /dev/stdin <<< "$DO_PUBKEY" | awk '{print $2}')
+            EXISTS=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+              "https://api.digitalocean.com/v2/account/keys?fingerprint=$FINGERPRINT" \
+              | jq -r '.ssh_keys[0].id // empty')
+            if [ -z "$EXISTS" ]; then
+              echo "Registering CI SSH key"
+              curl -s -X POST -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                -d "$(jq -n --arg pk "$DO_PUBKEY" --arg name "ci-chat" '{name:$name,public_key:$pk}')" \
+                "https://api.digitalocean.com/v2/account/keys" > /dev/null
+            fi
+          fi
+
       - name: Resolve droplet IP
         id: ip
         run: |
