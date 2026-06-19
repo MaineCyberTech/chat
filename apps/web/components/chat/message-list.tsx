@@ -91,7 +91,7 @@ export function MessageList({
                     }`}
                   >
                     {msg.parent_id && <p className="mb-0.5 text-xs italic opacity-60">↳ reply</p>}
-                    <p className="whitespace-pre-wrap break-words text-sm">{msg.content}</p>
+                    <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
                     {msg.edited_at && <p className="mt-0.5 text-xs opacity-70">edited</p>}
                     <p className="mt-0.5 text-right text-xs opacity-50">
                       {new Date(msg.created_at).toLocaleTimeString([], {

@@ -62,7 +62,7 @@ export function AppSidebar({ workspaceSlug, channelId }: Props) {
       {/* Workspace section */}
       <div className="flex-1 overflow-y-auto py-2">
         <div className="mb-1 px-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <h2 className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
             Workspaces
           </h2>
         </div>
@@ -77,7 +77,7 @@ export function AppSidebar({ workspaceSlug, channelId }: Props) {
         {workspaceSlug && (
           <div className="mt-4">
             <div className="mb-1 px-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+              <h2 className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
                 Channels
               </h2>
             </div>

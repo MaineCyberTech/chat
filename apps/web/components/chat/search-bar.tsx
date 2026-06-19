@@ -66,7 +66,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-1.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:focus:bg-gray-900"
       />
       {open && results.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+        <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
           {results.map((r) => (
             <Link
               key={r.id}

@@ -15,7 +15,7 @@ export function SidebarGroup({ title, children, defaultOpen = true }: SidebarGro
     <div className="py-1">
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-1 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        className="flex w-full items-center gap-1 px-3 py-1 text-xs font-semibold tracking-wider text-gray-400 uppercase hover:text-gray-600 dark:hover:text-gray-300"
       >
         <span className={`transition-transform ${open ? "rotate-90" : ""}`}>▸</span>
         {title}
