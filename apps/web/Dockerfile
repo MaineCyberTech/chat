@@ -1,29 +1,17 @@
 # apps/web/Dockerfile
 # Multi-stage production build for Next.js with standalone output.
 
-# ---- Deps stage ----
-FROM node:20-alpine AS deps
-WORKDIR /app
-
-RUN corepack enable && corepack prepare pnpm@9 --activate
-
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY apps/web/package.json ./apps/web/
-COPY packages/ui/package.json ./packages/ui/
-
-RUN pnpm install --frozen-lockfile --prod --filter @chat/web
-
 # ---- Build stage ----
 FROM node:20-alpine AS build
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./
 COPY apps/web/package.json apps/web/tsconfig.json apps/web/next.config.ts apps/web/postcss.config.js ./apps/web/
 COPY packages/ui/package.json packages/ui/tsconfig.json ./packages/ui/
 
-RUN pnpm install --frozen-lockfile --filter @chat/web
+RUN pnpm install --frozen-lockfile
 
 COPY packages/ui/src ./packages/ui/src
 COPY apps/web/app ./apps/web/app
@@ -32,8 +20,7 @@ COPY apps/web/lib ./apps/web/lib
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV STANDALONE=1
-RUN pnpm --filter @chat/ui build
-RUN pnpm --filter @chat/web build
+RUN pnpm turbo build --filter @chat/web
 
 # ---- Runtime stage ----
 FROM node:20-alpine AS runtime
