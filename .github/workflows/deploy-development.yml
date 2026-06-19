@@ -79,6 +79,12 @@ jobs:
           echo "=== Setting up droplet ==="
           $SSH '
             cloud-init status --wait 2>/dev/null || true
+
+            # Ensure docker compose plugin is installed
+            if ! docker compose version >/dev/null 2>&1; then
+              apt-get update -qq && apt-get install -y -qq docker-compose-v2
+            fi
+
             mkdir -p '"${REPO_DIR}"'/traefik
             touch '"${REPO_DIR}"'/traefik/acme.json
             chmod 600 '"${REPO_DIR}"'/traefik/acme.json
