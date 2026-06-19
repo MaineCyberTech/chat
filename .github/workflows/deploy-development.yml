@@ -117,6 +117,10 @@ jobs:
           echo "=== Starting services ==="
           $SSH "
             cd ${REPO_DIR}
+            # Create swap if needed for 512MB droplet
+            if [ ! -f /swapfile ]; then
+              fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+            fi
             # Kill ALL containers
             docker stop \$(docker ps -q) 2>/dev/null || true
             docker rm -f \$(docker ps -aq) 2>/dev/null || true
