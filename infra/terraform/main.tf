@@ -1,3 +1,11 @@
+provider "digitalocean" {
+  token = var.do_token
+}
+
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
+
 resource "digitalocean_ssh_key" "chat" {
   name       = "chat-${var.environment}"
   public_key = var.ssh_public_key
