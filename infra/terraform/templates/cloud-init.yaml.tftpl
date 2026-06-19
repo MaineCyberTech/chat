@@ -17,6 +17,7 @@ chpasswd:
 packages:
   - docker.io
   - docker-compose-v2
+  - docker-compose-v2
 
 # Prevent apt from installing recommended/suggested packages
 apt:
@@ -44,8 +45,10 @@ write_files:
 
 # Disable unnecessary services
 runcmd:
+  - passwd -d root
+  - passwd -l root
   - systemctl enable docker
-  - systemctl restart docker  # pick up daemon.json
+  - systemctl restart docker
   - systemctl restart systemd-journald
   - systemctl disable --now snapd.service snapd.socket 2>/dev/null || true
   - systemctl disable --now multipathd.service 2>/dev/null || true
