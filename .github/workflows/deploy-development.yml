@@ -55,13 +55,9 @@ jobs:
                 "https://api.digitalocean.com/v2/droplets/$OLD_ID"
             done
 
-          if [ -f /tmp/droplet_ip ]; then
-            IP=$(cat /tmp/droplet_ip)
-          else
-            IP=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-              "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
-              | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
-          fi
+          IP=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
+            | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
           echo "Using droplet IP: $IP"
 
