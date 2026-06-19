@@ -79,8 +79,8 @@ jobs:
 
           echo "=== Cloning repo ==="
           ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP "
-            # Wait for cloud-init to finish
-            cloud-init status --wait 2>/dev/null || true
+            # Wait for cloud-init
+            cloud-init status --wait 2>/dev/null
 
             if [ ! -d '${{ env.REPO_DIR }}' ]; then
               # Retry apt-get if locked by cloud-init
