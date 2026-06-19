@@ -21,7 +21,7 @@ resource "digitalocean_droplet" "chat" {
 }
 
 resource "digitalocean_firewall" "chat" {
-  name = "chat-${var.environment}"
+  name = "chat-${var.environment}-${digitalocean_droplet.chat.id}"
 
   droplet_ids = [digitalocean_droplet.chat.id]
 
