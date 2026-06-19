@@ -15,7 +15,7 @@ jobs:
   provision:
     name: Provision Infrastructure
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     outputs:
       droplet_ip: ${{ steps.terraform.outputs.droplet_ip }}
     steps:
@@ -117,7 +117,7 @@ jobs:
           echo "Waiting for SSH on $IP..."
           echo "${{ secrets.CI_SSH_PRIVATE_KEY }}" > /tmp/ssh_key
           chmod 600 /tmp/ssh_key
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /tmp/ssh_key root@$IP "echo ready" 2>/dev/null; then
               echo "SSH ready after $((i * 10))s"
               rm -f /tmp/ssh_key

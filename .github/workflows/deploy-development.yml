@@ -47,7 +47,7 @@ jobs:
           chmod 600 /tmp/ssh_key
           IP="${{ steps.ip.outputs.droplet_ip }}"
           echo "Waiting for SSH on $IP..."
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /tmp/ssh_key root@$IP "echo ready" 2>/dev/null; then
               echo "SSH ready after $((i * 10))s"
               exit 0
