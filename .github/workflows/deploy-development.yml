@@ -126,7 +126,8 @@ jobs:
           docker pull ghcr.io/${{ env.REPO_LC }}/web:dev
           docker save ghcr.io/${{ env.REPO_LC }}/api:dev ghcr.io/${{ env.REPO_LC }}/web:dev | gzip | \
             ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP '
-              docker image prune -af
+              docker system prune -af --volumes
+              journalctl --vacuum-size=100M 2>/dev/null || true
               gunzip | docker load
               cd '"${REPO_DIR}"'
               docker compose -f infra/docker/docker-compose.devremote.yml up -d --remove-orphans

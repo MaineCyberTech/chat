@@ -1,14 +1,23 @@
 # apps/api/Dockerfile
 # Multi-stage production build for the Express API server.
 
+# ---- Deps stage (production only) ----
+FROM node:20-alpine AS deps
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/db/package.json ./packages/db/
+
+RUN pnpm install --frozen-lockfile --prod --filter @chat/api
+
 # ---- Build stage ----
 FROM node:20-alpine AS build
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
-
-# pnpm in Docker needs hoisted node_modules for tsc to resolve workspace deps
-ENV PNPM_HOME=/usr/local/bin
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./
 COPY apps/api/package.json apps/api/tsconfig.json ./apps/api/
@@ -28,11 +37,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4000
 
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./node_modules 2>/dev/null || true
 COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/package.json ./package.json
-COPY --from=build /app/packages/db/package.json ./node_modules/@chat/db/package.json
 COPY --from=build /app/packages/db/dist ./node_modules/@chat/db/dist
+COPY --from=build /app/packages/db/package.json ./node_modules/@chat/db/package.json
 
 EXPOSE 4000
 CMD ["node", "dist/server.js"]
