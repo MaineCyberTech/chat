@@ -1,5 +1,5 @@
 # apps/web/Dockerfile
-# Multi-stage production build for Next.js with standalone output.
+# Multi-stage production build for Next.js.
 
 # ---- Build stage ----
 FROM node:20-alpine AS build
@@ -21,7 +21,6 @@ COPY apps/web/components ./apps/web/components
 COPY apps/web/lib ./apps/web/lib
 
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV STANDALONE=1
 RUN pnpm turbo build --filter @chat/web
 
 # ---- Runtime stage ----
@@ -31,8 +30,14 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-COPY --from=build /app/apps/web/.next/standalone ./
-COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/apps/web/.next ./apps/web/.next
+COPY --from=build /app/apps/web/package.json ./apps/web/package.json
+COPY --from=build /app/apps/web/next.config.ts ./apps/web/next.config.ts
+COPY --from=build /app/packages/ui/package.json ./packages/ui/package.json
+COPY --from=build /app/packages/db/package.json ./packages/db/package.json
+COPY --from=build /app/package.json ./
 
 EXPOSE 3000
-CMD ["node", "apps/web/server.js"]
+WORKDIR /app/apps/web
+CMD ["npx", "next", "start"]
