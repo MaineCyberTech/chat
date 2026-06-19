@@ -7,11 +7,14 @@ WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json ./
+# pnpm in Docker needs hoisted node_modules for tsc to resolve workspace deps
+ENV PNPM_HOME=/usr/local/bin
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./
 COPY apps/api/package.json apps/api/tsconfig.json ./apps/api/
 COPY packages/db/package.json packages/db/tsconfig.json ./packages/db/
 
-RUN pnpm install --frozen-lockfile --filter @chat/api
+RUN pnpm install --frozen-lockfile
 
 COPY packages/db/src ./packages/db/src
 COPY apps/api/src ./apps/api/src
