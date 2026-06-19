@@ -49,6 +49,10 @@ jobs:
 
       - name: Import existing resources
         id: import
+        env:
+          TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
         run: |
           cd infra/terraform
           DROPLET_ID=$(curl -sf -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
