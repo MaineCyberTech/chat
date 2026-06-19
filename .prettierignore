@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.next/
+.turbo/
+coverage/
+pnpm-lock.yaml
+*.tsbuildinfo
+*.log
+.terraform/
+*.tfstate
+*.tfstate.*
+FINAL_RECONCILIATION_REPO_AUDIT_PROMPT.md

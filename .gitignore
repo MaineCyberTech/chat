@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.next/
+.turbo/
+coverage/
+*.tsbuildinfo
+.env
+.env.*local
+.env.development
+.env.production
+!.env.*.example
+*.log
+.DS_Store
+Thumbs.db
+.terraform/
+*.tfstate
+*.tfstate.*

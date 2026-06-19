@@ -1,0 +1,170 @@
+name: Provision + Deploy — Production
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  ENVIRONMENT: production
+  DOMAIN: mainecybertech.com
+  REPO_DIR: /opt/chat
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm build
+
+  provision:
+    name: Provision Infrastructure
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      droplet_ip: ${{ steps.terraform.outputs.droplet_ip }}
+      frontend_url: ${{ steps.terraform.outputs.frontend_url }}
+      api_url: ${{ steps.terraform.outputs.api_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10"
+
+      - name: Terraform Init
+        working-directory: infra/terraform
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        id: terraform
+        working-directory: infra/terraform
+        env:
+          TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
+          TF_VAR_domain: ${{ env.DOMAIN }}
+          TF_VAR_ssh_public_key: ${{ secrets.DO_SSH_PUBLIC_KEY }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          terraform apply -auto-approve -input=false
+          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
+          echo "frontend_url=$(terraform output -raw frontend_url)" >> $GITHUB_OUTPUT
+          echo "api_url=$(terraform output -raw api_url)" >> $GITHUB_OUTPUT
+
+  build-images:
+    name: Build and Push Images
+    needs: provision
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/api:latest
+            ghcr.io/${{ github.repository }}/api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/web:latest
+            ghcr.io/${{ github.repository }}/web:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Droplet
+    needs: build-images
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup droplet
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ needs.provision.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          script: |
+            if [ ! -d "${{ env.REPO_DIR }}" ]; then
+              git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }}
+            fi
+            cd ${{ env.REPO_DIR }}
+            git fetch origin main
+            git checkout main
+            git pull origin main
+            cat > infra/docker/.env.prod << 'EOF'
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+            NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.com
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.com
+            PORT=4000
+            NODE_ENV=production
+            API_BASE_URL=https://chat-api.mainecybertech.com
+            FRONTEND_URL=https://chat.mainecybertech.com
+            EOF
+            mkdir -p infra/docker/traefik
+            touch infra/docker/traefik/acme.json
+            chmod 600 infra/docker/traefik/acme.json
+
+      - name: Deploy containers
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ needs.provision.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ env.REPO_DIR }}
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            docker pull ghcr.io/${{ github.repository }}/api:latest
+            docker pull ghcr.io/${{ github.repository }}/web:latest
+            docker compose -f infra/docker/docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -af
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ needs.provision.outputs.api_url }}/healthz || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "API healthy at ${{ needs.provision.outputs.api_url }}"
+              exit 0
+            fi
+            echo "Attempt $i: returned $STATUS, retrying..."
+            sleep 5
+          done
+          echo "Health check failed"
+          exit 1

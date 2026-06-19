@@ -1,0 +1,68 @@
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: chat-traefik-dev
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOCKER_NETWORK=chat-dev
+      - ACME_EMAIL=${ACME_EMAIL:-admin@mainecybertech.us}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/acme.json:/acme.json
+    networks:
+      - chat-dev
+
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/chat-platform/chat/web:dev}
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    container_name: chat-web-dev
+    restart: unless-stopped
+    env_file:
+      - .env.devremote
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web-dev.rule=Host(`chat.mainecybertech.us`)"
+      - "traefik.http.routers.web-dev.entrypoints=websecure"
+      - "traefik.http.routers.web-dev.tls.certresolver=le"
+    networks:
+      - chat-dev
+
+  api:
+    image: ${API_IMAGE:-ghcr.io/chat-platform/chat/api:dev}
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    container_name: chat-api-dev
+    restart: unless-stopped
+    env_file:
+      - .env.devremote
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-dev.rule=Host(`chat-api.mainecybertech.us`)"
+      - "traefik.http.routers.api-dev.entrypoints=websecure"
+      - "traefik.http.routers.api-dev.tls.certresolver=le"
+    networks:
+      - chat-dev
+
+networks:
+  chat-dev:
+    driver: bridge

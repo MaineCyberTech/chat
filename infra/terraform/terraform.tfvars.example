@@ -1,0 +1,6 @@
+do_token              = "dop_v1_..."
+environment           = "development"
+region                = "nyc3"
+droplet_size          = "s-1vcpu-512mb-10gb"
+domain                = "mainecybertech.us"
+ssh_public_key        = "ssh-ed25519 AAAAC3..."

@@ -1,0 +1,72 @@
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: chat-traefik-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOCKER_NETWORK=chat-prod
+      - ACME_EMAIL=${ACME_EMAIL:-admin@mainecybertech.com}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/acme.json:/acme.json
+    networks:
+      - chat-prod
+
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/chat-platform/chat/web:latest}
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    container_name: chat-web-prod
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web-prod.rule=Host(`chat.mainecybertech.com`)"
+      - "traefik.http.routers.web-prod.entrypoints=websecure"
+      - "traefik.http.routers.web-prod.tls.certresolver=le"
+      - "traefik.http.middlewares.web-compress.compress=true"
+      - "traefik.http.routers.web-prod.middlewares=web-compress"
+    networks:
+      - chat-prod
+
+  api:
+    image: ${API_IMAGE:-ghcr.io/chat-platform/chat/api:latest}
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    container_name: chat-api-prod
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-prod.rule=Host(`chat-api.mainecybertech.com`)"
+      - "traefik.http.routers.api-prod.entrypoints=websecure"
+      - "traefik.http.routers.api-prod.tls.certresolver=le"
+      - "traefik.http.middlewares.api-compress.compress=true"
+      - "traefik.http.routers.api-prod.middlewares=api-compress"
+    networks:
+      - chat-prod
+
+networks:
+  chat-prod:
+    driver: bridge

@@ -1,0 +1,44 @@
+{
+  "name": "chat-platform",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Production-grade real-time workspace communication platform",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "test:unit": "vitest run",
+    "test:integration": "vitest run --config vitest.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
+    "clean": "turbo clean",
+    "bootstrap": "pnpm install && pnpm build",
+    "ci": "pnpm install --frozen-lockfile && pnpm check && pnpm build"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "devDependencies": {
+    "@eslint/js": "^9.22.0",
+    "@next/eslint-plugin-next": "^15.2.0",
+    "@playwright/test": "^1.51.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.2.0",
+    "@types/node": "^22.13.0",
+    "eslint": "^9.22.0",
+    "jsdom": "^26.0.0",
+    "prettier": "^3.5.0",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "turbo": "^2.4.0",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.26.0",
+    "vitest": "^3.0.0"
+  }
+}
