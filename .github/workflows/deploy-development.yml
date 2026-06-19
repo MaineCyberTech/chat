@@ -93,7 +93,6 @@ jobs:
             echo \"NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}\" >> ${REPO_DIR}/.env.devremote
             echo \"NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}\" >> ${REPO_DIR}/.env.devremote
             echo 'NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us' >> ${REPO_DIR}/.env.devremote
-            echo 'PORT=4000' >> ${REPO_DIR}/.env.devremote
             echo 'NODE_ENV=development' >> ${REPO_DIR}/.env.devremote
             echo 'API_BASE_URL=https://chat-api.mainecybertech.us' >> ${REPO_DIR}/.env.devremote
             echo 'FRONTEND_URL=https://chat.mainecybertech.us' >> ${REPO_DIR}/.env.devremote

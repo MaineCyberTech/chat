@@ -19,6 +19,8 @@ services:
     image: ${WEB_IMAGE:-ghcr.io/mainecybertech/chat/web:dev}
     container_name: chat-web-dev
     restart: unless-stopped
+    environment:
+      - PORT=3000
     env_file:
       - .env.devremote
     healthcheck:
@@ -35,6 +37,8 @@ services:
     container_name: chat-api-dev
     restart: unless-stopped
     mem_limit: 96m
+    environment:
+      - PORT=4000
     env_file:
       - .env.devremote
     healthcheck:
