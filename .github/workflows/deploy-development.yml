@@ -117,6 +117,8 @@ jobs:
           echo "=== Starting services ==="
           $SSH '
             cd '"${REPO_DIR}"'
+            docker stop chat-api-dev chat-web-dev chat-caddy-dev 2>/dev/null || true
+            docker rm chat-api-dev chat-web-dev chat-caddy-dev 2>/dev/null || true
             docker compose -f docker-compose.yml up -d --remove-orphans
             docker image prune -af
           '
