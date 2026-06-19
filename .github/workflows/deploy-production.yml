@@ -78,17 +78,17 @@ jobs:
       - name: Get droplet IP
         id: get-ip
         run: |
-          if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
-            IP=$(curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
-              "https://api.digitalocean.com/v2/droplets?tag_name=chat-${ENVIRONMENT}" \
-              | jq -r '.droplets[0].networks.v4[0].ip_address')
-          else
-            cd infra/terraform
-            IP=$(terraform output -raw droplet_ip)
+          IP=$(curl -sf -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
+            "https://api.digitalocean.com/v2/droplets?tag_name=chat-${ENVIRONMENT}" \
+            | jq -r '.droplets[0].networks.v4[0].ip_address // empty')
+          if [ -z "$IP" ]; then
+            echo "ERROR: Could not find droplet IP"
+            exit 1
           fi
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
           echo "frontend_url=https://chat.${{ env.DOMAIN }}" >> $GITHUB_OUTPUT
           echo "api_url=https://chat-api.${{ env.DOMAIN }}" >> $GITHUB_OUTPUT
+          echo "Droplet IP: $IP"
 
   build-images:
     name: Build and Push Images
