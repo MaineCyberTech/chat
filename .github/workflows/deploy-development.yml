@@ -115,7 +115,8 @@ jobs:
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
           DO_PUBKEY: ${{ secrets.CI_SSH_PUBLIC_KEY }}
         run: |
-          # Register CI public key with DO if not already present
+          # Compute fingerprint and pass to terraform
+          FINGERPRINT=""
           if [ -n "$DO_PUBKEY" ]; then
             FINGERPRINT=$(ssh-keygen -lf /dev/stdin <<< "$DO_PUBKEY" | awk '{print $2}')
             EXISTS=$(curl -s -H "Authorization: Bearer $TF_VAR_do_token" \
@@ -129,6 +130,7 @@ jobs:
                 "https://api.digitalocean.com/v2/account/keys" > /dev/null
             fi
           fi
+          export TF_VAR_ci_ssh_fingerprint="$FINGERPRINT"
           terraform apply -auto-approve -input=false
           terraform output -raw droplet_ip > /tmp/droplet_ip
 
