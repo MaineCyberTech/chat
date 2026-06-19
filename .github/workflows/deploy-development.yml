@@ -113,7 +113,22 @@ jobs:
           TF_VAR_domain: ${{ env.DOMAIN }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
+          DO_PUBKEY: ${{ secrets.CI_SSH_PUBLIC_KEY }}
         run: |
+          # Register CI public key with DO if not already present
+          if [ -n "$DO_PUBKEY" ]; then
+            FINGERPRINT=$(ssh-keygen -lf /dev/stdin <<< "$DO_PUBKEY" | awk '{print $2}')
+            EXISTS=$(curl -s -H "Authorization: Bearer $TF_VAR_do_token" \
+              "https://api.digitalocean.com/v2/account/keys?fingerprint=$FINGERPRINT" \
+              | jq -r '.ssh_keys[0].id // empty')
+            if [ -z "$EXISTS" ]; then
+              echo "Registering CI SSH key with DigitalOcean"
+              curl -s -X POST -H "Authorization: Bearer $TF_VAR_do_token" \
+                -H "Content-Type: application/json" \
+                -d "$(jq -n --arg pk "$DO_PUBKEY" --arg name "ci-chat" '{name:$name,public_key:$pk}')" \
+                "https://api.digitalocean.com/v2/account/keys" > /dev/null
+            fi
+          fi
           terraform apply -auto-approve -input=false
           terraform output -raw droplet_ip > /tmp/droplet_ip
 
@@ -188,8 +203,7 @@ jobs:
         with:
           host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
-          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           timeout: 120s
           command_timeout: 5m
           script: echo "SSH ready"
@@ -199,8 +213,7 @@ jobs:
         with:
           host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
-          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           script: |
             if [ ! -d "${{ env.REPO_DIR }}" ]; then
               git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }}
@@ -233,8 +246,7 @@ jobs:
         with:
           host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
-          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           script: |
             cd ${{ env.REPO_DIR }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin

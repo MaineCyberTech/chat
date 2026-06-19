@@ -21,13 +21,23 @@ Before the first deploy, complete these steps.
 - [ ] Enable auth provider: Email (magic link)
 - [ ] Set Site URL to `https://chat.mainecybertech.us`
 
-## 2. GitHub
+## 2. Generate CI SSH Key (One-Time)
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/chat-ci -N "" -C "chat-ci"
+cat ~/.ssh/chat-ci.pub   # Copy → GitHub secret CI_SSH_PUBLIC_KEY
+cat ~/.ssh/chat-ci       # Copy → GitHub secret CI_SSH_PRIVATE_KEY
+```
+
+The workflow registers this key with DigitalOcean automatically on first deploy.
+
+## 3. GitHub
 
 - [ ] Settings → Actions → General → Workflow permissions → **Read and write**
 - [ ] Settings → Secrets and variables → Actions → **Repository secrets**:
   - `DO_API_TOKEN` — DigitalOcean API token (read/write)
-  - `DO_SSH_PRIVATE_KEY` — SSH private key
-  - `DO_SSH_PASSPHRASE` — SSH key passphrase (if set)
+  - `CI_SSH_PUBLIC_KEY` — Public key from step 2
+  - `CI_SSH_PRIVATE_KEY` — Private key from step 2
   - `SUPABASE_URL` — Supabase project URL
   - `SUPABASE_ANON_KEY` — Supabase anon key
   - `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key
