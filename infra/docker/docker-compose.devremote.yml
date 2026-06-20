@@ -21,6 +21,7 @@ services:
     restart: unless-stopped
     environment:
       - PORT=3000
+      - NEXT_PUBLIC_API_URL=http://api:4000
     env_file:
       - .env.devremote
     healthcheck:

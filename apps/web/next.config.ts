@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: process.env.STANDALONE === "1" ? "standalone" : undefined,
+  output: "standalone",
   reactStrictMode: true,
   transpilePackages: ["@chat/ui"],
 };

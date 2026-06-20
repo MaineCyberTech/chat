@@ -1,51 +1,42 @@
 # apps/web/Dockerfile
-# Multi-stage production build for Next.js.
+# Multi-stage production build for Next.js with standalone output.
 
-# ---- Build stage ----
-FROM node:20-alpine AS build
+FROM node:20-alpine AS base
 WORKDIR /app
-
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
+# Install deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./
 COPY apps/web/package.json apps/web/tsconfig.json apps/web/next.config.ts apps/web/postcss.config.js ./apps/web/
 COPY packages/ui/package.json packages/ui/tsconfig.json ./packages/ui/
 COPY packages/db/package.json packages/db/tsconfig.json ./packages/db/
-
 RUN pnpm install --frozen-lockfile
 
+# Copy source
 COPY packages/ui/src ./packages/ui/src
 COPY packages/db/src ./packages/db/src
 COPY apps/web/app ./apps/web/app
 COPY apps/web/components ./apps/web/components
 COPY apps/web/lib ./apps/web/lib
 
+# Build with standalone output
 ENV NEXT_TELEMETRY_DISABLED=1
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_APP_URL
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV STANDALONE=1
 RUN pnpm turbo build --filter @chat/web
 
-# ---- Runtime stage ----
+# Runtime
 FROM node:20-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps/web/.next ./apps/web/.next
-COPY --from=build /app/apps/web/package.json ./apps/web/package.json
-COPY --from=build /app/apps/web/next.config.ts ./apps/web/next.config.ts
-COPY --from=build /app/packages/ui/package.json ./packages/ui/package.json
-COPY --from=build /app/packages/db/package.json ./packages/db/package.json
-COPY --from=build /app/package.json ./
+COPY --from=base /app/apps/web/.next/standalone ./
+COPY --from=base /app/apps/web/.next/static ./apps/web/.next/static
 
-WORKDIR /app/apps/web
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+
 EXPOSE 3000
-CMD ["npx", "next", "start"]
+CMD ["node", "apps/web/server.js"]
