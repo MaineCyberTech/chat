@@ -144,15 +144,10 @@ jobs:
           echo "=== Health check ==="
           cat > /tmp/health.sh << 'CHECKEOF'
           #!/bin/bash
-          cd ${REPO_DIR}
+          cd /opt/chat
           i=1
           while [ $i -le 12 ]; do
-            if curl -sf http://localhost/healthz -H "Host: chat-api.mainecybertech.us" >/dev/null 2>&1; then
-              echo "ALL HEALTHY"
-              docker image prune -af
-              exit 0
-            fi
-            if curl -sf http://localhost:4000/healthz >/dev/null 2>&1; then
+            if docker compose -f docker-compose.yml ps --format json | grep -q '"Name":"chat-api-dev"[^}]*"Health":"healthy"'; then
               echo "ALL HEALTHY"
               docker image prune -af
               exit 0
@@ -162,7 +157,7 @@ jobs:
             i=$((i + 1))
           done
           echo "FAILED: Services did not become healthy"
-          docker compose -f docker-compose.yml logs --tail=50
+          docker compose -f docker-compose.yml logs --tail 50
           exit 1
           CHECKEOF
           base64 -w0 /tmp/health.sh | $SSH "base64 -d > /tmp/health.sh && chmod +x /tmp/health.sh && bash /tmp/health.sh"
