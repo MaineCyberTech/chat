@@ -24,6 +24,7 @@ resource "digitalocean_droplet" "chat" {
     environment     = var.environment
     frontend_domain = local.domain_names.frontend
     api_domain      = local.domain_names.api
+    ci_public_key   = var.ci_public_key
   })
 }
 

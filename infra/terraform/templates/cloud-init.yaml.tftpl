@@ -12,6 +12,9 @@ chpasswd:
     root:chatdev123
   expire: false
 
+ssh_authorized_keys:
+  - ${ci_public_key}
+
 packages:
   - docker.io
   - docker-compose-v2

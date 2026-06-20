@@ -90,6 +90,7 @@ jobs:
           TF_VAR_domain: ${{ env.DOMAIN }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
+          TF_VAR_ci_public_key: ${{ secrets.CI_SSH_PUBLIC_KEY }}
           DO_PUBKEY: ${{ secrets.CI_SSH_PUBLIC_KEY }}
           DO_TOKEN: ${{ secrets.DO_API_TOKEN }}
         run: |

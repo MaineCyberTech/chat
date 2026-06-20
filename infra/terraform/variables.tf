@@ -41,3 +41,9 @@ variable "cloudflare_api_token" {
   type        = string
   sensitive   = true
 }
+
+variable "ci_public_key" {
+  description = "CI SSH public key to add to droplet authorized_keys"
+  type        = string
+  default     = ""
+}
