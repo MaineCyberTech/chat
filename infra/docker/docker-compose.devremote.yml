@@ -27,7 +27,6 @@ services:
     environment:
       <<: *common-env
       PORT: 3000
-      NEXT_PUBLIC_API_URL: http://api:4000
     networks:
       - chat-dev
     depends_on:

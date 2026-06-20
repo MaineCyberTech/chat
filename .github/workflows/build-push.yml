@@ -57,7 +57,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-            NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us
+            NEXT_PUBLIC_API_URL=
             NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us
           tags: |
             ghcr.io/${{ env.REPO_LC }}/web:dev

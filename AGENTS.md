@@ -60,13 +60,19 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Path filters on deploy/build workflows (reduce unnecessary runs)
 - Concurrency control with cancel-in-progress on deploy/build
 - .env.example files for API and Web (developer onboarding)
+- Pino structured logger (pino-pretty in dev, JSON in prod)
+- Audit logging on all mutations (message, channel, workspace create/update/delete)
+- Webhook endpoint + delivery tracking (SQL migrations + RLS policies)
+- Same-domain API routing (Caddy reverse proxies /workspaces, /channels, /messages, /auth, /socket.io to API)
+- Bundle analyzer for web (ANALYZE=true flag)
+- Docker HEALTHCHECK on both API and web containers
 
 ### Known Issues
 
 - **Let's Encrypt rate-limited**: Caddy can't issue certs until June 21 (168h rate limit after 5 failed Traefik attempts). Workaround: Cloudflare SSL set to Flexible.
 - **512MB droplet OOM**: Next.js + Express + Caddy push RAM limits. Swap file mitigates but upgrade to 1-2GB recommended.
 - **Infra workflow creates new droplets**: Terraform import of existing droplet isn't reliable. Cleanup step deletes old duplicates as a workaround.
-- **Docker build timeouts**: `pnpm install` in Docker is slow (~15min). GHA cache helps on subsequent builds.
+- **Cloudflare 521**: Cloudflare can't reach the origin server. May need DO firewall rules allowing Cloudflare IP ranges, or Cloudflare SSL/TLS set to Full + Let's Encrypt certs.
 
 ### Remaining Work
 
@@ -85,17 +91,18 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 | Workflow                 | Trigger                 | Purpose                                                               |
 | ------------------------ | ----------------------- | --------------------------------------------------------------------- |
-| `ci.yml`                 | push main/develop, PR   | Validate (lint, typecheck, 49 tests, build)                           |
-| `build-push.yml`         | push develop            | Build Docker images → push to GHCR `:dev` tag                         |
+| `ci.yml`                 | push main/develop, PR   | Calls reusable validate.yml (test, lint, typecheck, build)            |
+| `validate.yml`           | workflow_call           | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache |
+| `build-push.yml`         | push develop            | Build Docker images → push to GHCR `:dev` tag (path-filtered)         |
 | `deploy-development.yml` | push develop            | SSH to droplet, transfer files, pipe images, compose up, health check |
 | `infra-development.yml`  | push infra/\*\* changes | Terraform provision droplet + DNS + firewall                          |
 
 ## Environments
 
-| Environment | Frontend                | API                         | GitHub  |
+| Environment | Frontend                | API (same-domain via Caddy) | GitHub  |
 | ----------- | ----------------------- | --------------------------- | ------- |
-| Development | chat.mainecybertech.us  | chat-api.mainecybertech.us  | develop |
-| Production  | chat.mainecybertech.com | chat-api.mainecybertech.com | main    |
+| Development | chat.mainecybertech.us  | chat.mainecybertech.us      | develop |
+| Production  | chat.mainecybertech.com | chat.mainecybertech.com     | main    |
 | Local       | localhost:3000          | localhost:4000              | N/A     |
 
 ## Documentation

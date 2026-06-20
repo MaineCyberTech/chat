@@ -3,6 +3,27 @@
 }
 
 http://chat.mainecybertech.us {
+    handle /health* {
+        reverse_proxy api:4000
+    }
+    handle /healthz* {
+        reverse_proxy api:4000
+    }
+    handle /auth* {
+        reverse_proxy api:4000
+    }
+    handle /workspaces* {
+        reverse_proxy api:4000
+    }
+    handle /channels* {
+        reverse_proxy api:4000
+    }
+    handle /messages* {
+        reverse_proxy api:4000
+    }
+    handle /socket.io* {
+        reverse_proxy api:4000
+    }
     reverse_proxy web:3000
     header {
         X-Frame-Options "DENY"

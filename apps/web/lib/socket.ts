@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 let socket: Socket | null = null;
 

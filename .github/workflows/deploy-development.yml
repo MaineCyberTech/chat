@@ -94,7 +94,7 @@ jobs:
           echo "SUPABASE_URL=${SUPABASE_URL}" > /tmp/.env.devremote
           echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >> /tmp/.env.devremote
           echo "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}" >> /tmp/.env.devremote
-          echo "NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us" >> /tmp/.env.devremote
+          echo "NEXT_PUBLIC_API_URL=" >> /tmp/.env.devremote
           echo "NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}" >> /tmp/.env.devremote
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >> /tmp/.env.devremote
           echo "NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us" >> /tmp/.env.devremote
