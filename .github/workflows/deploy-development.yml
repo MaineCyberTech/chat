@@ -103,7 +103,7 @@ jobs:
           echo "FRONTEND_URL=https://chat.mainecybertech.us" >> /tmp/.env.devremote
 
           echo "=== Transferring env file ==="
-          base64 -w0 /tmp/.env.devremote | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/.env.devremote"
+          base64 -w0 /tmp/.env.devremote | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/.env"
           echo "ENV_EXIT=$?"
 
           echo "=== Droplet setup ==="

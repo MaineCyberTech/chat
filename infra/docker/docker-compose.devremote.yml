@@ -23,6 +23,7 @@ services:
     image: ${WEB_IMAGE:-ghcr.io/mainecybertech/chat/web:dev}
     container_name: chat-web-dev
     restart: unless-stopped
+    env_file: .env
     environment:
       <<: *common-env
       PORT: 3000
@@ -38,6 +39,7 @@ services:
     container_name: chat-api-dev
     restart: unless-stopped
     mem_limit: 96m
+    env_file: .env
     environment:
       <<: *common-env
       PORT: 4000
