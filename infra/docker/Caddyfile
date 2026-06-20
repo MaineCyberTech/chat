@@ -1,3 +1,7 @@
+{
+    auto_https off
+}
+
 chat.mainecybertech.us {
     reverse_proxy web:3000
     header {
