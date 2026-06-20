@@ -71,7 +71,7 @@ resource "cloudflare_dns_record" "frontend" {
   content = digitalocean_droplet.chat.ipv4_address
   type    = "A"
   ttl     = 1
-  proxied = true
+  proxied = false
 }
 
 resource "cloudflare_dns_record" "api" {
@@ -80,5 +80,5 @@ resource "cloudflare_dns_record" "api" {
   content = digitalocean_droplet.chat.ipv4_address
   type    = "A"
   ttl     = 1
-  proxied = true
+  proxied = false
 }
