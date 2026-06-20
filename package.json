@@ -18,6 +18,9 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "clean": "turbo clean",
     "bootstrap": "pnpm install && pnpm build",
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop",
+    "supabase:status": "npx supabase status",
     "ci": "pnpm install --frozen-lockfile && pnpm check && pnpm build"
   },
   "engines": {

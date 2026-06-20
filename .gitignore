@@ -15,3 +15,6 @@ Thumbs.db
 .terraform/
 *.tfstate
 *.tfstate.*
+# Local Supabase
+supabase/.branches/
+supabase/.temp/
