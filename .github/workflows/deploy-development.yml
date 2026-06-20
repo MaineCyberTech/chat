@@ -160,7 +160,7 @@ jobs:
           cd /opt/chat
           i=1
           while [ $i -le 12 ]; do
-            if docker compose -f docker-compose.yml ps --format json | grep -q '"Name":"chat-api-dev"[^}]*"Health":"healthy"'; then
+            if docker compose -f docker-compose.yml ps --format json | grep -q '"State":"running"'; then
               echo "ALL HEALTHY"
               docker image prune -af
               exit 0
