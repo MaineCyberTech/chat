@@ -25,7 +25,7 @@ ENV STANDALONE=1
 RUN pnpm turbo build --filter @chat/web
 
 # Runtime
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production

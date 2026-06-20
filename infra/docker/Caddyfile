@@ -1,9 +1,7 @@
 chat.mainecybertech.us {
-    tls /etc/caddy/certs/chat.pem /etc/caddy/certs/chat.key
     reverse_proxy web:3000
 }
 
 chat-api.mainecybertech.us {
-    tls /etc/caddy/certs/chat.pem /etc/caddy/certs/chat.key
     reverse_proxy api:4000
 }

@@ -25,7 +25,7 @@ COPY apps/api/src ./apps/api/src
 RUN pnpm turbo build --filter @chat/api
 
 # ---- Runtime stage ----
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate

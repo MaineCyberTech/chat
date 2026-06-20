@@ -125,12 +125,7 @@ jobs:
           echo "=== Starting services ==="
           $SSH "
             cd ${REPO_DIR}
-            # Generate self-signed cert for Cloudflare Full SSL
-            mkdir -p certs
-            if [ ! -f certs/chat.pem ]; then
-              openssl req -x509 -newkey rsa:2048 -keyout certs/chat.key -out certs/chat.pem -days 3650 -nodes -subj '/CN=*.mainecybertech.us'
-              echo 'Self-signed cert created for Cloudflare Full SSL'
-            fi
+            # Create swap if needed for 512MB droplet
             if [ ! -f /swapfile ]; then
               fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
             fi
