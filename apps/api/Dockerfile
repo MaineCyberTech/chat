@@ -48,4 +48,8 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:4000/healthz || exit 1
 
 EXPOSE 4000
+
+RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 appuser
+USER appuser
+
 CMD ["node", "dist/server.js"]

@@ -74,72 +74,75 @@ jobs:
           echo "$SSH_KEY" > /tmp/ssh_key
           chmod 600 /tmp/ssh_key
           IP="${{ steps.ip.outputs.droplet_ip }}"
-          SSH="ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o ConnectTimeout=10 -i /tmp/ssh_key root@$IP"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o ConnectTimeout=10"
 
-          echo "=== Setting up droplet ==="
+          echo "=== SSH pre-flight ==="
+          ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "echo ALIVE_$(date +%s)" 2>&1
+          echo "SSH_TEST_EXIT=$?"
 
-          # Aggressive cleanup FIRST before any writes
-          $SSH "
+          echo "=== Writing env file ==="
+          cat > /tmp/.env.devremote << 'ENVEOF'
+SUPABASE_URL=${SUPABASE_URL}
+SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us
+NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us
+NODE_ENV=development
+API_BASE_URL=https://chat-api.mainecybertech.us
+FRONTEND_URL=https://chat.mainecybertech.us
+ENVEOF
+
+          echo "=== Transferring env file ==="
+          base64 -w0 /tmp/.env.devremote | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/.env.devremote"
+          echo "ENV_EXIT=$?"
+
+          echo "=== Droplet setup ==="
+          ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "
+            cloud-init status --wait 2>/dev/null || true
+            if ! docker compose version >/dev/null 2>&1; then
+              apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2
+            fi
+            mkdir -p ${REPO_DIR}
+            for i in \$(seq 1 12); do docker info >/dev/null 2>&1 && break; echo 'Waiting for Docker...'; sleep 10; done
+            if [ ! -f /swapfile ]; then
+              fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+            fi
             docker stop \$(docker ps -q) 2>/dev/null || true
             docker rm -f \$(docker ps -aq) 2>/dev/null || true
             docker network prune -f 2>/dev/null || true
             docker system prune -af --volumes 2>/dev/null || true
-            docker builder prune -af 2>/dev/null || true
-            rm -rf /tmp/* 2>/dev/null || true
-            journalctl --vacuum-size=50M 2>/dev/null || true
+            fuser -k 80/tcp 2>/dev/null || true
             df -h /
           "
-
-          # Write env file
-          $SSH "
-            cloud-init status --wait 2>/dev/null || true
-            if ! docker compose version >/dev/null 2>&1; then
-              apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2 2>/dev/null
-            fi
-            mkdir -p ${REPO_DIR}
-            echo \"SUPABASE_URL=${SUPABASE_URL}\" > ${REPO_DIR}/.env.devremote
-            echo \"SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}\" >> ${REPO_DIR}/.env.devremote
-            echo \"SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}\" >> ${REPO_DIR}/.env.devremote
-            echo 'NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us' >> ${REPO_DIR}/.env.devremote
-            echo \"NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}\" >> ${REPO_DIR}/.env.devremote
-            echo \"NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}\" >> ${REPO_DIR}/.env.devremote
-            echo 'NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us' >> ${REPO_DIR}/.env.devremote
-            echo 'NODE_ENV=development' >> ${REPO_DIR}/.env.devremote
-            echo 'API_BASE_URL=https://chat-api.mainecybertech.us' >> ${REPO_DIR}/.env.devremote
-            echo 'FRONTEND_URL=https://chat.mainecybertech.us' >> ${REPO_DIR}/.env.devremote
-            for i in \$(seq 1 12); do docker info >/dev/null 2>&1 && break; echo 'Waiting for Docker...'; sleep 10; done
-          "
+          echo "SETUP_EXIT=$?"
 
           echo "=== Transferring compose file ==="
-          base64 -w0 infra/docker/docker-compose.devremote.yml | $SSH "base64 -d > ${REPO_DIR}/docker-compose.yml"
+          base64 -w0 infra/docker/docker-compose.devremote.yml | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/docker-compose.yml"
+          echo "COMPOSE_EXIT=$?"
 
           echo "=== Transferring Caddyfile ==="
-          base64 -w0 infra/docker/Caddyfile | $SSH "base64 -d > ${REPO_DIR}/Caddyfile"
+          base64 -w0 infra/docker/Caddyfile | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/Caddyfile"
+          echo "CADDY_EXIT=$?"
 
           echo "=== Piping images ==="
           for IMG in api web; do
-            docker pull ghcr.io/${{ env.REPO_LC }}/$IMG:dev
-            docker save ghcr.io/${{ env.REPO_LC }}/$IMG:dev | gzip | $SSH "gunzip | docker load"
+            IMG_TAG=dev
+            echo "--- PIPING $IMG IMAGE ---"
+            docker pull ghcr.io/${{ env.REPO_LC }}/$IMG:$IMG_TAG
+            docker save ghcr.io/${{ env.REPO_LC }}/$IMG:$IMG_TAG | gzip | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "gunzip | docker load" 2>&1
+            echo "PIPE_${IMG^^}_EXIT=$?"
           done
 
           echo "=== Starting services ==="
-          $SSH "
-          cd /opt/chat
-            # Create swap if needed for 512MB droplet
-            if [ ! -f /swapfile ]; then
-              fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
-            fi
-            # Kill ALL containers
-            docker stop \$(docker ps -q) 2>/dev/null || true
-            docker rm -f \$(docker ps -aq) 2>/dev/null || true
-            docker network prune -f 2>/dev/null || true
-            # Kill anything on ports 80/443
-            fuser -k 80/tcp 2>/dev/null || true
-            fuser -k 443/tcp 2>/dev/null || true
+          ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "
+            cd ${REPO_DIR}
             sleep 2
             docker compose -f docker-compose.yml up -d --remove-orphans
             sleep 5
           "
+          echo "COMPOSE_UP_EXIT=$?"
 
           echo "=== Health check ==="
           cat > /tmp/health.sh << 'CHECKEOF'

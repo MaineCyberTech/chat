@@ -41,4 +41,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
 EXPOSE 3000
+
+RUN addgroup --system --gid 1001 nextjs && adduser --system --uid 1001 nextjs
+USER nextjs
+
 CMD ["node", "apps/web/server.js"]

@@ -3,11 +3,12 @@ hostname: chat-${environment}
 manage_etc_hosts: true
 
 package_update: true
-package_upgrade: false
+package_upgrade: true
 
 packages:
   - docker.io
   - docker-compose-v2
+  - ufw
   - psmisc
 
 write_files:
@@ -24,5 +25,10 @@ write_files:
 runcmd:
   - systemctl enable docker
   - systemctl start docker
+  - mkdir -p /opt/chat
+  - ufw --force enable
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
 
 final_message: "Chat droplet ready. Environment: ${environment}. Frontend: ${frontend_domain}, API: ${api_domain}"
