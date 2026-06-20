@@ -152,6 +152,11 @@ jobs:
           context: .
           file: apps/web/Dockerfile
           push: true
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.com
+            NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.com
           tags: |
             ghcr.io/${{ env.REPO_LC }}/web:latest
             ghcr.io/${{ env.REPO_LC }}/web:${{ github.sha }}
@@ -194,9 +199,7 @@ jobs:
             API_BASE_URL=https://chat-api.mainecybertech.com
             FRONTEND_URL=https://chat.mainecybertech.com
             EOF
-            mkdir -p infra/docker/traefik
-            touch infra/docker/traefik/acme.json
-            chmod 600 infra/docker/traefik/acme.json
+            mkdir -p /opt/chat/caddy-data /opt/chat/caddy-config
 
       - name: Deploy containers
         uses: appleboy/ssh-action@v1

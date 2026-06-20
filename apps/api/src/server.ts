@@ -17,7 +17,7 @@ if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
 // Set validated FRONTEND_URL so createApp() can use it for CORS
 process.env.FRONTEND_URL = env.FRONTEND_URL;
 
-const app = createApp();
+const app = createApp(env.FRONTEND_URL);
 const httpServer = createServer(app);
 initSocket(httpServer, env.FRONTEND_URL);
 

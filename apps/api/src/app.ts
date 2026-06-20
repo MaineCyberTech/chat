@@ -11,12 +11,12 @@ import workspaceRoutes from "./modules/workspaces/routes.js";
 import channelRoutes from "./modules/channels/routes.js";
 import messageRoutes from "./modules/messages/routes.js";
 
-export function createApp(): Express {
+export function createApp(frontendUrl: string): Express {
   const app = express();
 
   app.use(
     cors({
-      origin: true,
+      origin: frontendUrl,
       credentials: true,
       methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],

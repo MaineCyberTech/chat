@@ -66,6 +66,13 @@ router.patch("/:id", async (req, res) => {
     return;
   }
   res.json({ workspace });
+  logAuditEvent({
+    actorUserId: req.userId,
+    action: "workspace.update",
+    entityType: "workspace",
+    entityId: workspace.id,
+    metadata: { name: workspace.name },
+  });
 });
 
 router.delete("/:id", async (req, res) => {

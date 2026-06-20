@@ -19,12 +19,25 @@ create index if not exists idx_audit_logs_actor
 
 alter table public.audit_logs enable row level security;
 
+-- Only allow users to read audit logs for organizations they belong to
 create policy "audit_logs_select_authenticated"
 on public.audit_logs for select
 to authenticated
-using (true);
+using (
+  organization_id is null
+  or exists (
+    select 1 from workspace_members wm
+    join workspaces w on w.id = wm.workspace_id
+    where wm.user_id = auth.uid()
+    and w.organization_id = audit_logs.organization_id
+  )
+);
 
+-- Inserts are handled server-side via service role, but if direct inserts are needed:
 create policy "audit_logs_insert_authenticated"
 on public.audit_logs for insert
 to authenticated
-with check (true);
+with check (
+  actor_user_id = auth.uid()
+  and actor_type = 'user'
+);

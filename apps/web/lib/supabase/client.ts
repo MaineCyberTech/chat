@@ -9,13 +9,10 @@ export function getSupabaseBrowserClient() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    console.warn(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY — running without Supabase",
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
+        "These must be set at build time via Docker build args or environment variables.",
     );
-    browserClient = createClient("http://localhost:54321", "local", {
-      auth: { persistSession: true, autoRefreshToken: true },
-    });
-    return browserClient;
   }
 
   browserClient = createClient(url, key, {

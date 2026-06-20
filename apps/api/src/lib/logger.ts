@@ -19,15 +19,31 @@ const pinoLogger = pino({
 
 export const logger = {
   debug(message: string, meta?: Record<string, unknown>) {
-    meta ? pinoLogger.debug(meta, message) : pinoLogger.debug(message);
+    if (meta) {
+      pinoLogger.debug(meta, message);
+    } else {
+      pinoLogger.debug(message);
+    }
   },
   info(message: string, meta?: Record<string, unknown>) {
-    meta ? pinoLogger.info(meta, message) : pinoLogger.info(message);
+    if (meta) {
+      pinoLogger.info(meta, message);
+    } else {
+      pinoLogger.info(message);
+    }
   },
   warn(message: string, meta?: Record<string, unknown>) {
-    meta ? pinoLogger.warn(meta, message) : pinoLogger.warn(message);
+    if (meta) {
+      pinoLogger.warn(meta, message);
+    } else {
+      pinoLogger.warn(message);
+    }
   },
   error(message: string, meta?: Record<string, unknown>) {
-    meta ? pinoLogger.error(meta, message) : pinoLogger.error(message);
+    if (meta) {
+      pinoLogger.error(meta, message);
+    } else {
+      pinoLogger.error(message);
+    }
   },
 };
