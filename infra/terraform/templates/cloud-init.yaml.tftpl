@@ -5,16 +5,6 @@ manage_etc_hosts: true
 package_update: true
 package_upgrade: false
 
-ssh_pwauth: false
-
-chpasswd:
-  list: |
-    root:chatdev123
-  expire: false
-
-ssh_authorized_keys:
-  - ${ci_public_key}
-
 packages:
   - docker.io
   - docker-compose-v2
