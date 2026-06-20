@@ -81,18 +81,16 @@ jobs:
           echo "SSH_TEST_EXIT=$?"
 
           echo "=== Writing env file ==="
-          cat > /tmp/.env.devremote << ENVEOF
-SUPABASE_URL=${SUPABASE_URL}
-SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us
-NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
-NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us
-NODE_ENV=development
-API_BASE_URL=https://chat-api.mainecybertech.us
-FRONTEND_URL=https://chat.mainecybertech.us
-ENVEOF
+          echo "SUPABASE_URL=${SUPABASE_URL}" > /tmp/.env.devremote
+          echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >> /tmp/.env.devremote
+          echo "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}" >> /tmp/.env.devremote
+          echo "NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us" >> /tmp/.env.devremote
+          echo "NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}" >> /tmp/.env.devremote
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >> /tmp/.env.devremote
+          echo "NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us" >> /tmp/.env.devremote
+          echo "NODE_ENV=development" >> /tmp/.env.devremote
+          echo "API_BASE_URL=https://chat-api.mainecybertech.us" >> /tmp/.env.devremote
+          echo "FRONTEND_URL=https://chat.mainecybertech.us" >> /tmp/.env.devremote
 
           echo "=== Transferring env file ==="
           base64 -w0 /tmp/.env.devremote | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/.env.devremote"
@@ -130,8 +128,10 @@ ENVEOF
           for IMG in api web; do
             IMG_TAG=dev
             echo "--- PIPING $IMG IMAGE ---"
-            docker pull ghcr.io/${{ env.REPO_LC }}/$IMG:$IMG_TAG
-            docker save ghcr.io/${{ env.REPO_LC }}/$IMG:$IMG_TAG | gzip | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "gunzip | docker load" 2>&1
+            REPO_LC="${GITHUB_REPOSITORY,,}"
+            echo "REPO_LC=$REPO_LC"
+            docker pull ghcr.io/$REPO_LC/$IMG:$IMG_TAG
+            docker save ghcr.io/$REPO_LC/$IMG:$IMG_TAG | gzip | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "gunzip | docker load" 2>&1
             echo "PIPE_${IMG^^}_EXIT=$?"
           done
 
@@ -163,7 +163,7 @@ ENVEOF
           docker compose -f docker-compose.yml logs --tail 50
           exit 1
           CHECKEOF
-          base64 -w0 /tmp/health.sh | $SSH "base64 -d > /tmp/health.sh && chmod +x /tmp/health.sh && bash /tmp/health.sh"
+          base64 -w0 /tmp/health.sh | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > /tmp/health.sh && chmod +x /tmp/health.sh && bash /tmp/health.sh"
 
           rm -f /tmp/ssh_key
 
