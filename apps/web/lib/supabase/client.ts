@@ -9,16 +9,17 @@ export function getSupabaseBrowserClient() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.",
+    console.warn(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY — running without Supabase",
     );
+    browserClient = createClient("http://localhost:54321", "local", {
+      auth: { persistSession: true, autoRefreshToken: true },
+    });
+    return browserClient;
   }
 
   browserClient = createClient(url, key, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-    },
+    auth: { persistSession: true, autoRefreshToken: true },
   });
   return browserClient;
 }
