@@ -11,6 +11,7 @@ export function initSupabase(env: Env) {
   }
   anonClient = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
     auth: { persistSession: false },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     realtime: { transport: WebSocket as any },
   });
 
