@@ -23,7 +23,8 @@ export default function HomePage() {
       .get<{ workspaces: Workspace[] }>("/workspaces")
       .then((res) => {
         if (res.workspaces.length > 0) {
-          router.replace(`/${res.workspaces[0].slug}`);
+          const first = res.workspaces[0];
+          if (first) router.replace(`/${first.slug}`);
         } else {
           router.replace("/login");
         }

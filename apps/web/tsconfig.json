@@ -8,6 +8,7 @@
     "jsx": "preserve",
     "noEmit": true,
     "incremental": true,
+    "noUncheckedIndexedAccess": true,
     "paths": {
       "@/*": ["./*"],
       "@chat/ui": ["../../packages/ui/src"],

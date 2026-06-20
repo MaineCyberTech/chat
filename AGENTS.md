@@ -47,6 +47,19 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Infra pipeline (Terraform import → apply → SSH health check)
 - Local dev with Supabase CLI
 - One-command setup/teardown scripts
+- Security headers middleware (CSP, HSTS, XSS, framing, referrer, permissions)
+- Dependabot config (weekly npm + GHA updates, grouped deps)
+- SECURITY.md (vulnerability disclosure, sensitive areas)
+- .editorconfig (consistent editor settings)
+- Graceful shutdown handlers (10s drain timeout on SIGTERM/SIGINT)
+- Health check with DB connectivity + latency (returns 503 when degraded)
+- Zod env validation with LOG_LEVEL, SENTRY_DSN, SMTP config
+- Sentry error tracking (API via @sentry/node, web via @sentry/nextjs)
+- husky + lint-staged pre-commit hooks (prettier on staged files)
+- Reusable validate.yml workflow_call (called by ci.yml)
+- Path filters on deploy/build workflows (reduce unnecessary runs)
+- Concurrency control with cancel-in-progress on deploy/build
+- .env.example files for API and Web (developer onboarding)
 
 ### Known Issues
 
@@ -64,7 +77,8 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 | MEDIUM   | Terraform remote state backend | S3 backend to persist state between CI runs                    |
 | MEDIUM   | E2E test expansion             | Currently only homepage check                                  |
 | LOW      | Production deploy workflow     | `deploy-production.yml` exists but untested with `.com` domain |
-| LOW      | Email notifications            | No notification system yet                                     |
+| LOW      | Production approval gate       | GitHub Environment with required reviewers for production      |
+| LOW      | Email notifications            | SMTP nodemailer infra exists, no notification system yet       |
 | LOW      | User profile avatars           | Avatar component exists but no upload flow                     |
 
 ## GitHub Actions Workflows

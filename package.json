@@ -21,7 +21,8 @@
     "supabase:start": "npx supabase start",
     "supabase:stop": "npx supabase stop",
     "supabase:status": "npx supabase status",
-    "ci": "pnpm install --frozen-lockfile && pnpm check && pnpm build"
+    "ci": "pnpm install --frozen-lockfile && pnpm check && pnpm build",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -36,12 +37,22 @@
     "@testing-library/react": "^16.2.0",
     "@types/node": "^22.13.0",
     "eslint": "^9.22.0",
+    "husky": "^9.1.7",
     "jsdom": "^26.0.0",
+    "lint-staged": "^17.0.7",
     "prettier": "^3.5.0",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "turbo": "^2.4.0",
     "typescript": "^5.8.0",
     "typescript-eslint": "^8.26.0",
     "vitest": "^3.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write"
+    ],
+    "*.{js,mjs,cjs,json,md}": [
+      "prettier --write"
+    ]
   }
 }

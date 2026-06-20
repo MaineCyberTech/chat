@@ -4,6 +4,7 @@ import cors from "cors";
 import { requestId } from "./middleware/request-id.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { apiLimiter } from "./middleware/rate-limit.js";
+import { securityHeaders } from "./middleware/security-headers.js";
 import healthRoutes from "./modules/health/routes.js";
 import authRoutes from "./modules/auth/routes.js";
 import workspaceRoutes from "./modules/workspaces/routes.js";
@@ -22,6 +23,7 @@ export function createApp(): Express {
     }),
   );
   app.use(helmet());
+  app.use(securityHeaders);
   app.use(express.json());
   app.use(requestId);
   app.use(apiLimiter);

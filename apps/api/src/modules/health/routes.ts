@@ -7,8 +7,9 @@ router.get("/health", (_req, res) => {
   res.json(healthService.getReadiness());
 });
 
-router.get("/healthz", (_req, res) => {
-  res.json(healthService.getLiveness());
+router.get("/healthz", async (_req, res) => {
+  const result = await healthService.getFullHealth();
+  res.status(result.status === "ok" ? 200 : 503).json(result);
 });
 
 export default router;

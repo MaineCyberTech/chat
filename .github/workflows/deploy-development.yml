@@ -4,6 +4,16 @@ on:
   workflow_dispatch:
   push:
     branches: [develop]
+    paths:
+      - "apps/api/**"
+      - "apps/web/**"
+      - "packages/**"
+      - "infra/docker/**"
+      - ".github/workflows/deploy-development.yml"
+
+concurrency:
+  group: deploy-dev-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   REPO_DIR: /opt/chat

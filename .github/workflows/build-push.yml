@@ -4,6 +4,16 @@ on:
   workflow_dispatch:
   push:
     branches: [develop]
+    paths:
+      - "apps/api/**"
+      - "apps/web/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/build-push.yml"
+
+concurrency:
+  group: build-push-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   ENVIRONMENT: development
