@@ -1,14 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Dialog, Button, Input } from "@chat/ui";
 
 interface Props {
-  onCreated: () => void;
+  onCreated?: () => void;
+  children?: React.ReactNode;
 }
 
-export function CreateWorkspaceDialog({ onCreated }: Props) {
+export function CreateWorkspaceDialog({ onCreated, children }: Props) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,10 +24,16 @@ export function CreateWorkspaceDialog({ onCreated }: Props) {
     setError("");
 
     try {
-      await api.post("/workspaces", { name: name.trim() });
+      const res = await api.post<{ workspace: { slug: string } }>("/workspaces", {
+        name: name.trim(),
+      });
       setName("");
       setOpen(false);
-      onCreated();
+      if (onCreated) {
+        onCreated();
+      } else if (res.workspace?.slug) {
+        router.push(`/${res.workspace.slug}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create workspace");
     } finally {
@@ -34,12 +43,23 @@ export function CreateWorkspaceDialog({ onCreated }: Props) {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-      >
-        <span className="text-lg leading-none">+</span> Add workspace
-      </button>
+      {children ? (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setOpen(true)}
+          onKeyDown={(e) => e.key === "Enter" && setOpen(true)}
+        >
+          {children}
+        </div>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+        >
+          <span className="text-lg leading-none">+</span> Add workspace
+        </button>
+      )}
 
       <Dialog open={open} onClose={() => setOpen(false)} title="Create Workspace">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">

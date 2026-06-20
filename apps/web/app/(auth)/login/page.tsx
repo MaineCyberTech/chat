@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { LoginForm } from "@/components/auth/login-form";
@@ -10,6 +10,7 @@ import type { Workspace } from "@chat/db";
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -18,16 +19,33 @@ export default function LoginPage() {
       .then((res) => {
         if (res.workspaces.length > 0) {
           const first = res.workspaces[0];
-          if (first) router.push(`/${first.slug}`);
+          if (first) {
+            router.push(`/${first.slug}`);
+            return;
+          }
         }
+        router.push("/?new=true");
       })
-      .catch(() => {});
+      .catch(() => {
+        setFetchError(true);
+      });
   }, [user, router]);
 
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
         <p className="text-gray-500">Loading...</p>
+      </main>
+    );
+  }
+
+  if (user && fetchError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center p-8">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <p className="text-gray-500">Unable to load your workspaces.</p>
+          <p className="text-sm text-gray-400">Please try refreshing the page.</p>
+        </div>
       </main>
     );
   }
