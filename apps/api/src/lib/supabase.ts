@@ -1,6 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Env } from "../config/env.js";
-import WebSocket from "ws";
 
 let anonClient: SupabaseClient | null = null;
 let adminClient: SupabaseClient | null = null;
@@ -11,8 +10,6 @@ export function initSupabase(env: Env) {
   }
   anonClient = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
     auth: { persistSession: false },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    realtime: { transport: WebSocket as any },
   });
 
   if (env.SUPABASE_SERVICE_ROLE_KEY) {
