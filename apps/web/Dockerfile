@@ -2,7 +2,7 @@
 # Multi-stage production build for Next.js.
 
 # ---- Build stage ----
-FROM node:22-alpine AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
