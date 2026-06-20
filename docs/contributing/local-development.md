@@ -2,64 +2,68 @@
 
 ## Required Tooling
 
-| Tool    | Version | Install                          |
-| ------- | ------- | -------------------------------- |
-| Node.js | >= 20   | [nodejs.org](https://nodejs.org) |
-| pnpm    | >= 9    | `npm install -g pnpm@9`          |
+| Tool | Version | Install |
+|------|---------|---------|
+| Node.js | >= 20 | [nodejs.org](https://nodejs.org) |
+| pnpm | >= 9 | `npm install -g pnpm@9` |
+| Docker Desktop | Latest | [docker.com](https://docker.com) (for Supabase) |
 
-## Getting Started
+## One-Command Setup
 
+```powershell
+# Windows
+.\scripts\setup-dev.ps1
+```
 ```bash
-git clone <repo-url>
-cd chat
-pnpm install
-cp .env.local.example .env.local
-# Edit .env.local with your Supabase project credentials
+# Mac/Linux
+bash scripts/setup-dev.sh
+```
+
+This does everything: installs deps, builds packages, starts local Supabase, auto-fills API keys, runs SQL migrations.
+
+Then:
+```bash
 pnpm dev
 ```
 
-This starts:
+Opens `localhost:3000` (frontend), `localhost:4000` (API), `localhost:54323` (Supabase Studio).
 
-- `apps/web` at http://localhost:3000 (Next.js)
-- `apps/api` at http://localhost:4000 (Express + Socket.io)
+## Without Docker
 
-The API starts without Supabase credentials (health endpoints only).
-Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env.local` for full features.
+If Docker isn't available, skip Supabase and run directly:
+
+```bash
+pnpm install
+cp .env.local.example .env.local
+pnpm build
+pnpm dev
+```
+
+The app runs without Supabase — auth won't work, but the landing page and UI are testable.
 
 ## Run SQL Migrations
 
-Run these in order in the Supabase SQL Editor:
+Migrations are auto-run by the setup script. To run manually in Supabase Studio:
 
+Open `http://localhost:54323` → SQL Editor → run files in order:
 1. `packages/db/sql/migrations/001_users.sql`
 2. `packages/db/sql/functions/handle_new_user.sql`
 3. `packages/db/sql/policies/users_rls.sql`
-4. `packages/db/sql/migrations/002_workspaces.sql`
-5. `packages/db/sql/policies/workspaces_rls.sql`
-6. `packages/db/sql/migrations/003_channels.sql`
-7. `packages/db/sql/policies/channels_rls.sql`
-8. `packages/db/sql/migrations/004_messages.sql`
-9. `packages/db/sql/policies/messages_rls.sql`
-10. `packages/db/sql/migrations/005_search.sql`
-11. `packages/db/sql/policies/storage_rls.sql`
+4-11: remaining migrations + policies
 
-## Development Workflow
+## Teardown
 
-```bash
-pnpm dev          # Start all apps (Turbo watches all packages)
+```powershell
+.\scripts\teardown-dev.ps1
 ```
 
-This starts:
-
-- `apps/web` at http://localhost:3000 (Next.js)
-- `apps/api` at http://localhost:4000 (Express)
+Stops local Supabase, cleans build artifacts.
 
 ## Before Committing
 
 ```bash
 pnpm check        # Run format, lint, typecheck, and tests
 ```
-
-This should pass clean. The CI pipeline runs the same checks.
 
 ## Adding a New Package
 
