@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { LandingShell } from "@/components/home/landing-shell";
 import { CreateWorkspaceDialog } from "@/components/workspace/create-workspace-dialog";
@@ -12,7 +12,6 @@ import type { Workspace } from "@chat/db";
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [checking, setChecking] = useState(true);
   const [noWorkspace, setNoWorkspace] = useState(false);
 
@@ -58,9 +57,7 @@ export default function HomePage() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
         <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {searchParams.get("new") ? "Welcome!" : "No Workspaces"}
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">Welcome!</h1>
           <p className="max-w-md text-gray-500 dark:text-gray-400">
             Create your first workspace to get started.
           </p>
