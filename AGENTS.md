@@ -84,6 +84,14 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 | Production  | chat.mainecybertech.com | chat-api.mainecybertech.com | main    |
 | Local       | localhost:3000          | localhost:4000              | N/A     |
 
+## Documentation
+
+Full architecture docs in `docs/architecture/`:
+
+- [Bootstrap Foundation](docs/architecture/bootstrap-foundation.md)
+- [Repo Structure](docs/architecture/repo-structure.md)
+- [Portal Comparison Audit](docs/architecture/portal-comparison-audit.md)
+
 ## Local Development
 
 ```powershell

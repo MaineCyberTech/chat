@@ -2,8 +2,9 @@
 
 ## Documents
 
-- [Bootstrap Foundation](bootstrap-foundation.md) — what was built in the bootstrap phase and what comes next
+- [Bootstrap Foundation](bootstrap-foundation.md) — what was built and current status
 - [Repo Structure](repo-structure.md) — detailed directory and package layout
+- [Portal Comparison Audit](portal-comparison-audit.md) — audit vs production portal repo
 
 ## High-Level Architecture
 
