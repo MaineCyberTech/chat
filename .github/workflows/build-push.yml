@@ -9,6 +9,7 @@ on:
       - "apps/web/**"
       - "packages/**"
       - "pnpm-lock.yaml"
+      - ".dockerignore"
       - ".github/workflows/build-push.yml"
 
 concurrency:
