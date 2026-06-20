@@ -23,7 +23,6 @@ tests/
 .dockerignore
 .editorconfig
 .prettierrc.json
-.npmrc
 pnpm-debug.log*
 .DS_Store
 Thumbs.db
