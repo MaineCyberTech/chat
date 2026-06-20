@@ -2,6 +2,7 @@ import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { workspaceService } from "./service.js";
 import { createWorkspaceSchema, updateWorkspaceSchema } from "../../config/validators.js";
+import { logAuditEvent } from "../../services/audit.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -32,6 +33,13 @@ router.post("/", async (req, res) => {
   }
 
   res.status(201).json({ workspace });
+  logAuditEvent({
+    actorUserId: req.userId,
+    action: "workspace.create",
+    entityType: "workspace",
+    entityId: workspace.id,
+    metadata: { name: workspace.name },
+  });
 });
 
 router.get("/:id", async (req, res) => {
@@ -67,6 +75,12 @@ router.delete("/:id", async (req, res) => {
     return;
   }
   res.status(204).send();
+  logAuditEvent({
+    actorUserId: req.userId,
+    action: "workspace.delete",
+    entityType: "workspace",
+    entityId: req.params.id,
+  });
 });
 
 export default router;

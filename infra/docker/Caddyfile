@@ -2,7 +2,7 @@
     auto_https off
 }
 
-chat.mainecybertech.us {
+http://chat.mainecybertech.us {
     reverse_proxy web:3000
     header {
         X-Frame-Options "DENY"
@@ -11,7 +11,7 @@ chat.mainecybertech.us {
     }
 }
 
-chat-api.mainecybertech.us {
+http://chat-api.mainecybertech.us {
     reverse_proxy api:4000
     header {
         X-Frame-Options "DENY"

@@ -22,7 +22,7 @@ export function createApp(): Express {
       allowedHeaders: ["Content-Type", "Authorization"],
     }),
   );
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: false }));
   app.use(securityHeaders);
   app.use(express.json());
   app.use(requestId);

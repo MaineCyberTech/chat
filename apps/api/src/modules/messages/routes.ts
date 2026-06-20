@@ -3,6 +3,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { messageService } from "./service.js";
 import { getSupabase } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
+import { logAuditEvent } from "../../services/audit.js";
 import {
   createMessageSchema,
   updateMessageSchema,
@@ -69,6 +70,13 @@ router.post("/channels/:channelId/messages", async (req, res) => {
   }
 
   res.status(201).json({ message });
+  logAuditEvent({
+    actorUserId: req.userId,
+    action: "message.create",
+    entityType: "message",
+    entityId: message.id,
+    metadata: { channel_id: message.channel_id },
+  });
 });
 
 router.patch("/messages/:id", async (req, res) => {
@@ -87,6 +95,13 @@ router.patch("/messages/:id", async (req, res) => {
   }
 
   res.json({ message });
+  logAuditEvent({
+    actorUserId: req.userId,
+    action: "message.update",
+    entityType: "message",
+    entityId: message.id,
+    metadata: { channel_id: message.channel_id },
+  });
 });
 
 router.delete("/messages/:id", async (req, res) => {
@@ -97,6 +112,12 @@ router.delete("/messages/:id", async (req, res) => {
   }
 
   res.status(204).send();
+  logAuditEvent({
+    actorUserId: req.userId,
+    action: "message.delete",
+    entityType: "message",
+    entityId: req.params.id,
+  });
 });
 
 router.post("/messages/upload", async (req, res) => {

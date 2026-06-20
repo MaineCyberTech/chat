@@ -2,6 +2,7 @@ import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { channelService } from "./service.js";
 import { createChannelSchema, updateChannelSchema } from "../../config/validators.js";
+import { logAuditEvent } from "../../services/audit.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -34,6 +35,13 @@ router.post("/workspaces/:workspaceId/channels", async (req, res) => {
   }
 
   res.status(201).json({ channel });
+  logAuditEvent({
+    actorUserId: req.userId,
+    action: "channel.create",
+    entityType: "channel",
+    entityId: channel.id,
+    metadata: { name: channel.name, workspace_id: channel.workspace_id },
+  });
 });
 
 router.get("/channels/:id", async (req, res) => {
@@ -59,6 +67,13 @@ router.patch("/channels/:id", async (req, res) => {
     return;
   }
   res.json({ channel });
+  logAuditEvent({
+    actorUserId: req.userId,
+    action: "channel.update",
+    entityType: "channel",
+    entityId: channel.id,
+    metadata: { name: channel.name },
+  });
 });
 
 router.delete("/channels/:id", async (req, res) => {
@@ -68,6 +83,12 @@ router.delete("/channels/:id", async (req, res) => {
     return;
   }
   res.status(204).send();
+  logAuditEvent({
+    actorUserId: req.userId,
+    action: "channel.delete",
+    entityType: "channel",
+    entityId: req.params.id,
+  });
 });
 
 export default router;

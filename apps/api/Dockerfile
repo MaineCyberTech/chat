@@ -42,6 +42,8 @@ RUN pnpm install --frozen-lockfile --filter ./apps/api --prod --ignore-scripts
 ENV NODE_ENV=production
 ENV PORT=4000
 
+RUN apk add --no-cache wget
+
 WORKDIR /app/apps/api
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
