@@ -11,6 +11,7 @@ Real-time workspace communication platform (Slack/Discord inspired) built with N
 .\scripts\setup-dev.ps1
 pnpm dev
 ```
+
 ```bash
 # One-command setup (Mac/Linux)
 bash scripts/setup-dev.sh
@@ -25,16 +26,16 @@ Push to `develop` → [GitHub Actions](https://github.com/MaineCyberTech/chat/ac
 
 ## Commands
 
-| Command | Purpose |
-|---------|---------|
-| `pnpm dev` | Start all dev servers |
-| `pnpm build` | Build all packages |
-| `pnpm check` | Lint + format + typecheck + test |
-| `pnpm test` | Run 49 unit tests (11 files) |
-| `pnpm supabase:start` | Start local Supabase |
-| `pnpm supabase:stop` | Stop local Supabase |
-| `.\\scripts\\setup-dev.ps1` | Full local setup |
-| `.\\scripts\\teardown-dev.ps1` | Stop Supabase + clean artifacts |
+| Command                        | Purpose                          |
+| ------------------------------ | -------------------------------- |
+| `pnpm dev`                     | Start all dev servers            |
+| `pnpm build`                   | Build all packages               |
+| `pnpm check`                   | Lint + format + typecheck + test |
+| `pnpm test`                    | Run 49 unit tests (11 files)     |
+| `pnpm supabase:start`          | Start local Supabase             |
+| `pnpm supabase:stop`           | Stop local Supabase              |
+| `.\\scripts\\setup-dev.ps1`    | Full local setup                 |
+| `.\\scripts\\teardown-dev.ps1` | Stop Supabase + clean artifacts  |
 
 ## Features
 
