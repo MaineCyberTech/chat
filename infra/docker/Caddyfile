@@ -1,7 +1,17 @@
 chat.mainecybertech.us {
     reverse_proxy web:3000
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
 }
 
 chat-api.mainecybertech.us {
     reverse_proxy api:4000
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
 }

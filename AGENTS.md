@@ -29,7 +29,6 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 ## Implementation Status
 
 ### Complete
-
 - Magic link auth (Supabase) with JWT middleware
 - Workspaces & channels CRUD with RLS policies
 - Real-time messaging (Socket.io rooms, typing, presence)
@@ -41,7 +40,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - 5 SQL migrations, 4 RLS policy sets, 2 functions
 - 49 unit tests across 11 files
 - Caddy reverse proxy with auto-TLS
-- Docker multi-stage builds (node:20-alpine)
+- Docker multi-stage builds (node:22-alpine)
 - CI pipeline (validate → build images → push GHCR)
 - Deploy pipeline (provision → pipe images → compose up → health check)
 - Infra pipeline (Terraform import → apply → SSH health check)
@@ -49,7 +48,6 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - One-command setup/teardown scripts
 
 ### Known Issues
-
 - **Let's Encrypt rate-limited**: Caddy can't issue certs until June 21 (168h rate limit after 5 failed Traefik attempts). Workaround: Cloudflare SSL set to Flexible.
 - **512MB droplet OOM**: Next.js + Express + Caddy push RAM limits. Swap file mitigates but upgrade to 1-2GB recommended.
 - **Infra workflow creates new droplets**: Terraform import of existing droplet isn't reliable. Cleanup step deletes old duplicates as a workaround.
@@ -82,7 +80,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 | ----------- | ----------------------- | --------------------------- | ------- |
 | Development | chat.mainecybertech.us  | chat-api.mainecybertech.us  | develop |
 | Production  | chat.mainecybertech.com | chat-api.mainecybertech.com | main    |
-| Local       | localhost:3000          | localhost:4000              | N/A     |
+| Local       | localhost:3000          | localhost:4000               | N/A     |
 
 ## Local Development
 

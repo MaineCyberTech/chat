@@ -20,11 +20,9 @@ resource "digitalocean_droplet" "chat" {
   }
 
   user_data = templatefile("${path.module}/templates/cloud-init.yaml.tftpl", {
-    domain          = var.domain
     environment     = var.environment
     frontend_domain = local.domain_names.frontend
     api_domain      = local.domain_names.api
-    ci_public_key   = var.ci_public_key
   })
 }
 
