@@ -80,6 +80,8 @@ jobs:
           DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
+          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
         run: |
           echo "$SSH_KEY" > /tmp/ssh_key
           chmod 600 /tmp/ssh_key
@@ -113,6 +115,11 @@ jobs:
               apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2
             fi
             mkdir -p ${REPO_DIR}
+            mkdir -p ${REPO_DIR}/certs
+            if [ ! -f ${REPO_DIR}/certs/fullchain.pem ]; then
+              apk add --no-cache openssl 2>/dev/null || apt-get install -y -qq openssl
+              openssl req -x509 -newkey rsa:2048 -keyout ${REPO_DIR}/certs/privkey.pem -out ${REPO_DIR}/certs/fullchain.pem -days 3650 -nodes -subj "/CN=*.mainecybertech.us/O=Chat Platform" 2>/dev/null
+            fi
             for i in \$(seq 1 12); do docker info >/dev/null 2>&1 && break; echo 'Waiting for Docker...'; sleep 10; done
             if [ ! -f /swapfile ]; then
               fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
@@ -133,6 +140,19 @@ jobs:
           echo "=== Transferring Caddyfile ==="
           base64 -w0 infra/docker/Caddyfile | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/Caddyfile"
           echo "CADDY_EXIT=$?"
+
+          echo "=== Transferring TLS certs ==="
+          if [ -n "$CF_ORIGIN_CERT" ]; then
+            echo "$CF_ORIGIN_CERT" > /tmp/fullchain.pem
+            echo "$CF_ORIGIN_KEY" > /tmp/privkey.pem
+            ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "mkdir -p ${REPO_DIR}/certs"
+            cat /tmp/fullchain.pem | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "cat > ${REPO_DIR}/certs/fullchain.pem"
+            cat /tmp/privkey.pem | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "cat > ${REPO_DIR}/certs/privkey.pem"
+            ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "chmod 600 ${REPO_DIR}/certs/privkey.pem ${REPO_DIR}/certs/fullchain.pem"
+            echo "CERT_EXIT=$?"
+          else
+            echo "CF_ORIGIN_CERT secret not set — using self-signed certs"
+          fi
 
           echo "=== Piping images ==="
           for IMG in api web; do

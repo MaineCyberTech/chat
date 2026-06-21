@@ -138,4 +138,6 @@ pnpm dev
 | `SUPABASE_URL`              | deploy, build |
 | `SUPABASE_ANON_KEY`         | deploy, build |
 | `SUPABASE_SERVICE_ROLE_KEY` | deploy        |
+| `CF_ORIGIN_CERT`            | deploy        |
+| `CF_ORIGIN_KEY`             | deploy        |
 | `GITHUB_TOKEN`              | auto-provided |
