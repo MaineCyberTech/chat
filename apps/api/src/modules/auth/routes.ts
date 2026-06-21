@@ -94,7 +94,7 @@ router.post("/avatar", authenticate, async (req, res) => {
     }
 
     res.json({ uploadUrl: uploadData.signedUrl, publicUrl, profile });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: { code: "UPLOAD_FAILED", message: "Avatar upload failed" } });
   }
 });
