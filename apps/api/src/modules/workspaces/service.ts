@@ -53,22 +53,36 @@ export class WorkspaceService {
         owner_id: input.owner_id,
       })
       .select("*")
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
-      logger.error("Workspace create failed", {
-        error: error?.message,
-        code: error?.code,
-        details: error?.details,
+    if (error) {
+      logger.error("Workspace insert error", {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
       });
       return null;
     }
 
+    if (!data) {
+      logger.error("Workspace insert returned no data", { input, slug });
+      return null;
+    }
+
     // Add creator as a member
-    await supabase.from("workspace_members").insert({
+    const { error: memberError } = await supabase.from("workspace_members").insert({
       workspace_id: data.id,
       user_id: input.owner_id,
     });
+
+    if (memberError) {
+      logger.error("Workspace member insert error", {
+        error: memberError.message,
+        workspaceId: data.id,
+        userId: input.owner_id,
+      });
+    }
 
     return data as Workspace;
   }
