@@ -50,6 +50,7 @@ export default function ChannelPageClient() {
   return (
     <ChatView
       channelId={channel.id}
+      channelName={channel.name}
       workspaceId={workspaceId ?? channel.workspace_id}
       workspaceSlug={params.workspaceSlug}
     />

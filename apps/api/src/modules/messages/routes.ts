@@ -1,5 +1,6 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
+import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { messageService } from "./service.js";
 import { getSupabase } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
@@ -38,17 +39,17 @@ router.get("/messages/search", async (req, res) => {
   res.json({ messages: data ?? [] });
 });
 
-router.get("/channels/:channelId/messages", async (req, res) => {
+router.get("/channels/:channelId/messages", validateUuidParam("channelId"), async (req, res) => {
   const { before } = req.query;
   const messages = await messageService.listByChannel(
-    req.params.channelId,
+    req.params.channelId as string,
     50,
     before as string | undefined,
   );
   res.json({ messages });
 });
 
-router.post("/channels/:channelId/messages", async (req, res) => {
+router.post("/channels/:channelId/messages", validateUuidParam("channelId"), async (req, res) => {
   const parsed = createMessageSchema.safeParse(req.body);
   if (!parsed.success) {
     res
@@ -58,7 +59,7 @@ router.post("/channels/:channelId/messages", async (req, res) => {
   }
 
   const message = await messageService.create({
-    channel_id: req.params.channelId,
+    channel_id: req.params.channelId as string,
     user_id: req.userId!,
     content: parsed.data.content,
     parent_id: parsed.data.parent_id,
@@ -79,7 +80,7 @@ router.post("/channels/:channelId/messages", async (req, res) => {
   });
 });
 
-router.patch("/messages/:id", async (req, res) => {
+router.patch("/messages/:id", validateUuidParam("id"), async (req, res) => {
   const parsed = updateMessageSchema.safeParse(req.body);
   if (!parsed.success) {
     res
@@ -88,7 +89,7 @@ router.patch("/messages/:id", async (req, res) => {
     return;
   }
 
-  const message = await messageService.update(req.params.id, parsed.data.content);
+  const message = await messageService.update(req.params.id as string, parsed.data.content);
   if (!message) {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
     return;
@@ -104,20 +105,20 @@ router.patch("/messages/:id", async (req, res) => {
   });
 });
 
-router.delete("/messages/:id", async (req, res) => {
-  const result = await messageService.remove(req.params.id);
+router.delete("/messages/:id", validateUuidParam("id"), async (req, res) => {
+  const result = await messageService.remove(req.params.id as string);
   if (!result) {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
     return;
   }
 
-  res.status(204).send();
   logAuditEvent({
     actorUserId: req.userId,
     action: "message.delete",
     entityType: "message",
-    entityId: req.params.id,
+    entityId: req.params.id as string,
   });
+  res.status(204).send();
 });
 
 router.post("/messages/upload", async (req, res) => {

@@ -15,11 +15,12 @@ import type { UserProfile } from "@chat/db";
 
 interface Props {
   channelId: string;
+  channelName?: string;
   workspaceId?: string;
   workspaceSlug?: string;
 }
 
-export function ChatView({ channelId, workspaceId, workspaceSlug }: Props) {
+export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }: Props) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,7 +182,7 @@ export function ChatView({ channelId, workspaceId, workspaceSlug }: Props) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 border-b border-gray-200 px-6 py-3 dark:border-gray-800">
-        <h1 className="text-lg font-semibold"># {channelId}</h1>
+        <h1 className="text-lg font-semibold"># {channelName}</h1>
         <Badge variant="success">{onlineCount} online</Badge>
         <div className="ml-auto w-64">
           {workspaceId && workspaceSlug && (
@@ -197,6 +198,9 @@ export function ChatView({ channelId, workspaceId, workspaceSlug }: Props) {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {messages.length > 0 && `${messages[messages.length - 1]?.user_id} sent a message`}
+      </div>
       {replyTo && (
         <div className="flex items-center gap-2 border-t border-gray-200 bg-gray-50 px-6 py-2 text-sm dark:border-gray-800 dark:bg-gray-900">
           <span className="text-gray-500">

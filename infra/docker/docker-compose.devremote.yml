@@ -10,6 +10,7 @@ services:
     image: caddy:2-alpine
     container_name: chat-caddy-dev
     restart: unless-stopped
+    mem_limit: 64m
     ports:
       - "80:80"
       - "443:443"
@@ -25,6 +26,7 @@ services:
     image: ${WEB_IMAGE:-ghcr.io/mainecybertech/chat/web:dev}
     container_name: chat-web-dev
     restart: unless-stopped
+    mem_limit: 256m
     env_file: .env
     environment:
       <<: *common-env

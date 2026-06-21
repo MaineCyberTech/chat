@@ -4,6 +4,7 @@ import React from "react";
 import { redirect, useParams } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { AppSidebar } from "@/components/workspace/app-sidebar";
+import { ErrorBoundary } from "@/components/shared/error-boundary";
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const params = useParams<{ workspaceSlug?: string; channelId?: string }>();
@@ -25,7 +26,9 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen">
       <AppSidebar workspaceSlug={params.workspaceSlug} channelId={params.channelId} />
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="flex-1 overflow-y-auto">
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </main>
     </div>
   );
 }
