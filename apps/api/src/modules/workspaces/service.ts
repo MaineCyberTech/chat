@@ -53,7 +53,7 @@ export class WorkspaceService {
         owner_id: input.owner_id,
       })
       .select("*")
-      .maybeSingle();
+      .single();
 
     if (error) {
       logger.error("Workspace insert error", {
