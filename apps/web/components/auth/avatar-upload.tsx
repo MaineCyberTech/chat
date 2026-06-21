@@ -34,15 +34,15 @@ export function AvatarUpload() {
 
   return (
     <div className="relative">
-      <button onClick={() => setOpen(!open)} className="focus:outline-none" aria-label="Profile settings">
-        <Avatar
-          src={avatarUrl}
-          fallback={user?.email ?? "?"}
-          size="sm"
-        />
+      <button
+        onClick={() => setOpen(!open)}
+        className="focus:outline-none"
+        aria-label="Profile settings"
+      >
+        <Avatar src={avatarUrl} fallback={user?.email ?? "?"} size="sm" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
+        <div className="absolute top-full right-0 z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
           <input
             ref={fileRef}
             type="file"
