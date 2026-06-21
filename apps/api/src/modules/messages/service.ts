@@ -1,6 +1,7 @@
 import { getSupabase } from "../../lib/supabase.js";
 import { getIO } from "../../lib/socket.js";
 import { webhookService } from "../webhooks/service.js";
+import { notificationService } from "../notifications/service.js";
 import type { Message } from "@chat/db";
 
 interface CreateMessageInput {
@@ -81,6 +82,23 @@ export class MessageService {
         }
       })
       .catch(() => {});
+
+    // Notify parent message author on reply
+    if (input.parent_id) {
+      this.getById(input.parent_id)
+        .then((parent) => {
+          if (parent && parent.user_id !== input.user_id) {
+            notificationService.create({
+              user_id: parent.user_id,
+              type: "reply",
+              title: "New reply to your message",
+              body: input.content.slice(0, 200),
+              link: `/channels/${input.channel_id}`,
+            });
+          }
+        })
+        .catch(() => {});
+    }
 
     return message;
   }

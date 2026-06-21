@@ -39,8 +39,8 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Full-text search (PostgreSQL tsvector)
 - Rate limiting + Zod validation on all API routes
 - 7 UI components (Avatar, Badge, Button, Dialog, Input, SidebarGroup, Skeleton)
-- 5 SQL migrations, 4 RLS policy sets, 2 functions
-- 51 unit tests across 11 files
+- 6 SQL migrations, 5 RLS policy sets, 2 functions
+- 54 unit tests across 12 files
 - Caddy reverse proxy with auto-TLS
 - Docker multi-stage builds (node:22-alpine)
 - CI pipeline (validate → build images → push GHCR)
@@ -67,6 +67,23 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Same-domain API routing (Caddy reverse proxies /workspaces, /channels, /messages, /auth, /socket.io to API)
 - Bundle analyzer for web (ANALYZE=true flag)
 - Docker HEALTHCHECK on both API and web containers
+- Server-side workspace membership checks on channel/message create routes
+- UUID validation middleware on all resource route params
+- In-app notification system (reply notifications, notification bell UI, unread polling)
+- Webhook delivery pipeline (CRUD routes, auto-trigger on message/channel events, delivery logging)
+- Responsive sidebar layout (hamburger menu at <768px breakpoint)
+- CI gate: build depends on test; E2E tests run with mock Supabase
+- Focus trap + close button on Dialog component
+- ErrorBoundary wrapping workspace layout
+- aria-labels on all icon buttons, focus-within for keyboard users
+- Channel name displayed in ChatView header (not raw ID)
+- aria-live polite region for new message announcements
+- Docker mem_limit on all services (web=256m, api=192m, caddy=64m)
+- Coverage thresholds (lines 40%, functions 30%, branches 30%)
+- Auth flow tests (login form render, success, error states)
+- Storage bucket RLS scoped by user_id
+- Terraform remote state config (commented out, DO Spaces docs)
+- CONTRIBUTING.md with dev workflow and PR guidelines
 
 ### Audits Completed (June 21, 2026)
 
@@ -82,37 +99,29 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 ### Known Issues
 
 - **Let's Encrypt rate-limited**: Caddy can't issue certs until June 21 (168h rate limit after 5 failed Traefik attempts). Workaround: Cloudflare SSL set to Flexible.
-- **512MB droplet OOM**: Next.js + Express + Caddy push RAM limits. Swap file mitigates but upgrade to 1-2GB recommended.
-- **Infra workflow creates new droplets**: Terraform import of existing droplet isn't reliable. Cleanup step deletes old duplicates as a workaround.
 - **Cloudflare 521**: Cloudflare can't reach the origin server. May need DO firewall rules allowing Cloudflare IP ranges, or Cloudflare SSL/TLS set to Full + Let's Encrypt certs.
-- **search_messages RLS bypass**: P0 security finding — `search_messages` function is `SECURITY DEFINER` with no `auth.uid()` check, allowing any authenticated user to search all workspaces' messages.
-- **audit_logs RLS policy broken**: References `w.organization_id` which doesn't exist on `workspaces` table — policy fails at runtime for rows with non-null organization_id.
-- **workspace_members missing UPDATE/DELETE RLS**: No RLS policies for member removal or role changes — blocked at DB level.
-- **Webhook delivery pipeline non-functional**: Tables exist in SQL but no worker, router, or API endpoints process deliveries.
-- **Prod compose loads dev Caddyfile**: `docker-compose.prod.yml` mounts the dev Caddyfile which requires TLS certs that are never provisioned — Caddy will fail.
-- **No Terraform remote state**: Every CI run starts from empty state, relying on fragile `terraform import` workarounds.
-- **No E2E tests in CI**: CI never runs Playwright tests — auth, messaging, and file upload flows are untested.
-- **infra/docker/README.md references Traefik**: Documents Traefik but actual proxy is Caddy — dangerous configuration drift.
+
+### Resolved Issues
+
+- search_messages RLS bypass — Fixed with auth.uid() membership check
+- audit_logs RLS policy broken — Fixed column reference
+- workspace_members missing UPDATE/DELETE RLS — Added policies
+- Webhook delivery pipeline non-functional — Implemented CRUD routes + auto-trigger
+- Prod compose loads dev Caddyfile — Fixed to use Caddyfile.prod
+- No Terraform remote state — Added config (commented out)
+- No E2E tests in CI — Added E2E job with mock Supabase
+- infra/docker/README.md references Traefik — Replaced with Caddy docs
+- 512MB droplet OOM — Upgraded to s-2vcpu-2gb
 
 ### Remaining Work
 
 | Priority | Task                           | Notes                                                          |
 | -------- | ------------------------------ | -------------------------------------------------------------- |
 | HIGH     | Fix Let's Encrypt certs        | Will auto-resolve after June 21 rate limit expiry              |
-| HIGH     | Upgrade droplet to s-2vcpu-2gb | 512MB is too small for 3 containers                            |
-| HIGH     | Fix search_messages RLS bypass | SECURITY DEFINER function has no auth.uid() check (P0)         |
-| HIGH     | Fix audit_logs RLS policy      | References non-existent w.organization_id column (P0)          |
-| HIGH     | Add workspace_members RLS      | Missing UPDATE/DELETE policies (P0)                            |
-| HIGH     | Fix prod compose Caddyfile     | Prod mounts dev Caddyfile that requires unprovisioned certs    |
-| MEDIUM   | Terraform remote state backend | S3 backend to persist state between CI runs                    |
-| MEDIUM   | E2E test expansion             | Currently only homepage check; auth + messaging untested       |
-| MEDIUM   | Add CI E2E gate                | CI never runs Playwright tests                                 |
-| MEDIUM   | Implement webhook worker       | Tables exist but no worker/router processes deliveries         |
+| MEDIUM   | Terraform remote state backend | Uncomment backend block in versions.tf + configure DO Spaces   |
 | LOW      | Production deploy workflow     | `deploy-production.yml` exists but untested with `.com` domain |
 | LOW      | Production approval gate       | GitHub Environment with required reviewers for production      |
-| LOW      | Email notifications            | SMTP nodemailer infra exists, no notification system yet       |
 | LOW      | User profile avatars           | Avatar component exists but no upload flow                     |
-| LOW      | Fix infra/docker/README.md     | Documents Traefik but actual proxy is Caddy                    |
 
 ## GitHub Actions Workflows
 
