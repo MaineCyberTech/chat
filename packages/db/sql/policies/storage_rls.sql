@@ -11,10 +11,25 @@ CREATE POLICY "Users can upload files"
   ON storage.objects
   FOR INSERT
   TO authenticated
-  WITH CHECK (bucket_id = 'chat-uploads');
+  WITH CHECK (
+    bucket_id = 'chat-uploads'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
 
 CREATE POLICY "Users can read uploaded files"
   ON storage.objects
   FOR SELECT
   TO authenticated
-  USING (bucket_id = 'chat-uploads');
+  USING (
+    bucket_id = 'chat-uploads'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+CREATE POLICY "Users can delete own files"
+  ON storage.objects
+  FOR DELETE
+  TO authenticated
+  USING (
+    bucket_id = 'chat-uploads'
+    AND owner_id = auth.uid()
+  );

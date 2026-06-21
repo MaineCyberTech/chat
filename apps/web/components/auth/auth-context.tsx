@@ -11,7 +11,7 @@ interface AuthState {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthState>({
+export const AuthContext = createContext<AuthState>({
   user: null,
   loading: true,
   signIn: async () => ({ error: "AuthProvider not mounted" }),

@@ -3,8 +3,8 @@ create table if not exists public.webhook_endpoints (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces(id) on delete cascade,
   name text not null,
-  url text not null,
-  secret text,
+  url text not null constraint webhook_url_https check (url ~ '^https://'),
+  secret text not null default '',
   events text[] not null default '{}',
   is_active boolean not null default true,
   last_success_at timestamptz,
@@ -31,21 +31,23 @@ using (
   )
 );
 
-create policy "webhook_endpoints_manage_workspace_member"
+create policy "webhook_endpoints_manage_workspace_admin"
 on public.webhook_endpoints for all
 to authenticated
 using (
   exists (
     select 1 from public.workspace_members
     where workspace_id = webhook_endpoints.workspace_id
-    and user_id = auth.uid()
+      and user_id = auth.uid()
+      and role IN ('owner', 'admin')
   )
 )
 with check (
   exists (
     select 1 from public.workspace_members
     where workspace_id = webhook_endpoints.workspace_id
-    and user_id = auth.uid()
+      and user_id = auth.uid()
+      and role IN ('owner', 'admin')
   )
 );
 
