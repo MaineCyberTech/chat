@@ -1,5 +1,4 @@
-import { getSupabase, getAdminOrAnon } from "../../lib/supabase.js";
-import { isWorkspaceMember } from "../../lib/membership.js";
+import { getSupabase } from "../../lib/supabase.js";
 import type { Channel } from "@chat/db";
 
 interface CreateChannelInput {

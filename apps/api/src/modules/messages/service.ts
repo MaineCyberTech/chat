@@ -1,4 +1,4 @@
-import { getSupabase, getAdminOrAnon } from "../../lib/supabase.js";
+import { getSupabase } from "../../lib/supabase.js";
 import { getIO } from "../../lib/socket.js";
 import type { Message } from "@chat/db";
 

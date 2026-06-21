@@ -1,4 +1,4 @@
-import { getSupabase, getAdminOrAnon } from "../../lib/supabase.js";
+import { getSupabase } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
 import type { Workspace } from "@chat/db";
 
