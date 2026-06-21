@@ -1,8 +1,25 @@
-{
-    auto_https off
-}
-
-http://chat.mainecybertech.com {
+chat.mainecybertech.com {
+    handle /health* {
+        reverse_proxy api:4000
+    }
+    handle /healthz* {
+        reverse_proxy api:4000
+    }
+    handle /auth* {
+        reverse_proxy api:4000
+    }
+    handle /workspaces* {
+        reverse_proxy api:4000
+    }
+    handle /channels* {
+        reverse_proxy api:4000
+    }
+    handle /messages* {
+        reverse_proxy api:4000
+    }
+    handle /socket.io* {
+        reverse_proxy api:4000
+    }
     reverse_proxy web:3000
     header {
         X-Frame-Options "DENY"
@@ -11,7 +28,7 @@ http://chat.mainecybertech.com {
     }
 }
 
-http://chat-api.mainecybertech.com {
+chat-api.mainecybertech.com {
     reverse_proxy api:4000
     header {
         X-Frame-Options "DENY"

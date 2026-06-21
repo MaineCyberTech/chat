@@ -1,15 +1,7 @@
 terraform {
   required_version = ">= 1.10.0"
 
-  # Uncomment and configure for remote state storage:
-  # backend "s3" {
-  #   bucket         = "chat-terraform-state"
-  #   key            = "infra/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   encrypt        = true
-  # }
-  #
-  # For DigitalOcean Spaces (S3-compatible):
+  # Configure via -backend-config in CI, or uncomment with static values:
   # backend "s3" {
   #   bucket   = "chat-terraform-state"
   #   key      = "infra/terraform.tfstate"
@@ -19,9 +11,12 @@ terraform {
   #   skip_metadata_api_check     = true
   # }
   #
-  # Then configure with env vars:
-  #   AWS_ACCESS_KEY_ID=<DO Spaces key>
-  #   AWS_SECRET_ACCESS_KEY=<DO Spaces secret>
+  # Usage with partial config:
+  #   terraform init -backend-config="bucket=chat-terraform-state-${ENVIRONMENT}"
+  #
+  # Env vars required:
+  #   AWS_ACCESS_KEY_ID=<DO Spaces access key>
+  #   AWS_SECRET_ACCESS_KEY=<DO Spaces secret key>
 
   required_providers {
     digitalocean = {

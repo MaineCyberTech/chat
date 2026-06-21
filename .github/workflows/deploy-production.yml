@@ -21,7 +21,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
@@ -168,16 +168,19 @@ jobs:
     needs: build-images
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: production
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set lowercase repo
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
       - name: Setup droplet
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ needs.provision.outputs.droplet_ip }}
           username: root
-          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           script: |
             if [ ! -d "${{ env.REPO_DIR }}" ]; then
               git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }}

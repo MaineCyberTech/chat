@@ -98,7 +98,6 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 ### Known Issues
 
-- **Let's Encrypt rate-limited**: Caddy can't issue certs until June 21 (168h rate limit after 5 failed Traefik attempts). Workaround: Cloudflare SSL set to Flexible.
 - **Cloudflare 521**: Cloudflare can't reach the origin server. May need DO firewall rules allowing Cloudflare IP ranges, or Cloudflare SSL/TLS set to Full + Let's Encrypt certs.
 
 ### Resolved Issues
@@ -112,16 +111,15 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - No E2E tests in CI — Added E2E job with mock Supabase
 - infra/docker/README.md references Traefik — Replaced with Caddy docs
 - 512MB droplet OOM — Upgraded to s-2vcpu-2gb
+- Let's Encrypt rate-limited — Resolved after June 21 expiry; Caddyfiles updated with auto-TLS
+- Production deploy workflow untested — Fixed node version, SSH secrets, REPO_LC env
 
 ### Remaining Work
 
-| Priority | Task                           | Notes                                                          |
-| -------- | ------------------------------ | -------------------------------------------------------------- |
-| HIGH     | Fix Let's Encrypt certs        | Will auto-resolve after June 21 rate limit expiry              |
-| MEDIUM   | Terraform remote state backend | Uncomment backend block in versions.tf + configure DO Spaces   |
-| LOW      | Production deploy workflow     | `deploy-production.yml` exists but untested with `.com` domain |
-| LOW      | Production approval gate       | GitHub Environment with required reviewers for production      |
-| LOW      | User profile avatars           | Avatar component exists but no upload flow                     |
+| Priority | Task                     | Notes                                                     |
+| -------- | ------------------------ | --------------------------------------------------------- |
+| LOW      | Production approval gate | GitHub Environment with required reviewers for production |
+| LOW      | User profile avatars     | Avatar component exists but no upload flow                |
 
 ## GitHub Actions Workflows
 

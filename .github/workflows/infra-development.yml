@@ -36,9 +36,10 @@ jobs:
                 "https://api.digitalocean.com/v2/droplets/$OLD_ID"
             done
 
+      # Add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets for DO Spaces remote state
       - name: Terraform Init
         working-directory: infra/terraform
-        run: terraform init -input=false
+        run: terraform init -input=false -backend-config="bucket=chat-terraform-state-${ENVIRONMENT}"
 
       - name: Import existing resources
         working-directory: infra/terraform
