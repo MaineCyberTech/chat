@@ -81,7 +81,7 @@ export function MessageInput({
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
               className="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
-              title="Attach file"
+              aria-label={uploading ? "Uploading file" : "Attach file"}
             >
               {uploading ? "⏳" : "📎"}
             </button>

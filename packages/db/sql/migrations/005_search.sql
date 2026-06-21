@@ -21,6 +21,15 @@ RETURNS TABLE(
   rank REAL
 ) AS $$
 BEGIN
+  -- Verify the caller is a member of the workspace
+  IF NOT EXISTS (
+    SELECT 1 FROM public.workspace_members
+    WHERE workspace_id = search_messages.workspace_id
+      AND user_id = auth.uid()
+  ) THEN
+    RETURN;
+  END IF;
+
   RETURN QUERY
   SELECT
     m.id,
@@ -36,4 +45,6 @@ BEGIN
   ORDER BY rank DESC
   LIMIT result_limit;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+COMMENT ON FUNCTION public.search_messages IS 'Search messages with workspace membership check. SECURITY DEFINER requires explicit auth.uid() guard.';

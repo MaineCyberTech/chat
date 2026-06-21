@@ -73,3 +73,37 @@ CREATE POLICY "Owners and admins can manage members"
         AND wm2.role IN ('owner', 'admin')
     )
   );
+
+CREATE POLICY "Owners and admins can update members"
+  ON public.workspace_members
+  FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.workspace_members wm2
+      WHERE wm2.workspace_id = workspace_id
+        AND wm2.user_id = (SELECT auth.uid())
+        AND wm2.role IN ('owner', 'admin')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.workspace_members wm2
+      WHERE wm2.workspace_id = workspace_id
+        AND wm2.user_id = (SELECT auth.uid())
+        AND wm2.role IN ('owner', 'admin')
+    )
+  );
+
+CREATE POLICY "Owners and admins can remove members"
+  ON public.workspace_members
+  FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.workspace_members wm2
+      WHERE wm2.workspace_id = workspace_id
+        AND wm2.user_id = (SELECT auth.uid())
+        AND wm2.role IN ('owner', 'admin')
+    )
+  );

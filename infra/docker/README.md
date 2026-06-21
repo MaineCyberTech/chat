@@ -1,4 +1,4 @@
-# Docker / Compose / Traefik
+# Docker / Compose / Caddy
 
 ## Files
 
@@ -8,7 +8,8 @@
 | `docker-compose.prod.yml`      | Production environment (`.com` domains)        |
 | `.env.devremote.example`       | Dev remote env template                        |
 | `.env.prod.example`            | Production env template                        |
-| `traefik/traefik.yml`          | Traefik reverse proxy configuration            |
+| `Caddyfile`                    | Caddy reverse proxy configuration (dev)        |
+| `Caddyfile.prod`               | Caddy reverse proxy configuration (prod)       |
 
 ## Usage — Local Build
 
@@ -51,8 +52,12 @@ Required GitHub Environment secrets:
 ## Architecture
 
 ```
-Internet → Traefik (80/443) → web (Next.js, port 3000)
-                            → api (Express + Socket.io, port 4000)
+Internet → Caddy (80/443) → web (Next.js, port 3000)
+                             → api (Express + Socket.io, port 4000)
+
+Caddy handles TLS termination and reverse proxies path-based routes to the API:
+- `/auth*`, `/workspaces*`, `/channels*`, `/messages*`, `/socket.io*` → api:4000
+- everything else → web:3000
 ```
 
 Dockerfiles are multi-stage builds:

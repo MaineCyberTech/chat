@@ -102,12 +102,12 @@ export function MessageList({
                   </div>
                 )}
                 {/* Hover actions */}
-                <div className="flex shrink-0 flex-col gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="flex shrink-0 flex-col gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
                   {onReply && (
                     <button
                       onClick={() => onReply(msg)}
                       className="rounded px-1 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-                      title="Reply"
+                      aria-label="Reply to message"
                     >
                       ↩
                     </button>
@@ -116,7 +116,7 @@ export function MessageList({
                     <button
                       onClick={() => startEdit(msg)}
                       className="rounded px-1 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-                      title="Edit"
+                      aria-label="Edit message"
                     >
                       ✎
                     </button>
@@ -125,7 +125,7 @@ export function MessageList({
                     <button
                       onClick={() => onDelete(msg.id)}
                       className="rounded px-1 text-xs text-gray-400 hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
-                      title="Delete"
+                      aria-label="Delete message"
                     >
                       ✕
                     </button>
