@@ -74,14 +74,12 @@ router.post("/avatar", authenticate, async (req, res) => {
       .createSignedUploadUrl(filePath);
 
     if (uploadError || !uploadData) {
-      res
-        .status(500)
-        .json({
-          error: {
-            code: "UPLOAD_FAILED",
-            message: uploadError?.message ?? "Could not create upload URL",
-          },
-        });
+      res.status(500).json({
+        error: {
+          code: "UPLOAD_FAILED",
+          message: uploadError?.message ?? "Could not create upload URL",
+        },
+      });
       return;
     }
 
