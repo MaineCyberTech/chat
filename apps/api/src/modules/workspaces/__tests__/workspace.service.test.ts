@@ -1,44 +1,59 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { WorkspaceService } from "../service.js";
 
-vi.mock("../../../lib/supabase.js", () => ({
-  getSupabase: vi.fn(() => ({
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        order: vi.fn(() => ({
-          data: [
-            {
-              id: "ws-1",
-              name: "Test",
-              slug: "test",
-              owner_id: "u1",
-              created_at: "2024-01-01",
-              updated_at: "2024-01-01",
-            },
-          ],
+const mockClient = () => ({
+  from: vi.fn(() => ({
+    select: vi.fn(() => ({
+      order: vi.fn(() => ({
+        data: [
+          {
+            id: "ws-1",
+            name: "Test",
+            slug: "test",
+            owner_id: "u1",
+            created_at: "2024-01-01",
+            updated_at: "2024-01-01",
+          },
+        ],
+        error: null,
+      })),
+      eq: vi.fn(() => ({
+        single: vi.fn(() => ({
+          data: {
+            id: "ws-1",
+            name: "Test",
+            slug: "test",
+            owner_id: "u1",
+            created_at: "2024-01-01",
+            updated_at: "2024-01-01",
+          },
           error: null,
         })),
-        eq: vi.fn(() => ({
-          single: vi.fn(() => ({
-            data: {
-              id: "ws-1",
-              name: "Test",
-              slug: "test",
-              owner_id: "u1",
-              created_at: "2024-01-01",
-              updated_at: "2024-01-01",
-            },
-            error: null,
-          })),
+      })),
+    })),
+    insert: vi.fn(() => ({
+      select: vi.fn(() => ({
+        single: vi.fn(() => ({
+          data: {
+            id: "ws-new",
+            name: "New WS",
+            slug: "new-ws",
+            owner_id: "u1",
+            created_at: "2024-01-01",
+            updated_at: "2024-01-01",
+          },
+          error: null,
         })),
       })),
-      insert: vi.fn(() => ({
+    })),
+    update: vi.fn(() => ({
+      eq: vi.fn(() => ({
         select: vi.fn(() => ({
           single: vi.fn(() => ({
             data: {
-              id: "ws-new",
-              name: "New WS",
-              slug: "new-ws",
+              id: "ws-1",
+              name: "Updated",
+              slug: "updated",
               owner_id: "u1",
               created_at: "2024-01-01",
               updated_at: "2024-01-01",
@@ -47,28 +62,16 @@ vi.mock("../../../lib/supabase.js", () => ({
           })),
         })),
       })),
-      update: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          select: vi.fn(() => ({
-            single: vi.fn(() => ({
-              data: {
-                id: "ws-1",
-                name: "Updated",
-                slug: "updated",
-                owner_id: "u1",
-                created_at: "2024-01-01",
-                updated_at: "2024-01-01",
-              },
-              error: null,
-            })),
-          })),
-        })),
-      })),
-      delete: vi.fn(() => ({
-        eq: vi.fn(() => ({ error: null })),
-      })),
+    })),
+    delete: vi.fn(() => ({
+      eq: vi.fn(() => ({ error: null })),
     })),
   })),
+});
+
+vi.mock("../../../lib/supabase.js", () => ({
+  getSupabase: vi.fn(() => mockClient()),
+  getSupabaseAdmin: vi.fn(() => mockClient()),
 }));
 
 describe("WorkspaceService", () => {

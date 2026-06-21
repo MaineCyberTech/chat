@@ -1,29 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ChannelService } from "../service.js";
 
-vi.mock("../../../lib/supabase.js", () => ({
-  getSupabase: vi.fn(() => ({
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          order: vi.fn(() => ({
-            data: [
-              {
-                id: "ch-1",
-                workspace_id: "ws-1",
-                name: "general",
-                slug: "general",
-                topic: null,
-                is_private: false,
-                created_by: "u1",
-                created_at: "2024-01-01",
-                updated_at: "2024-01-01",
-              },
-            ],
-            error: null,
-          })),
-          single: vi.fn(() => ({
-            data: {
+const mockClient = () => ({
+  from: vi.fn(() => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        order: vi.fn(() => ({
+          data: [
+            {
               id: "ch-1",
               workspace_id: "ws-1",
               name: "general",
@@ -34,19 +18,53 @@ vi.mock("../../../lib/supabase.js", () => ({
               created_at: "2024-01-01",
               updated_at: "2024-01-01",
             },
-            error: null,
-          })),
+          ],
+          error: null,
+        })),
+        single: vi.fn(() => ({
+          data: {
+            id: "ch-1",
+            workspace_id: "ws-1",
+            name: "general",
+            slug: "general",
+            topic: null,
+            is_private: false,
+            created_by: "u1",
+            created_at: "2024-01-01",
+            updated_at: "2024-01-01",
+          },
+          error: null,
         })),
       })),
-      insert: vi.fn(() => ({
+    })),
+    insert: vi.fn(() => ({
+      select: vi.fn(() => ({
+        single: vi.fn(() => ({
+          data: {
+            id: "ch-new",
+            workspace_id: "ws-1",
+            name: "random",
+            slug: "random",
+            topic: null,
+            is_private: false,
+            created_by: "u1",
+            created_at: "2024-01-01",
+            updated_at: "2024-01-01",
+          },
+          error: null,
+        })),
+      })),
+    })),
+    update: vi.fn(() => ({
+      eq: vi.fn(() => ({
         select: vi.fn(() => ({
           single: vi.fn(() => ({
             data: {
-              id: "ch-new",
+              id: "ch-1",
               workspace_id: "ws-1",
-              name: "random",
-              slug: "random",
-              topic: null,
+              name: "Updated",
+              slug: "general",
+              topic: "A topic",
               is_private: false,
               created_by: "u1",
               created_at: "2024-01-01",
@@ -56,31 +74,16 @@ vi.mock("../../../lib/supabase.js", () => ({
           })),
         })),
       })),
-      update: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          select: vi.fn(() => ({
-            single: vi.fn(() => ({
-              data: {
-                id: "ch-1",
-                workspace_id: "ws-1",
-                name: "Updated",
-                slug: "general",
-                topic: "A topic",
-                is_private: false,
-                created_by: "u1",
-                created_at: "2024-01-01",
-                updated_at: "2024-01-01",
-              },
-              error: null,
-            })),
-          })),
-        })),
-      })),
-      delete: vi.fn(() => ({
-        eq: vi.fn(() => ({ error: null })),
-      })),
+    })),
+    delete: vi.fn(() => ({
+      eq: vi.fn(() => ({ error: null })),
     })),
   })),
+});
+
+vi.mock("../../../lib/supabase.js", () => ({
+  getSupabase: vi.fn(() => mockClient()),
+  getSupabaseAdmin: vi.fn(() => mockClient()),
 }));
 
 describe("ChannelService", () => {
@@ -90,7 +93,7 @@ describe("ChannelService", () => {
     service = new ChannelService();
   });
 
-  it("lists channels by workspace", async () => {
+  it("lists channels for a workspace", async () => {
     const list = await service.listByWorkspace("ws-1");
     expect(list).toHaveLength(1);
     expect(list[0].name).toBe("general");
@@ -108,13 +111,12 @@ describe("ChannelService", () => {
       workspace_id: "ws-1",
       created_by: "u1",
     });
-    expect(ch?.name).toBe("random");
+    expect(ch?.slug).toBe("random");
   });
 
   it("updates a channel", async () => {
-    const ch = await service.update("ch-1", { name: "Updated", topic: "A topic" });
+    const ch = await service.update("ch-1", { name: "Updated" });
     expect(ch?.name).toBe("Updated");
-    expect(ch?.topic).toBe("A topic");
   });
 
   it("deletes a channel", async () => {

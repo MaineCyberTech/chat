@@ -1,4 +1,4 @@
-import { getSupabase } from "../../lib/supabase.js";
+import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import type { Channel } from "@chat/db";
 
 interface CreateChannelInput {
@@ -40,7 +40,7 @@ export class ChannelService {
   }
 
   async create(input: CreateChannelInput): Promise<Channel | null> {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const slug = input.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")

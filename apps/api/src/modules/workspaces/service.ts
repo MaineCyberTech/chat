@@ -1,4 +1,4 @@
-import { getSupabase } from "../../lib/supabase.js";
+import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import type { Workspace } from "@chat/db";
 
 interface CreateWorkspaceInput {
@@ -38,7 +38,7 @@ export class WorkspaceService {
   }
 
   async create(input: CreateWorkspaceInput): Promise<Workspace | null> {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const slug = input.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -54,7 +54,14 @@ export class WorkspaceService {
       .select("*")
       .single();
 
-    if (error) return null;
+    if (error || !data) return null;
+
+    // Add creator as a member
+    await supabase.from("workspace_members").insert({
+      workspace_id: data.id,
+      user_id: input.owner_id,
+    });
+
     return data as Workspace;
   }
 
