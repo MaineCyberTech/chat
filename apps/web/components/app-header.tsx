@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { AvatarUpload } from "@/components/auth/avatar-upload";
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
@@ -24,6 +25,7 @@ export function AppHeader() {
       </Link>
       <div className="flex items-center gap-3">
         <NotificationBell />
+        <AvatarUpload />
         <span className="text-xs text-gray-500">{user.email}</span>
         <button
           onClick={handleSignOut}

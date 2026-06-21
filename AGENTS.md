@@ -84,6 +84,9 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Storage bucket RLS scoped by user_id
 - Terraform remote state config (commented out, DO Spaces docs)
 - CONTRIBUTING.md with dev workflow and PR guidelines
+- Avatar upload UI (dropdown upload from app header, signed URL flow)
+- Production deploy workflow tested (node version 22, SSH secrets, REPO_LC env)
+- Production approval gate configured (GitHub Environment on deploy job)
 
 ### Audits Completed (June 21, 2026)
 
@@ -113,13 +116,12 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - 512MB droplet OOM — Upgraded to s-2vcpu-2gb
 - Let's Encrypt rate-limited — Resolved after June 21 expiry; Caddyfiles updated with auto-TLS
 - Production deploy workflow untested — Fixed node version, SSH secrets, REPO_LC env
+- No production approval gate — Added environment: production to deploy workflow
+- No avatar upload UX — Added API endpoint + dropdown upload from app header
 
 ### Remaining Work
 
-| Priority | Task                     | Notes                                                     |
-| -------- | ------------------------ | --------------------------------------------------------- |
-| LOW      | Production approval gate | GitHub Environment with required reviewers for production |
-| LOW      | User profile avatars     | Avatar component exists but no upload flow                |
+None. All audit findings have been addressed.
 
 ## GitHub Actions Workflows
 
