@@ -1,5 +1,6 @@
 import { getSupabase } from "../../lib/supabase.js";
 import { getIO } from "../../lib/socket.js";
+import { webhookService } from "../webhooks/service.js";
 import type { Message } from "@chat/db";
 
 interface CreateMessageInput {
@@ -64,6 +65,22 @@ export class MessageService {
     } catch {
       // Socket.io may not be initialized in test env
     }
+
+    // Trigger webhooks (fire-and-forget)
+    webhookService
+      .getChannelWorkspaceId(input.channel_id)
+      .then((workspaceId) => {
+        if (workspaceId) {
+          webhookService.triggerEvent("message.created", workspaceId, {
+            message_id: message.id,
+            channel_id: message.channel_id,
+            user_id: message.user_id,
+            content: message.content,
+            created_at: message.created_at,
+          });
+        }
+      })
+      .catch(() => {});
 
     return message;
   }

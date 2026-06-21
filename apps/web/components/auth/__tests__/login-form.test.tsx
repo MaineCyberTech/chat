@@ -38,7 +38,8 @@ describe("LoginForm", () => {
     renderLoginForm();
 
     await user.type(screen.getByLabelText("Email address"), "test@example.com");
-    await user.click(screen.getAllByRole("button", { name: /send magic link/i })[0]);
+    const sendButtons = screen.getAllByRole("button", { name: /send magic link/i });
+    await user.click(sendButtons[0]!);
 
     expect(await screen.findByText(/check your email/i)).toBeDefined();
   });
@@ -50,7 +51,8 @@ describe("LoginForm", () => {
     });
 
     await user.type(screen.getByLabelText("Email address"), "bad@example.com");
-    await user.click(screen.getAllByRole("button", { name: /send magic link/i })[0]);
+    const errorButtons = screen.getAllByRole("button", { name: /send magic link/i });
+    await user.click(errorButtons[0]!);
 
     expect(await screen.findByText("Invalid email")).toBeDefined();
   });

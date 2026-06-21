@@ -1,4 +1,5 @@
 import { getSupabase } from "../../lib/supabase.js";
+import { webhookService } from "../webhooks/service.js";
 import type { Channel } from "@chat/db";
 
 interface CreateChannelInput {
@@ -60,7 +61,19 @@ export class ChannelService {
       .single();
 
     if (error) return null;
-    return data as Channel;
+
+    const channel = data as Channel;
+
+    webhookService
+      .triggerEvent("channel.created", input.workspace_id, {
+        channel_id: channel.id,
+        name: channel.name,
+        slug: channel.slug,
+        created_by: input.created_by,
+      })
+      .catch(() => {});
+
+    return channel;
   }
 
   async update(channelId: string, input: UpdateChannelInput): Promise<Channel | null> {
