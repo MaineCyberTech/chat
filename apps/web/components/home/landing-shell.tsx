@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@chat/ui";
 
-export function LandingShell() {
-  const router = useRouter();
+interface Props {
+  onGetStarted?: () => void;
+  onLearnMore?: () => void;
+}
 
+export function LandingShell({ onGetStarted, onLearnMore }: Props) {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
       <div className="flex flex-col items-center gap-2 text-center">
@@ -16,13 +18,10 @@ export function LandingShell() {
         </p>
       </div>
       <div className="flex gap-3">
-        <Button variant="primary" onClick={() => router.push("/login")}>
+        <Button variant="primary" onClick={onGetStarted}>
           Get Started
         </Button>
-        <Button
-          variant="secondary"
-          onClick={() => window.open("https://mainecybertech.com", "_blank")}
-        >
+        <Button variant="secondary" onClick={onLearnMore}>
           Learn More
         </Button>
       </div>

@@ -71,5 +71,10 @@ export default function HomePage() {
 
   if (user) return null;
 
-  return <LandingShell />;
+  return (
+    <LandingShell
+      onGetStarted={() => router.push("/login")}
+      onLearnMore={() => window.open("https://mainecybertech.com", "_blank")}
+    />
+  );
 }

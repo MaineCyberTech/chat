@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import React from "react";
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, afterEach } from "vitest";
+import { render, screen, cleanup } from "@testing-library/react";
 import { Avatar } from "../avatar";
 
 describe("Avatar", () => {
+  afterEach(() => cleanup());
   it("renders initials from fallback", () => {
     render(<Avatar fallback="John Doe" />);
     expect(screen.getByText("JD")).toBeDefined();
