@@ -1,4 +1,5 @@
 import { getSupabase, getAdminOrAnon } from "../../lib/supabase.js";
+import { logger } from "../../lib/logger.js";
 import type { Workspace } from "@chat/db";
 
 interface CreateWorkspaceInput {
@@ -54,7 +55,14 @@ export class WorkspaceService {
       .select("*")
       .single();
 
-    if (error || !data) return null;
+    if (error || !data) {
+      logger.error("Workspace create failed", {
+        error: error?.message,
+        code: error?.code,
+        details: error?.details,
+      });
+      return null;
+    }
 
     // Add creator as a member
     await supabase.from("workspace_members").insert({
