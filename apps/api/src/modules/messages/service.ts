@@ -1,4 +1,4 @@
-import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
+import { getSupabase, getAdminOrAnon } from "../../lib/supabase.js";
 import { getIO } from "../../lib/socket.js";
 import type { Message } from "@chat/db";
 
@@ -41,7 +41,7 @@ export class MessageService {
   }
 
   async create(input: CreateMessageInput): Promise<Message | null> {
-    const supabase = getSupabaseAdmin();
+    const supabase = getAdminOrAnon();
     const { data, error } = await supabase
       .from("messages")
       .insert({

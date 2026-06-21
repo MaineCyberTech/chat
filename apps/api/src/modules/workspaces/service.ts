@@ -1,4 +1,4 @@
-import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
+import { getSupabase, getAdminOrAnon } from "../../lib/supabase.js";
 import type { Workspace } from "@chat/db";
 
 interface CreateWorkspaceInput {
@@ -38,7 +38,7 @@ export class WorkspaceService {
   }
 
   async create(input: CreateWorkspaceInput): Promise<Workspace | null> {
-    const supabase = getSupabaseAdmin();
+    const supabase = getAdminOrAnon();
     const slug = input.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")

@@ -84,6 +84,7 @@ const mockClient = () => ({
 vi.mock("../../../lib/supabase.js", () => ({
   getSupabase: vi.fn(() => mockClient()),
   getSupabaseAdmin: vi.fn(() => mockClient()),
+  getAdminOrAnon: vi.fn(() => mockClient()),
 }));
 
 describe("ChannelService", () => {

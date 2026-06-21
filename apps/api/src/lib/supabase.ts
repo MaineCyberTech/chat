@@ -39,3 +39,7 @@ export function getSupabaseAdmin(): SupabaseClient {
   }
   return adminClient;
 }
+
+export function getAdminOrAnon(): SupabaseClient {
+  return adminClient ?? getSupabase();
+}
