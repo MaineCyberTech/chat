@@ -39,7 +39,7 @@ export class WorkspaceService {
   }
 
   async create(input: CreateWorkspaceInput): Promise<Workspace | null> {
-    const supabase = getAdminOrAnon();
+    const supabase = getSupabase();
     const slug = input.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")

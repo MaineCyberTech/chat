@@ -41,7 +41,7 @@ export class MessageService {
   }
 
   async create(input: CreateMessageInput): Promise<Message | null> {
-    const supabase = getAdminOrAnon();
+    const supabase = getSupabase();
     const { data, error } = await supabase
       .from("messages")
       .insert({

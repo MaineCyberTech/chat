@@ -1,4 +1,5 @@
 import { getSupabase, getAdminOrAnon } from "../../lib/supabase.js";
+import { isWorkspaceMember } from "../../lib/membership.js";
 import type { Channel } from "@chat/db";
 
 interface CreateChannelInput {
@@ -40,7 +41,7 @@ export class ChannelService {
   }
 
   async create(input: CreateChannelInput): Promise<Channel | null> {
-    const supabase = getAdminOrAnon();
+    const supabase = getSupabase();
     const slug = input.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")

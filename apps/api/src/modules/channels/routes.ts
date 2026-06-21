@@ -1,6 +1,7 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
+import { isWorkspaceMember } from "../../lib/membership.js";
 import { channelService } from "./service.js";
 import { createChannelSchema, updateChannelSchema } from "../../config/validators.js";
 import { logAuditEvent } from "../../services/audit.js";
@@ -26,6 +27,14 @@ router.post(
       res
         .status(400)
         .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
+      return;
+    }
+
+    const isMember = await isWorkspaceMember(req.userId!, req.params.workspaceId as string);
+    if (!isMember) {
+      res
+        .status(403)
+        .json({ error: { code: "FORBIDDEN", message: "Not a member of this workspace" } });
       return;
     }
 

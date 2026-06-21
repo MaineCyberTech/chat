@@ -1,6 +1,7 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
+import { isWorkspaceMember } from "../../lib/membership.js";
 import { messageService } from "./service.js";
 import { getSupabase } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";

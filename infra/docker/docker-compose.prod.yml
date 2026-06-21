@@ -11,11 +11,12 @@ services:
     image: caddy:2-alpine
     container_name: chat-caddy-prod
     restart: unless-stopped
+    mem_limit: 64m
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile
       - caddy-data:/data
       - caddy-config:/config
     networks:
@@ -25,6 +26,7 @@ services:
     image: ${WEB_IMAGE:-ghcr.io/mainecybertech/chat/web:latest}
     container_name: chat-web-prod
     restart: unless-stopped
+    mem_limit: 256m
     environment:
       <<: *common-env
       PORT: 3000
@@ -39,6 +41,7 @@ services:
     image: ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:latest}
     container_name: chat-api-prod
     restart: unless-stopped
+    mem_limit: 192m
     environment:
       <<: *common-env
       PORT: 4000
