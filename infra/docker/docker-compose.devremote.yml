@@ -37,7 +37,7 @@ services:
     image: ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:dev}
     container_name: chat-api-dev
     restart: unless-stopped
-    mem_limit: 96m
+    mem_limit: 192m
     env_file: .env
     environment:
       <<: *common-env
