@@ -1,8 +1,5 @@
-{
-    auto_https off
-}
-
-http://chat.mainecybertech.us {
+chat.mainecybertech.us {
+    tls internal
     handle /health* {
         reverse_proxy api:4000
     }
@@ -32,7 +29,8 @@ http://chat.mainecybertech.us {
     }
 }
 
-http://chat-api.mainecybertech.us {
+chat-api.mainecybertech.us {
+    tls internal
     reverse_proxy api:4000
     header {
         X-Frame-Options "DENY"
