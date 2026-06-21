@@ -21,25 +21,35 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  const workspace = await workspaceService.create({
-    name: parsed.data.name,
-    owner_id: req.userId!,
-  });
-  if (!workspace) {
-    res
-      .status(500)
-      .json({ error: { code: "CREATE_FAILED", message: "Could not create workspace" } });
-    return;
-  }
+  try {
+    const workspace = await workspaceService.create({
+      name: parsed.data.name,
+      owner_id: req.userId!,
+    });
+    if (!workspace) {
+      res
+        .status(500)
+        .json({
+          error: {
+            code: "CREATE_FAILED",
+            message: "Could not create workspace. Check server logs for details.",
+          },
+        });
+      return;
+    }
 
-  res.status(201).json({ workspace });
-  logAuditEvent({
-    actorUserId: req.userId,
-    action: "workspace.create",
-    entityType: "workspace",
-    entityId: workspace.id,
-    metadata: { name: workspace.name },
-  });
+    res.status(201).json({ workspace });
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "workspace.create",
+      entityType: "workspace",
+      entityId: workspace.id,
+      metadata: { name: workspace.name },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: { code: "CREATE_FAILED", message } });
+  }
 });
 
 router.get("/:id", async (req, res) => {
