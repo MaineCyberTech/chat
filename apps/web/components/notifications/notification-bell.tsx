@@ -22,7 +22,9 @@ export function NotificationBell() {
     try {
       const res = await api.get<{ unread: number }>("/notifications/unread");
       setUnread(res.unread);
-    } catch {}
+    } catch {
+      // API unavailable — will retry on next poll
+    }
   }, []);
 
   const fetchAll = useCallback(async () => {
@@ -32,7 +34,9 @@ export function NotificationBell() {
       );
       setNotifications(res.notifications);
       setUnread(res.unread);
-    } catch {}
+    } catch {
+      // API unavailable — will retry on next poll
+    }
   }, []);
 
   useEffect(() => {
