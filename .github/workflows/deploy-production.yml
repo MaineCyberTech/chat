@@ -201,6 +201,8 @@ jobs:
             NODE_ENV=production
             API_BASE_URL=https://chat-api.mainecybertech.com
             FRONTEND_URL=https://chat.mainecybertech.com
+            VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
+            VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}
             EOF
             mkdir -p /opt/chat/caddy-data /opt/chat/caddy-config
 

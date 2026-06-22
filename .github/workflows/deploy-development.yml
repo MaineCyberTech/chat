@@ -103,6 +103,8 @@ jobs:
           echo "NODE_ENV=development" >> /tmp/.env.devremote
           echo "API_BASE_URL=https://chat-api.mainecybertech.us" >> /tmp/.env.devremote
           echo "FRONTEND_URL=https://chat.mainecybertech.us" >> /tmp/.env.devremote
+          echo "VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> /tmp/.env.devremote
+          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> /tmp/.env.devremote
 
           echo "=== Transferring env file ==="
           base64 -w0 /tmp/.env.devremote | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/.env"
