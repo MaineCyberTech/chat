@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
+export const dynamic = "force-dynamic";
+
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
