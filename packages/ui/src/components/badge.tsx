@@ -6,10 +6,10 @@ export interface BadgeProps {
 }
 
 const variantClasses: Record<string, string> = {
-  default: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-  success: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-  warning: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
-  danger: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+  default: "bg-[var(--color-badge-default-bg)] text-[var(--color-badge-default-fg)]",
+  success: "bg-[var(--color-badge-success-bg)] text-[var(--color-badge-success-fg)]",
+  warning: "bg-[var(--color-badge-warning-bg)] text-[var(--color-badge-warning-fg)]",
+  danger: "bg-[var(--color-badge-danger-bg)] text-[var(--color-badge-danger-fg)]",
 };
 
 export function Badge({ children, variant = "default" }: BadgeProps) {

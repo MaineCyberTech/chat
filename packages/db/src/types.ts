@@ -59,3 +59,13 @@ export interface Message {
   edited_at: string | null;
   created_at: string;
 }
+
+export type ThemePreference = "system" | "light" | "dark";
+
+export interface UserPreferences {
+  user_id: string;
+  theme: ThemePreference;
+  notification_prefs: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}

@@ -24,12 +24,16 @@ export default function WorkspacePageClient() {
   }, [params.workspaceSlug]);
 
   if (loading) {
-    return <div className="flex h-full items-center justify-center text-gray-400">Loading...</div>;
+    return (
+      <div className="flex h-full items-center justify-center text-[var(--color-foreground-tertiary)]">
+        Loading...
+      </div>
+    );
   }
 
   if (!workspace) {
     return (
-      <div className="flex h-full items-center justify-center text-gray-400">
+      <div className="flex h-full items-center justify-center text-[var(--color-foreground-tertiary)]">
         Workspace not found
       </div>
     );
@@ -37,12 +41,16 @@ export default function WorkspacePageClient() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-gray-200 px-6 py-3 dark:border-gray-800">
-        <h1 className="text-lg font-semibold"># {workspace.name}</h1>
+      <div className="border-b border-[var(--color-border-primary)] px-6 py-3">
+        <h1 className="text-lg font-semibold text-[var(--color-foreground-primary)]">
+          # {workspace.name}
+        </h1>
       </div>
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-        <h2 className="text-xl font-semibold">Welcome to {workspace.name}</h2>
-        <p className="max-w-md text-gray-500 dark:text-gray-400">
+        <h2 className="text-xl font-semibold text-[var(--color-foreground-primary)]">
+          Welcome to {workspace.name}
+        </h2>
+        <p className="max-w-md text-[var(--color-foreground-secondary)]">
           Select a channel from the sidebar or create a new one to start messaging.
         </p>
         <div key={channelRefresh}>

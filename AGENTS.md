@@ -14,18 +14,18 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 ## Repository Map
 
-| Directory            | Purpose                             | Key Files                                                                     |
-| -------------------- | ----------------------------------- | ----------------------------------------------------------------------------- |
-| `apps/api/`          | Express API server                  | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                  |
-| `apps/web/`          | Next.js 15 frontend                 | `app/`, `components/`, `lib/`                                                 |
-| `packages/ui/`       | Shared React components             | `src/components/button.tsx`, etc.                                             |
-| `packages/db/`       | Supabase client + types             | `src/config.ts`, `sql/`                                                       |
-| `infra/docker/`      | Compose files, Caddyfile            | `docker-compose.devremote.yml`                                                |
-| `infra/terraform/`   | DO droplet + DNS                    | `main.tf`, `templates/cloud-init.yaml.tftpl`                                  |
-| `.github/workflows/` | CI/CD pipelines                     | `ci.yml`, `deploy-development.yml`, `build-push.yml`, `infra-development.yml` |
-| `scripts/`           | Dev tooling                         | `setup-dev.ps1`, `teardown-dev.ps1`                                           |
-| `supabase/`          | Local Supabase config               | `config.toml`                                                                 |
-| `docs/`              | Architecture docs, runbooks, audits | `docs/architecture/`, `docs/prompts/`, `docs/audits/`                         |
+| Directory            | Purpose                              | Key Files                                                                     |
+| -------------------- | ------------------------------------ | ----------------------------------------------------------------------------- |
+| `apps/api/`          | Express API server                   | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                  |
+| `apps/web/`          | Next.js 15 frontend                  | `app/`, `components/`, `lib/`                                                 |
+| `packages/ui/`       | Shared React components              | `src/components/button.tsx`, etc.                                             |
+| `packages/db/`       | Supabase client + types + migrations | `src/config.ts`, `sql/`, `sql/migrations/006_user_preferences.sql`            |
+| `infra/docker/`      | Compose files, Caddyfile             | `docker-compose.devremote.yml`                                                |
+| `infra/terraform/`   | DO droplet + DNS                     | `main.tf`, `templates/cloud-init.yaml.tftpl`                                  |
+| `.github/workflows/` | CI/CD pipelines                      | `ci.yml`, `deploy-development.yml`, `build-push.yml`, `infra-development.yml` |
+| `scripts/`           | Dev tooling                          | `setup-dev.ps1`, `teardown-dev.ps1`                                           |
+| `supabase/`          | Local Supabase config                | `config.toml`                                                                 |
+| `docs/`              | Architecture docs, runbooks, audits  | `docs/architecture/`, `docs/prompts/`, `docs/audits/`                         |
 
 ## Implementation Status
 
@@ -87,6 +87,16 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Avatar upload UI (dropdown upload from app header, signed URL flow)
 - Production deploy workflow tested (node version 22, SSH secrets, REPO_LC env)
 - Production approval gate configured (GitHub Environment on deploy job)
+- Design system token architecture (7 token modules in `packages/ui/src/tokens/`)
+- 7 UI components updated to use semantic CSS variables (`var(--color-*)`)
+- Tailwind v4 CSS-first configuration with `@theme` and automatic dark mode
+- 7 additional app components migrated (ChatView, AppSidebar, NotificationBell, AvatarUpload, CreateWorkspaceDialog, CreateChannelDialog, LandingShell)
+- Accessibility pass: ARIA roles, focus-visible, reduced motion, touch targets, body scroll lock
+- Client-side theme toggle (`ThemeToggle`) with `useTheme` hook, `ThemeProvider`, and `html.dark` class-based dark mode
+- Anti-FOUC inline script in root layout
+- User preferences DB migration (`006_user_preferences.sql`) with RLS policies
+- `GET /auth/preferences` and `PATCH /auth/preferences` API endpoints with Zod validation
+- User preferences TypeScript types (`UserPreferences`, `ThemePreference`)
 
 ### Audits Completed (June 21, 2026)
 
@@ -121,7 +131,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 ### Remaining Work
 
-None. All audit findings have been addressed.
+None. All UX/UI phases (1–7) complete. All audit findings addressed.
 
 ## GitHub Actions Workflows
 

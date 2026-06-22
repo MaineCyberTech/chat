@@ -13,12 +13,12 @@ describe("Badge", () => {
   it("applies success variant", () => {
     render(<Badge variant="success">Online</Badge>);
     const el = screen.getByText("Online");
-    expect(el.className).toContain("bg-green-100");
+    expect(el.className).toContain("bg-[var(--color-badge-success-bg)]");
   });
 
   it("applies danger variant", () => {
     render(<Badge variant="danger">Banned</Badge>);
     const el = screen.getByText("Banned");
-    expect(el.className).toContain("bg-red-100");
+    expect(el.className).toContain("bg-[var(--color-badge-danger-bg)]");
   });
 });

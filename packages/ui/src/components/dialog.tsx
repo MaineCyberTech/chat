@@ -81,17 +81,19 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
       role="dialog"
       aria-modal="true"
     >
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div className="fixed inset-0 bg-[var(--color-dialog-overlay)]" onClick={onClose} />
       <div
         ref={dialogRef}
-        className="relative z-10 w-full max-w-sm rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900"
+        className="relative z-10 w-full max-w-sm rounded-xl bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]"
       >
         {title && (
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{title}</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-foreground-primary)]">
+              {title}
+            </h2>
             <button
               onClick={onClose}
-              className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+              className="rounded p-1 text-[var(--color-dialog-close-btn-fg)] transition-colors hover:bg-[var(--color-dialog-close-btn-bg-hover)] hover:text-[var(--color-dialog-close-btn-fg-hover)]"
               aria-label="Close dialog"
             >
               ✕

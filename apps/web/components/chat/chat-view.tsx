@@ -8,10 +8,8 @@ import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { SearchBar } from "./search-bar";
 import { Badge, Skeleton } from "@chat/ui";
-import type { Message } from "@chat/db";
+import type { Message, UserProfile } from "@chat/db";
 import type { Socket } from "socket.io-client";
-
-import type { UserProfile } from "@chat/db";
 
 interface Props {
   channelId: string;
@@ -29,7 +27,6 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const [profiles, setProfiles] = useState<Map<string, UserProfile>>(new Map());
   const [replyTo, setReplyTo] = useState<Message | null>(null);
 
-  // Load profiles for message authors (uses setProfiles callback to avoid stale deps)
   const loadProfiles = useCallback(async (msgs: Message[]) => {
     const ids = [...new Set(msgs.map((m) => m.user_id))];
     if (ids.length === 0) return;
@@ -47,7 +44,6 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     }
   }, []);
 
-  // Load initial messages
   useEffect(() => {
     api
       .get<{ messages: Message[] }>(`/channels/${channelId}/messages`)
@@ -59,7 +55,6 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       .finally(() => setLoading(false));
   }, [channelId, loadProfiles]);
 
-  // Socket.io connection and event handlers
   useEffect(() => {
     let socket: Socket | null = null;
 
@@ -166,10 +161,10 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   if (loading) {
     return (
       <div className="flex h-full flex-col">
-        <div className="border-b border-gray-200 px-6 py-3 dark:border-gray-800">
+        <div className="border-b border-[var(--color-border-primary)] px-4 py-3 md:px-6">
           <Skeleton className="h-6 w-32" />
         </div>
-        <div className="flex-1 space-y-3 px-6 py-4">
+        <div className="flex-1 space-y-3 px-4 py-4 md:px-6">
           <Skeleton className="h-16 w-3/4" />
           <Skeleton className="h-16 w-2/3" />
           <Skeleton className="h-16 w-4/5" />
@@ -181,34 +176,40 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 border-b border-gray-200 px-6 py-3 dark:border-gray-800">
-        <h1 className="text-lg font-semibold"># {channelName}</h1>
+      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-3 md:gap-3 md:px-6">
+        <h1 className="min-w-0 truncate text-base font-semibold md:text-lg"># {channelName}</h1>
         <Badge variant="success">{onlineCount} online</Badge>
-        <div className="ml-auto w-64">
+        <div className="mt-2 w-full md:mt-0 md:ml-auto md:w-64">
           {workspaceId && workspaceSlug && (
             <SearchBar workspaceId={workspaceId} workspaceSlug={workspaceSlug} />
           )}
         </div>
       </div>
-      <MessageList
-        messages={messages}
-        currentUserId={user?.id}
-        profiles={profiles}
-        onReply={setReplyTo}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
-      <div aria-live="polite" aria-atomic="true" className="sr-only">
-        {messages.length > 0 && `${messages[messages.length - 1]?.user_id} sent a message`}
+      <div
+        role="log"
+        aria-live="polite"
+        aria-atomic="false"
+        aria-label="Messages"
+        className="flex-1 overflow-y-auto"
+      >
+        <MessageList
+          messages={messages}
+          currentUserId={user?.id}
+          profiles={profiles}
+          onReply={setReplyTo}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       </div>
       {replyTo && (
-        <div className="flex items-center gap-2 border-t border-gray-200 bg-gray-50 px-6 py-2 text-sm dark:border-gray-800 dark:bg-gray-900">
-          <span className="text-gray-500">
+        <div className="flex items-center gap-2 border-t border-[var(--color-border-primary)] bg-[var(--color-background-secondary)] px-4 py-2 text-sm md:px-6">
+          <span className="min-w-0 truncate text-[var(--color-foreground-secondary)]">
             Replying to {profiles.get(replyTo.user_id)?.display_name ?? replyTo.user_id.slice(0, 8)}
           </span>
           <button
             onClick={() => setReplyTo(null)}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="shrink-0 rounded p-1 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+            aria-label="Cancel reply"
           >
             ✕
           </button>

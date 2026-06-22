@@ -42,7 +42,7 @@ export function AvatarUpload() {
         <Avatar src={avatarUrl} fallback={user?.email ?? "?"} size="sm" />
       </button>
       {open && (
-        <div className="absolute top-full right-0 z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
+        <div className="absolute top-full right-0 z-50 mt-1 w-48 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] py-1 shadow-[var(--shadow-xl)]">
           <input
             ref={fileRef}
             type="file"
@@ -53,7 +53,7 @@ export function AvatarUpload() {
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[var(--color-foreground-primary)] transition-colors hover:bg-[var(--color-background-tertiary)] disabled:opacity-50"
           >
             {uploading ? "Uploading..." : "Upload photo"}
           </button>

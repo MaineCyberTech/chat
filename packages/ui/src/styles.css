@@ -1,2 +1,385 @@
-/* Shared UI component styles */
-/* This file provides base styles consumed by components in this package. */
+@import "tailwindcss";
+
+@source "../**/*.tsx";
+@source "../../apps/web/**/*.tsx";
+
+@theme {
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f5f5f5;
+  --color-background-tertiary: #e5e5e5;
+  --color-background-inverse: #0a0a0a;
+  --color-background-overlay: rgba(0, 0, 0, 0.5);
+
+  --color-foreground-primary: #0a0a0a;
+  --color-foreground-secondary: #525252;
+  --color-foreground-tertiary: #a3a3a3;
+  --color-foreground-inverse: #ffffff;
+  --color-foreground-muted: #a3a3a3;
+
+  --color-border-primary: #e5e5e5;
+  --color-border-secondary: #d4d4d4;
+  --color-border-focus: #3b82f6;
+  --color-border-error: #ef4444;
+  --color-border-success: #22c55e;
+
+  --color-brand-primary: #2563eb;
+  --color-brand-primary-hover: #1d4ed8;
+  --color-brand-primary-active: #1e40af;
+  --color-brand-primary-light: #dbeafe;
+  --color-brand-primary-foreground: #ffffff;
+
+  --color-status-success-bg: #dcfce7;
+  --color-status-success-fg: #15803d;
+  --color-status-success-border: #86efac;
+  --color-status-warning-bg: #fef9c3;
+  --color-status-warning-fg: #a16207;
+  --color-status-warning-border: #fde047;
+  --color-status-danger-bg: #fee2e2;
+  --color-status-danger-fg: #b91c1c;
+  --color-status-danger-border: #fca5a5;
+  --color-status-info-bg: #dbeafe;
+  --color-status-info-fg: #1d4ed8;
+  --color-status-info-border: #93c5fd;
+
+  --color-button-primary-bg: #2563eb;
+  --color-button-primary-bg-hover: #1d4ed8;
+  --color-button-primary-bg-active: #1e40af;
+  --color-button-primary-fg: #ffffff;
+  --color-button-primary-border: #2563eb;
+  --color-button-primary-focus-ring: #3b82f6;
+
+  --color-button-secondary-bg: #f5f5f5;
+  --color-button-secondary-bg-hover: #e5e5e5;
+  --color-button-secondary-bg-active: #d4d4d4;
+  --color-button-secondary-fg: #171717;
+  --color-button-secondary-border: #e5e5e5;
+  --color-button-secondary-focus-ring: #737373;
+
+  --color-button-ghost-bg: transparent;
+  --color-button-ghost-bg-hover: #f5f5f5;
+  --color-button-ghost-bg-active: #e5e5e5;
+  --color-button-ghost-fg: #404040;
+  --color-button-ghost-border: transparent;
+  --color-button-ghost-focus-ring: #737373;
+
+  --color-input-bg: #ffffff;
+  --color-input-border: #d4d4d4;
+  --color-input-border-hover: #a3a3a3;
+  --color-input-border-focus: #3b82f6;
+  --color-input-border-error: #ef4444;
+  --color-input-fg: #0a0a0a;
+  --color-input-placeholder: #a3a3a3;
+  --color-input-error-fg: #dc2626;
+  --color-input-focus-ring: #3b82f6;
+
+  --color-avatar-bg: #d4d4d4;
+  --color-avatar-fg: #404040;
+
+  --color-badge-default-bg: #f5f5f5;
+  --color-badge-default-fg: #404040;
+  --color-badge-success-bg: #dcfce7;
+  --color-badge-success-fg: #15803d;
+  --color-badge-warning-bg: #fef9c3;
+  --color-badge-warning-fg: #a16207;
+  --color-badge-danger-bg: #fee2e2;
+  --color-badge-danger-fg: #b91c1c;
+
+  --color-skeleton-bg: #e5e5e5;
+
+  --color-dialog-overlay: rgba(0, 0, 0, 0.5);
+  --color-dialog-bg: #ffffff;
+  --color-dialog-close-btn-bg-hover: #f5f5f5;
+  --color-dialog-close-btn-fg: #a3a3a3;
+  --color-dialog-close-btn-fg-hover: #525252;
+
+  --color-sidebar-title-fg: #a3a3a3;
+  --color-sidebar-title-fg-hover: #525252;
+
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-none: 1;
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+
+  --letter-spacing-tighter: -0.05em;
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  --radius-none: 0;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
+
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+  --shadow-focus: 0 0 0 2px var(--color-border-focus);
+  --shadow-focus-inset: inset 0 0 0 2px var(--color-border-focus);
+
+  --duration-instant: 0ms;
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+
+  --easing-linear: linear;
+  --easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: var(--color-border-focus);
+  --focus-ring-error: var(--color-border-error);
+  --focus-ring-success: var(--color-border-success);
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-background-primary: #0a0a0a;
+    --color-background-secondary: #171717;
+    --color-background-tertiary: #262626;
+    --color-background-inverse: #ffffff;
+    --color-background-overlay: rgba(0, 0, 0, 0.7);
+
+    --color-foreground-primary: #ffffff;
+    --color-foreground-secondary: #d4d4d4;
+    --color-foreground-tertiary: #737373;
+    --color-foreground-inverse: #0a0a0a;
+    --color-foreground-muted: #737373;
+
+    --color-border-primary: #404040;
+    --color-border-secondary: #525252;
+    --color-border-focus: #60a5fa;
+    --color-border-error: #f87171;
+    --color-border-success: #4ade80;
+
+    --color-brand-primary: #3b82f6;
+    --color-brand-primary-hover: #60a5fa;
+    --color-brand-primary-active: #2563eb;
+    --color-brand-primary-light: #1e3a8a;
+    --color-brand-primary-foreground: #ffffff;
+
+    --color-status-success-bg: #14532d;
+    --color-status-success-fg: #86efac;
+    --color-status-success-border: #166534;
+    --color-status-warning-bg: #713f12;
+    --color-status-warning-fg: #fde047;
+    --color-status-warning-border: #854d0e;
+    --color-status-danger-bg: #7f1d1d;
+    --color-status-danger-fg: #fca5a5;
+    --color-status-danger-border: #991b1b;
+    --color-status-info-bg: #1e3a8a;
+    --color-status-info-fg: #93c5fd;
+    --color-status-info-border: #1e40af;
+
+    --color-button-primary-bg: #3b82f6;
+    --color-button-primary-bg-hover: #60a5fa;
+    --color-button-primary-bg-active: #2563eb;
+    --color-button-primary-fg: #ffffff;
+    --color-button-primary-border: #3b82f6;
+    --color-button-primary-focus-ring: #60a5fa;
+
+    --color-button-secondary-bg: #262626;
+    --color-button-secondary-bg-hover: #404040;
+    --color-button-secondary-bg-active: #525252;
+    --color-button-secondary-fg: #fafafa;
+    --color-button-secondary-border: #404040;
+    --color-button-secondary-focus-ring: #a3a3a3;
+
+    --color-button-ghost-bg: transparent;
+    --color-button-ghost-bg-hover: #262626;
+    --color-button-ghost-bg-active: #404040;
+    --color-button-ghost-fg: #d4d4d4;
+    --color-button-ghost-border: transparent;
+    --color-button-ghost-focus-ring: #a3a3a3;
+
+    --color-input-bg: #262626;
+    --color-input-border: #404040;
+    --color-input-border-hover: #525252;
+    --color-input-border-focus: #60a5fa;
+    --color-input-border-error: #f87171;
+    --color-input-fg: #fafafa;
+    --color-input-placeholder: #737373;
+    --color-input-error-fg: #f87171;
+    --color-input-focus-ring: #60a5fa;
+
+    --color-avatar-bg: #404040;
+    --color-avatar-fg: #d4d4d4;
+
+    --color-badge-default-bg: #262626;
+    --color-badge-default-fg: #d4d4d4;
+    --color-badge-success-bg: #14532d;
+    --color-badge-success-fg: #86efac;
+    --color-badge-warning-bg: #713f12;
+    --color-badge-warning-fg: #fde047;
+    --color-badge-danger-bg: #7f1d1d;
+    --color-badge-danger-fg: #fca5a5;
+
+    --color-skeleton-bg: #262626;
+
+    --color-dialog-overlay: rgba(0, 0, 0, 0.7);
+    --color-dialog-bg: #171717;
+    --color-dialog-close-btn-bg-hover: #262626;
+    --color-dialog-close-btn-fg: #a3a3a3;
+    --color-dialog-close-btn-fg-hover: #d4d4d4;
+
+    --color-sidebar-title-fg: #737373;
+    --color-sidebar-title-fg-hover: #d4d4d4;
+  }
+}
+
+html.dark {
+  --color-background-primary: #0a0a0a;
+  --color-background-secondary: #171717;
+  --color-background-tertiary: #262626;
+  --color-background-inverse: #ffffff;
+  --color-background-overlay: rgba(0, 0, 0, 0.7);
+
+  --color-foreground-primary: #ffffff;
+  --color-foreground-secondary: #d4d4d4;
+  --color-foreground-tertiary: #737373;
+  --color-foreground-inverse: #0a0a0a;
+  --color-foreground-muted: #737373;
+
+  --color-border-primary: #404040;
+  --color-border-secondary: #525252;
+  --color-border-focus: #60a5fa;
+  --color-border-error: #f87171;
+  --color-border-success: #4ade80;
+
+  --color-brand-primary: #3b82f6;
+  --color-brand-primary-hover: #60a5fa;
+  --color-brand-primary-active: #2563eb;
+  --color-brand-primary-light: #1e3a8a;
+  --color-brand-primary-foreground: #ffffff;
+
+  --color-status-success-bg: #14532d;
+  --color-status-success-fg: #86efac;
+  --color-status-success-border: #166534;
+  --color-status-warning-bg: #713f12;
+  --color-status-warning-fg: #fde047;
+  --color-status-warning-border: #854d0e;
+  --color-status-danger-bg: #7f1d1d;
+  --color-status-danger-fg: #fca5a5;
+  --color-status-danger-border: #991b1b;
+  --color-status-info-bg: #1e3a8a;
+  --color-status-info-fg: #93c5fd;
+  --color-status-info-border: #1e40af;
+
+  --color-button-primary-bg: #3b82f6;
+  --color-button-primary-bg-hover: #60a5fa;
+  --color-button-primary-bg-active: #2563eb;
+  --color-button-primary-fg: #ffffff;
+  --color-button-primary-border: #3b82f6;
+  --color-button-primary-focus-ring: #60a5fa;
+
+  --color-button-secondary-bg: #262626;
+  --color-button-secondary-bg-hover: #404040;
+  --color-button-secondary-bg-active: #525252;
+  --color-button-secondary-fg: #fafafa;
+  --color-button-secondary-border: #404040;
+  --color-button-secondary-focus-ring: #a3a3a3;
+
+  --color-button-ghost-bg: transparent;
+  --color-button-ghost-bg-hover: #262626;
+  --color-button-ghost-bg-active: #404040;
+  --color-button-ghost-fg: #d4d4d4;
+  --color-button-ghost-border: transparent;
+  --color-button-ghost-focus-ring: #a3a3a3;
+
+  --color-input-bg: #262626;
+  --color-input-border: #404040;
+  --color-input-border-hover: #525252;
+  --color-input-border-focus: #60a5fa;
+  --color-input-border-error: #f87171;
+  --color-input-fg: #fafafa;
+  --color-input-placeholder: #737373;
+  --color-input-error-fg: #f87171;
+  --color-input-focus-ring: #60a5fa;
+
+  --color-avatar-bg: #404040;
+  --color-avatar-fg: #d4d4d4;
+
+  --color-badge-default-bg: #262626;
+  --color-badge-default-fg: #d4d4d4;
+  --color-badge-success-bg: #14532d;
+  --color-badge-success-fg: #86efac;
+  --color-badge-warning-bg: #713f12;
+  --color-badge-warning-fg: #fde047;
+  --color-badge-danger-bg: #7f1d1d;
+  --color-badge-danger-fg: #fca5a5;
+
+  --color-skeleton-bg: #262626;
+
+  --color-dialog-overlay: rgba(0, 0, 0, 0.7);
+  --color-dialog-bg: #171717;
+  --color-dialog-close-btn-bg-hover: #262626;
+  --color-dialog-close-btn-fg: #a3a3a3;
+  --color-dialog-close-btn-fg-hover: #d4d4d4;
+
+  --color-sidebar-title-fg: #737373;
+  --color-sidebar-title-fg-hover: #d4d4d4;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}

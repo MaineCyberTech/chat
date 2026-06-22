@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Component, type ReactNode } from "react";
+import { Button } from "@chat/ui";
 
 interface Props {
   children: ReactNode;
@@ -30,19 +31,14 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
       return (
-        <div className="flex h-screen flex-col items-center justify-center gap-4 p-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+        <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[var(--color-background-primary)] p-8 text-center">
+          <h2 className="text-xl font-semibold text-[var(--color-foreground-primary)]">
             Something went wrong
           </h2>
-          <p className="max-w-md text-sm text-gray-500">
+          <p className="max-w-md text-sm text-[var(--color-foreground-secondary)]">
             An unexpected error occurred. Please try refreshing the page.
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Refresh Page
-          </button>
+          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
         </div>
       );
     }

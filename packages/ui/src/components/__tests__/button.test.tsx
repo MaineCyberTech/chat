@@ -12,19 +12,19 @@ describe("Button", () => {
   it("applies primary variant by default", () => {
     render(<Button>Primary</Button>);
     const btn = screen.getByText("Primary");
-    expect(btn.className).toContain("bg-blue-600");
+    expect(btn.className).toContain("bg-[var(--color-button-primary-bg)]");
   });
 
   it("applies secondary variant styles", () => {
     render(<Button variant="secondary">Secondary</Button>);
     const btn = screen.getByText("Secondary");
-    expect(btn.className).toContain("bg-gray-100");
+    expect(btn.className).toContain("bg-[var(--color-button-secondary-bg)]");
   });
 
   it("applies ghost variant styles", () => {
     render(<Button variant="ghost">Ghost</Button>);
     const btn = screen.getByText("Ghost");
-    expect(btn.className).toContain("bg-transparent");
+    expect(btn.className).toContain("bg-[var(--color-button-ghost-bg)]");
   });
 
   it("applies size classes", () => {

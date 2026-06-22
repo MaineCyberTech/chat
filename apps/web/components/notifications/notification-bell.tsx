@@ -60,34 +60,44 @@ export function NotificationBell() {
     <div className="relative">
       <button
         onClick={handleOpen}
-        className="relative rounded p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+        className="relative rounded p-1.5 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
       >
         🔔
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-status-danger-bg)] px-1 text-[10px] font-bold text-[var(--color-status-danger-fg)]">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
       </button>
       {open && (
-        <div className="absolute top-full right-0 z-50 mt-1 w-80 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
-          <div className="border-b border-gray-200 px-4 py-2 dark:border-gray-700">
-            <p className="text-sm font-semibold">Notifications</p>
+        <div className="absolute top-full right-0 z-50 mt-1 w-80 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] shadow-[var(--shadow-xl)]">
+          <div className="border-b border-[var(--color-border-primary)] px-4 py-2">
+            <p className="text-sm font-semibold text-[var(--color-foreground-primary)]">
+              Notifications
+            </p>
           </div>
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-gray-500">No notifications</p>
+              <p className="px-4 py-6 text-center text-sm text-[var(--color-foreground-tertiary)]">
+                No notifications
+              </p>
             ) : (
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`border-b border-gray-100 px-4 py-3 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800 ${n.read ? "" : "bg-blue-50 dark:bg-blue-950"}`}
+                  className={`border-b border-[var(--color-border-primary)] px-4 py-3 transition-colors hover:bg-[var(--color-background-tertiary)] ${n.read ? "" : "bg-[var(--color-status-info-bg)]"}`}
                   onClick={() => !n.read && handleMarkRead(n.id)}
                 >
-                  <p className="text-sm font-medium">{n.title}</p>
-                  {n.body && <p className="mt-0.5 text-xs text-gray-500">{n.body}</p>}
-                  <p className="mt-1 text-[10px] text-gray-400">
+                  <p className="text-sm font-medium text-[var(--color-foreground-primary)]">
+                    {n.title}
+                  </p>
+                  {n.body && (
+                    <p className="mt-0.5 text-xs text-[var(--color-foreground-secondary)]">
+                      {n.body}
+                    </p>
+                  )}
+                  <p className="mt-1 text-[10px] text-[var(--color-foreground-tertiary)]">
                     {new Date(n.created_at).toLocaleDateString()}
                   </p>
                 </div>

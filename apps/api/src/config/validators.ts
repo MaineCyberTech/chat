@@ -50,3 +50,8 @@ export const uploadRequestSchema = z.object({
 export const uploadAvatarSchema = z.object({
   contentType: z.string().min(1).max(100),
 });
+
+export const updatePreferencesSchema = z.object({
+  theme: z.enum(["system", "light", "dark"]).optional(),
+  notification_prefs: z.record(z.unknown()).optional(),
+});

@@ -14,7 +14,10 @@ const sizeClasses: Record<string, string> = {
 };
 
 export function Avatar({ src, alt = "", fallback, size = "md" }: AvatarProps) {
-  const classes = `inline-flex shrink-0 items-center justify-center rounded-full bg-gray-300 font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300 ${sizeClasses[size]}`;
+  const classes = `inline-flex shrink-0 items-center justify-center rounded-full font-medium
+    bg-[var(--color-avatar-bg)]
+    text-[var(--color-avatar-fg)]
+    ${sizeClasses[size]}`;
 
   if (src) {
     return (

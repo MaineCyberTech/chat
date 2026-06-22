@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-context";
 import { WorkspaceList } from "./workspace-list";
@@ -8,6 +8,7 @@ import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { ChannelList } from "@/components/channel/channel-list";
 import { CreateChannelDialog } from "@/components/channel/create-channel-dialog";
 import { Avatar } from "@chat/ui";
+import { SidebarGroup } from "@chat/ui";
 import type { Workspace } from "@chat/db";
 import { api } from "@/lib/api";
 
@@ -24,6 +25,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [channelRefreshKey, setChannelRefreshKey] = useState(0);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [wsLoading, setWsLoading] = useState(false);
+  const [sidebarRef, setSidebarRef] = useState<HTMLElement | null>(null);
 
   const handleCreated = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -47,15 +49,56 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       .finally(() => setWsLoading(false));
   }, [workspaceSlug]);
 
+  // Focus trap for mobile sidebar
+  useEffect(() => {
+    if (!mobileOpen || !sidebarRef) return;
+
+    const focusableSelector =
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const container = sidebarRef;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Tab") return;
+      const focusableElements = container.querySelectorAll<HTMLElement>(focusableSelector);
+      if (focusableElements.length === 0) return;
+
+      const first = focusableElements[0]!;
+      const last = focusableElements[focusableElements.length - 1]!;
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    const first = container.querySelector<HTMLElement>(focusableSelector);
+    first?.focus();
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen, sidebarRef]);
+
   return (
     <>
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={onMobileClose} />
+        <div
+          className="fixed inset-0 z-30 bg-[var(--color-dialog-overlay)] md:hidden"
+          onClick={onMobileClose}
+        />
       )}
 
       <aside
-        className={`flex h-full w-60 flex-col border-r border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950 ${
+        ref={setSidebarRef}
+        id="sidebar"
+        className={`flex h-full w-60 flex-col border-r border-[var(--color-border-primary)] bg-[var(--color-background-secondary)] ${
           mobileOpen === undefined
             ? ""
             : mobileOpen
@@ -64,14 +107,14 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
         }`}
       >
         {/* User area */}
-        <div className="flex items-center gap-2 border-b border-gray-200 px-3 py-3 dark:border-gray-800">
+        <div className="flex items-center gap-2 border-b border-[var(--color-border-primary)] px-3 py-3">
           <Avatar fallback={user?.email ?? "?"} size="sm" />
-          <span className="min-w-0 flex-1 truncate text-sm font-medium">
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-foreground-primary)]">
             {user?.email ?? "Chat"}
           </span>
           <button
             onClick={signOut}
-            className="shrink-0 rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800"
+            className="shrink-0 rounded px-2 py-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
           >
             Logout
           </button>
@@ -79,32 +122,24 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
 
         {/* Workspace section */}
         <div className="flex-1 overflow-y-auto py-2">
-          <div className="mb-1 px-3">
-            <h2 className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
-              Workspaces
-            </h2>
-          </div>
-          <div key={refreshKey}>
-            <WorkspaceList activeSlug={workspaceSlug} />
-          </div>
-          <div className="mt-1">
-            <CreateWorkspaceDialog onCreated={handleCreated} />
-          </div>
+          <SidebarGroup title="Workspaces" defaultOpen>
+            <div key={refreshKey}>
+              <WorkspaceList activeSlug={workspaceSlug} />
+            </div>
+            <div className="mt-1">
+              <CreateWorkspaceDialog onCreated={handleCreated} />
+            </div>
+          </SidebarGroup>
 
           {/* Channel section (shown when a workspace is selected) */}
           {workspaceSlug && (
-            <div className="mt-4">
-              <div className="mb-1 px-3">
-                <h2 className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
-                  Channels
-                </h2>
-              </div>
+            <SidebarGroup title="Channels" defaultOpen>
               {wsLoading || !workspace ? (
                 <div className="space-y-1 px-2">
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="h-7 animate-pulse rounded bg-gray-200 dark:bg-gray-800"
+                      className="h-7 animate-pulse rounded bg-[var(--color-skeleton-bg)]"
                     />
                   ))}
                 </div>
@@ -125,15 +160,15 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                   />
                 </div>
               )}
-            </div>
+            </SidebarGroup>
           )}
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 px-3 py-2 dark:border-gray-800">
+        <div className="border-t border-[var(--color-border-primary)] px-3 py-2">
           <Link
             href="/"
-            className="text-xs text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-xs text-[var(--color-sidebar-title-fg)] transition-colors hover:text-[var(--color-sidebar-title-fg-hover)]"
           >
             Chat Platform
           </Link>

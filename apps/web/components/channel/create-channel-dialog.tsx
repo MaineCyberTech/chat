@@ -42,7 +42,7 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2 rounded-md px-3 py-1 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+        className="flex w-full items-center gap-2 rounded-md px-3 py-1 text-sm text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
       >
         <span className="text-lg leading-none">+</span> Add channel
       </button>

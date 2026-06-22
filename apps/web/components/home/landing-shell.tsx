@@ -10,14 +10,16 @@ interface Props {
 
 export function LandingShell({ onGetStarted, onLearnMore }: Props) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4 md:p-8">
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-4xl font-bold tracking-tight">Chat Platform</h1>
-        <p className="max-w-md text-lg text-gray-500 dark:text-gray-400">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-foreground-primary)] md:text-4xl">
+          Chat Platform
+        </h1>
+        <p className="max-w-md text-base text-[var(--color-foreground-secondary)] md:text-lg">
           Real-time workspace communication, inspired by the best.
         </p>
       </div>
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <Button variant="primary" onClick={onGetStarted}>
           Get Started
         </Button>

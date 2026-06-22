@@ -36,19 +36,19 @@ export function ChannelList({ workspaceSlug, workspaceId, activeChannelId }: Pro
   }
 
   if (channels.length === 0) {
-    return <p className="px-2 text-sm text-gray-500">No channels yet</p>;
+    return <p className="px-2 text-sm text-[var(--color-foreground-tertiary)]">No channels yet</p>;
   }
 
   return (
-    <ul className="space-y-0.5">
+    <ul className="space-y-0.5" role="listbox" aria-label="Channels">
       {channels.map((ch) => (
-        <li key={ch.id}>
+        <li key={ch.id} role="option" aria-selected={activeChannelId === ch.id}>
           <Link
             href={`/${workspaceSlug}/${ch.slug}`}
-            className={`block rounded-md px-3 py-1 text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            className={`block rounded-md px-3 py-1 text-sm transition-colors hover:bg-[var(--color-background-tertiary)] ${
               activeChannelId === ch.id
-                ? "bg-gray-100 font-medium dark:bg-gray-800"
-                : "text-gray-600 dark:text-gray-400"
+                ? "bg-[var(--color-background-tertiary)] font-medium"
+                : "text-[var(--color-foreground-secondary)]"
             }`}
           >
             # {ch.name}
