@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Evaluate promotion policy
         run: |
           python scripts/audits/evaluate_promotion_gate.py --repo-root . --source-branch "${{ inputs.source_branch }}" --target-environment "${{ inputs.target_environment }}" --policy-file docs/hardening_super_bundle/policies/gate-policy.prod.json

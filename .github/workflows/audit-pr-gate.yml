@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Evaluate audit gate policy
         run: |
           python scripts/audits/evaluate_gate.py --repo-root . --policy-file docs/hardening_super_bundle/policies/gate-policy.dev.json
