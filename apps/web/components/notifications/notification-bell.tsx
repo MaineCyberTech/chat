@@ -22,8 +22,8 @@ export function NotificationBell() {
     try {
       const res = await api.get<{ unread: number }>("/notifications/unread");
       setUnread(res.unread);
-    } catch {
-      // API unavailable — will retry on next poll
+    } catch (err) {
+      console.error("Failed to fetch unread count:", err);
     }
   }, []);
 
@@ -34,8 +34,8 @@ export function NotificationBell() {
       );
       setNotifications(res.notifications);
       setUnread(res.unread);
-    } catch {
-      // API unavailable — will retry on next poll
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
     }
   }, []);
 

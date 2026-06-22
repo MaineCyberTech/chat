@@ -123,12 +123,15 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Prod compose loads dev Caddyfile — Fixed to use Caddyfile.prod
 - No Terraform remote state — Added config (commented out)
 - No E2E tests in CI — Added E2E job with mock Supabase
-- infra/docker/README.md references Traefik — Replaced with Caddy docs
+- infra/docker/README.md referenced Traefik — Replaced with Caddy docs (resolved)
 - 512MB droplet OOM — Upgraded to s-2vcpu-2gb
 - Let's Encrypt rate-limited — Resolved after June 21 expiry; Caddyfiles updated with auto-TLS
 - Production deploy workflow untested — Fixed node version, SSH secrets, REPO_LC env
 - No production approval gate — Added environment: production to deploy workflow
 - No avatar upload UX — Added API endpoint + dropdown upload from app header
+- AGENTS.md/config drift swept — 25 files fixed (Traefik→Caddy, Debian→Ubuntu, droplet size, dead variables)
+- P0 auth context bug — `authenticate.ts` now calls `supabase.auth.setSession()` after `getUser()` so RLS policies see `auth.uid()`
+- Frontend UX release gate all findings resolved — `error.tsx`/`not-found.tsx` pages created, avatar-upload focus ring added, silent catch blocks logged (6 files), message-input sending state prevents double-submit, avatar-upload error feedback displayed
 
 ### Remaining Work
 

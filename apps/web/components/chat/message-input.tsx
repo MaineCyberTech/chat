@@ -39,6 +39,7 @@ export function MessageInput({
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [loadedDraft, setLoadedDraft] = useState(false);
+  const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
 
   // Load draft on mount
@@ -70,7 +71,7 @@ export function MessageInput({
     api
       .get<{ members: Member[] }>(`/workspaces/${workspaceId}/members`)
       .then((res) => setMembers(res.members))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to fetch members:", err));
   }, [workspaceId]);
 
   const filteredMembers = useMemo(() => {
@@ -180,7 +181,9 @@ export function MessageInput({
   const handleSubmit = useCallback(async () => {
     const text = content.trim();
     if (!text && files.length === 0) return;
+    if (sending) return;
 
+    setSending(true);
     setSendError("");
     try {
       if (text) await onSend(text);
@@ -194,8 +197,10 @@ export function MessageInput({
       textareaRef.current?.focus();
     } catch {
       setSendError("Failed to send message. Please try again.");
+    } finally {
+      setSending(false);
     }
-  }, [content, files, onSend, onFileUpload, onTypingStop, channelId]);
+  }, [content, files, onSend, onFileUpload, onTypingStop, channelId, sending]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
@@ -286,7 +291,11 @@ export function MessageInput({
           )}
         </div>
         <div className="flex min-h-[44px] min-w-[44px] shrink-0">
-          <Button size="md" onClick={handleSubmit} disabled={!content.trim() && files.length === 0}>
+          <Button
+            size="md"
+            onClick={handleSubmit}
+            disabled={sending || (!content.trim() && files.length === 0)}
+          >
             ➤
           </Button>
         </div>

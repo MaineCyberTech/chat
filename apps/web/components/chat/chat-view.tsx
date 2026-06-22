@@ -23,7 +23,7 @@ function ConnectionBanner() {
         s.on("reconnect_attempt", () => setStatus("reconnecting"));
         s.io.on("reconnect_error", () => setStatus("disconnected"));
       })
-      .catch(() => {});
+      .catch((err) => console.error("Socket events setup failed:", err));
 
     return () => {
       getSocket()
@@ -33,7 +33,7 @@ function ConnectionBanner() {
           s.off("reconnect_attempt");
           s.io.off("reconnect_error");
         })
-        .catch(() => {});
+        .catch((err) => console.error("Socket cleanup failed:", err));
     };
   }, []);
 
@@ -92,8 +92,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         res.profiles.forEach((p) => next.set(p.id, p));
         return next;
       });
-    } catch {
-      // Silently ignore profile fetch errors
+    } catch (err) {
+      console.error("Failed to fetch profiles:", err);
     }
   }, []);
 
@@ -149,7 +149,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
     getSocket()
       .then(setup)
-      .catch(() => {});
+      .catch((err) => console.error("Socket setup failed:", err));
 
     return () => {
       offReconnect(() => {});
@@ -227,13 +227,13 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const handleTypingStart = useCallback(() => {
     getSocket()
       .then((s) => s.emit("typing:start", channelId))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to emit typing:start:", err));
   }, [channelId]);
 
   const handleTypingStop = useCallback(() => {
     getSocket()
       .then((s) => s.emit("typing:stop", channelId))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to emit typing:stop:", err));
   }, [channelId]);
 
   if (loading) {

@@ -10,6 +10,7 @@ export function AvatarUpload() {
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -17,14 +18,16 @@ export function AvatarUpload() {
     if (!file) return;
 
     setUploading(true);
+    setUploadError("");
     try {
       const res = await api.post<{ uploadUrl: string; publicUrl: string }>("/auth/avatar", {
         contentType: file.type,
       });
       await fetch(res.uploadUrl, { method: "PUT", body: file });
       setAvatarUrl(res.publicUrl);
-    } catch {
-      // Upload failed silently
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+      setUploadError("Failed to upload. Please try again.");
     } finally {
       setUploading(false);
       setOpen(false);
@@ -36,7 +39,7 @@ export function AvatarUpload() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="focus:outline-none"
+        className="rounded-lg focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
         aria-label="Profile settings"
       >
         <Avatar src={avatarUrl} fallback={user?.email ?? "?"} size="sm" />
@@ -57,6 +60,11 @@ export function AvatarUpload() {
           >
             {uploading ? "Uploading..." : "Upload photo"}
           </button>
+          {uploadError && (
+            <p className="px-4 py-1 text-xs text-[var(--color-status-danger-fg)]" role="alert">
+              {uploadError}
+            </p>
+          )}
         </div>
       )}
     </div>

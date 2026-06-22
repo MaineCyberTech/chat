@@ -28,7 +28,8 @@ function WorkspaceBreadcrumbs({
       const res = await api.get<{ workspaces: Workspace[] }>("/workspaces");
       const ws = res.workspaces.find((w) => w.slug === slug);
       setWorkspace(ws ?? null);
-    } catch {
+    } catch (err) {
+      console.error("Failed to fetch workspace:", err);
       setWorkspace(null);
     } finally {
       setLoading(false);
@@ -41,7 +42,8 @@ function WorkspaceBreadcrumbs({
       const res = await api.get<{ channels: Channel[] }>(`/workspaces/${wsId}/channels`);
       const ch = res.channels.find((c) => c.id === chId);
       setChannel(ch ?? null);
-    } catch {
+    } catch (err) {
+      console.error("Failed to fetch channel:", err);
       setChannel(null);
     }
   }, []);

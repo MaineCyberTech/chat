@@ -60,7 +60,8 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         setResults(res.messages.map((m) => ({ ...m, channel_slug: slugMap.get(m.channel_id) })));
         setSelectedIndex(-1);
         setOpen(true);
-      } catch {
+      } catch (err) {
+        console.error("Search failed:", err);
         setResults([]);
       } finally {
         setLoading(false);
