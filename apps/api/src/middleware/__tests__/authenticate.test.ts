@@ -70,7 +70,7 @@ describe("authenticate middleware", () => {
       error: null,
     });
     (getSupabase as AnyObj).mockReturnValue({
-      auth: { getUser: mockGetUser, setSession: vi.fn() },
+      auth: { getUser: mockGetUser, setSession: vi.fn().mockResolvedValue({ error: null }) },
     });
 
     const req = mockReq({ authorization: "Bearer valid-token" });

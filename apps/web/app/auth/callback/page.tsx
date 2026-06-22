@@ -16,16 +16,36 @@ function AuthCallbackContent() {
     const supabase = getSupabaseBrowserClient();
 
     async function handleAuth() {
+      // Try PKCE code exchange first
       if (code) {
-        // Exchange the code for a session (magic link flow)
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) {
           setError(exchangeError.message);
           return;
         }
+        if (data?.session) {
+          router.push("/");
+          return;
+        }
       }
 
-      // Verify session exists after code exchange or if already logged in
+      // Try hash-based session (implicit flow fallback)
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.replace("#", ""));
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          router.push("/");
+          return;
+        }
+      }
+
+      // Check if session already exists
       const {
         data: { session },
         error: sessionError,
@@ -37,7 +57,8 @@ function AuthCallbackContent() {
       }
     }
 
-    handleAuth().catch(() => {
+    handleAuth().catch((err) => {
+      console.error("Auth callback error:", err);
       setError("An unexpected error occurred.");
     });
   }, [router, searchParams]);
@@ -45,14 +66,27 @@ function AuthCallbackContent() {
   if (error) {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
-        <p className="text-[var(--color-status-danger-fg)]">{error}</p>
+        <div className="flex flex-col items-center gap-3 text-center">
+          <p className="text-[var(--color-status-danger-fg)]">{error}</p>
+          <button
+            onClick={() => router.push("/login")}
+            className="text-sm text-[var(--color-foreground-secondary)] underline hover:text-[var(--color-foreground-primary)]"
+          >
+            Back to sign in
+          </button>
+        </div>
       </main>
     );
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center p-8">
-      <p className="text-[var(--color-foreground-secondary)]">Completing sign in...</p>
+      <div className="flex flex-col items-center gap-3">
+        <p className="text-[var(--color-foreground-secondary)]">Completing sign in...</p>
+        <div className="h-1 w-32 overflow-hidden rounded-full bg-[var(--color-background-tertiary)]">
+          <div className="h-full animate-pulse rounded-full bg-[var(--color-accent-primary)]" style={{ width: "60%" }} />
+        </div>
+      </div>
     </main>
   );
 }
@@ -62,7 +96,7 @@ export default function AuthCallbackPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center p-8">
-          <p>Loading...</p>
+          <p className="text-[var(--color-foreground-secondary)]">Loading...</p>
         </div>
       }
     >

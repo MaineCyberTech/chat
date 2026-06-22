@@ -31,7 +31,13 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     }
 
     // Set auth context so subsequent RLS queries see auth.uid()
-    await supabase.auth.setSession({ access_token: token, refresh_token: "" });
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: token,
+      refresh_token: "",
+    });
+    if (sessionError) {
+      logger.warn("Session setup failed", { requestId: req.requestId, error: sessionError.message });
+    }
 
     req.userId = data.user.id;
     req.userEmail = data.user.email;

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "AUTH-001",
+    "severity": "P0"
+  },
+  {
+    "id": "API-001",
+    "severity": "P1"
+  }
+]
