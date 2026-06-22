@@ -71,7 +71,7 @@ export default function LoginPage() {
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-3xl font-bold">Sign In</h1>
         <p className="text-gray-500 dark:text-gray-400">
-          Enter your email to receive a magic link.
+          Sign in with email and password, or use a magic link.
         </p>
       </div>
       <LoginForm />
