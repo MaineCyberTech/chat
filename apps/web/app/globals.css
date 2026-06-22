@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@chat/ui/styles.css";
 
 @source "../components/**/*.tsx";
 
@@ -29,26 +30,10 @@ body {
   box-sizing: border-box;
 }
 
-:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--focus-ring-color, #3b82f6);
-  border-radius: 2px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :focus-visible {
-    --focus-ring-color: #60a5fa;
-  }
-}
-
 @media (max-width: 767px) {
   body:has(#sidebar.mobile-open) {
     overflow: hidden;
   }
-}
-
-@media (min-width: 768px) {
-  .sm\:hidden { display: none; }
 }
 
 @media (hover: none) {

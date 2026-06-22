@@ -1,7 +1,19 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { Avatar } from "@chat/ui";
+import { api } from "@/lib/api";
 import type { Message, UserProfile } from "@chat/db";
+
+const GROUP_GAP_MS = 5 * 60 * 1000;
+const QUICK_EMOJIS = ["👍", "❤️", "😄", "😮", "😢", "🎉"];
+
+interface Reaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
+}
 
 interface Props {
   messages: Message[];
@@ -10,6 +22,8 @@ interface Props {
   onReply?: (message: Message) => void;
   onEdit?: (messageId: string, content: string) => Promise<void>;
   onDelete?: (messageId: string) => Promise<void>;
+  onThreadOpen?: (message: Message) => void;
+  replyCounts?: Map<string, number>;
 }
 
 function authorName(userId: string, profiles: Map<string, UserProfile>): string {
@@ -33,6 +47,16 @@ function formatDate(dateString: string): string {
   });
 }
 
+function avatarUrl(userId: string, profiles: Map<string, UserProfile>): string | undefined {
+  return profiles.get(userId)?.avatar_url ?? undefined;
+}
+
+interface MessageMeta extends Message {
+  showDate?: boolean;
+  isGroupStart?: boolean;
+  isGroupEnd?: boolean;
+}
+
 export function MessageList({
   messages,
   currentUserId,
@@ -40,14 +64,36 @@ export function MessageList({
   onReply,
   onEdit,
   onDelete,
+  onThreadOpen,
+  replyCounts,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [reactions, setReactions] = useState<Map<string, Reaction[]>>(new Map());
+  const [pickerMessageId, setPickerMessageId] = useState<string | null>(null);
 
-  // Auto-scroll to bottom on new messages (but not when user scrolled up)
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+
+  // Fetch reactions for visible messages
+  useEffect(() => {
+    const messageIds = messages.map((m) => m.id);
+    if (messageIds.length === 0) return;
+    Promise.all(
+      messageIds.map((id) =>
+        api
+          .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
+          .then((res) => ({ id, reactions: res.reactions }))
+          .catch(() => ({ id, reactions: [] as Reaction[] })),
+      ),
+    ).then((results) => {
+      const map = new Map<string, Reaction[]>();
+      results.forEach((r) => map.set(r.id, r.reactions));
+      setReactions(map);
+    });
+  }, [messages]);
 
   const handleScroll = useCallback(() => {
     if (!listRef.current) return;
@@ -79,126 +125,294 @@ export function MessageList({
     setEditingId(null);
   }
 
-  // Group messages by date for date separators
-  const messagesWithDates = React.useMemo(() => {
-    const result: (Message & { showDate?: boolean })[] = [];
+  async function toggleReaction(messageId: string, emoji: string) {
+    const msgReactions = reactions.get(messageId) ?? [];
+    const existing = msgReactions.find((r) => r.user_id === currentUserId && r.emoji === emoji);
+
+    if (existing) {
+      await api.delete(`/messages/${messageId}/reactions/${encodeURIComponent(emoji)}`);
+      setReactions((prev) => {
+        const next = new Map(prev);
+        next.set(
+          messageId,
+          (next.get(messageId) ?? []).filter((r) => r.id !== existing.id),
+        );
+        return next;
+      });
+    } else {
+      const res = await api.post<{ reaction: Reaction }>(`/messages/${messageId}/reactions`, {
+        emoji,
+      });
+      setReactions((prev) => {
+        const next = new Map(prev);
+        next.set(messageId, [...(next.get(messageId) ?? []), res.reaction]);
+        return next;
+      });
+    }
+  }
+
+  // Aggregate reactions grouped by emoji for display
+  function aggregatedReactions(
+    messageId: string,
+  ): { emoji: string; count: number; hasMine: boolean }[] {
+    const msgReactions = reactions.get(messageId) ?? [];
+    const grouped = new Map<string, { count: number; hasMine: boolean }>();
+    for (const r of msgReactions) {
+      const entry = grouped.get(r.emoji) ?? { count: 0, hasMine: false };
+      entry.count++;
+      if (r.user_id === currentUserId) entry.hasMine = true;
+      grouped.set(r.emoji, entry);
+    }
+    return Array.from(grouped.entries()).map(([emoji, data]) => ({ emoji, ...data }));
+  }
+
+  const messagesWithMeta = React.useMemo(() => {
+    const result: MessageMeta[] = [];
     let lastDate: string | null = null;
+    let lastUserId: string | null = null;
+    let lastUserTime: number | null = null;
 
     for (const msg of messages) {
       const msgDate = new Date(msg.created_at).toDateString();
-      if (msgDate !== lastDate) {
-        result.push({ ...msg, showDate: true });
-        lastDate = msgDate;
-      } else {
-        result.push(msg);
+      const msgTime = new Date(msg.created_at).getTime();
+      const isNewDate = msgDate !== lastDate;
+      const isSameUser = msg.user_id === lastUserId;
+      const gap = lastUserTime ? msgTime - lastUserTime : Infinity;
+      const isGroupStart = isNewDate || !isSameUser || gap > GROUP_GAP_MS;
+
+      if (result.length > 0) {
+        const prev = result[result.length - 1];
+        if (prev) prev.isGroupEnd = isGroupStart;
       }
+
+      result.push({ ...msg, showDate: isNewDate, isGroupStart, isGroupEnd: true });
+      lastDate = msgDate;
+      lastUserId = msg.user_id;
+      lastUserTime = msgTime;
     }
     return result;
   }, [messages]);
 
   return (
-    <div ref={listRef} className="flex-1 overflow-y-auto px-6 py-4" onScroll={handleScroll}>
-      {messagesWithDates.map((msg) => {
-        const isOwn = msg.user_id === currentUserId;
-        const showDate = msg.showDate;
+    <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-4 md:px-6" onScroll={handleScroll}>
+      {messages.length === 0 ? (
+        <div className="flex h-full items-center justify-center">
+          <p className="text-sm text-[var(--color-foreground-tertiary)]">
+            No messages yet. Start the conversation!
+          </p>
+        </div>
+      ) : (
+        messagesWithMeta.map((msg) => {
+          const isOwn = msg.user_id === currentUserId;
+          const showDate = msg.showDate;
+          const showAuthor = !isOwn && msg.isGroupStart;
+          const name = authorName(msg.user_id, profiles);
+          const avatar = avatarUrl(msg.user_id, profiles);
+          const isHovered = hoveredId === msg.id;
+          const aggr = aggregatedReactions(msg.id);
 
-        return (
-          <React.Fragment key={msg.id}>
-            {showDate && (
-              <div className="my-4 flex justify-center">
-                <span className="rounded-full bg-[var(--color-background-tertiary)] px-3 py-0.5 text-xs font-medium text-[var(--color-foreground-tertiary)]">
-                  {formatDate(msg.created_at)}
-                </span>
-              </div>
-            )}
-            <div className={`group mb-1 ${isOwn ? "flex justify-end" : "flex justify-start"}`}>
-              <div className={`max-w-[70%] ${isOwn ? "items-end" : "items-start"}`}>
-                {!isOwn && (
-                  <p className="mb-0.5 pl-1 text-xs font-medium text-[var(--color-foreground-tertiary)]">
-                    {authorName(msg.user_id, profiles)}
-                  </p>
-                )}
-                <div className="flex items-start gap-1">
-                  {editingId === msg.id ? (
-                    <div className="flex w-full gap-1">
-                      <input
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Escape") setEditingId(null);
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            submitEdit();
-                          }
-                        }}
-                        className="flex-1 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-1 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
-                        autoFocus
-                      />
-                      <button
-                        onClick={submitEdit}
-                        className="shrink-0 text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="shrink-0 text-xs text-[var(--color-foreground-tertiary)] hover:underline"
-                      >
-                        Cancel
-                      </button>
-                    </div>
+          const isSystem = (msg as unknown as Record<string, unknown>).type === "system";
+          if (isSystem) {
+            return (
+              <React.Fragment key={msg.id}>
+                <div className="my-2 text-center">
+                  <span className="text-xs text-[var(--color-foreground-tertiary)] italic">
+                    {msg.content}
+                  </span>
+                </div>
+              </React.Fragment>
+            );
+          }
+
+          return (
+            <React.Fragment key={msg.id}>
+              {showDate && (
+                <div className="my-4 flex justify-center">
+                  <span className="rounded-full bg-[var(--color-background-tertiary)] px-3 py-0.5 text-xs font-medium text-[var(--color-foreground-tertiary)]">
+                    {formatDate(msg.created_at)}
+                  </span>
+                </div>
+              )}
+              <div
+                className={`group flex ${isOwn ? "flex-row-reverse" : "flex-row"} ${
+                  msg.isGroupStart ? "mt-3" : "mt-0.5"
+                }`}
+                onMouseEnter={() => {
+                  setHoveredId(msg.id);
+                  setPickerMessageId(null);
+                }}
+                onMouseLeave={() => setHoveredId(null)}
+              >
+                <div className={`flex w-9 shrink-0 ${isOwn ? "ml-2" : "mr-2"}`}>
+                  {showAuthor ? (
+                    <Avatar src={avatar} fallback={name.charAt(0).toUpperCase()} size="sm" />
                   ) : (
+                    <div className="w-8" />
+                  )}
+                </div>
+
+                <div className={`flex min-w-0 flex-col ${isOwn ? "items-end" : "items-start"}`}>
+                  {showAuthor && (
+                    <p className="mb-0.5 px-1 text-xs font-medium text-[var(--color-foreground-tertiary)]">
+                      {name}
+                    </p>
+                  )}
+
+                  <div className="flex items-start gap-1">
+                    {editingId === msg.id ? (
+                      <div className="flex w-full gap-1">
+                        <input
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") setEditingId(null);
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              submitEdit();
+                            }
+                          }}
+                          className="flex-1 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-1 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
+                          autoFocus
+                          aria-label="Edit message"
+                        />
+                        <button
+                          onClick={submitEdit}
+                          className="shrink-0 text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="shrink-0 text-xs text-[var(--color-foreground-tertiary)] hover:underline"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className={`flex flex-col rounded-lg px-3 py-1.5 ${
+                          isOwn
+                            ? "bg-[var(--color-brand-primary)] text-[var(--color-brand-primary-foreground)]"
+                            : "bg-[var(--color-background-tertiary)] text-[var(--color-foreground-primary)]"
+                        }`}
+                      >
+                        {msg.parent_id && (
+                          <p className="mb-0.5 text-xs italic opacity-70">↳ Reply</p>
+                        )}
+                        <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
+                        {msg.edited_at && <p className="mt-0.5 text-xs opacity-70">edited</p>}
+                        {msg.isGroupEnd || isHovered ? (
+                          <p className="mt-0.5 text-right text-xs opacity-50">
+                            {formatTime(msg.created_at)}
+                          </p>
+                        ) : null}
+                        {!msg.parent_id && onThreadOpen && replyCounts?.has(msg.id) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onThreadOpen(msg);
+                            }}
+                            className="mt-0.5 self-start text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
+                          >
+                            {replyCounts.get(msg.id)}{" "}
+                            {replyCounts.get(msg.id) === 1 ? "reply" : "replies"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     <div
-                      className={`flex flex-col rounded-lg px-3 py-1.5 ${
-                        isOwn
-                          ? "bg-[var(--color-brand-primary)] text-[var(--color-brand-primary-foreground)]"
-                          : "bg-[var(--color-background-tertiary)] text-[var(--color-foreground-primary)]"
+                      className={`flex shrink-0 flex-col gap-0.5 transition-opacity ${
+                        isHovered || editingId === msg.id
+                          ? "opacity-100"
+                          : "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
                       }`}
                     >
-                      {msg.parent_id && <p className="mb-0.5 text-xs italic opacity-70">↳ Reply</p>}
-                      <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
-                      {msg.edited_at && <p className="mt-0.5 text-xs opacity-70">edited</p>}
-                      <p className="mt-0.5 text-right text-xs opacity-50">
-                        {formatTime(msg.created_at)}
-                      </p>
+                      {onReply && (
+                        <button
+                          onClick={() => onReply(msg)}
+                          className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded px-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+                          aria-label="Reply to message"
+                        >
+                          ↩
+                        </button>
+                      )}
+                      <button
+                        onClick={() =>
+                          setPickerMessageId(pickerMessageId === msg.id ? null : msg.id)
+                        }
+                        className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded px-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+                        aria-label="Add reaction"
+                      >
+                        😊
+                      </button>
+                      {isOwn && onEdit && (
+                        <button
+                          onClick={() => startEdit(msg)}
+                          className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded px-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+                          aria-label="Edit message"
+                        >
+                          ✎
+                        </button>
+                      )}
+                      {isOwn && onDelete && (
+                        <button
+                          onClick={() => onDelete(msg.id)}
+                          className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded px-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-status-danger-fg)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+                          aria-label="Delete message"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Reaction pills */}
+                  {aggr.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {aggr.map(({ emoji, count, hasMine }) => (
+                        <button
+                          key={emoji}
+                          onClick={() => toggleReaction(msg.id, emoji)}
+                          className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none ${
+                            hasMine
+                              ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary-light)]"
+                              : "border-[var(--color-border-primary)] hover:bg-[var(--color-background-tertiary)]"
+                          }`}
+                        >
+                          <span>{emoji}</span>
+                          <span className="text-[var(--color-foreground-tertiary)]">{count}</span>
+                        </button>
+                      ))}
                     </div>
                   )}
-                  {/* Hover actions */}
-                  <div className="flex shrink-0 flex-col gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
-                    {onReply && (
-                      <button
-                        onClick={() => onReply(msg)}
-                        className="rounded px-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-                        aria-label="Reply to message"
-                      >
-                        ↩
-                      </button>
-                    )}
-                    {isOwn && onEdit && (
-                      <button
-                        onClick={() => startEdit(msg)}
-                        className="rounded px-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-                        aria-label="Edit message"
-                      >
-                        ✎
-                      </button>
-                    )}
-                    {isOwn && onDelete && (
-                      <button
-                        onClick={() => onDelete(msg.id)}
-                        className="rounded px-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-status-danger-fg)]"
-                        aria-label="Delete message"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
+
+                  {/* Emoji picker */}
+                  {pickerMessageId === msg.id && (
+                    <div className="relative mt-1">
+                      <div className="absolute top-0 left-0 z-10 flex gap-0.5 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-background-primary)] p-1 shadow-[var(--shadow-xl)]">
+                        {QUICK_EMOJIS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            onClick={() => {
+                              toggleReaction(msg.id, emoji);
+                              setPickerMessageId(null);
+                            }}
+                            className="rounded p-1 text-lg leading-none transition-colors hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+                            aria-label={`React with ${emoji}`}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          </React.Fragment>
-        );
-      })}
+            </React.Fragment>
+          );
+        })
+      )}
       <div ref={bottomRef} />
     </div>
   );

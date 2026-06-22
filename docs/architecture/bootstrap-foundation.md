@@ -25,7 +25,7 @@ The bootstrap phase established a production-grade monorepo foundation, and subs
 
 ### Infrastructure
 
-- **Docker**: Multi-stage builds with Node 20 Alpine + ws for WebSocket compat
+- **Docker**: Multi-stage builds with Node 22 Alpine + ws for WebSocket compat
 - **Caddy**: Zero-config TLS via auto-ACME (rate-limited until June 21)
 - **Cloudflare DNS**: Proxied A records (Flexible SSL until Caddy certs issue)
 - **Terraform**: DO droplet provisioning with cloud-init, DNS records, firewall
@@ -33,7 +33,7 @@ The bootstrap phase established a production-grade monorepo foundation, and subs
 
 ### Testing
 
-- 49 unit tests across 11 files (API services, middleware, UI components)
+- 54 unit tests across 12 files (API services, middleware, UI components, auth flow)
 - E2E Playwright scaffold
 
 ### Documentation
@@ -45,27 +45,23 @@ The bootstrap phase established a production-grade monorepo foundation, and subs
 
 ## Deployment Status
 
-| Component  | Status       | Notes                               |
-| ---------- | ------------ | ----------------------------------- |
-| Droplet    | Running      | Ubuntu 24.04, s-1vcpu-512mb-10gb    |
-| Caddy      | Running      | Auto-retrying LE certs every 60s    |
-| API        | Restarting   | Node 20 + ws transport fix deployed |
-| Web        | Running      | NEXT*PUBLIC* vars passed at build   |
-| Cloudflare | Flexible SSL | Workaround for LE rate limit        |
-| CI         | Passing      | validate + build + deploy           |
+| Component  | Status        | Notes                               |
+| ---------- | ------------- | ----------------------------------- |
+| Droplet    | Running       | Ubuntu 24.04, s-2vcpu-2gb           |
+| Caddy      | Running       | Auto-TLS via Let's Encrypt          |
+| API        | Restarting    | Node 22 + ws transport fix deployed |
+| Web        | Running       | NEXT*PUBLIC* vars passed at build   |
+| Cloudflare | Full (strict) | Proxied via Cloudflare              |
+| CI         | Passing       | validate + build + deploy           |
 
 ## Known Issues
 
-1. **LE rate limit**: 5 certs issued in 168h — resets June 21. Cloudflare Flexible SSL as workaround.
-2. **512MB RAM**: Next.js + Express + Caddy push limits. Swap file mitigates. Upgrade to s-2vcpu-2gb recommended.
-3. **Terraform state**: No remote backend — each CI run imports existing resources. Cleanup deletes duplicates.
-4. **Docker build slow**: ~15min for pnpm install. GHA cache speeds up subsequent builds.
+1. **Terraform state**: No remote backend — each CI run imports existing resources. Cleanup deletes duplicates.
+2. **Docker build slow**: ~15min for pnpm install. GHA cache speeds up subsequent builds.
 
 ## Remaining Work
 
-- Switch Cloudflare to Full (strict) after June 21
-- Upgrade droplet to 1-2GB RAM
-- Add Terraform remote state (S3 backend)
+- Add Terraform remote state (DO Spaces backend)
 - Expand E2E tests
 - Test production deploy with `.com` domain
 - Add email notification system

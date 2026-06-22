@@ -17,7 +17,7 @@
 ```bash
 cd infra/terraform
 cp terraform.tfvars.example terraform.tfvars
-# Edit: do_token, environment="development", domain="mainecybertech.us", ssh_key_fingerprint
+# Edit: do_token, environment="development", domain="mainecybertech.us", ci_public_key
 
 terraform init
 terraform plan
@@ -26,7 +26,7 @@ terraform apply
 
 This creates:
 
-- Debian 12 droplet with Docker pre-installed
+- Ubuntu 24.04 droplet with Docker pre-installed
 - Firewall (ports 22, 80, 443)
 - DNS A records for `chat` and `chat-api` subdomains
 
@@ -45,10 +45,6 @@ cd /opt/chat
 cp infra/docker/.env.devremote.example infra/docker/.env.devremote
 # Edit .env.devremote with real Supabase credentials
 
-# Create acme.json for Traefik certificates
-touch infra/docker/traefik/acme.json
-chmod 600 infra/docker/traefik/acme.json
-
 # Start services
 docker compose -f infra/docker/docker-compose.devremote.yml up -d
 ```
@@ -63,11 +59,10 @@ Push to `develop` branch. GitHub Actions will:
 4. SSH into droplet, pull images, `docker compose up -d`
 5. Health check: poll `https://chat-api.mainecybertech.us/healthz` for 60s
 
-Required GitHub Environment `development` secrets:
+Required GitHub repository secrets:
 
-- `DO_DROPLET_HOST` — droplet IP
-- `DO_DROPLET_USER` — SSH user (e.g. `root`)
-- `DO_SSH_PRIVATE_KEY` — SSH private key
+- `CI_SSH_PRIVATE_KEY` — SSH private key for authentication
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — Supabase connection
 
 ## Manual Deploy
 
@@ -95,5 +90,5 @@ curl -sI https://chat.mainecybertech.us | head -1
 ## Troubleshooting
 
 - **Container won't start**: `docker compose -f infra/docker/docker-compose.devremote.yml logs`
-- **SSL certificate errors**: Check `acme.json` permissions (`chmod 600`)
+- **SSL certificate errors**: Check Caddy logs (`docker compose logs caddy`)
 - **Supabase connection fails**: Verify `SUPABASE_URL` and keys in `.env.devremote`

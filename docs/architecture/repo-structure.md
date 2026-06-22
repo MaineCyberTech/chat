@@ -57,8 +57,9 @@ chat/
 │       └── README.md
 │
 ├── infra/
-│   ├── docker/                       # Docker + Traefik
-│   │   ├── traefik/traefik.yml
+│   ├── docker/                       # Docker + Caddy
+│   │   ├── Caddyfile
+│   │   ├── Caddyfile.prod
 │   │   ├── docker-compose.devremote.yml
 │   │   ├── docker-compose.prod.yml
 │   │   └── .env.*.example
@@ -77,8 +78,11 @@ chat/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml
+│   │   ├── validate.yml
+│   │   ├── build-push.yml
 │   │   ├── deploy-development.yml
-│   │   └── deploy-production.yml
+│   │   ├── deploy-production.yml
+│   │   └── infra-development.yml
 │   ├── pull_request_template.md
 │   └── dependabot.yml
 │

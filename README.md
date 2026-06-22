@@ -31,7 +31,7 @@ Push to `develop` → [GitHub Actions](https://github.com/MaineCyberTech/chat/ac
 | `pnpm dev`                     | Start all dev servers            |
 | `pnpm build`                   | Build all packages               |
 | `pnpm check`                   | Lint + format + typecheck + test |
-| `pnpm test`                    | Run 49 unit tests (11 files)     |
+| `pnpm test`                    | Run 54 unit tests (12 files)     |
 | `pnpm supabase:start`          | Start local Supabase             |
 | `pnpm supabase:stop`           | Stop local Supabase              |
 | `.\\scripts\\setup-dev.ps1`    | Full local setup                 |

@@ -142,7 +142,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         <div className="flex items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:hidden">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="rounded p-1 text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)]"
+            className="rounded p-1 text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
             aria-label="Toggle sidebar"
             aria-expanded={sidebarOpen}
             aria-controls="sidebar"

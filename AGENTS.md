@@ -10,22 +10,22 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 **Reverse Proxy**: Caddy 2 (zero-config TLS, auto ACME)
 **DNS**: Cloudflare (proxied for DDoS protection)
-**Compute**: Single DigitalOcean droplet (Ubuntu 24.04, s-1vcpu-512mb-10gb)
+**Compute**: Single DigitalOcean droplet (Ubuntu 24.04, s-2vcpu-2gb)
 
 ## Repository Map
 
-| Directory            | Purpose                              | Key Files                                                                     |
-| -------------------- | ------------------------------------ | ----------------------------------------------------------------------------- |
-| `apps/api/`          | Express API server                   | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                  |
-| `apps/web/`          | Next.js 15 frontend                  | `app/`, `components/`, `lib/`                                                 |
-| `packages/ui/`       | Shared React components              | `src/components/button.tsx`, etc.                                             |
-| `packages/db/`       | Supabase client + types + migrations | `src/config.ts`, `sql/`, `sql/migrations/006_user_preferences.sql`            |
-| `infra/docker/`      | Compose files, Caddyfile             | `docker-compose.devremote.yml`                                                |
-| `infra/terraform/`   | DO droplet + DNS                     | `main.tf`, `templates/cloud-init.yaml.tftpl`                                  |
-| `.github/workflows/` | CI/CD pipelines                      | `ci.yml`, `deploy-development.yml`, `build-push.yml`, `infra-development.yml` |
-| `scripts/`           | Dev tooling                          | `setup-dev.ps1`, `teardown-dev.ps1`                                           |
-| `supabase/`          | Local Supabase config                | `config.toml`                                                                 |
-| `docs/`              | Architecture docs, runbooks, audits  | `docs/architecture/`, `docs/prompts/`, `docs/audits/`                         |
+| Directory            | Purpose                              | Key Files                                                                                                              |
+| -------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `apps/api/`          | Express API server                   | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                                                           |
+| `apps/web/`          | Next.js 15 frontend                  | `app/`, `components/`, `lib/`                                                                                          |
+| `packages/ui/`       | Shared React components              | `src/components/button.tsx`, etc.                                                                                      |
+| `packages/db/`       | Supabase client + types + migrations | `src/config.ts`, `sql/`, `sql/migrations/006_user_preferences.sql`                                                     |
+| `infra/docker/`      | Compose files, Caddyfiles            | `docker-compose.devremote.yml`, `docker-compose.prod.yml`, `Caddyfile`, `Caddyfile.prod`                               |
+| `infra/terraform/`   | DO droplet + DNS                     | `main.tf`, `templates/cloud-init.yaml.tftpl`                                                                           |
+| `.github/workflows/` | CI/CD pipelines                      | `ci.yml`, `validate.yml`, `build-push.yml`, `deploy-development.yml`, `deploy-production.yml`, `infra-development.yml` |
+| `scripts/`           | Dev tooling                          | `setup-dev.ps1`, `teardown-dev.ps1`                                                                                    |
+| `supabase/`          | Local Supabase config                | `config.toml`                                                                                                          |
+| `docs/`              | Architecture docs, runbooks, audits  | `docs/architecture/`, `docs/prompts/`, `docs/audits/`                                                                  |
 
 ## Implementation Status
 
@@ -64,7 +64,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Pino structured logger (pino-pretty in dev, JSON in prod)
 - Audit logging on all mutations (message, channel, workspace create/update/delete)
 - Webhook endpoint + delivery tracking (SQL migrations + RLS policies)
-- Same-domain API routing (Caddy reverse proxies /workspaces, /channels, /messages, /auth, /socket.io to API)
+- Subdomain API routing (Caddy reverse proxies `chat-api.*` subdomain to `api:4000`) with fallback same-domain routing for `/socket.io`
 - Bundle analyzer for web (ANALYZE=true flag)
 - Docker HEALTHCHECK on both API and web containers
 - Server-side workspace membership checks on channel/message create routes
@@ -98,7 +98,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - `GET /auth/preferences` and `PATCH /auth/preferences` API endpoints with Zod validation
 - User preferences TypeScript types (`UserPreferences`, `ThemePreference`)
 
-### Audits Completed (June 21, 2026)
+### Audits Completed (June 22, 2026)
 
 - **Comparative repo audit** (8 phases): structural baseline, feature mapping, strengths/weaknesses, risk analysis, alignment roadmap, file-by-file change plan, patch set design. See `docs/audits/compare/`.
 - **Frontend UI/UX audit** (8 phases): frontend inventory, information architecture, visual system, accessibility/responsiveness, comparative findings, refinement roadmap, change plan. See `docs/audits/frontend/`.
@@ -108,6 +108,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - **Infra/Deployment/Resilience audit**: 15KB report covering environment separation, Terraform state, Docker safety, deploy repeatability, health checks, CI/CD reliability. See `docs/audits/infra_deployment_resilience_audit_summary.md`.
 - **Testing/QA/CI-CD audit**: 10KB report covering test coverage breadth, CI gate effectiveness, quality enforcement gaps. See `docs/audits/testing_qa_cicd_audit_summary.md`.
 - **Docs/DevEx/Operations audit**: 20KB report covering onboarding quality, script/documentation completeness, runbook readiness, repo ergonomics. See `docs/audits/docs_devex_operations_audit_summary.md`.
+- **Frontend UX Release Gate audit**: 6-dimension release-readiness audit (visual consistency, accessibility, responsive, design system, interaction quality, product surface). 2 P0, 13 P1, 27 P2, 12 P3 findings. All grades: PASS WITH RISKS. See `docs/audits/frontend_ux_release_gate_audit_summary.md`.
 
 ### Known Issues
 
@@ -131,17 +132,27 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 ### Remaining Work
 
-None. All UX/UI phases (1–7) complete. All audit findings addressed.
+**Frontend Release Gate Findings** (from `docs/audits/frontend_ux_release_gate_audit_summary.md`):
+
+| Priority | Count        | Key Items                                                                                                                                                                                                                                                                                                                                                                     |
+| -------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0**   | 0 (2 fixed)  | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED**                                                                                                                                                                                                                                                                                         |
+| **P1**   | 3 (10 fixed) | ~styles.css not imported~, ~4 inputs missing aria-label~, ~Dialog missing aria-labelledby~, ~NotificationBell not keyboard-accessible~, ~no empty/send-error states~, **no preferences UI**, ~missing focus-visible on ~18 elements~, ~CreateWorkspaceDialog Space key~, **search/channel search fetches on mount without workspace context**, **no error.tsx/not-found.tsx** |
+| **P2**   | 19 (8 fixed) | ~No debounce on search~, ~body scroll lock broken~, ~no slide animations~, no tablet breakpoint, low contrast on tertiary text, ~small touch targets~, duplicate CSS config, ~shadow token inconsistency~, missing loading states in thread panel, **no error boundary for message fetch failure**                                                                            |
+| **P3**   | 12           | Dead code, raw values, no `not-found.tsx`/`error.tsx`, no settings UI, no avatar preview                                                                                                                                                                                                                                                                                      |
+
+All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
 ## GitHub Actions Workflows
 
-| Workflow                 | Trigger                 | Purpose                                                               |
-| ------------------------ | ----------------------- | --------------------------------------------------------------------- |
-| `ci.yml`                 | push main/develop, PR   | Calls reusable validate.yml (test, lint, typecheck, build)            |
-| `validate.yml`           | workflow_call           | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache |
-| `build-push.yml`         | push develop            | Build Docker images → push to GHCR `:dev` tag (path-filtered)         |
-| `deploy-development.yml` | push develop            | SSH to droplet, transfer files, pipe images, compose up, health check |
-| `infra-development.yml`  | push infra/\*\* changes | Terraform provision droplet + DNS + firewall                          |
+| Workflow                 | Trigger                 | Purpose                                                                   |
+| ------------------------ | ----------------------- | ------------------------------------------------------------------------- |
+| `ci.yml`                 | push main/develop, PR   | Calls reusable validate.yml (test, lint, typecheck, build)                |
+| `validate.yml`           | workflow_call           | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache     |
+| `build-push.yml`         | push develop            | Build Docker images → push to GHCR `:dev` tag (path-filtered)             |
+| `deploy-development.yml` | push develop            | SSH to droplet, transfer files, pipe images, compose up, health check     |
+| `infra-development.yml`  | push infra/\*\* changes | Terraform provision droplet + DNS + firewall + SSH key registration       |
+| `deploy-production.yml`  | push main, manual       | Build + push `:latest` images, deploy to production droplet, health check |
 
 ## Environments
 
@@ -169,6 +180,7 @@ Full audit suite in `docs/audits/`:
 - [Infra/Deployment/Resilience Audit](docs/audits/infra_deployment_resilience_audit_summary.md)
 - [Testing/QA/CI-CD Audit](docs/audits/testing_qa_cicd_audit_summary.md)
 - [Docs/DevEx/Operations Audit](docs/audits/docs_devex_operations_audit_summary.md)
+- [Frontend UX Release Gate Audit](docs/audits/frontend_ux_release_gate_audit_summary.md)
 
 ## Local Development
 
@@ -186,10 +198,12 @@ pnpm dev
 ## Secrets Required
 
 | Secret                      | Used By       |
-| --------------------------- | ------------- |
+| --------------------------- | ------------- | ------------------------------------------- |
 | `DO_API_TOKEN`              | infra, deploy |
-| `CI_SSH_PUBLIC_KEY`         | infra         |
+| `CI_SSH_PUBLIC_KEY`         | infra, deploy |
 | `CI_SSH_PRIVATE_KEY`        | deploy        |
+| `DO_SSH_PRIVATE_KEY`        | deploy        |
+| `DO_SSH_PASSPHRASE`         | deploy        |
 | `CF_API_TOKEN`              | infra         |
 | `CF_ZONE_ID`                | infra         |
 | `SUPABASE_URL`              | deploy, build |
@@ -197,4 +211,6 @@ pnpm dev
 | `SUPABASE_SERVICE_ROLE_KEY` | deploy        |
 | `CF_ORIGIN_CERT`            | deploy        |
 | `CF_ORIGIN_KEY`             | deploy        |
+| `AWS_ACCESS_KEY_ID`         | infra         | DO Spaces Terraform remote state (optional) |
+| `AWS_SECRET_ACCESS_KEY`     | infra         | DO Spaces Terraform remote state (optional) |
 | `GITHUB_TOKEN`              | auto-provided |

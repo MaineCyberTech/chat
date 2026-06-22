@@ -1,0 +1,24 @@
+{
+  "name": "progressier_pwa_execution_bundle",
+  "type": "repo-ready-folders-zip",
+  "drop_in_root": "docs/prompts/progressier_pwa_execution_bundle",
+  "files": [
+    "docs/prompts/progressier_pwa_execution_bundle/00_readme_first.md",
+    "docs/prompts/progressier_pwa_execution_bundle/01_global_operator_instructions.md",
+    "docs/prompts/progressier_pwa_execution_bundle/02_master_prompt_progressier_pwa_execution.md",
+    "docs/prompts/progressier_pwa_execution_bundle/03_phase_1_repo_inventory_and_guardrails.md",
+    "docs/prompts/progressier_pwa_execution_bundle/04_phase_2_pwa_foundation_and_installability.md",
+    "docs/prompts/progressier_pwa_execution_bundle/05_phase_3_install_ux_and_install_page.md",
+    "docs/prompts/progressier_pwa_execution_bundle/06_phase_4_push_notifications_and_preferences.md",
+    "docs/prompts/progressier_pwa_execution_bundle/07_phase_5_testing_observability_and_release.md",
+    "docs/prompts/progressier_pwa_execution_bundle/08_phase_6_optional_dynamic_manifest_and_tenant_branding.md",
+    "docs/prompts/progressier_pwa_execution_bundle/09_final_reconciliation_and_output_contract.md",
+    "docs/prompts/progressier_pwa_execution_bundle/FULL_PROMPT_PACK.md",
+    "docs/prompts/progressier_pwa_execution_bundle/QUICKSTART.md",
+    "docs/prompts/progressier_pwa_execution_bundle/examples/example_output_manifest.md",
+    "docs/prompts/progressier_pwa_execution_bundle/examples/example_validation_checklist.md",
+    "docs/prompts/progressier_pwa_execution_bundle/FULL_PROMPT_PACK.md",
+    "docs/prompts/progressier_pwa_execution_bundle/QUICKSTART.md",
+    "docs/prompts/progressier_pwa_execution_bundle/bundle_manifest.json"
+  ]
+}

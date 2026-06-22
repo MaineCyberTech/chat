@@ -19,7 +19,7 @@ pnpm dev                              # Start API (4000) + Web (3000)
 pnpm format:check   # Check code formatting
 pnpm lint           # Run ESLint (4 workspaces)
 pnpm typecheck      # Run TypeScript type checking
-pnpm test           # Run 49 unit tests (11 files)
+pnpm test           # Run 54 unit tests (12 files)
 pnpm build          # Build all packages + Next.js
 pnpm check          # Run all of the above
 ```

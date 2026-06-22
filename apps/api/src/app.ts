@@ -13,6 +13,7 @@ import messageRoutes from "./modules/messages/routes.js";
 import webhookRoutes from "./modules/webhooks/routes.js";
 import notificationRoutes from "./modules/notifications/routes.js";
 import preferencesRoutes from "./modules/preferences/routes.js";
+import reactionRoutes from "./modules/reactions/routes.js";
 
 export function createApp(frontendUrl: string): Express {
   const app = express();
@@ -39,6 +40,7 @@ export function createApp(frontendUrl: string): Express {
   app.use(webhookRoutes);
   app.use(notificationRoutes);
   app.use("/auth", preferencesRoutes);
+  app.use(reactionRoutes);
 
   app.get("/", (_req, res) => {
     res.json({ name: "chat-api", status: "running" });

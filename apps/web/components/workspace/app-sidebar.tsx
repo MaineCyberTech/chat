@@ -102,7 +102,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           mobileOpen === undefined
             ? ""
             : mobileOpen
-              ? "fixed inset-y-0 left-0 z-40"
+              ? "mobile-open animate-slide-in-left fixed inset-y-0 left-0 z-40"
               : "hidden md:flex"
         }`}
       >
@@ -114,7 +114,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           </span>
           <button
             onClick={signOut}
-            className="shrink-0 rounded px-2 py-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+            className="shrink-0 rounded px-2 py-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
           >
             Logout
           </button>

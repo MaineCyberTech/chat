@@ -5,6 +5,8 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Skeleton } from "@chat/ui";
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 interface SearchResult {
   id: string;
   channel_id: string;
@@ -26,9 +28,17 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
-    if (inputRef.current) inputRef.current.focus();
+    return () => clearTimeout(debounceRef.current);
+  }, []);
+
+  useEffect(() => {
+    // Only auto-focus on desktop to avoid pulling up keyboard on mobile
+    if (inputRef.current && window.innerWidth >= 768) {
+      inputRef.current.focus();
+    }
   }, []);
 
   const search = useCallback(
@@ -97,12 +107,14 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
-          search(e.target.value);
+          clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => search(e.target.value), SEARCH_DEBOUNCE_MS);
         }}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder="Search messages..."
+        aria-label="Search messages"
         aria-autocomplete="list"
         aria-controls="search-results"
         aria-expanded={open && results.length > 0}

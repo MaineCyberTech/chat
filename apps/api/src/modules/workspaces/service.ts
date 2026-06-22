@@ -114,6 +114,34 @@ export class WorkspaceService {
     const { error } = await supabase.from("workspaces").delete().eq("id", workspaceId);
     return !error;
   }
+
+  async getMembers(
+    workspaceId: string,
+  ): Promise<
+    { user_id: string; display_name: string | null; email: string; avatar_url: string | null }[]
+  > {
+    const supabase = getSupabase();
+    const { data } = await supabase
+      .from("workspace_members")
+      .select("user_id, users!inner(display_name, email, avatar_url)")
+      .eq("workspace_id", workspaceId);
+
+    if (!data) return [];
+    return (
+      data as Array<{
+        user_id: string;
+        users: { display_name: string | null; email: string; avatar_url: string | null }[];
+      }>
+    ).map((row) => {
+      const user = row.users[0] ?? { display_name: null, email: "", avatar_url: null };
+      return {
+        user_id: row.user_id,
+        display_name: user.display_name,
+        email: user.email,
+        avatar_url: user.avatar_url,
+      };
+    });
+  }
 }
 
 export const workspaceService = new WorkspaceService();

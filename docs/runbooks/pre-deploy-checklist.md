@@ -17,7 +17,9 @@ Before the first deploy, complete these steps.
   8. `packages/db/sql/migrations/004_messages.sql`
   9. `packages/db/sql/policies/messages_rls.sql`
   10. `packages/db/sql/migrations/005_search.sql`
-  11. `packages/db/sql/policies/storage_rls.sql`
+  11. `packages/db/sql/migrations/006_user_preferences.sql`
+  12. `packages/db/sql/migrations/007_reactions.sql`
+  13. `packages/db/sql/policies/storage_rls.sql`
 - [ ] Enable auth provider: Email (magic link)
 - [ ] Set Site URL to `https://chat.mainecybertech.us`
 
@@ -68,7 +70,7 @@ The workflow registers this key with DigitalOcean automatically on first deploy.
 | Secret                      | Used by              | Purpose                                 |
 | --------------------------- | -------------------- | --------------------------------------- |
 | `DO_API_TOKEN`              | provision            | Create droplet, DNS, upload SSH key     |
-| `DO_SSH_PUBLIC_KEY`         | provision            | Register SSH key with DigitalOcean      |
+| `CI_SSH_PUBLIC_KEY`         | provision            | Register SSH key with DigitalOcean      |
 | `DO_SSH_PRIVATE_KEY`        | deploy               | SSH into droplet as root                |
 | `SUPABASE_URL`              | deploy               | Written to `.env` on droplet            |
 | `SUPABASE_ANON_KEY`         | deploy               | Written to `.env` on droplet            |

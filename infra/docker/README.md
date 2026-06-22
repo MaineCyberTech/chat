@@ -43,11 +43,10 @@ GitHub Actions workflows in `.github/workflows/` automatically:
 3. Push to GitHub Container Registry
 4. SSH into the droplet and `docker compose up -d`
 
-Required GitHub Environment secrets:
+Required GitHub repository secrets:
 
-- `DO_DROPLET_HOST` — droplet IP or hostname
-- `DO_DROPLET_USER` — SSH username (e.g., `root`)
-- `DO_SSH_PRIVATE_KEY` — SSH private key for authentication
+- `CI_SSH_PRIVATE_KEY` — SSH private key for authentication
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — Supabase connection
 
 ## Architecture
 

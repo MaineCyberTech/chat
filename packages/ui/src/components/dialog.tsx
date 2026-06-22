@@ -80,6 +80,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
       className="fixed inset-0 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="dialog-title"
     >
       <div className="fixed inset-0 bg-[var(--color-dialog-overlay)]" onClick={onClose} />
       <div
@@ -88,7 +89,10 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
       >
         {title && (
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-[var(--color-foreground-primary)]">
+            <h2
+              id="dialog-title"
+              className="text-lg font-semibold text-[var(--color-foreground-primary)]"
+            >
               {title}
             </h2>
             <button

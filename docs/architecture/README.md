@@ -9,23 +9,13 @@
 ## High-Level Architecture
 
 ```
-                    ┌──────────────────┐
-                    │    Traefik LB    │
-                    └───┬──────────┬───┘
-                        │          │
-              ┌─────────▼──┐  ┌───▼─────────┐
-              │  Next.js    │  │  Express     │
-              │  (web)      │  │  (api)       │
-              └─────────────┘  └──────┬───────┘
-                                      │
-                              ┌───────▼───────┐
-                              │   Supabase    │
-                              │  (PostgreSQL) │
-                              └───────────────┘
+Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
+                                        → api:4000 (Express + Socket.io)
+                                              → Supabase (PostgreSQL)
 ```
 
-- **Single droplet** deployment (Debian 12, DigitalOcean)
-- **Traefik** as reverse proxy with automatic Let's Encrypt TLS
+- **Single droplet** deployment (Ubuntu 24.04, DigitalOcean)
+- **Caddy** as reverse proxy with automatic Let's Encrypt TLS
 - **Next.js** serves the frontend, **Express** serves the API
 - **Supabase** provides PostgreSQL, auth, and real-time
 

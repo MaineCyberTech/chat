@@ -48,7 +48,7 @@ export function CreateWorkspaceDialog({ onCreated, children }: Props) {
           role="button"
           tabIndex={0}
           onClick={() => setOpen(true)}
-          onKeyDown={(e) => e.key === "Enter" && setOpen(true)}
+          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setOpen(true)}
         >
           {children}
         </div>

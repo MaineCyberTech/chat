@@ -18,7 +18,7 @@ Same as development, plus:
 ```bash
 cd infra/terraform
 cp terraform.tfvars.example terraform.tfvars
-# Edit: do_token, environment="production", domain="mainecybertech.com", ssh_key_fingerprint
+# Edit: do_token, environment="production", domain="mainecybertech.com", ci_public_key
 
 terraform init
 terraform plan
@@ -34,9 +34,6 @@ cd /opt/chat
 
 cp infra/docker/.env.prod.example infra/docker/.env.prod
 # Edit with production Supabase credentials
-
-touch infra/docker/traefik/acme.json
-chmod 600 infra/docker/traefik/acme.json
 
 docker compose -f infra/docker/docker-compose.prod.yml up -d
 ```

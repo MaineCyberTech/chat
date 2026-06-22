@@ -84,6 +84,11 @@ router.patch("/:id", validateUuidParam("id"), async (req, res) => {
   });
 });
 
+router.get("/:id/members", validateUuidParam("id"), async (req, res) => {
+  const members = await workspaceService.getMembers(req.params.id as string);
+  res.json({ members });
+});
+
 router.delete("/:id", validateUuidParam("id"), async (req, res) => {
   const deleted = await workspaceService.remove(req.params.id as string);
   if (!deleted) {

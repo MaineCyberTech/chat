@@ -17,6 +17,6 @@ pnpm test:e2e:ui   # Run E2E tests with Playwright UI
 
 ## Current Status
 
-- Unit tests: 49 tests across 11 files (API services, middleware, UI components, web components)
+- Unit tests: 54 tests across 12 files (API services, middleware, UI components, auth flow, web components)
 - E2E tests: Playwright scaffold with basic homepage check
 - Integration tests: Placeholder directory for future phases

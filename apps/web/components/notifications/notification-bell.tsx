@@ -50,6 +50,10 @@ export function NotificationBell() {
     if (!open) fetchAll();
   }
 
+  async function handleClose() {
+    setOpen(false);
+  }
+
   async function handleMarkRead(id: string) {
     await api.patch(`/notifications/${id}/read`, {});
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
@@ -60,8 +64,12 @@ export function NotificationBell() {
     <div className="relative">
       <button
         onClick={handleOpen}
-        className="relative rounded p-1.5 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+        onKeyDown={(e) => {
+          if (e.key === "Escape") handleClose();
+        }}
+        className="relative rounded p-1.5 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
+        aria-expanded={open}
       >
         🔔
         {unread > 0 && (
@@ -86,8 +94,16 @@ export function NotificationBell() {
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`border-b border-[var(--color-border-primary)] px-4 py-3 transition-colors hover:bg-[var(--color-background-tertiary)] ${n.read ? "" : "bg-[var(--color-status-info-bg)]"}`}
+                  role="button"
+                  tabIndex={0}
+                  className={`border-b border-[var(--color-border-primary)] px-4 py-3 transition-colors hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none ${n.read ? "" : "bg-[var(--color-status-info-bg)]"}`}
                   onClick={() => !n.read && handleMarkRead(n.id)}
+                  onKeyDown={(e) => {
+                    if ((e.key === "Enter" || e.key === " ") && !n.read) {
+                      e.preventDefault();
+                      handleMarkRead(n.id);
+                    }
+                  }}
                 >
                   <p className="text-sm font-medium text-[var(--color-foreground-primary)]">
                     {n.title}
