@@ -1,0 +1,12 @@
+{
+  "policy_name": "hotfix_gate",
+  "max_p0": 0,
+  "max_p1": 1,
+  "min_readiness": 75.0,
+  "require_decision": "GO WITH RISKS",
+  "special_requirements": [
+    "executive_signoff_required",
+    "rollback_plan_required",
+    "post_release_validation_required"
+  ]
+}

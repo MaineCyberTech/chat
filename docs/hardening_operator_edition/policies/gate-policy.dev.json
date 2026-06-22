@@ -1,0 +1,7 @@
+{
+  "policy_name": "development_gate",
+  "max_p0": 0,
+  "max_p1": 5,
+  "min_readiness": 70.0,
+  "require_decision": "GO WITH RISKS"
+}

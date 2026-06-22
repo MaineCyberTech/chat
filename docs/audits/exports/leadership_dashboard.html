@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Leadership Audit Dashboard</title>
+    <style>
+      body {
+        font-family:
+          Segoe UI,
+          Arial,
+          sans-serif;
+        margin: 24px;
+        color: #111;
+      }
+      h1,
+      h2 {
+        margin-bottom: 8px;
+      }
+      .card {
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 12px 0;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background: #f3f3f3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Leadership Audit Dashboard</h1>
+    <div class="card">
+      <h2>Current Release Posture</h2>
+      <p><strong>Decision:</strong> NO-GO</p>
+      <p><strong>Average Readiness:</strong> 73.50 / 100</p>
+      <p><strong>P0/P1:</strong> 1 / 4</p>
+    </div>
+    <div class="card">
+      <h2>Last 10 Audit Runs</h2>
+      <table>
+        <tr>
+          <th>Run ID</th>
+          <th>Decision</th>
+          <th>P0</th>
+          <th>P1</th>
+          <th>P2</th>
+          <th>P3</th>
+        </tr>
+        <tr>
+          <td>testrun_001</td>
+          <td>NO-GO</td>
+          <td>1</td>
+          <td>4</td>
+          <td>2</td>
+          <td>1</td>
+        </tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Artifacts</h2>
+      <ul>
+        <li>Use <code>powerbi_audit_dataset.csv</code> for Power BI import.</li>
+        <li>Use <code>audit_dataset.json</code> for downstream integrations.</li>
+      </ul>
+    </div>
+  </body>
+</html>

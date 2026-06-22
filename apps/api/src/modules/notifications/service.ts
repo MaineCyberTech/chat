@@ -1,4 +1,5 @@
 import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
+import { pushSubscriptionService } from "./push-subscription-service.js";
 
 interface Notification {
   id: string;
@@ -70,6 +71,22 @@ export class NotificationService {
       body: input.body ?? null,
       link: input.link ?? null,
     });
+
+    // Also send push notification (best-effort, non-blocking)
+    if (!error) {
+      pushSubscriptionService
+        .sendPush(input.user_id, {
+          title: input.title,
+          body: input.body ?? "",
+          data: { link: input.link ?? "/" },
+          tag: `notification-${input.type}`,
+          requireInteraction: true,
+        })
+        .catch((err) => {
+          console.error("Push notification failed:", err);
+        });
+    }
+
     return !error;
   }
 }

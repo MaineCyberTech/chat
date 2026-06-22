@@ -1,0 +1,15 @@
+# Ignore build outputs
+.next
+dist
+build
+*.log
+
+# Ignore public assets (service worker, icons)
+public/
+apps/web/public/
+
+# Ignore scripts
+apps/web/scripts/
+
+# Ignore generated files
+*.generated.ts

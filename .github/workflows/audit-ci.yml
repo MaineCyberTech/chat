@@ -1,0 +1,32 @@
+name: audit-ci
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - development
+      - dev
+      - release/**
+  workflow_dispatch:
+
+jobs:
+  audit-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install --upgrade pip
+          pip install matplotlib
+      - run: |
+          if [ -d docs/audits/runs ]; then
+            python scripts/audits/generate_dashboard.py --repo-root . || true
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audit-dashboard
+          path: docs/audits/dashboard
+          if-no-files-found: warn

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LoginForm } from "../login-form";
 import { AuthContext } from "../auth-context";
@@ -39,9 +39,13 @@ describe("LoginForm", () => {
 
     await user.type(screen.getByLabelText("Email address"), "test@example.com");
     const sendButtons = screen.getAllByRole("button", { name: /send magic link/i });
-    await user.click(sendButtons[0]!);
+    await act(async () => {
+      await user.click(sendButtons[0]!);
+    });
 
-    expect(await screen.findByText(/check your email/i)).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText(/check your email/i)).toBeDefined();
+    });
   });
 
   it("shows error message on failed submission", async () => {
@@ -52,8 +56,12 @@ describe("LoginForm", () => {
 
     await user.type(screen.getByLabelText("Email address"), "bad@example.com");
     const errorButtons = screen.getAllByRole("button", { name: /send magic link/i });
-    await user.click(errorButtons[0]!);
+    await act(async () => {
+      await user.click(errorButtons[0]!);
+    });
 
-    expect(await screen.findByText("Invalid email")).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText("Invalid email")).toBeDefined();
+    });
   });
 });

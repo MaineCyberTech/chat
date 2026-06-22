@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Audit Stage Summary",
+  "type": "object",
+  "required": [
+    "stage",
+    "run_id",
+    "decision",
+    "generated_at",
+    "severity_counts",
+    "category_scores",
+    "findings"
+  ],
+  "properties": {
+    "stage": { "type": "string" },
+    "run_id": { "type": "string" },
+    "decision": { "type": "string" },
+    "generated_at": { "type": "string" },
+    "severity_counts": { "type": "object" },
+    "category_scores": { "type": "object" },
+    "findings": { "type": "array" },
+    "notes": { "type": "string" }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "phases": [
+    "00_preflight",
+    "01_phase1_high_risk",
+    "02_phase2_release_confidence",
+    "03_phase3_resilience",
+    "04_phase4_governance",
+    "05_rc_checkpoint",
+    "06_prod_checkpoint",
+    "07_post_release_validation",
+    "incident_rollback"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "run_id": "testrun_automation_001",
+  "generated_at": "2026-06-22T08:05:00+00:00",
+  "decision": "NO-GO",
+  "severity_totals": {
+    "P0": 1,
+    "P1": 3,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_health_scores": {
+    "platform": 68.0,
+    "frontend": 72.0
+  },
+  "findings": []
+}

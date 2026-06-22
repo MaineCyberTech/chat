@@ -1,0 +1,33 @@
+{
+  "stage": "reconciliation",
+  "run_id": "testrun_001",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-06-22T07:23:08+00:00",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 1,
+    "P3": 0
+  },
+  "category_scores": {
+    "reconciliation": 80
+  },
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "P1",
+      "category": "Category A",
+      "description": "Script drift",
+      "status": "Fixed",
+      "release_impact": "High"
+    },
+    {
+      "id": "F-002",
+      "severity": "P2",
+      "category": "Category O",
+      "description": "Docs drift",
+      "status": "Fixed",
+      "release_impact": "Medium"
+    }
+  ]
+}

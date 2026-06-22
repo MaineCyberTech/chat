@@ -10,6 +10,7 @@ export function AvatarUpload() {
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -17,8 +18,12 @@ export function AvatarUpload() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
+    // Create preview URL
+    const preview = URL.createObjectURL(file);
+    setPreviewUrl(preview);
     setUploadError("");
+
+    setUploading(true);
     try {
       const res = await api.post<{ uploadUrl: string; publicUrl: string }>("/auth/avatar", {
         contentType: file.type,
@@ -32,6 +37,11 @@ export function AvatarUpload() {
       setUploading(false);
       setOpen(false);
       if (fileRef.current) fileRef.current.value = "";
+      // Clean up preview after a delay so user can see it
+      setTimeout(() => {
+        URL.revokeObjectURL(preview);
+        setPreviewUrl(null);
+      }, 2000);
     }
   }
 
@@ -45,7 +55,17 @@ export function AvatarUpload() {
         <Avatar src={avatarUrl} fallback={user?.email ?? "?"} size="sm" />
       </button>
       {open && (
-        <div className="absolute top-full right-0 z-50 mt-1 w-48 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] py-1 shadow-[var(--shadow-xl)]">
+        <div className="absolute top-full right-0 z-50 mt-1 w-56 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] py-1 shadow-[var(--shadow-xl)]">
+          {previewUrl && (
+            <div className="border-b border-[var(--color-border-primary)] px-4 py-2">
+              <p className="mb-1 text-xs text-[var(--color-foreground-tertiary)]">Preview</p>
+              <img
+                src={previewUrl}
+                alt="Avatar preview"
+                className="mx-auto h-16 w-16 rounded-full object-cover"
+              />
+            </div>
+          )}
           <input
             ref={fileRef}
             type="file"

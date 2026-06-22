@@ -1,0 +1,8 @@
+{
+  "policy_name": "release_candidate_gate",
+  "description": "Release candidate policy stricter than development and looser than production.",
+  "max_p0": 0,
+  "max_p1": 2,
+  "min_readiness": 80.0,
+  "require_decision": "GO WITH RISKS"
+}

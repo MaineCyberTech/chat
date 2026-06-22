@@ -1,0 +1,43 @@
+name: audit-release-certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Audit run ID to certify
+        required: true
+        type: string
+
+jobs:
+  release-certification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install matplotlib
+
+      - name: Generate release report
+        run: |
+          python scripts/audits/generate_release_candidate_report.py --repo-root . --run-id "${{ inputs.run_id }}"
+
+      - name: Export stakeholder pack
+        run: |
+          python scripts/audits/export_stakeholder_pack.py --repo-root . --run-id "${{ inputs.run_id }}"
+
+      - name: Upload release certification artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-certification-${{ inputs.run_id }}
+          path: |
+            docs/audits/runs/${{ inputs.run_id }}/release_candidate_report.md
+            docs/audits/runs/${{ inputs.run_id }}/stakeholder_export/**
+          if-no-files-found: error

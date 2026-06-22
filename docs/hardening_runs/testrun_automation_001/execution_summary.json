@@ -1,0 +1,12 @@
+{
+  "run_id": "testrun_automation_001",
+  "decision": "NO-GO",
+  "severity_snapshot": {
+    "P0": 1,
+    "P1": 3,
+    "P2": 2,
+    "P3": 1
+  },
+  "readiness": 70.0,
+  "executed_at": "2026-06-22T14:33:29+00:00"
+}

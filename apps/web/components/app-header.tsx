@@ -7,10 +7,12 @@ import { useAuth } from "@/components/auth/auth-context";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { AvatarUpload } from "@/components/auth/avatar-upload";
 import { Button, ThemeToggle } from "@chat/ui";
+import { usePWA } from "@/components/pwa/pwa-provider";
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const { showInstallPrompt, showNotificationPrompt } = usePWA();
 
   async function handleSignOut() {
     await signOut();
@@ -29,6 +31,17 @@ export function AppHeader() {
         <NotificationBell />
         <AvatarUpload />
         <span className="text-xs text-[var(--color-foreground-tertiary)]">{user.email}</span>
+        <Button variant="ghost" size="sm" onClick={showInstallPrompt} aria-label="Install app">
+          📱
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={showNotificationPrompt}
+          aria-label="Notification settings"
+        >
+          🔔
+        </Button>
         <Button variant="ghost" size="sm" onClick={handleSignOut}>
           Logout
         </Button>

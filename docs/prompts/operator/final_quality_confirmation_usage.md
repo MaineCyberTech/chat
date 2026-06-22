@@ -19,9 +19,9 @@ This prompt requires the AI to produce:
 - a summary table of findings
 - category checklists
 - a release / quality decision
-- a clearer go/no-go style conclusion
+- a clearer GO / GO WITH RISKS / NO-GO conclusion
 
 ## Operator recommendation
 
-Treat unresolved `P0` findings as blocking.  
-Treat significant unresolved `P1` findings as serious risk requiring a conscious acceptance decision.
+Treat unresolved `P0` findings as blocking.
+Treat significant unresolved `P1` findings as serious risk requiring an explicit acceptance decision.

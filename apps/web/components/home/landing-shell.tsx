@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Button } from "@chat/ui";
 
 interface Props {
@@ -26,6 +27,9 @@ export function LandingShell({ onGetStarted, onLearnMore }: Props) {
         <Button variant="secondary" onClick={onLearnMore}>
           Learn More
         </Button>
+        <Link href="/install">
+          <Button variant="ghost">Install App</Button>
+        </Link>
       </div>
     </main>
   );

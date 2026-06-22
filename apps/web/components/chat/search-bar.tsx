@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { Skeleton } from "@chat/ui";
 
 const SEARCH_DEBOUNCE_MS = 300;
+const CHANNELS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 interface SearchResult {
   id: string;
@@ -16,9 +17,27 @@ interface SearchResult {
   rank: number;
 }
 
+interface ChannelInfo {
+  id: string;
+  slug: string;
+}
+
 interface Props {
   workspaceId: string;
   workspaceSlug: string;
+}
+
+// Module-level cache for channels (persists across component instances)
+let channelsCache: { data: ChannelInfo[]; timestamp: number } | null = null;
+
+async function getChannelsWithCache(workspaceId: string): Promise<ChannelInfo[]> {
+  const now = Date.now();
+  if (channelsCache && now - channelsCache.timestamp < CHANNELS_CACHE_TTL) {
+    return channelsCache.data;
+  }
+  const res = await api.get<{ channels: ChannelInfo[] }>(`/workspaces/${workspaceId}/channels`);
+  channelsCache = { data: res.channels, timestamp: now };
+  return res.channels;
 }
 
 export function SearchBar({ workspaceId, workspaceSlug }: Props) {
@@ -53,10 +72,8 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         const res = await api.get<{ messages: SearchResult[] }>(
           `/messages/search?q=${encodeURIComponent(q)}&workspace_id=${workspaceId}`,
         );
-        const channels = await api.get<{ channels: { id: string; slug: string }[] }>(
-          `/workspaces/${workspaceId}/channels`,
-        );
-        const slugMap = new Map(channels.channels.map((c) => [c.id, c.slug]));
+        const channels = await getChannelsWithCache(workspaceId);
+        const slugMap = new Map(channels.map((c) => [c.id, c.slug]));
         setResults(res.messages.map((m) => ({ ...m, channel_slug: slugMap.get(m.channel_id) })));
         setSelectedIndex(-1);
         setOpen(true);

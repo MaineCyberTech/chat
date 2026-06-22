@@ -1,0 +1,8 @@
+{
+  "policy_name": "production_gate",
+  "max_p0": 0,
+  "max_p1": 0,
+  "min_readiness": 85.0,
+  "require_decision": "GO",
+  "allowed_source_branches": ["main", "master", "release", "release/*"]
+}

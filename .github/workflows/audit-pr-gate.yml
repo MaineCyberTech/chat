@@ -1,0 +1,24 @@
+name: audit-pr-gate
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Evaluate audit gate policy
+        run: |
+          python scripts/audits/evaluate_gate.py --repo-root . --policy-file docs/hardening_super_bundle/policies/gate-policy.dev.json
+      - name: Upload gate result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-gate-result
+          path: docs/hardening_super_bundle/examples/results/generated_gate_result.md
+          if-no-files-found: warn

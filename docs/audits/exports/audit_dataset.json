@@ -1,0 +1,88 @@
+{
+  "runs": [
+    {
+      "run_id": "testrun_001",
+      "generated_at": "2026-06-22T07:23:09+00:00",
+      "decision": "NO-GO",
+      "severity_totals": {
+        "P0": 1,
+        "P1": 4,
+        "P2": 2,
+        "P3": 1
+      },
+      "category_health_scores": {
+        "reconciliation": 80.0,
+        "principal_audit": 84.0,
+        "quality_confirmation": 50.0,
+        "frontend_release_gate": 80.0
+      },
+      "finding_count": 8,
+      "findings": [
+        {
+          "id": "F-001",
+          "severity": "P1",
+          "category": "Category A",
+          "description": "Script drift",
+          "status": "Fixed",
+          "release_impact": "High"
+        },
+        {
+          "id": "F-002",
+          "severity": "P2",
+          "category": "Category O",
+          "description": "Docs drift",
+          "status": "Fixed",
+          "release_impact": "Medium"
+        },
+        {
+          "id": "F-003",
+          "severity": "P1",
+          "category": "Category C",
+          "description": "Contract mismatch",
+          "status": "Partially Fixed",
+          "release_impact": "High"
+        },
+        {
+          "id": "F-004",
+          "severity": "P3",
+          "category": "Category P",
+          "description": "Cleanup item",
+          "status": "Accepted Risk",
+          "release_impact": "Low"
+        },
+        {
+          "id": "F-005",
+          "severity": "P0",
+          "category": "Category J",
+          "description": "Mobile responsive failure",
+          "status": "Unresolved",
+          "release_impact": "Blocking"
+        },
+        {
+          "id": "F-006",
+          "severity": "P1",
+          "category": "Category H",
+          "description": "Visual inconsistency",
+          "status": "Partially Fixed",
+          "release_impact": "High"
+        },
+        {
+          "id": "F-007",
+          "severity": "P1",
+          "category": "F5 Accessibility",
+          "description": "Missing focus states",
+          "status": "Partially Fixed",
+          "release_impact": "High"
+        },
+        {
+          "id": "F-008",
+          "severity": "P2",
+          "category": "F9 Visual Consistency",
+          "description": "Minor spacing drift",
+          "status": "Fixed",
+          "release_impact": "Medium"
+        }
+      ]
+    }
+  ]
+}

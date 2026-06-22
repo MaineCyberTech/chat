@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="bubble" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f3460"/>
+      <stop offset="100%" style="stop-color:#533483"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e94560"/>
+      <stop offset="100%" style="stop-color:#ff6b6b"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded square -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#bg)"/>
+  <!-- Chat bubble 1 -->
+  <path d="M140 180 Q140 140 180 140 L332 140 Q372 140 372 180 L372 280 Q372 320 332 320 L180 320 Q140 320 140 280 L140 180 Z" fill="url(#bubble)" opacity="0.9"/>
+  <!-- Chat bubble 2 -->
+  <path d="M200 220 Q200 190 230 190 L300 190 Q330 190 330 220 L330 260 Q330 290 300 290 L230 290 Q200 290 200 260 L200 220 Z" fill="url(#accent)" opacity="0.9"/>
+  <!-- Three dots indicator -->
+  <circle cx="230" cy="240" r="12" fill="#ffffff" opacity="0.7"/>
+  <circle cx="270" cy="240" r="12" fill="#ffffff" opacity="0.7"/>
+  <circle cx="310" cy="240" r="12" fill="#ffffff" opacity="0.7"/>
+</svg>

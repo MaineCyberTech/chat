@@ -1,0 +1,31 @@
+name: environment-promotion-audit
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: Target environment
+        required: true
+        type: choice
+        options: [development, production]
+      source_branch:
+        description: Source branch name
+        required: true
+        type: string
+jobs:
+  promotion-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Evaluate promotion policy
+        run: |
+          python scripts/audits/evaluate_promotion_gate.py --repo-root . --source-branch "${{ inputs.source_branch }}" --target-environment "${{ inputs.target_environment }}" --policy-file docs/hardening_super_bundle/policies/gate-policy.prod.json
+      - name: Upload promotion gate result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: promotion-gate-result-${{ inputs.target_environment }}
+          path: docs/hardening_super_bundle/examples/results/generated_promotion_gate_result.md
+          if-no-files-found: warn

@@ -1,0 +1,49 @@
+{
+  "stage": "principal_audit",
+  "run_id": "testrun_001",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-06-22T07:05:20+00:00",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 0,
+    "P3": 1
+  },
+  "category_scores": {
+    "A Monorepo Workspace Package Governance": 84,
+    "B TypeScript Build Import Integrity": 84,
+    "C Frontend Backend Database Contract Alignment": 84,
+    "D Authentication Authorization Security Surface": 84,
+    "E Environment Domain Consistency": 84,
+    "F API Realtime Socket Correctness": 84,
+    "G Frontend Routing UX State Provider Integrity": 84,
+    "H UXUI Design Quality": 84,
+    "I Accessibility Readiness": 84,
+    "J Responsive Readiness": 84,
+    "K Quality Tooling Test Validation Infrastructure": 84,
+    "L CICD GitHub Environments Release Automation": 84,
+    "M Docker Traefik Runtime Orchestration": 84,
+    "N Terraform Cloud-Init Host Provisioning": 84,
+    "O Documentation Runbooks Contributor Guidance": 84,
+    "P Dead Files Duplicate Systems Stale Artifacts": 84
+  },
+  "findings": [
+    {
+      "id": "F-003",
+      "severity": "P1",
+      "category": "Category C",
+      "description": "Contract mismatch",
+      "status": "Partially Fixed",
+      "release_impact": "High"
+    },
+    {
+      "id": "F-004",
+      "severity": "P3",
+      "category": "Category P",
+      "description": "Cleanup item",
+      "status": "Accepted Risk",
+      "release_impact": "Low"
+    }
+  ],
+  "notes": "Parsed from markdown report."
+}

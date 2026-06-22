@@ -1,0 +1,106 @@
+{
+  "run_id": "testrun_001",
+  "generated_at": "2026-06-22T07:05:20+00:00",
+  "decision": "NO-GO",
+  "severity_totals": {
+    "P0": 1,
+    "P1": 4,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_health_scores": {
+    "A Monorepo Workspace Package Governance": 71.33,
+    "B TypeScript Build Import Integrity": 71.33,
+    "C Frontend Backend Database Contract Alignment": 71.33,
+    "D Authentication Authorization Security Surface": 71.33,
+    "E Environment Domain Consistency": 71.33,
+    "F API Realtime Socket Correctness": 71.33,
+    "G Frontend Routing UX State Provider Integrity": 71.33,
+    "H UXUI Design Quality": 71.33,
+    "I Accessibility Readiness": 71.33,
+    "J Responsive Readiness": 71.33,
+    "K Quality Tooling Test Validation Infrastructure": 71.33,
+    "L CICD GitHub Environments Release Automation": 71.33,
+    "M Docker Traefik Runtime Orchestration": 71.33,
+    "N Terraform Cloud-Init Host Provisioning": 71.33,
+    "O Documentation Runbooks Contributor Guidance": 71.33,
+    "P Dead Files Duplicate Systems Stale Artifacts": 71.33,
+    "F1 Design System Integrity": 80.0,
+    "F2 Layout and Navigation": 80.0,
+    "F3 Chat UX": 80.0,
+    "F4 State Management and Data Flow": 80.0,
+    "F5 Accessibility": 80.0,
+    "F6 Responsive Design": 80.0,
+    "F7 Performance": 80.0,
+    "F8 Interaction Quality": 80.0,
+    "F9 Visual Consistency": 80.0,
+    "F10 Component Architecture": 80.0
+  },
+  "finding_count": 8,
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "P1",
+      "category": "Category A",
+      "description": "Script drift",
+      "status": "Fixed",
+      "release_impact": "High"
+    },
+    {
+      "id": "F-002",
+      "severity": "P2",
+      "category": "Category O",
+      "description": "Docs drift",
+      "status": "Fixed",
+      "release_impact": "Medium"
+    },
+    {
+      "id": "F-003",
+      "severity": "P1",
+      "category": "Category C",
+      "description": "Contract mismatch",
+      "status": "Partially Fixed",
+      "release_impact": "High"
+    },
+    {
+      "id": "F-004",
+      "severity": "P3",
+      "category": "Category P",
+      "description": "Cleanup item",
+      "status": "Accepted Risk",
+      "release_impact": "Low"
+    },
+    {
+      "id": "F-005",
+      "severity": "P0",
+      "category": "Category J",
+      "description": "Mobile responsive failure",
+      "status": "Unresolved",
+      "release_impact": "Blocking"
+    },
+    {
+      "id": "F-006",
+      "severity": "P1",
+      "category": "Category H",
+      "description": "Visual inconsistency",
+      "status": "Partially Fixed",
+      "release_impact": "High"
+    },
+    {
+      "id": "F-007",
+      "severity": "P1",
+      "category": "F5 Accessibility",
+      "description": "Missing focus states",
+      "status": "Partially Fixed",
+      "release_impact": "High"
+    },
+    {
+      "id": "F-008",
+      "severity": "P2",
+      "category": "F9 Visual Consistency",
+      "description": "Minor spacing drift",
+      "status": "Fixed",
+      "release_impact": "Medium"
+    }
+  ]
+}

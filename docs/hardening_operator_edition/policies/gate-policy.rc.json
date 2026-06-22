@@ -1,0 +1,7 @@
+{
+  "policy_name": "release_candidate_gate",
+  "max_p0": 0,
+  "max_p1": 2,
+  "min_readiness": 80.0,
+  "require_decision": "GO WITH RISKS"
+}

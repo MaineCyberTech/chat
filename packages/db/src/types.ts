@@ -62,6 +62,24 @@ export interface Message {
 
 export type ThemePreference = "system" | "light" | "dark";
 
+export interface PushSubscription {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PushSubscriptionInput {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent?: string;
+}
+
 export interface UserPreferences {
   user_id: string;
   theme: ThemePreference;
