@@ -38,8 +38,8 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - File uploads (Supabase Storage signed URLs)
 - Full-text search (PostgreSQL tsvector)
 - Rate limiting + Zod validation on all API routes
-- 7 UI components (Avatar, Badge, Button, Dialog, Input, SidebarGroup, Skeleton)
-- 6 SQL migrations, 5 RLS policy sets, 2 functions
+- 8 UI components (Avatar, Badge, Button, Dialog, Input, SidebarGroup, Skeleton, ThemeToggle)
+- 7 SQL migrations, 5 RLS policy sets, 1 function
 - 54 unit tests across 12 files
 - Caddy reverse proxy with auto-TLS
 - Docker multi-stage builds (node:22-alpine)

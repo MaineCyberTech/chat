@@ -7,6 +7,7 @@ vi.mock("../../lib/supabase.js", () => ({
   getSupabase: vi.fn(() => ({
     auth: {
       getUser: vi.fn(),
+      setSession: vi.fn(),
     },
   })),
 }));
@@ -69,7 +70,7 @@ describe("authenticate middleware", () => {
       error: null,
     });
     (getSupabase as AnyObj).mockReturnValue({
-      auth: { getUser: mockGetUser },
+      auth: { getUser: mockGetUser, setSession: vi.fn() },
     });
 
     const req = mockReq({ authorization: "Bearer valid-token" });
@@ -88,6 +89,7 @@ describe("authenticate middleware", () => {
     (getSupabase as AnyObj).mockReturnValue({
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: new Error("invalid") }),
+        setSession: vi.fn(),
       },
     });
 

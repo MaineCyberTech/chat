@@ -62,8 +62,9 @@ Open `http://localhost:54323` → SQL Editor → run files in order:
 11. `packages/db/sql/migrations/006_user_preferences.sql`
 12. `packages/db/sql/migrations/007_reactions.sql`
 13. `packages/db/sql/policies/storage_rls.sql`
-14. `packages/db/sql/functions/notify_reply.sql`
-15. `packages/db/sql/functions/webhook_delivery.sql`
+14. `supabase/migrations/webhooks.sql`
+15. `supabase/migrations/notifications.sql`
+16. `supabase/migrations/audit_logs.sql`
 
 ## Teardown
 

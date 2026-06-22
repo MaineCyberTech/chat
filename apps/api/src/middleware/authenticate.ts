@@ -30,6 +30,9 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       return;
     }
 
+    // Set auth context so subsequent RLS queries see auth.uid()
+    await supabase.auth.setSession({ access_token: token, refresh_token: "" });
+
     req.userId = data.user.id;
     req.userEmail = data.user.email;
     next();
