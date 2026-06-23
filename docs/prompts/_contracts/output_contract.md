@@ -1,0 +1,1 @@
+Output contract prompt

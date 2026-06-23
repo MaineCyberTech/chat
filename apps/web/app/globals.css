@@ -9,6 +9,7 @@
     sans-serif;
   --font-mono:
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --breakpoint-lg: 1024px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -36,7 +37,7 @@ body {
 }
 
 @media (max-width: 767px) {
-  body:has(#sidebar.mobile-open) {
+  body.sidebar-mobile-open {
     overflow: hidden;
   }
 }

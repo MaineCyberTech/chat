@@ -85,6 +85,12 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [mobileOpen, sidebarRef]);
 
+  // Toggle body scroll lock class for mobile sidebar
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    document.body.classList.toggle("sidebar-mobile-open", mobileOpen);
+  }, [mobileOpen]);
+
   return (
     <>
       {/* Mobile overlay */}

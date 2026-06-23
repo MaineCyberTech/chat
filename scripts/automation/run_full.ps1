@@ -1,5 +1,5 @@
-pwsh ./scripts/engine/diff.ps1
-pwsh ./scripts/engine/validate_exceptions.ps1
-pwsh ./scripts/engine/enforce.ps1
+pwsh ./scripts/engine/full_engine.ps1
+pwsh ./scripts/ai/auto_fix.ps1
+pwsh ./scripts/bot/pr_comment.ps1
 pwsh ./scripts/dashboard/generate.ps1
-pwsh ./scripts/ai/suggest_fixes.ps1
+pwsh ./scripts/compliance/export.ps1

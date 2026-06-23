@@ -35,7 +35,7 @@ services:
       - chat-dev
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
 
   api:
     image: ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:dev}

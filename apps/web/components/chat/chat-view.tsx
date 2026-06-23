@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { getSocket, onReconnect, offReconnect } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
@@ -64,11 +64,13 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
   const [profiles, setProfiles] = useState<Map<string, UserProfile>>(new Map());
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const replyCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -98,13 +100,19 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   }, []);
 
   useEffect(() => {
+    setError(null);
+    setLoading(true);
     api
       .get<{ messages: Message[] }>(`/channels/${channelId}/messages`)
       .then((res) => {
         setMessages(res.messages);
         loadProfiles(res.messages);
       })
-      .catch(() => setMessages([]))
+      .catch((err) => {
+        setError("Failed to load messages. Please try again.");
+        console.error("Failed to load messages:", err);
+        setMessages([]);
+      })
       .finally(() => setLoading(false));
   }, [channelId, loadProfiles]);
 
@@ -225,16 +233,36 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   );
 
   const handleTypingStart = useCallback(() => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
     getSocket()
       .then((s) => s.emit("typing:start", channelId))
       .catch((err) => console.error("Failed to emit typing:start:", err));
+
+    typingTimeoutRef.current = setTimeout(() => {
+      handleTypingStop();
+    }, 3000); // Auto-stop after 3 seconds of inactivity
   }, [channelId]);
 
   const handleTypingStop = useCallback(() => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
     getSocket()
       .then((s) => s.emit("typing:stop", channelId))
       .catch((err) => console.error("Failed to emit typing:stop:", err));
   }, [channelId]);
+
+  // Cleanup typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -247,6 +275,56 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           <Skeleton className="h-16 w-2/3" />
           <Skeleton className="h-16 w-4/5" />
           <Skeleton className="ml-auto h-12 w-1/2" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="border-b border-[var(--color-border-primary)] px-4 py-3 md:px-6">
+          <h1 className="min-w-0 truncate text-base font-semibold md:text-lg"># {channelName}</h1>
+        </div>
+        <div className="flex flex-1 items-center justify-center p-4">
+          <div className="max-w-md space-y-3 text-center">
+            <div className="inline-flex rounded-full bg-[var(--color-status-danger-bg)] p-3">
+              <svg
+                className="h-8 w-8 text-[var(--color-status-danger-fg)]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <h2 className="text-lg font-medium text-[var(--color-foreground-primary)]">
+              Failed to load messages
+            </h2>
+            <p className="text-[var(--color-foreground-secondary)]">{error}</p>
+            <button
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+              }}
+              className="inline-flex items-center gap-2 rounded bg-[var(--color-brand-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:outline-none"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Try again
+            </button>
+          </div>
         </div>
       </div>
     );

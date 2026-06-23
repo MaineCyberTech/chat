@@ -1,0 +1,6 @@
+{
+  "block_on": ["P0", "P1"],
+  "auto_fix": true,
+  "pr_comments": true,
+  "compliance_export": true
+}

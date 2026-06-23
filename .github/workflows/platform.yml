@@ -1,0 +1,8 @@
+name: v6 Platform
+on: [push, pull_request]
+jobs:
+  platform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pwsh ./scripts/automation/run_full.ps1

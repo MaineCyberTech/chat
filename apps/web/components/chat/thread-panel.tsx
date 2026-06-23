@@ -11,6 +11,7 @@ interface Props {
   profiles: Map<string, UserProfile>;
   onClose: () => void;
   onSendReply: (content: string) => Promise<void>;
+  isLoading?: boolean;
 }
 
 function authorName(userId: string, profiles: Map<string, UserProfile>): string {
@@ -36,6 +37,7 @@ export function ThreadPanel({
   profiles,
   onClose,
   onSendReply,
+  isLoading = false,
 }: Props) {
   const [replyContent, setReplyContent] = useState("");
   const [sending, setSending] = useState(false);
@@ -111,47 +113,63 @@ export function ThreadPanel({
         <div className="mb-3 border-t border-[var(--color-border-primary)]" />
 
         {/* Replies */}
-        {replies.length === 0 && (
+        {isLoading ? (
+          <div className="space-y-3" aria-busy="true" aria-live="polite">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex gap-2">
+                <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--color-skeleton-bg)]" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-24 animate-pulse rounded bg-[var(--color-skeleton-bg)]" />
+                  <div className="h-4 w-full animate-pulse rounded bg-[var(--color-skeleton-bg)]" />
+                  <div className="h-4 w-3/4 animate-pulse rounded bg-[var(--color-skeleton-bg)]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : replies.length === 0 ? (
           <p className="text-center text-xs text-[var(--color-foreground-tertiary)]">
             No replies yet
           </p>
+        ) : (
+          <div className="space-y-3">
+            {replies.map((reply) => {
+              const isOwn = reply.user_id === currentUserId;
+              const name = authorName(reply.user_id, profiles);
+              return (
+                <div key={reply.id} className="flex gap-2">
+                  <Avatar
+                    src={avatarUrl(reply.user_id, profiles)}
+                    fallback={name.charAt(0).toUpperCase()}
+                    size="sm"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-[var(--color-foreground-primary)]">
+                      {name}
+                      <span className="ml-2 text-[var(--color-foreground-tertiary)]">
+                        {formatTime(reply.created_at)}
+                      </span>
+                    </p>
+                    <p
+                      className={`mt-0.5 text-sm break-words whitespace-pre-wrap ${
+                        isOwn
+                          ? "text-[var(--color-brand-primary)]"
+                          : "text-[var(--color-foreground-primary)]"
+                      }`}
+                    >
+                      {reply.content}
+                    </p>
+                    {reply.edited_at && (
+                      <p className="mt-0.5 text-xs text-[var(--color-foreground-tertiary)]">
+                        edited
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
 
-        <div className="space-y-3">
-          {replies.map((reply) => {
-            const isOwn = reply.user_id === currentUserId;
-            const name = authorName(reply.user_id, profiles);
-            return (
-              <div key={reply.id} className="flex gap-2">
-                <Avatar
-                  src={avatarUrl(reply.user_id, profiles)}
-                  fallback={name.charAt(0).toUpperCase()}
-                  size="sm"
-                />
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--color-foreground-primary)]">
-                    {name}
-                    <span className="ml-2 text-[var(--color-foreground-tertiary)]">
-                      {formatTime(reply.created_at)}
-                    </span>
-                  </p>
-                  <p
-                    className={`mt-0.5 text-sm break-words whitespace-pre-wrap ${
-                      isOwn
-                        ? "text-[var(--color-brand-primary)]"
-                        : "text-[var(--color-foreground-primary)]"
-                    }`}
-                  >
-                    {reply.content}
-                  </p>
-                  {reply.edited_at && (
-                    <p className="mt-0.5 text-xs text-[var(--color-foreground-tertiary)]">edited</p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
         <div ref={bottomRef} />
       </div>
 

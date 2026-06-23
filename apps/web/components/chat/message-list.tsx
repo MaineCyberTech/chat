@@ -374,7 +374,7 @@ export function MessageList({
                         <button
                           key={emoji}
                           onClick={() => toggleReaction(msg.id, emoji)}
-                          className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none ${
+                          className={`inline-flex min-h-[44px] min-w-[44px] items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none ${
                             hasMine
                               ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary-light)]"
                               : "border-[var(--color-border-primary)] hover:bg-[var(--color-background-tertiary)]"
@@ -398,7 +398,7 @@ export function MessageList({
                               toggleReaction(msg.id, emoji);
                               setPickerMessageId(null);
                             }}
-                            className="rounded p-1 text-lg leading-none transition-colors hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+                            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded p-1 text-lg leading-none transition-colors hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
                             aria-label={`React with ${emoji}`}
                           >
                             {emoji}

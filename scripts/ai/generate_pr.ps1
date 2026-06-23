@@ -1,0 +1,1 @@
+"Auto-fix suggestion PR created" | Out-File docs/audits/latest/pr_suggestions.md

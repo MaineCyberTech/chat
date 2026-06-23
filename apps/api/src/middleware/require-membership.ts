@@ -40,7 +40,7 @@ export function requireChannelAccess(paramName = "channelId") {
     const supabase = getSupabase();
     const { data: channel, error: channelError } = await supabase
       .from("channels")
-      .select("workspace_id")
+      .select("workspace_id, is_private")
       .eq("id", channelId)
       .single();
 

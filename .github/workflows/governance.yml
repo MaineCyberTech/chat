@@ -1,0 +1,9 @@
+name: Governance v5
+on: [push, pull_request]
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Governance Engine
+        run: pwsh ./scripts/automation/run_full.ps1

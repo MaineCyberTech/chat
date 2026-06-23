@@ -1,0 +1,1 @@
+"Auto-fix applied (placeholder)" | Out-File docs/audits/latest/auto_fix.log

@@ -82,7 +82,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Coverage thresholds (lines 40%, functions 30%, branches 30%)
 - Auth flow tests (login form render, success, error states)
 - Storage bucket RLS scoped by user_id
-- Terraform remote state config (commented out, DO Spaces docs)
+- Terraform remote state config (DO Spaces backend configured)
 - CONTRIBUTING.md with dev workflow and PR guidelines
 - Avatar upload UI (dropdown upload from app header, signed URL flow)
 - Production deploy workflow tested (node version 22, SSH secrets, REPO_LC env)
@@ -97,6 +97,12 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - User preferences DB migration (`006_user_preferences.sql`) with RLS policies
 - `GET /auth/preferences` and `PATCH /auth/preferences` API endpoints with Zod validation
 - User preferences TypeScript types (`UserPreferences`, `ThemePreference`)
+- Cross-tenant search leak fixed (SECURITY DEFINER → SECURITY INVOKER + auth.uid() check)
+- Route-level membership middleware (requireWorkspaceMembership, requireChannelAccess)
+- Workspace/channel member management endpoints (add, remove, update role)
+- Idempotency key support for message creation
+- Terraform firewall rules restricted to Cloudflare IP ranges
+- Incident response & database migration runbooks
 
 ### Audits Completed (June 22, 2026)
 
@@ -121,7 +127,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - workspace_members missing UPDATE/DELETE RLS — Added policies
 - Webhook delivery pipeline non-functional — Implemented CRUD routes + auto-trigger
 - Prod compose loads dev Caddyfile — Fixed to use Caddyfile.prod
-- No Terraform remote state — Added config (commented out)
+- No Terraform remote state — Added config (DO Spaces backend)
 - No E2E tests in CI — Added E2E job with mock Supabase
 - infra/docker/README.md referenced Traefik — Replaced with Caddy docs (resolved)
 - 512MB droplet OOM — Upgraded to s-2vcpu-2gb
@@ -132,19 +138,60 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - AGENTS.md/config drift swept — 25 files fixed (Traefik→Caddy, Debian→Ubuntu, droplet size, dead variables)
 - P0 auth context bug — `authenticate.ts` now calls `supabase.auth.setSession()` after `getUser()` so RLS policies see `auth.uid()`
 - Frontend UX release gate all findings resolved — `error.tsx`/`not-found.tsx` pages created, avatar-upload focus ring added, silent catch blocks logged (6 files), message-input sending state prevents double-submit, avatar-upload error feedback displayed
+- Cross-tenant search leak — Fixed SECURITY DEFINER → SECURITY INVOKER with workspace membership check
+- Route-level membership middleware — Added requireWorkspaceMembership/requireChannelAccess
+- Workspace/channel member management — Full CRUD endpoints for members
+- Idempotency key support — Added for message creation
+- Terraform firewall rules — Restricted SSH/HTTP/HTTPS to Cloudflare IP ranges
+- Setup-dev.sh macOS bug — Fixed sed detection with uname
+- Setup-dev.sh re-run fix — Keys now update on every run
+- Husky pre-commit hook — Added with lint-staged
+- CONTRIBUTING.md / CHANGELOG.md — Created at root
+- Incident response & DB migration runbooks — Created in docs/runbooks/
 
 ### Remaining Work
 
 **Frontend Release Gate Findings** (from `docs/audits/frontend_ux_release_gate_audit_summary.md`):
 
-| Priority | Count        | Key Items                                                                                                                                                                                                                                                                                                                                                                     |
-| -------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **P0**   | 0 (2 fixed)  | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED**                                                                                                                                                                                                                                                                                         |
-| **P1**   | 3 (10 fixed) | ~styles.css not imported~, ~4 inputs missing aria-label~, ~Dialog missing aria-labelledby~, ~NotificationBell not keyboard-accessible~, ~no empty/send-error states~, **no preferences UI**, ~missing focus-visible on ~18 elements~, ~CreateWorkspaceDialog Space key~, **search/channel search fetches on mount without workspace context**, **no error.tsx/not-found.tsx** |
-| **P2**   | 19 (8 fixed) | ~No debounce on search~, ~body scroll lock broken~, ~no slide animations~, no tablet breakpoint, low contrast on tertiary text, ~small touch targets~, duplicate CSS config, ~shadow token inconsistency~, missing loading states in thread panel, **no error boundary for message fetch failure**                                                                            |
-| **P3**   | 12           | Dead code, raw values, no `not-found.tsx`/`error.tsx`, no settings UI, no avatar preview                                                                                                                                                                                                                                                                                      |
+| Priority | Count        | Key Items                                                                                                                                                                                                                                                                                               |
+| -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0**   | 0 (2 fixed)  | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED**                                                                                                                                                                                                                   |
+| **P1**   | 0 (13 fixed) | All P1 items resolved                                                                                                                                                                                                                                                                                   |
+| **P2**   | 19 (8 fixed) | No tablet breakpoint, low contrast on tertiary text, small touch targets, duplicate CSS config, missing loading states in thread panel, no error boundary for message fetch failure, body scroll lock broken, no slide animations, no debounce on typing indicator, audit logging retry/queue mechanism |
+| **P3**   | 12           | Dead code, raw values, no `not-found.tsx`/`error.tsx`, no settings UI, no avatar preview                                                                                                                                                                                                                |
 
 All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
+
+**Database/Schema Improvements** (from `docs/audits/database_schema_data_lifecycle_audit_summary.md`):
+
+- Add indexes: `workspace_members.user_id`, `channel_members.user_id`, `messages.parent_id`
+- Fix `audit_logs.organization_id` FK or CHECK constraint
+- Add `WorkspaceMember.role` to TypeScript types
+- Unify migration directory structure
+- Add soft-delete for workspaces/channels/messages
+- Add data retention/archival policy
+- Add audit log pruning strategy
+- Parameterized cursor for message pagination
+
+**Infra/Deployment** (from `docs/audits/infra_deployment_resilience_audit_summary.md`):
+
+- Implement rollback strategy (preserve compose, use SHA tags)
+- Add health endpoint routing to Caddyfile.prod
+- Add `depends_on: condition: service_healthy` to compose files
+- Add DO monitoring alerts (CPU > 80%, memory > 80%)
+- Add fallback `docker pull` in dev deploy
+
+**Testing/QA** (from `docs/audits/testing_qa_cicd_audit_summary.md`):
+
+- Add auth flow E2E tests (magic link → callback → workspace redirect)
+- Add messaging E2E flow (WebSocket connect → send → receive → edit → delete)
+- Add file upload E2E flow
+- Test remaining API route files (auth, workspaces, channels, messages)
+- Test remaining middleware (error-handler, rate-limit, security-headers, request-id)
+- Add pre-commit hook with eslint + typecheck (currently prettier only)
+- Add diff coverage checking
+- Test remaining UI components (dialog, sidebar-group, skeleton)
+- Increase coverage thresholds after Phase 2
 
 ## GitHub Actions Workflows
 
