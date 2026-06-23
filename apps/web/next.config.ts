@@ -6,7 +6,6 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   reactStrictMode: true,
   transpilePackages: ["@chat/ui"],
 };
