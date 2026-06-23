@@ -8,7 +8,6 @@ declare global {
     interface Request {
       userId?: string;
       userEmail?: string;
-      requestId?: string;
     }
   }
 }
