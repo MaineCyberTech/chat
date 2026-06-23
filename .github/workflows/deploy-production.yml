@@ -111,6 +111,7 @@ jobs:
           TF_VAR_domain: ${{ env.DOMAIN }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
+          TF_VAR_ssh_allowed_ips: ${{ secrets.SSH_ALLOWED_IPS }}
         run: |
           terraform apply -auto-approve -input=false
           echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
@@ -188,7 +189,7 @@ jobs:
             cd ${{ env.REPO_DIR }}
             git fetch origin main
             git checkout main
-            git pull origin main
+            git reset --hard origin/main
             cat > infra/docker/.env.prod << 'EOF'
             SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}

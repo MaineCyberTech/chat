@@ -1,6 +1,10 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
+import {
+  requireWorkspaceMembership,
+  requireChannelAccess,
+} from "../../middleware/require-membership.js";
 import { messageService } from "./service.js";
 import { getSupabase } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
@@ -14,6 +18,25 @@ import {
 
 const router: RouterType = Router();
 router.use(authenticate);
+
+// In-memory store for idempotency keys (use Redis in production)
+const idempotencyStore = new Map<string, { messageId: string; expiresAt: number }>();
+const IDEMPOTENCY_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+function checkIdempotencyKey(key: string): string | null {
+  const entry = idempotencyStore.get(key);
+  if (entry && entry.expiresAt > Date.now()) {
+    return entry.messageId;
+  }
+  if (entry) {
+    idempotencyStore.delete(key);
+  }
+  return null;
+}
+
+function storeIdempotencyKey(key: string, messageId: string): void {
+  idempotencyStore.set(key, { messageId, expiresAt: Date.now() + IDEMPOTENCY_TTL });
+}
 
 router.get("/messages/search", async (req, res) => {
   const parsed = searchQuerySchema.safeParse(req.query);
@@ -39,46 +62,76 @@ router.get("/messages/search", async (req, res) => {
   res.json({ messages: data ?? [] });
 });
 
-router.get("/channels/:channelId/messages", validateUuidParam("channelId"), async (req, res) => {
-  const { before } = req.query;
-  const messages = await messageService.listByChannel(
-    req.params.channelId as string,
-    50,
-    before as string | undefined,
-  );
-  res.json({ messages });
-});
+router.get(
+  "/channels/:channelId/messages",
+  validateUuidParam("channelId"),
+  requireChannelAccess("channelId"),
+  async (req, res) => {
+    const { before } = req.query;
+    const messages = await messageService.listByChannel(
+      req.params.channelId as string,
+      50,
+      before as string | undefined,
+    );
+    res.json({ messages });
+  },
+);
 
-router.post("/channels/:channelId/messages", validateUuidParam("channelId"), async (req, res) => {
-  const parsed = createMessageSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
-  }
+router.post(
+  "/channels/:channelId/messages",
+  validateUuidParam("channelId"),
+  requireChannelAccess("channelId"),
+  async (req, res) => {
+    const idempotencyKey = req.headers["idempotency-key"] as string | undefined;
 
-  const message = await messageService.create({
-    channel_id: req.params.channelId as string,
-    user_id: req.userId!,
-    content: parsed.data.content,
-    parent_id: parsed.data.parent_id,
-  });
+    if (idempotencyKey) {
+      const existingMessageId = checkIdempotencyKey(idempotencyKey);
+      if (existingMessageId) {
+        const existingMessage = await messageService.getById(existingMessageId);
+        if (existingMessage) {
+          res.set("Idempotency-Key", idempotencyKey);
+          return res.status(200).json({ message: existingMessage, idempotent: true });
+        }
+      }
+    }
 
-  if (!message) {
-    res.status(500).json({ error: { code: "CREATE_FAILED", message: "Could not create message" } });
-    return;
-  }
+    const parsed = createMessageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
+      return;
+    }
 
-  res.status(201).json({ message });
-  logAuditEvent({
-    actorUserId: req.userId,
-    action: "message.create",
-    entityType: "message",
-    entityId: message.id,
-    metadata: { channel_id: message.channel_id },
-  });
-});
+    const message = await messageService.create({
+      channel_id: req.params.channelId as string,
+      user_id: req.userId!,
+      content: parsed.data.content,
+      parent_id: parsed.data.parent_id,
+    });
+
+    if (!message) {
+      res
+        .status(500)
+        .json({ error: { code: "CREATE_FAILED", message: "Could not create message" } });
+      return;
+    }
+
+    if (idempotencyKey) {
+      storeIdempotencyKey(idempotencyKey, message.id);
+      res.set("Idempotency-Key", idempotencyKey);
+    }
+
+    res.status(201).json({ message });
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "message.create",
+      entityType: "message",
+      entityId: message.id,
+      metadata: { channel_id: message.channel_id },
+    });
+  },
+);
 
 router.patch("/messages/:id", validateUuidParam("id"), async (req, res) => {
   const parsed = updateMessageSchema.safeParse(req.body);

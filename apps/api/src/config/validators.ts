@@ -55,3 +55,16 @@ export const updatePreferencesSchema = z.object({
   theme: z.enum(["system", "light", "dark"]).optional(),
   notification_prefs: z.record(z.unknown()).optional(),
 });
+
+export const addWorkspaceMemberSchema = z.object({
+  user_id: z.string().uuid(),
+  role: z.enum(["owner", "admin", "member"]).default("member"),
+});
+
+export const updateWorkspaceMemberSchema = z.object({
+  role: z.enum(["owner", "admin", "member"]),
+});
+
+export const addChannelMemberSchema = z.object({
+  user_id: z.string().uuid(),
+});

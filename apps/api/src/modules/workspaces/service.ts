@@ -1,5 +1,6 @@
 import { getSupabase } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
+import { webhookService } from "../webhooks/service.js";
 import type { Workspace } from "@chat/db";
 
 interface CreateWorkspaceInput {
@@ -84,6 +85,15 @@ export class WorkspaceService {
       });
     }
 
+    webhookService
+      .triggerEvent("workspace.created", data.id, {
+        workspace_id: data.id,
+        name: data.name,
+        slug: data.slug,
+        owner_id: input.owner_id,
+      })
+      .catch(() => {});
+
     return data as Workspace;
   }
 
@@ -106,13 +116,32 @@ export class WorkspaceService {
       .single();
 
     if (error) return null;
+
+    webhookService
+      .triggerEvent("workspace.updated", workspaceId, {
+        workspace_id: data.id,
+        name: data.name,
+        slug: data.slug,
+      })
+      .catch(() => {});
+
     return data as Workspace;
   }
 
   async remove(workspaceId: string): Promise<boolean> {
     const supabase = getSupabase();
     const { error } = await supabase.from("workspaces").delete().eq("id", workspaceId);
-    return !error;
+    const success = !error;
+
+    if (success) {
+      webhookService
+        .triggerEvent("workspace.deleted", workspaceId, {
+          workspace_id: workspaceId,
+        })
+        .catch(() => {});
+    }
+
+    return success;
   }
 
   async getMembers(
@@ -123,24 +152,64 @@ export class WorkspaceService {
     const supabase = getSupabase();
     const { data } = await supabase
       .from("workspace_members")
-      .select("user_id, users!inner(display_name, email, avatar_url)")
+      .select("user_id, role, users!inner(display_name, email, avatar_url)")
       .eq("workspace_id", workspaceId);
 
     if (!data) return [];
     return (
       data as Array<{
         user_id: string;
+        role: string;
         users: { display_name: string | null; email: string; avatar_url: string | null }[];
       }>
     ).map((row) => {
       const user = row.users[0] ?? { display_name: null, email: "", avatar_url: null };
       return {
         user_id: row.user_id,
+        role: row.role,
         display_name: user.display_name,
         email: user.email,
         avatar_url: user.avatar_url,
       };
     });
+  }
+
+  async addMember(
+    workspaceId: string,
+    userId: string,
+    role: "owner" | "admin" | "member" = "member",
+  ): Promise<boolean> {
+    const supabase = getSupabase();
+    const { error } = await supabase.from("workspace_members").insert({
+      workspace_id: workspaceId,
+      user_id: userId,
+      role,
+    });
+    return !error;
+  }
+
+  async removeMember(workspaceId: string, userId: string): Promise<boolean> {
+    const supabase = getSupabase();
+    const { error } = await supabase
+      .from("workspace_members")
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", userId);
+    return !error;
+  }
+
+  async updateMemberRole(
+    workspaceId: string,
+    userId: string,
+    role: "owner" | "admin" | "member",
+  ): Promise<boolean> {
+    const supabase = getSupabase();
+    const { error } = await supabase
+      .from("workspace_members")
+      .update({ role })
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", userId);
+    return !error;
   }
 }
 

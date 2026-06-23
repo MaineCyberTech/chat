@@ -47,3 +47,9 @@ variable "ci_public_key" {
   type        = string
   default     = ""
 }
+
+variable "ssh_allowed_ips" {
+  description = "Comma-separated list of CIDR blocks allowed to access SSH (port 22). Empty = allow all (not recommended for production)."
+  type        = string
+  default     = ""
+}

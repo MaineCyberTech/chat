@@ -21,15 +21,6 @@ RETURNS TABLE(
   rank REAL
 ) AS $$
 BEGIN
-  -- Verify the caller is a member of the workspace
-  IF NOT EXISTS (
-    SELECT 1 FROM public.workspace_members
-    WHERE workspace_id = search_messages.workspace_id
-      AND user_id = auth.uid()
-  ) THEN
-    RETURN;
-  END IF;
-
   RETURN QUERY
   SELECT
     m.id,
@@ -42,9 +33,14 @@ BEGIN
   JOIN public.channels ch ON ch.id = m.channel_id
   WHERE ch.workspace_id = workspace_id
     AND to_tsvector('english', m.content) @@ plainto_tsquery('english', query_text)
+    AND EXISTS (
+      SELECT 1 FROM public.workspace_members wm
+      WHERE wm.workspace_id = workspace_id
+        AND wm.user_id = auth.uid()
+    )
   ORDER BY rank DESC
   LIMIT result_limit;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = public;
 
-COMMENT ON FUNCTION public.search_messages IS 'Search messages with workspace membership check. SECURITY DEFINER requires explicit auth.uid() guard.';
+COMMENT ON FUNCTION public.search_messages IS 'Search messages with workspace membership check enforced via SECURITY INVOKER and WHERE clause.';

@@ -129,7 +129,7 @@ jobs:
             docker stop \$(docker ps -q) 2>/dev/null || true
             docker rm -f \$(docker ps -aq) 2>/dev/null || true
             docker network prune -f 2>/dev/null || true
-            docker system prune -af --volumes 2>/dev/null || true
+            docker system prune -af 2>/dev/null || true
             fuser -k 80/tcp 2>/dev/null || true
             df -h /
           "

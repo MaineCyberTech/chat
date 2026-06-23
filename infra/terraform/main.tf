@@ -6,6 +6,9 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
+data "cloudflare_ip_ranges" "ipv4" {}
+data "cloudflare_ip_ranges" "ipv6" {}
+
 resource "digitalocean_droplet" "chat" {
   image      = "ubuntu-24-04-x64"
   name       = "chat-${var.environment}"
@@ -34,19 +37,31 @@ resource "digitalocean_firewall" "chat" {
   inbound_rule {
     protocol         = "tcp"
     port_range       = "22"
-    source_addresses = ["0.0.0.0/0"]
+    source_addresses = var.ssh_allowed_ips != "" ? split(",", var.ssh_allowed_ips) : ["0.0.0.0/0"]
   }
 
   inbound_rule {
     protocol         = "tcp"
     port_range       = "80"
-    source_addresses = ["0.0.0.0/0"]
+    source_addresses = data.cloudflare_ip_ranges.ipv4.ipv4_cidrs
   }
 
   inbound_rule {
     protocol         = "tcp"
     port_range       = "443"
-    source_addresses = ["0.0.0.0/0"]
+    source_addresses = data.cloudflare_ip_ranges.ipv4.ipv4_cidrs
+  }
+
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "80"
+    source_addresses = data.cloudflare_ip_ranges.ipv6.ipv6_cidrs
+  }
+
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "443"
+    source_addresses = data.cloudflare_ip_ranges.ipv6.ipv6_cidrs
   }
 
   outbound_rule {

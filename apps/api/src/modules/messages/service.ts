@@ -123,6 +123,21 @@ export class MessageService {
       // Socket.io not initialized
     }
 
+    webhookService
+      .getChannelWorkspaceId(message.channel_id)
+      .then((workspaceId) => {
+        if (workspaceId) {
+          webhookService.triggerEvent("message.updated", workspaceId, {
+            message_id: message.id,
+            channel_id: message.channel_id,
+            user_id: message.user_id,
+            content: message.content,
+            edited_at: message.edited_at,
+          });
+        }
+      })
+      .catch(() => {});
+
     return message;
   }
 
@@ -145,6 +160,18 @@ export class MessageService {
     } catch {
       // Socket.io not initialized
     }
+
+    webhookService
+      .getChannelWorkspaceId(existing.channel_id)
+      .then((workspaceId) => {
+        if (workspaceId) {
+          webhookService.triggerEvent("message.deleted", workspaceId, {
+            message_id: messageId,
+            channel_id: existing.channel_id,
+          });
+        }
+      })
+      .catch(() => {});
 
     return { channel_id: existing.channel_id };
   }

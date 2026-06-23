@@ -90,12 +90,63 @@ export class ChannelService {
       .single();
 
     if (error) return null;
+
+    webhookService
+      .triggerEvent("channel.updated", data.workspace_id, {
+        channel_id: data.id,
+        name: data.name,
+        slug: data.slug,
+      })
+      .catch(() => {});
+
     return data as Channel;
   }
 
   async remove(channelId: string): Promise<boolean> {
     const supabase = getSupabase();
+    const channel = await this.getById(channelId);
+    if (!channel) return false;
+
     const { error } = await supabase.from("channels").delete().eq("id", channelId);
+    const success = !error;
+
+    if (success) {
+      webhookService
+        .triggerEvent("channel.deleted", channel.workspace_id, {
+          channel_id: channelId,
+        })
+        .catch(() => {});
+    }
+
+    return success;
+  }
+
+  async getMembers(channelId: string): Promise<{ user_id: string }[]> {
+    const supabase = getSupabase();
+    const { data } = await supabase
+      .from("channel_members")
+      .select("user_id")
+      .eq("channel_id", channelId);
+
+    return (data ?? []) as { user_id: string }[];
+  }
+
+  async addMember(channelId: string, userId: string): Promise<boolean> {
+    const supabase = getSupabase();
+    const { error } = await supabase.from("channel_members").insert({
+      channel_id: channelId,
+      user_id: userId,
+    });
+    return !error;
+  }
+
+  async removeMember(channelId: string, userId: string): Promise<boolean> {
+    const supabase = getSupabase();
+    const { error } = await supabase
+      .from("channel_members")
+      .delete()
+      .eq("channel_id", channelId)
+      .eq("user_id", userId);
     return !error;
   }
 }
