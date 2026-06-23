@@ -8,6 +8,7 @@ declare global {
     interface Request {
       userId?: string;
       userEmail?: string;
+      requestId?: string;
     }
   }
 }
@@ -36,7 +37,10 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       refresh_token: "",
     });
     if (sessionError) {
-      logger.warn("Session setup failed", { requestId: req.requestId, error: sessionError.message });
+      logger.warn("Session setup failed", {
+        requestId: req.requestId,
+        error: sessionError.message,
+      });
     }
 
     req.userId = data.user.id;

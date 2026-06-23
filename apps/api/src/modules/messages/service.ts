@@ -12,22 +12,40 @@ interface CreateMessageInput {
 }
 
 export class MessageService {
-  async listByChannel(channelId: string, limit = 50, before?: string): Promise<Message[]> {
+  async listByChannel(
+    channelId: string,
+    limit = 50,
+    cursor?: string,
+  ): Promise<{ messages: Message[]; nextCursor: string | null }> {
     const supabase = getSupabase();
     let query = supabase
       .from("messages")
       .select("*")
       .eq("channel_id", channelId)
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .limit(limit + 1); // Fetch one extra to determine if there's a next page
 
-    if (before) {
-      query = query.lt("created_at", before);
+    if (cursor) {
+      // cursor format: "created_at|id" for stable pagination
+      const [cursorCreatedAt, cursorId] = cursor.split("|");
+      if (cursorCreatedAt && cursorId) {
+        query = query.or(
+          `created_at.lt.${cursorCreatedAt},and(created_at.eq.${cursorCreatedAt},id.lt.${cursorId})`,
+        );
+      }
     }
 
     const { data, error } = await query;
-    if (error) return [];
-    return ((data ?? []) as Message[]).reverse();
+    if (error) return { messages: [], nextCursor: null };
+
+    const messages = (data ?? []) as Message[];
+    const hasMore = messages.length > limit;
+    const results = hasMore ? messages.slice(0, limit) : messages;
+    const nextCursor = hasMore
+      ? `${results[results.length - 1].created_at}|${results[results.length - 1].id}`
+      : null;
+
+    return { messages: results.reverse(), nextCursor };
   }
 
   async getById(messageId: string): Promise<Message | null> {

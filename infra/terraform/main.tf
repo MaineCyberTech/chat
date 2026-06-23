@@ -95,3 +95,37 @@ resource "cloudflare_dns_record" "api" {
   ttl     = 1
   proxied = true
 }
+
+# Monitoring alerts
+resource "digitalocean_alert_policy" "cpu_alert" {
+  name        = "chat-${var.environment}-cpu-alert"
+  type        = "v1/insights/droplet/cpu_utilization_percent"
+  comparison  = "GREATER_THAN"
+  value       = "80"
+  window      = "5m"
+  enabled     = true
+  tags        = ["chat-${var.environment}"]
+  description = "CPU utilization exceeded 80% for 5 minutes"
+}
+
+resource "digitalocean_alert_policy" "memory_alert" {
+  name        = "chat-${var.environment}-memory-alert"
+  type        = "v1/insights/droplet/memory_utilization_percent"
+  comparison  = "GREATER_THAN"
+  value       = "80"
+  window      = "5m"
+  enabled     = true
+  tags        = ["chat-${var.environment}"]
+  description = "Memory utilization exceeded 80% for 5 minutes"
+}
+
+resource "digitalocean_alert_policy" "disk_alert" {
+  name        = "chat-${var.environment}-disk-alert"
+  type        = "v1/insights/droplet/disk_utilization_percent"
+  comparison  = "GREATER_THAN"
+  value       = "85"
+  window      = "5m"
+  enabled     = true
+  tags        = ["chat-${var.environment}"]
+  description = "Disk utilization exceeded 85% for 5 minutes"
+}

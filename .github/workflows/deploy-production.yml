@@ -2,6 +2,11 @@ name: Provision + Deploy — Production
 
 on:
   workflow_dispatch:
+    inputs:
+      rollback_sha:
+        description: 'SHA to rollback to (leave empty for latest)'
+        required: false
+        type: string
   push:
     branches: [main]
 
@@ -234,4 +239,49 @@ jobs:
             sleep 5
           done
           echo "Health check failed"
+          exit 1
+
+  rollback:
+    name: Rollback to Previous Version
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback_sha != ''
+    needs: build-images
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set lowercase repo
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      - name: Rollback to SHA
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ needs.provision.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
+          script: |
+            cd ${{ env.REPO_DIR }}
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            ROLLBACK_SHA="${{ github.event.inputs.rollback_sha }}"
+            docker pull ghcr.io/${{ env.REPO_LC }}/api:${ROLLBACK_SHA}
+            docker pull ghcr.io/${{ env.REPO_LC }}/web:${ROLLBACK_SHA}
+            docker tag ghcr.io/${{ env.REPO_LC }}/api:${ROLLBACK_SHA} ghcr.io/${{ env.REPO_LC }}/api:latest
+            docker tag ghcr.io/${{ env.REPO_LC }}/web:${ROLLBACK_SHA} ghcr.io/${{ env.REPO_LC }}/web:latest
+            docker compose -f infra/docker/docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -af
+
+      - name: Health check after rollback
+        run: |
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ needs.provision.outputs.api_url }}/healthz || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "API healthy at ${{ needs.provision.outputs.api_url }} after rollback"
+              exit 0
+            fi
+            echo "Attempt $i: returned $STATUS, retrying..."
+            sleep 5
+          done
+          echo "Health check failed after rollback"
           exit 1

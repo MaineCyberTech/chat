@@ -162,8 +162,13 @@ jobs:
             echo "--- PIPING $IMG IMAGE ---"
             REPO_LC="${GITHUB_REPOSITORY,,}"
             echo "REPO_LC=$REPO_LC"
-            docker pull ghcr.io/$REPO_LC/$IMG:$IMG_TAG
-            docker save ghcr.io/$REPO_LC/$IMG:$IMG_TAG | gzip | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "gunzip | docker load" 2>&1
+            # Try docker pull first as fallback, then pipe if pull fails
+            docker pull ghcr.io/$REPO_LC/$IMG:$IMG_TAG 2>&1 && {
+              echo "Pull successful for $IMG, skipping pipe"
+            } || {
+              echo "Pull failed, piping image for $IMG"
+              docker save ghcr.io/$REPO_LC/$IMG:$IMG_TAG | gzip | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "gunzip | docker load" 2>&1
+            }
             echo "PIPE_${IMG^^}_EXIT=$?"
           done
 

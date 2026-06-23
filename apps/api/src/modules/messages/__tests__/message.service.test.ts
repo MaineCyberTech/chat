@@ -111,9 +111,10 @@ describe("MessageService", () => {
   });
 
   it("lists messages for a channel", async () => {
-    const msgs = await service.listByChannel("ch-1");
-    expect(msgs).toHaveLength(1);
-    expect(msgs[0].content).toBe("Hello");
+    const result = await service.listByChannel("ch-1");
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0].content).toBe("Hello");
+    expect(result.nextCursor).toBeNull();
   });
 
   it("gets a message by id", async () => {

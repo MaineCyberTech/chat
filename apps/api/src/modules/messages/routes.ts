@@ -64,13 +64,13 @@ router.get(
   validateUuidParam("channelId"),
   requireChannelAccess("channelId"),
   async (req, res) => {
-    const { before } = req.query;
-    const messages = await messageService.listByChannel(
+    const { cursor } = req.query;
+    const result = await messageService.listByChannel(
       req.params.channelId as string,
       50,
-      before as string | undefined,
+      cursor as string | undefined,
     );
-    res.json({ messages });
+    res.json({ messages: result.messages, nextCursor: result.nextCursor });
   },
 );
 

@@ -153,20 +153,20 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 **Frontend Release Gate Findings** (from `docs/audits/frontend_ux_release_gate_audit_summary.md`):
 
-| Priority | Count        | Key Items                                                                                                                                                                                                                                                                                               |
-| -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **P0**   | 0 (2 fixed)  | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED**                                                                                                                                                                                                                   |
-| **P1**   | 0 (13 fixed) | All P1 items resolved                                                                                                                                                                                                                                                                                   |
-| **P2**   | 19 (8 fixed) | No tablet breakpoint, low contrast on tertiary text, small touch targets, duplicate CSS config, missing loading states in thread panel, no error boundary for message fetch failure, body scroll lock broken, no slide animations, no debounce on typing indicator, audit logging retry/queue mechanism |
-| **P3**   | 12           | Dead code, raw values, no `not-found.tsx`/`error.tsx`, no settings UI, no avatar preview                                                                                                                                                                                                                |
+| Priority | Count         | Key Items                                                                                                                                                                                                                                                                                                                               |
+| -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0**   | 0 (2 fixed)   | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED**                                                                                                                                                                                                                                                   |
+| **P1**   | 0 (13 fixed)  | All P1 items resolved                                                                                                                                                                                                                                                                                                                   |
+| **P2**   | 19 (11 fixed) | ~~No tablet breakpoint~~, ~~low contrast on tertiary text~~, ~~small touch targets~~, duplicate CSS config, ~~missing loading states in thread panel~~, ~~no error boundary for message fetch failure~~, ~~body scroll lock broken~~, no slide animations, ~~no debounce on typing indicator~~, ~~audit logging retry/queue mechanism~~ |
+| **P3**   | 12            | Dead code, raw values, no `not-found.tsx`/`error.tsx`, no settings UI, no avatar preview                                                                                                                                                                                                                                                |
 
 All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
 **Database/Schema Improvements** (from `docs/audits/database_schema_data_lifecycle_audit_summary.md`):
 
-- Add indexes: `workspace_members.user_id`, `channel_members.user_id`, `messages.parent_id`
+- ~~Add indexes: `workspace_members.user_id`, `channel_members.user_id`, `messages.parent_id`~~ **DONE**
 - Fix `audit_logs.organization_id` FK or CHECK constraint
-- Add `WorkspaceMember.role` to TypeScript types
+- ~~Add `WorkspaceMember.role` to TypeScript types~~ **DONE**
 - Unify migration directory structure
 - Add soft-delete for workspaces/channels/messages
 - Add data retention/archival policy
@@ -176,8 +176,8 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 **Infra/Deployment** (from `docs/audits/infra_deployment_resilience_audit_summary.md`):
 
 - Implement rollback strategy (preserve compose, use SHA tags)
-- Add health endpoint routing to Caddyfile.prod
-- Add `depends_on: condition: service_healthy` to compose files
+- Add health endpoint routing to Caddyfile.prod — **DONE**
+- Add `depends_on: condition: service_healthy` to compose files — **DONE**
 - Add DO monitoring alerts (CPU > 80%, memory > 80%)
 - Add fallback `docker pull` in dev deploy
 
