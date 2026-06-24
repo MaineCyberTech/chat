@@ -169,8 +169,9 @@ jobs:
             # Run container directly to see error
             echo "=== Running container directly to see error ==="
             docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev node dist/server.js 2>&1 > /tmp/docker-run-output.txt; echo "Exit code: $?"
-            echo "=== docker run output file size ==="
+            echo "MARKER: checking file size"
             ls -la /tmp/docker-run-output.txt 2>&1 || true
+            echo "MARKER: cat output"
             cat /tmp/docker-run-output.txt 2>&1 || true
             echo "=== File content (wc) ==="
             wc -l /tmp/docker-run-output.txt 2>&1 || true
