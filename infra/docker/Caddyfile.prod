@@ -1,4 +1,5 @@
 chat.mainecybertech.com {
+    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
     handle /health* {
         reverse_proxy api:4000
     }
@@ -41,6 +42,7 @@ chat.mainecybertech.com {
 }
 
 chat-api.mainecybertech.com {
+    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
     reverse_proxy api:4000
     header {
         X-Frame-Options "DENY"
