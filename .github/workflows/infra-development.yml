@@ -50,6 +50,8 @@ jobs:
       - name: Import existing resources
         working-directory: infra/terraform
         env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
           TF_VAR_environment: ${{ env.ENVIRONMENT }}
           TF_VAR_domain: ${{ env.DOMAIN }}
