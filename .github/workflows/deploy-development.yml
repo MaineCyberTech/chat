@@ -67,7 +67,7 @@ jobs:
               apt-get install -y -qq git
             fi
             if [ ! -d "${{ env.REPO_DIR }}" ]; then
-              git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }}
+              git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }} || { echo "ERROR: git clone failed"; exit 1; }
             fi
             cd ${{ env.REPO_DIR }}
             git fetch origin develop
