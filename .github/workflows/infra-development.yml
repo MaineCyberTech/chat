@@ -45,7 +45,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: terraform init -input=false -backend-config="bucket=chat-terraform-state-${ENVIRONMENT}" -backend-config="endpoint=https://sfo3.digitaloceanspaces.com"
+        run: terraform init -input=false -backend-config="bucket=chat-terraform-state" -backend-config="endpoint=https://sfo3.digitaloceanspaces.com"
 
       - name: Import existing resources
         working-directory: infra/terraform
