@@ -9,7 +9,7 @@ provider "cloudflare" {
 data "cloudflare_ip_ranges" "ipv4" {}
 data "cloudflare_ip_ranges" "ipv6" {}
 
-resource "digitalocean_drocean_droplet" "chat" {
+resource "digitalocean_droplet" "chat" {
   image      = "ubuntu-24-04-x64"
   name       = "chat-${var.environment}"
   region     = var.region
