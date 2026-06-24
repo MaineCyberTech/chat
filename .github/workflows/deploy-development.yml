@@ -124,7 +124,7 @@ jobs:
 
             # Check API logs immediately
             echo "=== API container logs (immediate) ==="
-            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100 chat-api-dev || true
+            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100 chat-api-dev 2>&1 || true
 
             # Wait a bit for container to start
             sleep 3
@@ -135,7 +135,7 @@ jobs:
 
             # Check API logs again
             echo "=== API container logs (retry) ==="
-            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100 chat-api-dev || true
+            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100 chat-api-dev 2>&1 || true
 
             # Also check docker logs directly
             echo "=== Docker logs chat-api-dev ==="
@@ -143,7 +143,7 @@ jobs:
 
             # Check container details
             echo "=== Container inspect ==="
-            docker inspect chat-api-dev --format='ExitCode={{.State.ExitCode}} Error={{.State.Error}} FinishedAt={{.State.FinishedAt}} OOMKilled={{.State.OOMKilled}}' || true
+            docker inspect chat-api-dev --format='ExitCode={{.State.ExitCode}} Error={{.State.Error}} FinishedAt={{.State.FinishedAt}} OOMKilled={{.State.OOMKilled}}' 2>&1 || true
 
             # Wait for health check
             sleep 5
