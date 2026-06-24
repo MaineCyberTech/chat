@@ -89,6 +89,20 @@ jobs:
             fi
           done
 
+      - name: Cleanup duplicate DNS records
+        run: |
+          ZONE_ID="${{ secrets.CF_ZONE_ID }}"
+          TOKEN="${{ secrets.CF_API_TOKEN }}"
+          for NAME in chat chat-api; do
+            curl -s -H "Authorization: Bearer $TOKEN" \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=${NAME}.${{ env.DOMAIN }}" \
+              | jq -r '.result[].id' | while read ID; do
+                echo "Deleting old DNS record $NAME (id=$ID)"
+                curl -s -X DELETE -H "Authorization: Bearer $TOKEN" \
+                  "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$ID"
+              done
+          done
+
       - name: Terraform Apply
         id: terraform
         timeout-minutes: 5
