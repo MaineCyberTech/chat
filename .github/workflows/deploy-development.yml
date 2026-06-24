@@ -69,10 +69,7 @@ jobs:
             if [ ! -d "${{ env.REPO_DIR }}" ]; then
               git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }} || { echo "ERROR: git clone failed"; exit 1; }
             fi
-            cd ${{ env.REPO_DIR }}
-            git fetch origin develop
-            git checkout develop
-            git reset --hard origin/develop
+            cd ${{ env.REPO_DIR }} && git fetch origin develop && git checkout develop && git reset --hard origin/develop
 
             mkdir -p ${{ env.REPO_DIR }}/certs
             if [ ! -f ${{ env.REPO_DIR }}/certs/fullchain.pem ]; then
