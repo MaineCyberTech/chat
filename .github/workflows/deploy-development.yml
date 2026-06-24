@@ -164,7 +164,7 @@ jobs:
 
             # Run container directly to see error
             echo "=== Running container directly to see error ==="
-            docker run --rm --env-file ${{ env.REPO_DIR }}/.env ghcr.io/${{ env.REPO_LC }}/api:dev 2>&1 || true
+            docker run --rm --env-file ${{ env.REPO_DIR }}/.env ghcr.io/${{ env.REPO_LC }}/api:dev 2>&1; echo "Exit code: $?"
 
             # Wait for health check
             sleep 5
