@@ -16,6 +16,7 @@ resource "digitalocean_droplet" "chat" {
   size       = var.droplet_size
   tags       = ["chat-${var.environment}"]
   monitoring = true
+  ssh_keys   = var.ci_public_key != "" ? [var.ci_public_key] : []
 
   lifecycle {
     prevent_destroy = true
