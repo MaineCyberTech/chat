@@ -168,10 +168,11 @@ jobs:
             
             # Run container directly to see error
             echo "MARKER: before docker run"
-            docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev sh -c "echo 'hello from container'; pwd; ls -la /" 2>&1; echo "Exit code: $?"
+            docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev sh -c "echo 'hello from container'; pwd; ls -la /" 2>&1 > /tmp/test-output.txt; echo "Exit code: $?"
+            cat /tmp/test-output.txt 2>&1 || true
             echo "MARKER: done docker run"
             
-            # Also try running the actual server with more output
+            # Also try running the actual server
             echo "MARKER: running actual server"
             docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev node dist/server.js 2>&1; echo "Exit code: $?"
             echo "MARKER: done server run"
