@@ -158,6 +158,10 @@ jobs:
               echo "Log file not found or empty"
             fi
 
+            # Check if container is actually running
+            echo "=== Container state ==="
+            docker inspect chat-api-dev --format='{{.State.Status}} {{.State.Running}} {{.State.Pid}} {{.State.ExitCode}}' 2>&1 || true
+
             # Wait for health check
             sleep 5
 
