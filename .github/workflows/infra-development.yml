@@ -107,18 +107,6 @@ jobs:
           DO_PUBKEY: ${{ secrets.CI_SSH_PUBLIC_KEY }}
           DO_TOKEN: ${{ secrets.DO_API_TOKEN }}
         run: |
-          FINGERPRINT="${{ secrets.CI_SSH_FINGERPRINT }}"
-          if [ -n "$FINGERPRINT" ]; then
-            EXISTS=$(curl -s -H "Authorization: Bearer $DO_TOKEN" \
-              "https://api.digitalocean.com/v2/account/keys?fingerprint=$FINGERPRINT" \
-              | jq -r '.ssh_keys[0].id // empty')
-            if [ -z "$EXISTS" ]; then
-              curl -s -X POST -H "Authorization: Bearer $DO_TOKEN" \
-                -H "Content-Type: application/json" \
-                -d "$(jq -n --arg pk "$DO_PUBKEY="$DO_PUBKEY" --arg name "ci-chat" '{name:$name,public_key:$pk}')" \
-                "https://api.digitalocean.com/v2/account/keys" > /dev/null
-            fi
-          fi
           terraform apply -auto-approve -input=false
           terraform output -raw droplet_ip > /tmp/droplet_ip
           echo "droplet_ip=$(cat /tmp/droplet_ip)" >> $GITHUB_OUTPUT
