@@ -145,6 +145,19 @@ jobs:
             echo "=== Container inspect ==="
             docker inspect chat-api-dev --format='ExitCode={{.State.ExitCode}} Error={{.State.Error}} FinishedAt={{.State.FinishedAt}} OOMKilled={{.State.OOMKilled}}' 2>&1 || true
 
+            # Get container logs via docker inspect
+            echo "=== Container log path ==="
+            docker inspect chat-api-dev --format='{{.LogPath}}' 2>&1 || true
+
+            # Check container logs via cat
+            echo "=== Cat container log file ==="
+            LOGPATH=$(docker inspect chat-api-dev --format='{{.LogPath}}' 2>/dev/null)
+            if [ -n "$LOGPATH" ] && [ -f "$LOGPATH" ]; then
+              tail -100 "$LOGPATH" 2>&1 || true
+            else
+              echo "Log file not found or empty"
+            fi
+
             # Wait for health check
             sleep 5
 
