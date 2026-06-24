@@ -97,6 +97,10 @@ jobs:
             VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}
             EOF
 
+            # Also create .env in infra/docker for docker-compose
+            mkdir -p ${{ env.REPO_DIR }}/infra/docker
+            cp ${{ env.REPO_DIR }}/.env ${{ env.REPO_DIR }}/infra/docker/.env
+
             # Verify compose file exists
             if [ ! -f "infra/docker/docker-compose.devremote.yml" ]; then
               echo "ERROR: docker-compose.devremote.yml not found"
