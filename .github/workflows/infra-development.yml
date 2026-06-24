@@ -102,20 +102,20 @@ jobs:
           TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
           TF_VAR_ci_public_key: ${{ secrets.CI_SSH_PUBLIC_KEY }}
+          TF_VAR_ci_ssh_key_fingerprint: ${{ secrets.CI_SSH_FINGERPRINT }}
           TF_VAR_ssh_allowed_ips: "0.0.0.0/0"
           DO_PUBKEY: ${{ secrets.CI_SSH_PUBLIC_KEY }}
           DO_TOKEN: ${{ secrets.DO_API_TOKEN }}
         run: |
-          FINGERPRINT=""
-          if [ -n "$DO_PUBKEY" ]; then
-            FINGERPRINT=$(ssh-keygen -E md5 -lf /dev/stdin <<< "$DO_PUBKEY" | awk '{print $2}' | sed 's/^MD5://')
+          FINGERPRINT="${{ secrets.CI_SSH_FINGERPRINT }}"
+          if [ -n "$FINGERPRINT" ]; then
             EXISTS=$(curl -s -H "Authorization: Bearer $DO_TOKEN" \
               "https://api.digitalocean.com/v2/account/keys?fingerprint=$FINGERPRINT" \
               | jq -r '.ssh_keys[0].id // empty')
             if [ -z "$EXISTS" ]; then
               curl -s -X POST -H "Authorization: Bearer $DO_TOKEN" \
                 -H "Content-Type: application/json" \
-                -d "$(jq -n --arg pk "$DO_PUBKEY" --arg name "ci-chat" '{name:$name,public_key:$pk}')" \
+                -d "$(jq -n --arg pk "$DO_PUBKEY="$DO_PUBKEY" --arg name "ci-chat" '{name:$name,public_key:$pk}')" \
                 "https://api.digitalocean.com/v2/account/keys" > /dev/null
             fi
           fi

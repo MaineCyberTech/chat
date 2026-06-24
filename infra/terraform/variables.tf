@@ -48,6 +48,12 @@ variable "ci_public_key" {
   default     = ""
 }
 
+variable "ci_ssh_key_fingerprint" {
+  description = "CI SSH key fingerprint (md5)"
+  type        = string
+  default     = ""
+}
+
 variable "ssh_allowed_ips" {
   description = "Comma-separated list of CIDR blocks allowed to access SSH (port 22). Empty = allow all (not recommended for production)."
   type        = string

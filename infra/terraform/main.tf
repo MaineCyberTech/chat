@@ -16,7 +16,7 @@ resource "digitalocean_droplet" "chat" {
   size       = var.droplet_size
   tags       = ["chat-${var.environment}"]
   monitoring = true
-  ssh_keys   = var.ci_public_key != "" ? [data.digitalocean_ssh_key.ci_key[0].fingerprint] : []
+  ssh_keys   = var.ci_ssh_key_fingerprint != "" ? [var.ci_ssh_key_fingerprint] : []
 
   lifecycle {
     ignore_changes  = [user_data]
@@ -27,11 +27,6 @@ resource "digitalocean_droplet" "chat" {
     frontend_domain = local.domain_names.frontend
     api_domain      = local.domain_names.api
   })
-}
-
-data "digitalocean_ssh_key" "ci_key" {
-  count = var.ci_public_key != "" ? 1 : 0
-  name   = "ci-chat"
 }
 
 resource "digitalocean_firewall" "chat" {
