@@ -63,7 +63,7 @@ jobs:
           DROPLET_ID=$(echo "$DROPLET_JSON" | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name) | .id')
           if [ -n "$DROPLET_ID" ]; then
             echo "Importing droplet $DROPLET_ID"
-            terraform import -input=false digitalocean_droplet.chat "$DROPLET_ID" 2>/dev/null || echo "Droplet import failed (may already be in state)"
+            terraform import -input=false digitalocean_droplet.chat "$DROPLET_ID" || echo "Droplet import failed (may already be in state)"
           else
             echo "No existing droplet found, will create new one"
           fi
@@ -73,7 +73,7 @@ jobs:
             | jq -r --arg prefix "chat-${ENVIRONMENT}" '[.firewalls[] | select(.name | startswith($prefix))] | sort_by(.created_at) | last | .id // empty')
           if [ -n "$FW_ID" ]; then
             echo "Importing firewall $FW_ID"
-            terraform import -input=false digitalocean_firewall.chat "$FW_ID" 2>/dev/null || echo "Firewall import failed"
+            terraform import -input=false digitalocean_firewall.chat "$FW_ID" || echo "Firewall import failed"
           fi
           # Import DNS records
           for NAME in chat chat-api; do
@@ -83,7 +83,7 @@ jobs:
             if [ -n "$RECORD_ID" ]; then
               RESOURCE="cloudflare_dns_record.$([ "$NAME" = "chat" ] && echo "frontend" || echo "api")"
               echo "Importing DNS $NAME ($RECORD_ID) as $RESOURCE"
-              terraform import -input=false "$RESOURCE" "$TF_VAR_cloudflare_zone_id/$RECORD_ID" 2>/dev/null || echo "DNS import failed"
+              terraform import -input=false "$RESOURCE" "$TF_VAR_cloudflare_zone_id/$RECORD_ID" || echo "DNS import failed"
             fi
           done
 
