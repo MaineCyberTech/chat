@@ -141,6 +141,10 @@ jobs:
             echo "=== Docker logs chat-api-dev ==="
             docker logs chat-api-dev --tail 100 2>&1 || true
 
+            # Check container details
+            echo "=== Container inspect ==="
+            docker inspect chat-api-dev --format='{{.State.ExitCode}} {{.State.Error}} {{.State.FinishedAt}}' || true
+
             # Wait for health check
             sleep 5
 
