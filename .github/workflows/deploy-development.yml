@@ -162,6 +162,10 @@ jobs:
             echo "=== Container state ==="
             docker inspect chat-api-dev --format='{{.State.Status}} {{.State.Running}} {{.State.Pid}} {{.State.ExitCode}}' 2>&1 || true
 
+            # Run container directly to see error
+            echo "=== Running container directly to see error ==="
+            docker run --rm --env-file ${{ env.REPO_DIR }}/.env ghcr.io/${{ env.REPO_LC }}/api:dev 2>&1 || true
+
             # Wait for health check
             sleep 5
 
