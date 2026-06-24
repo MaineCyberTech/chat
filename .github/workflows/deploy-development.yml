@@ -162,9 +162,14 @@ jobs:
             echo "=== Container state ==="
             docker inspect chat-api-dev --format='{{.State.Status}} {{.State.Running}} {{.State.Pid}} {{.State.ExitCode}}' 2>&1 || true
 
+            # Check container logs directly
+            echo "=== Docker logs chat-api-dev (full) ==="
+            docker logs chat-api-dev 2>&1 || true
+            
             # Run container directly to see error
             echo "=== Running container directly to see error ==="
-            docker run --rm --env-file ${{ env.REPO_DIR }}/.env ghcr.io/${{ env.REPO_LC }}/api:dev 2>&1; echo "Exit code: $?"
+            docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev node dist/server.js 2>&1 || true
+            echo "Exit code: $?"
 
             # Wait for health check
             sleep 5
