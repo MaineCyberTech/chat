@@ -168,8 +168,8 @@ jobs:
             
             # Run container directly to see error
             echo "=== Running container directly to see error ==="
-            docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev node dist/server.js 2>&1 || true
-            echo "Exit code: $?"
+            docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev node dist/server.js 2>&1 > /tmp/docker-run-output.txt; echo "Exit code: $?"
+            cat /tmp/docker-run-output.txt 2>&1 || true
 
             # Wait for health check
             sleep 5
