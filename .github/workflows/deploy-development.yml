@@ -170,6 +170,11 @@ jobs:
             echo "MARKER: before docker run"
             docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev sh -c "echo 'hello from container'; pwd; ls -la /" 2>&1; echo "Exit code: $?"
             echo "MARKER: done docker run"
+            
+            # Also try running the actual server
+            echo "MARKER: running actual server"
+            docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev node dist/server.js 2>&1 || true; echo "Exit code: $?"
+            echo "MARKER: done server run"
             echo "MARKER: file size check"
             stat /tmp/docker-run-output.txt 2>&1 || true
 
