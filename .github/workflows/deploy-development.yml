@@ -143,7 +143,7 @@ jobs:
 
             # Check container details
             echo "=== Container inspect ==="
-            docker inspect chat-api-dev --format='{{.State.ExitCode}} {{.State.Error}} {{.State.FinishedAt}}' || true
+            docker inspect chat-api-dev --format='ExitCode={{.State.ExitCode}} Error={{.State.Error}} FinishedAt={{.State.FinishedAt}} OOMKilled={{.State.OOMKilled}}' || true
 
             # Wait for health check
             sleep 5
