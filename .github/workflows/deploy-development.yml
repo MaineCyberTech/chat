@@ -167,7 +167,7 @@ jobs:
             docker logs chat-api-dev 2>&1 || true
             
             # Run container directly to see error
-            echo "=== Running container directly to see error ==="
+            echo "MARKER: before docker run"
             docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev node dist/server.js 2>&1 > /tmp/docker-run-output.txt; echo "Exit code: $?"
             echo "MARKER: checking file size"
             ls -la /tmp/docker-run-output.txt 2>&1 || true
@@ -175,6 +175,8 @@ jobs:
             cat /tmp/docker-run-output.txt 2>&1 || true
             echo "=== File content (wc) ==="
             wc -l /tmp/docker-run-output.txt 2>&1 || true
+            echo "MARKER: file size check"
+            stat /tmp/docker-run-output.txt 2>&1 || true
 
             # Wait for health check
             sleep 5
