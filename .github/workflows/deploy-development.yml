@@ -58,6 +58,7 @@ jobs:
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           script: |
+            set -e
             cloud-init status --wait 2>/dev/null || true
             if ! docker compose version >/dev/null 2>&1; then
               apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2
@@ -98,6 +99,12 @@ jobs:
             VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}
             EOF
 
+            # Verify compose file exists
+            if [ ! -f "infra/docker/docker-compose.devremote.yml" ]; then
+              echo "ERROR: docker-compose.devremote.yml not found"
+              exit 1
+            fi
+
       - name: Deploy
         uses: appleboy/ssh-action@v1
         with:
@@ -105,12 +112,22 @@ jobs:
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           script: |
+            set -e
             cd ${{ env.REPO_DIR }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             docker pull ghcr.io/${{ env.REPO_LC }}/api:dev
             docker pull ghcr.io/${{ env.REPO_LC }}/web:dev
             docker compose -f infra/docker/docker-compose.devremote.yml up -d --remove-orphans
             docker image prune -af
+
+            # Verify services are running
+            sleep 5
+            docker compose -f infra/docker/docker-compose.devremote.yml ps
+            if ! docker compose -f infra/docker/docker-compose.devremote.yml ps | grep -q "Up"; then
+              echo "ERROR: Services not running"
+              docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 50
+              exit 1
+            fi
 
       - name: Health check
         run: |
