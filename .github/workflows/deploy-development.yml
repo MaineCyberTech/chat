@@ -124,7 +124,18 @@ jobs:
 
             # Check API logs immediately
             echo "=== API container logs ==="
-            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100 chat-api-dev
+            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100 chat-api-dev || true
+
+            # Wait a bit for container to start
+            sleep 3
+
+            # Check container status
+            echo "=== Container status ==="
+            docker compose -f infra/docker/docker-compose.devremote.yml ps
+
+            # Check API logs again
+            echo "=== API container logs (retry) ==="
+            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100 chat-api-dev || true
 
             # Wait for health check
             sleep 5
