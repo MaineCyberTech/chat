@@ -122,8 +122,14 @@ jobs:
             docker compose -f infra/docker/docker-compose.devremote.yml up -d --remove-orphans
             docker image prune -af
 
-            # Verify services are running
+            # Check API logs immediately
+            echo "=== API container logs ==="
+            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100 chat-api-dev
+
+            # Wait for health check
             sleep 5
+
+            # Verify services are running
             docker compose -f infra/docker/docker-compose.devremote.yml ps
             if ! docker compose -f infra/docker/docker-compose.devremote.yml ps | grep -q "Up"; then
               echo "ERROR: Services not running"
