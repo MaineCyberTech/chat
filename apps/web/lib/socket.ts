@@ -20,11 +20,15 @@ export async function getSocket(): Promise<Socket> {
   }
 
   socket = io(API_BASE, {
-    auth: { token },
+    extraHeaders: { Authorization: `Bearer ${token}` },
     transports: ["websocket"],
     reconnection: true,
     reconnectionDelay: 1000,
-    reconnectionAttempts: 10,
+    reconnectionDelayMax: 30000,
+    reconnectionAttempts: Infinity,
+    randomizationFactor: 0.5,
+    timeout: 20000,
+    autoConnect: true,
   });
 
   return new Promise((resolve, reject) => {

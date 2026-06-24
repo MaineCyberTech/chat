@@ -12,28 +12,19 @@ import {
   searchQuerySchema,
   uploadRequestSchema,
 } from "../../config/validators.js";
+import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
+import DOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
+
+const window = new JSDOM("").window;
+const purify = DOMPurify(window);
+
+function sanitizeContent(content: string): string {
+  return purify.sanitize(content, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+}
 
 const router: RouterType = Router();
 router.use(authenticate);
-
-// In-memory store for idempotency keys (use Redis in production)
-const idempotencyStore = new Map<string, { messageId: string; expiresAt: number }>();
-const IDEMPOTENCY_TTL = 24 * 60 * 60 * 1000; // 24 hours
-
-function checkIdempotencyKey(key: string): string | null {
-  const entry = idempotencyStore.get(key);
-  if (entry && entry.expiresAt > Date.now()) {
-    return entry.messageId;
-  }
-  if (entry) {
-    idempotencyStore.delete(key);
-  }
-  return null;
-}
-
-function storeIdempotencyKey(key: string, messageId: string): void {
-  idempotencyStore.set(key, { messageId, expiresAt: Date.now() + IDEMPOTENCY_TTL });
-}
 
 router.get("/messages/search", async (req, res) => {
   const parsed = searchQuerySchema.safeParse(req.query);
@@ -82,7 +73,7 @@ router.post(
     const idempotencyKey = req.headers["idempotency-key"] as string | undefined;
 
     if (idempotencyKey) {
-      const existingMessageId = checkIdempotencyKey(idempotencyKey);
+      const existingMessageId = await checkIdempotencyKey(idempotencyKey);
       if (existingMessageId) {
         const existingMessage = await messageService.getById(existingMessageId);
         if (existingMessage) {
@@ -100,10 +91,12 @@ router.post(
       return;
     }
 
+    const sanitizedContent = sanitizeContent(parsed.data.content);
+
     const message = await messageService.create({
       channel_id: req.params.channelId as string,
       user_id: req.userId!,
-      content: parsed.data.content,
+      content: sanitizedContent,
       parent_id: parsed.data.parent_id,
     });
 
@@ -115,7 +108,7 @@ router.post(
     }
 
     if (idempotencyKey) {
-      storeIdempotencyKey(idempotencyKey, message.id);
+      await storeIdempotencyKey(idempotencyKey, message.id);
       res.set("Idempotency-Key", idempotencyKey);
     }
 
@@ -139,7 +132,9 @@ router.patch("/messages/:id", validateUuidParam("id"), async (req, res) => {
     return;
   }
 
-  const message = await messageService.update(req.params.id as string, parsed.data.content);
+  const sanitizedContent = sanitizeContent(parsed.data.content);
+
+  const message = await messageService.update(req.params.id as string, sanitizedContent);
   if (!message) {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
     return;

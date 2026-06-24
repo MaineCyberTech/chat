@@ -9,15 +9,15 @@ describe("HealthService", () => {
   });
 
   describe("getReadiness", () => {
-    it("returns status ok", () => {
+    it("returns status healthy", () => {
       const result = service.getReadiness();
-      expect(result.status).toBe("ok");
+      expect(result.status).toBe("healthy");
     });
 
     it("includes server check", () => {
       const result = service.getReadiness();
       expect(result.checks.server).toBeDefined();
-      expect(result.checks.server.status).toBe("ok");
+      expect(result.checks.server?.status).toBe("healthy");
     });
 
     it("includes timestamp and uptime", () => {
@@ -25,6 +25,8 @@ describe("HealthService", () => {
       expect(result.timestamp).toBeDefined();
       expect(typeof result.uptime).toBe("number");
       expect(result.uptime).toBeGreaterThanOrEqual(0);
+      expect(result.service).toBe("api");
+      expect(result.version).toBeDefined();
     });
   });
 

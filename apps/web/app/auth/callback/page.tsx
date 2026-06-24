@@ -84,7 +84,10 @@ function AuthCallbackContent() {
       <div className="flex flex-col items-center gap-3">
         <p className="text-[var(--color-foreground-secondary)]">Completing sign in...</p>
         <div className="h-1 w-32 overflow-hidden rounded-full bg-[var(--color-background-tertiary)]">
-          <div className="h-full animate-pulse rounded-full bg-[var(--color-accent-primary)]" style={{ width: "60%" }} />
+          <div
+            className="h-full animate-pulse rounded-full bg-[var(--color-accent-primary)]"
+            style={{ width: "60%" }}
+          />
         </div>
       </div>
     </main>

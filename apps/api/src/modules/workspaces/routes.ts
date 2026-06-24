@@ -3,13 +3,14 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
 import { workspaceService } from "./service.js";
+import { logAuditEvent } from "../../services/audit.js";
+import type { Workspace } from "@chat/db";
 import {
   createWorkspaceSchema,
   updateWorkspaceSchema,
   addWorkspaceMemberSchema,
   updateWorkspaceMemberSchema,
 } from "../../config/validators.js";
-import { logAuditEvent } from "../../services/audit.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -80,13 +81,15 @@ router.patch("/:id", validateUuidParam("id"), requireWorkspaceMembership(), asyn
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
     return;
   }
-  res.json({ workspace });
+
+  const updatedWorkspace: Workspace = workspace;
+  res.json({ workspace: updatedWorkspace });
   logAuditEvent({
     actorUserId: req.userId,
     action: "workspace.update",
     entityType: "workspace",
-    entityId: workspace.id,
-    metadata: { name: workspace.name },
+    entityId: updatedWorkspace.id,
+    metadata: { name: updatedWorkspace.name },
   });
 });
 

@@ -55,7 +55,7 @@ jobs:
           file: apps/web/Dockerfile
           push: true
           build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
             NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us
             NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us
@@ -64,3 +64,58 @@ jobs:
             ghcr.io/${{ env.REPO_LC }}/web:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          artifact-name: sbom-api
+          path: apps/api
+          format: spdx-json
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+
+      - name: Generate SBOM (CycloneDX) - Web
+        uses: anchore/sbom-action@v0
+        with:
+          artifact-name: sbom-web
+          path: apps/web
+          format: spdx-json
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: |
+            sbom-api.spdx.json
+            sbom-web.spdx.json
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+
+      - name: Run Trivy vulnerability scanner (API image)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "ghcr.io/${{ env.REPO_LC }}/api:dev"
+          format: "sarif"
+          output: "trivy-api.sarif"
+          severity: "HIGH,CRITICAL"
+
+      - name: Run Trivy vulnerability scanner (Web image)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "ghcr.io/${{ env.REPO_LC }}/web:dev"
+          format: "sarif"
+          output: "trivy-web.sarif"
+          severity: "HIGH,CRITICAL"
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-api.sarif"
+          category: "trivy-api"
+
+      - name: Upload Trivy results to GitHub Security (Web)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-web.sarif"
+          category: "trivy-web"

@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { createApp } from "./app.js";
 import { loadEnv } from "./config/env.js";
 import { initSupabase } from "./lib/supabase.js";
-import { initSocket } from "./lib/socket.js";
+import { initSocket, shutdownSocket } from "./lib/socket.js";
 import { initSentry } from "./lib/sentry.js";
 import { logger } from "./lib/logger.js";
 
@@ -19,7 +19,7 @@ process.env.FRONTEND_URL = env.FRONTEND_URL;
 
 const app = createApp(env.FRONTEND_URL);
 const httpServer = createServer(app);
-initSocket(httpServer, env.FRONTEND_URL);
+initSocket(httpServer, env.FRONTEND_URL, env.REDIS_URL);
 
 httpServer.listen(env.PORT, () => {
   logger.info(`API server listening on port ${env.PORT}`, { port: env.PORT });
@@ -27,7 +27,8 @@ httpServer.listen(env.PORT, () => {
 
 function shutdown(signal: string) {
   logger.info(`Received ${signal} — draining connections...`);
-  httpServer.close(() => {
+  httpServer.close(async () => {
+    await shutdownSocket();
     logger.info("All connections closed — shutting down");
     process.exit(0);
   });

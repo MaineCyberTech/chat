@@ -1,6 +1,7 @@
 import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import { loadEnv } from "../../config/env.js";
 import * as webPush from "web-push";
+import { logger } from "../../lib/logger.js";
 
 const env = loadEnv();
 
@@ -30,6 +31,9 @@ export interface PushPayload {
   tag?: string;
   requireInteraction?: boolean;
 }
+
+const MAX_PUSH_RETRIES = 3;
+const BASE_RETRY_DELAY_MS = 1000;
 
 export class PushSubscriptionService {
   private vapidKeys: { publicKey: string; privateKey: string } | null = null;
@@ -98,9 +102,35 @@ export class PushSubscriptionService {
     return !error;
   }
 
+  private async sendWithRetry(
+    pushSubscription: { endpoint: string; keys: { p256dh: string; auth: string } },
+    payload: PushPayload,
+    retryCount: number,
+  ): Promise<void> {
+    try {
+      await webPush.sendNotification(pushSubscription, JSON.stringify(payload));
+    } catch (err: unknown) {
+      const error = err as { statusCode?: number; message?: string };
+
+      // Don't retry on permanent failures (expired/invalid subscription)
+      if (error.statusCode === 410 || error.statusCode === 404) {
+        throw err;
+      }
+
+      // Retry on transient failures
+      if (retryCount < MAX_PUSH_RETRIES) {
+        const delayMs = BASE_RETRY_DELAY_MS * Math.pow(2, retryCount) + Math.random() * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        return this.sendWithRetry(pushSubscription, payload, retryCount + 1);
+      }
+
+      throw err;
+    }
+  }
+
   async sendPush(userId: string, payload: PushPayload): Promise<number> {
     if (!this.vapidKeys) {
-      console.warn("VAPID keys not configured, skipping push notification");
+      logger.warn("VAPID keys not configured, skipping push notification");
       return 0;
     }
 
@@ -120,7 +150,7 @@ export class PushSubscriptionService {
           },
         };
 
-        await webPush.sendNotification(pushSubscription, JSON.stringify(payload));
+        await this.sendWithRetry(pushSubscription, payload, 0);
         sentCount++;
       } catch (err: unknown) {
         const error = err as { statusCode?: number; message?: string };
@@ -128,7 +158,11 @@ export class PushSubscriptionService {
         if (error.statusCode === 410 || error.statusCode === 404) {
           await this.delete(userId, sub.id);
         }
-        console.error("Push notification failed:", error.message);
+        logger.error("Push notification failed", {
+          userId,
+          error: error.message,
+          statusCode: error.statusCode,
+        });
       }
     });
 

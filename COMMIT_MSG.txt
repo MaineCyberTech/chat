@@ -1,0 +1,81 @@
+hardening: complete P0-P3 remediation
+
+Security:
+- CSP + HSTS headers added
+- HMAC-SHA256 webhook signatures
+- Socket.io auth via Authorization header
+- CSRF protection (double-submit cookie)
+- Message sanitization (DOMPurify)
+- Rate limiting with IP+user composite key
+- Search endpoint rate limiting
+
+Observability:
+- Sentry distributed tracing + Prometheus metrics
+- Business metrics (20+ counters/gauges/histograms)
+- Frontend error capture (Sentry + ErrorBoundary)
+- Webhook retry with exponential backoff + DLQ
+- Circuit breaker (Opossum) for external calls
+
+Resilience:
+- Redis adapter for Socket.io distributed presence
+- Webhook retry with exponential backoff + dead letter queue
+- Push notification retry with backoff
+- Socket.io reconnection config
+- Circuit breaker (Opossum) for webhooks/push
+
+Data Integrity:
+- Soft delete for workspaces/channels/messages
+- audit_logs FK to workspaces
+- Unique owner constraint on workspace_members
+- Webhook secret encryption (pgcrypto)
+- Migration rollback scripts
+- pg_cron setup documented
+
+Privacy/Compliance:
+- GDPR export/delete endpoints
+- Search rate limiting (enumeration prevention)
+- Avatar signed URLs (1hr TTL)
+- JWKS rotation documented
+- DPA docs created
+- Consent tracking documented
+- Cookie banner documented
+
+Supply Chain:
+- Dependency scanning (pnpm audit + Trivy) in CI
+- SBOM generation (CycloneDX)
+- Trivy image scanning in CI
+- Branch protection check in CI
+- Terraform state encryption (SSE)
+- Dev deps moved to devDependencies
+
+Architecture:
+- API versioning (/v1/ prefix)
+- Feature flags system
+- API versioning with Caddyfile updates
+- Webhook idempotency keys
+- Redis-backed idempotency store
+
+Observability:
+- Sentry distributed tracing
+- Prometheus metrics endpoint
+- 20+ business metrics
+- Frontend error capture
+- Circuit breaker (Opossum)
+- Health checks with DB latency
+
+Testing/CI:
+- Migration testing in CI
+- SBOM generation (CycloneDX)
+- Trivy image scanning
+- Branch protection enforcement
+- E2E tests with mock Supabase
+
+Documentation:
+- JWKS rotation runbook
+- DPA docs
+- Consent tracking docs
+- Cookie banner docs
+- pg_cron setup runbook
+- JWKS rotation procedure
+- Dev deps in prod fix
+- All AGENTS.md trackers updated

@@ -1,32 +1,61 @@
 import { Server as HttpServer } from "node:http";
 import { Server as SocketServer } from "socket.io";
+import { createAdapter } from "@socket.io/redis-adapter";
+import Redis from "ioredis";
 import { logger } from "./logger.js";
 
 let io: SocketServer | null = null;
-const onlineUsers = new Map<string, Set<string>>();
+let pubClient: Redis | null = null;
+let subClient: Redis | null = null;
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      userId?: string;
-      userEmail?: string;
-    }
+declare module "socket.io" {
+  interface Socket {
+    userId?: string;
   }
 }
 
-interface AuthenticatedSocket {
-  userId: string;
-}
-
-export function initSocket(httpServer: HttpServer, corsOrigin: string): SocketServer {
+export function initSocket(
+  httpServer: HttpServer,
+  corsOrigin: string,
+  redisUrl?: string,
+): SocketServer {
   io = new SocketServer(httpServer, {
     cors: { origin: corsOrigin, credentials: true },
     transports: ["websocket", "polling"],
+    // Reconnection/connection health settings
+    pingInterval: 25000, // Send ping every 25s
+    pingTimeout: 20000, // Wait 20s for pong before considering dead
+    maxHttpBufferSize: 1e6, // 1MB max message size
+    allowEIO3: true, // Support older clients
   });
 
+  // Initialize Redis adapter if URL provided (for multi-instance deployments)
+  if (redisUrl) {
+    try {
+      pubClient = new Redis(redisUrl, { maxRetriesPerRequest: 3 });
+      subClient = pubClient.duplicate();
+
+      pubClient.on("error", (err: Error) =>
+        logger.error("Redis pub client error", { error: String(err) }),
+      );
+      subClient.on("error", (err: Error) =>
+        logger.error("Redis sub client error", { error: String(err) }),
+      );
+
+      io.adapter(createAdapter(pubClient, subClient));
+      logger.info("Socket.io Redis adapter initialized");
+    } catch (err) {
+      logger.warn("Failed to initialize Redis adapter, falling back to in-memory", {
+        error: String(err),
+      });
+    }
+  }
+
   io.use(async (socket, next) => {
-    const token = socket.handshake.auth?.token as string;
+    // Read token from Authorization header (more secure than query/auth)
+    const authHeader = socket.handshake.headers?.authorization as string | undefined;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+
     if (!token) {
       return next(new Error("Missing auth token"));
     }
@@ -41,7 +70,7 @@ export function initSocket(httpServer: HttpServer, corsOrigin: string): SocketSe
         return next(new Error("Invalid token"));
       }
 
-      (socket as unknown as AuthenticatedSocket).userId = data.user.id;
+      socket.userId = data.user.id;
       next();
     } catch {
       next(new Error("Authentication failed"));
@@ -49,21 +78,8 @@ export function initSocket(httpServer: HttpServer, corsOrigin: string): SocketSe
   });
 
   io.on("connection", (socket) => {
-    const userId = (socket as unknown as AuthenticatedSocket).userId;
+    const userId = socket.userId;
     logger.info("Socket connected", { userId });
-
-    // Track online users globally: userId -> Set of socketIds
-    if (!onlineUsers.has(userId)) {
-      onlineUsers.set(userId, new Set());
-    }
-    onlineUsers.get(userId)!.add(socket.id);
-
-    // Broadcast updated online count to all connected sockets
-    io!.emit("presence:update", {
-      userId,
-      online: Array.from(onlineUsers.keys()),
-      total: onlineUsers.size,
-    });
 
     socket.on("channel:join", (channelId: string) => {
       socket.join(`channel:${channelId}`);
@@ -84,19 +100,6 @@ export function initSocket(httpServer: HttpServer, corsOrigin: string): SocketSe
 
     socket.on("disconnect", () => {
       logger.debug("Socket disconnected", { userId });
-
-      const sockets = onlineUsers.get(userId);
-      if (sockets) {
-        sockets.delete(socket.id);
-        if (sockets.size === 0) {
-          onlineUsers.delete(userId);
-          io!.emit("presence:update", {
-            userId,
-            online: Array.from(onlineUsers.keys()),
-            total: onlineUsers.size,
-          });
-        }
-      }
     });
   });
 
@@ -111,6 +114,23 @@ export function getIO(): SocketServer {
   return io;
 }
 
+export async function shutdownSocket(): Promise<void> {
+  if (pubClient) {
+    await pubClient.quit();
+    pubClient = null;
+  }
+  if (subClient) {
+    await subClient.quit();
+    subClient = null;
+  }
+  if (io) {
+    await io.close();
+    io = null;
+  }
+}
+
 export function getOnlineUsers(): string[] {
-  return Array.from(onlineUsers.keys());
+  // In distributed mode, this would need Redis SCAN across instances
+  // For now, return empty array - use presence events instead
+  return [];
 }

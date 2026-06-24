@@ -1,0 +1,59 @@
+{
+  "name": "@chat/sdk",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./workspaces": {
+      "import": "./dist/workspaces.js",
+      "types": "./dist/workspaces.d.ts"
+    },
+    "./channels": {
+      "import": "./dist/channels.js",
+      "types": "./dist/channels.d.ts"
+    },
+    "./messages": {
+      "import": "./dist/messages.js",
+      "types": "./dist/messages.d.ts"
+    },
+    "./webhooks": {
+      "import": "./dist/webhooks.js",
+      "types": "./dist/webhooks.d.ts"
+    },
+    "./notifications": {
+      "import": "./dist/notifications.js",
+      "types": "./dist/notifications.d.ts"
+    },
+    "./preferences": {
+      "import": "./dist/preferences.js",
+      "types": "./dist/preferences.d.ts"
+    },
+    "./reactions": {
+      "import": "./dist/reactions.js",
+      "types": "./dist/reactions.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "eslint": "^9.22.0",
+    "typescript": "^5.8.0",
+    "rimraf": "^6.0.0"
+  }
+}

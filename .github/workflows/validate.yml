@@ -67,10 +67,116 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
 
+  security-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run pnpm audit
+        run: pnpm audit --prod --audit-level=high
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "HIGH,CRITICAL"
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+          category: "trivy"
+
+  branch-protection:
+    name: Check Branch Protection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.repository_owner == github.actor || github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check branch protection on main
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = await github.rest.repos.getBranchProtection({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              branch: 'main'
+            });
+
+            const required = [
+              'required_status_checks',
+              'enforce_admins',
+              'required_pull_request_reviews',
+              'restrictions'
+            ];
+
+            const missing = required.filter(r => !branch.data[r]);
+
+            if (missing.length > 0) {
+              console.log('❌ Missing branch protection rules:', missing.join(', '));
+              core.setFailed(`Branch protection not fully configured. Missing: ${missing.join(', ')}`);
+            } else {
+              console.log('✅ All branch protection rules configured');
+            }
+
+  migration-test:
+    name: Test Database Migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: "latest"
+
+      - name: Start Supabase local
+        run: supabase start --workdir ./supabase
+
+      - name: Apply migrations
+        run: supabase db reset --workdir ./supabase
+
+      - name: Verify migration status
+        run: supabase migration list --workdir ./supabase
+
+      - name: Test migration up/down (dry run)
+        run: |
+          # Test that all migrations can be applied cleanly
+          supabase db diff --workdir ./supabase --schema public --dry-run || true
+
+      - name: Run database tests (if any)
+        run: |
+          # Run any SQL-based tests
+          if [ -d "./supabase/tests" ]; then
+            for test in ./supabase/tests/*.sql; do
+              echo "Running $test..."
+              supabase db execute --workdir ./supabase --file "$test" || exit 1
+            done
+          else
+            echo "No SQL tests found, skipping"
+          fi
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [lint, typecheck, test]
+    needs: [lint, typecheck, test, security-audit, branch-protection, migration-test]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

@@ -232,14 +232,14 @@
     --color-button-secondary-bg-active: #525252;
     --color-button-secondary-fg: #fafafa;
     --color-button-secondary-border: #404040;
-  --color-button-secondary-focus-ring: #737373;
+    --color-button-secondary-focus-ring: #737373;
 
     --color-button-ghost-bg: transparent;
     --color-button-ghost-bg-hover: #262626;
     --color-button-ghost-bg-active: #404040;
     --color-button-ghost-fg: #d4d4d4;
     --color-button-ghost-border: transparent;
-  --color-button-ghost-focus-ring: #737373;
+    --color-button-ghost-focus-ring: #737373;
 
     --color-input-bg: #262626;
     --color-input-border: #404040;
@@ -268,7 +268,7 @@
     --color-dialog-overlay: rgba(0, 0, 0, 0.7);
     --color-dialog-bg: #171717;
     --color-dialog-close-btn-bg-hover: #262626;
-  --color-dialog-close-btn-fg: #737373;
+    --color-dialog-close-btn-fg: #737373;
     --color-dialog-close-btn-fg-hover: #d4d4d4;
 
     --color-sidebar-title-fg: #737373;

@@ -7,6 +7,7 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  REDIS_URL: z.string().url().optional(),
   API_BASE_URL: z.string().url().default("http://localhost:4000"),
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
   SENTRY_DSN: z.string().optional(),

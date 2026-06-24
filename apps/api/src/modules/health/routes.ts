@@ -4,12 +4,14 @@ import { healthService } from "./service.js";
 const router: RouterType = Router();
 
 router.get("/health", (_req, res) => {
-  res.json(healthService.getReadiness());
+  const readiness = healthService.getReadiness();
+  res.status(200).json(readiness);
 });
 
 router.get("/healthz", async (_req, res) => {
   const result = await healthService.getFullHealth();
-  res.status(result.status === "ok" ? 200 : 503).json(result);
+  const statusCode = result.status === "healthy" ? 200 : result.status === "degraded" ? 200 : 503;
+  res.status(statusCode).json(result);
 });
 
 export default router;

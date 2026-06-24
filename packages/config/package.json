@@ -1,0 +1,20 @@
+{
+  "name": "@chat/config",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "echo 'Config package - no build needed'",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "eslint": "^9.22.0",
+    "typescript-eslint": "^8.26.0",
+    "prettier": "^3.5.0",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "vitest": "^3.0.0",
+    "zod": "^3.24.0"
+  }
+}

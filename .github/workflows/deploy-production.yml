@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       rollback_sha:
-        description: 'SHA to rollback to (leave empty for latest)'
+        description: "SHA to rollback to (leave empty for latest)"
         required: false
         type: string
   push:

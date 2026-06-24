@@ -85,7 +85,7 @@ describe("WorkspaceService", () => {
   it("lists workspaces for a user", async () => {
     const list = await service.listByUser();
     expect(list).toHaveLength(1);
-    expect(list[0].name).toBe("Test");
+    expect(list[0]?.name).toBe("Test");
   });
 
   it("gets a workspace by id", async () => {

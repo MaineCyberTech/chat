@@ -1,9 +1,16 @@
+export interface HealthCheck {
+  status: "healthy" | "unhealthy" | "degraded";
+  latencyMs?: number;
+  message?: string;
+}
+
 export interface HealthStatus {
-  status: "ok" | "degraded" | "down";
+  service: string;
+  status: "healthy" | "degraded" | "down";
   timestamp: string;
   uptime: number;
   version: string;
-  checks: Record<string, { status: string; message?: string; latencyMs?: number }>;
+  checks: Record<string, HealthCheck>;
 }
 
 export class HealthService {
@@ -14,12 +21,13 @@ export class HealthService {
   }
 
   getReadiness(): HealthStatus {
-    const checks: Record<string, { status: string; message?: string }> = {
-      server: { status: "ok" },
+    const checks: Record<string, HealthCheck> = {
+      server: { status: "healthy" },
     };
 
     return {
-      status: "ok",
+      service: "api",
+      status: "healthy",
       timestamp: new Date().toISOString(),
       uptime: Math.floor((Date.now() - this.startTime) / 1000),
       version: process.env.npm_package_version ?? "0.0.0",
@@ -28,8 +36,8 @@ export class HealthService {
   }
 
   async getFullHealth(): Promise<HealthStatus> {
-    const checks: Record<string, { status: string; message?: string; latencyMs?: number }> = {
-      server: { status: "ok" },
+    const checks: Record<string, HealthCheck> = {
+      server: { status: "healthy" },
     };
 
     try {
@@ -47,21 +55,14 @@ export class HealthService {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       checks.database = { status: "unhealthy", message: msg };
-      return {
-        status: "degraded",
-        timestamp: new Date().toISOString(),
-        uptime: Math.floor((Date.now() - this.startTime) / 1000),
-        version: process.env.npm_package_version ?? "0.0.0",
-        checks,
-      };
     }
 
-    const allHealthy = Object.values(checks).every(
-      (c) => c.status === "healthy" || c.status === "ok",
-    );
+    const hasUnhealthy = Object.values(checks).some((c) => c.status === "unhealthy");
+    const hasDegraded = Object.values(checks).some((c) => c.status === "degraded");
 
     return {
-      status: allHealthy ? "ok" : "degraded",
+      service: "api",
+      status: hasUnhealthy ? "down" : hasDegraded ? "degraded" : "healthy",
       timestamp: new Date().toISOString(),
       uptime: Math.floor((Date.now() - this.startTime) / 1000),
       version: process.env.npm_package_version ?? "0.0.0",

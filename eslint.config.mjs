@@ -1,34 +1,12 @@
-import js from "@eslint/js";
-import tseslint from "typescript-eslint";
+import sharedConfig from "./packages/config/eslint.config.mjs";
 import nextPlugin from "@next/eslint-plugin-next";
+import tseslint from "typescript-eslint";
 
-export default tseslint.config(
-  {
-    ignores: [
-      "**/dist/**",
-      "**/.next/**",
-      "**/.turbo/**",
-      "**/coverage/**",
-      "**/next-env.d.ts",
-      "**/postcss.config.js",
-      "**/public/**",
-      "**/scripts/**",
-    ],
+export default tseslint.config(...sharedConfig, {
+  files: ["apps/web/**/*.{ts,tsx}"],
+  plugins: { "@next/next": nextPlugin },
+  rules: {
+    ...nextPlugin.configs.recommended.rules,
+    ...nextPlugin.configs["core-web-vitals"].rules,
   },
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
-  {
-    files: ["apps/web/**/*.{ts,tsx}"],
-    plugins: { "@next/next": nextPlugin },
-    rules: {
-      ...nextPlugin.configs.recommended.rules,
-      ...nextPlugin.configs["core-web-vitals"].rules,
-    },
-  },
-  {
-    files: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-    },
-  },
-);
+});

@@ -52,66 +52,58 @@ jobs:
           echo "Using droplet IP: $IP"
 
       - name: Wait for SSH
-        run: |
-          echo "${{ secrets.CI_SSH_PRIVATE_KEY }}" > /tmp/ssh_key
-          chmod 600 /tmp/ssh_key
-          IP="${{ steps.ip.outputs.droplet_ip }}"
-          echo "Waiting for SSH on $IP..."
-          for i in $(seq 1 60); do
-            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i /tmp/ssh_key root@$IP "echo ready" 2>/dev/null; then
-              echo "SSH ready after $((i * 10))s"
-              exit 0
-            fi
-            echo "Attempt $i: not ready, retrying in 10s..."
-            sleep 10
-          done
-          echo "SSH never became available"
-          exit 1
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ steps.ip.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          script: echo "SSH ready"
+          timeout: 60s
 
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
       - name: Deploy
-        env:
-          SSH_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
-          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
-          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
-        run: |
-          echo "$SSH_KEY" > /tmp/ssh_key
-          chmod 600 /tmp/ssh_key
-          IP="${{ steps.ip.outputs.droplet_ip }}"
-          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o ConnectTimeout=10"
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ steps.ip.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          env:
+            SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+            SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+            SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+            DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+            CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+            CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+            CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
+            CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
+            VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+            VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+            REPO_DIR: /opt/chat
+            REPO_LC: ${{ github.repository_owner }}/${{ github.event.repository.name }}
+          script: |
+            set -e
+            echo "=== SSH pre-flight ==="
+            echo "ALIVE_$(date +%s)"
 
-          echo "=== SSH pre-flight ==="
-          ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "echo ALIVE_$(date +%s)" 2>&1
-          echo "SSH_TEST_EXIT=$?"
+            echo "=== Writing env file ==="
+            cat > ${REPO_DIR}/.env << 'ENVEOF'
+            SUPABASE_URL=${SUPABASE_URL}
+            SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+            SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+            NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us
+            NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+            NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us
+            NODE_ENV=development
+            API_BASE_URL=https://chat-api.mainecybertech.us
+            FRONTEND_URL=https://chat.mainecybertech.us
+            VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+            VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+            ENVEOF
 
-          echo "=== Writing env file ==="
-          echo "SUPABASE_URL=${SUPABASE_URL}" > /tmp/.env.devremote
-          echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >> /tmp/.env.devremote
-          echo "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}" >> /tmp/.env.devremote
-          echo "NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us" >> /tmp/.env.devremote
-          echo "NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}" >> /tmp/.env.devremote
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >> /tmp/.env.devremote
-          echo "NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us" >> /tmp/.env.devremote
-          echo "NODE_ENV=development" >> /tmp/.env.devremote
-          echo "API_BASE_URL=https://chat-api.mainecybertech.us" >> /tmp/.env.devremote
-          echo "FRONTEND_URL=https://chat.mainecybertech.us" >> /tmp/.env.devremote
-          echo "VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> /tmp/.env.devremote
-          echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> /tmp/.env.devremote
-
-          echo "=== Transferring env file ==="
-          base64 -w0 /tmp/.env.devremote | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/.env"
-          echo "ENV_EXIT=$?"
-
-          echo "=== Droplet setup ==="
-          ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "
+            echo "=== Droplet setup ==="
             cloud-init status --wait 2>/dev/null || true
             if ! docker compose version >/dev/null 2>&1; then
               apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2
@@ -122,87 +114,73 @@ jobs:
               apk add --no-cache openssl 2>/dev/null || apt-get install -y -qq openssl
               openssl req -x509 -newkey rsa:2048 -keyout ${REPO_DIR}/certs/privkey.pem -out ${REPO_DIR}/certs/fullchain.pem -days 3650 -nodes -subj "/CN=*.mainecybertech.us/O=Chat Platform" 2>/dev/null
             fi
-            for i in \$(seq 1 12); do docker info >/dev/null 2>&1 && break; echo 'Waiting for Docker...'; sleep 10; done
+            for i in $(seq 1 12); do docker info >/dev/null 2>&1 && break; echo 'Waiting for Docker...'; sleep 10; done
             if [ ! -f /swapfile ]; then
               fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
             fi
-            docker stop \$(docker ps -q) 2>/dev/null || true
-            docker rm -f \$(docker ps -aq) 2>/dev/null || true
+            docker stop $(docker ps -q) 2>/dev/null || true
+            docker rm -f $(docker ps -aq) 2>/dev/null || true
             docker network prune -f 2>/dev/null || true
             docker system prune -af 2>/dev/null || true
             fuser -k 80/tcp 2>/dev/null || true
             df -h /
-          "
-          echo "SETUP_EXIT=$?"
 
-          echo "=== Transferring compose file ==="
-          base64 -w0 infra/docker/docker-compose.devremote.yml | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/docker-compose.yml"
-          echo "COMPOSE_EXIT=$?"
+            echo "=== Transferring compose file ==="
+            cat > ${REPO_DIR}/docker-compose.yml << 'COMPOSEEOF'
+            $(base64 -w0 infra/docker/docker-compose.devremote.yml)
+            COMPOSEEOF
+            base64 -d <<< "$(cat ${REPO_DIR}/docker-compose.yml)" > ${REPO_DIR}/docker-compose.yml
 
-          echo "=== Transferring Caddyfile ==="
-          base64 -w0 infra/docker/Caddyfile | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > ${REPO_DIR}/Caddyfile"
-          echo "CADDY_EXIT=$?"
+            echo "=== Transferring Caddyfile ==="
+            cat > ${REPO_DIR}/Caddyfile << 'CADDYEOF'
+            $(base64 -w0 infra/docker/Caddyfile)
+            CADDYEOF
+            base64 -d <<< "$(cat ${REPO_DIR}/Caddyfile)" > ${REPO_DIR}/Caddyfile
 
-          echo "=== Transferring TLS certs ==="
-          if [ -n "$CF_ORIGIN_CERT" ]; then
-            echo "$CF_ORIGIN_CERT" > /tmp/fullchain.pem
-            echo "$CF_ORIGIN_KEY" > /tmp/privkey.pem
-            ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "mkdir -p ${REPO_DIR}/certs"
-            cat /tmp/fullchain.pem | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "cat > ${REPO_DIR}/certs/fullchain.pem"
-            cat /tmp/privkey.pem | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "cat > ${REPO_DIR}/certs/privkey.pem"
-            ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "chmod 600 ${REPO_DIR}/certs/privkey.pem ${REPO_DIR}/certs/fullchain.pem"
-            echo "CERT_EXIT=$?"
-          else
-            echo "CF_ORIGIN_CERT secret not set — using self-signed certs"
-          fi
+            echo "=== Transferring TLS certs ==="
+            if [ -n "${CF_ORIGIN_CERT}" ]; then
+              mkdir -p ${REPO_DIR}/certs
+              echo "${CF_ORIGIN_CERT}" > ${REPO_DIR}/certs/fullchain.pem
+              echo "${CF_ORIGIN_KEY}" > ${REPO_DIR}/certs/privkey.pem
+              chmod 600 ${REPO_DIR}/certs/privkey.pem ${REPO_DIR}/certs/fullchain.pem
+            else
+              echo "CF_ORIGIN_CERT secret not set — using self-signed certs"
+            fi
 
-          echo "=== Piping images ==="
-          for IMG in api web; do
-            IMG_TAG=dev
-            echo "--- PIPING $IMG IMAGE ---"
-            REPO_LC="${GITHUB_REPOSITORY,,}"
-            echo "REPO_LC=$REPO_LC"
-            # Try docker pull first as fallback, then pipe if pull fails
-            docker pull ghcr.io/$REPO_LC/$IMG:$IMG_TAG 2>&1 && {
-              echo "Pull successful for $IMG, skipping pipe"
-            } || {
-              echo "Pull failed, piping image for $IMG"
-              docker save ghcr.io/$REPO_LC/$IMG:$IMG_TAG | gzip | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "gunzip | docker load" 2>&1
-            }
-            echo "PIPE_${IMG^^}_EXIT=$?"
-          done
+            echo "=== Piping images ==="
+            for IMG in api web; do
+              IMG_TAG=dev
+              echo "--- PIPING $IMG IMAGE ---"
+              # Try docker pull first as fallback, then pipe if pull fails
+              docker pull ghcr.io/${REPO_LC}/$IMG:$IMG_TAG 2>&1 && {
+                echo "Pull successful for $IMG, skipping pipe"
+              } || {
+                echo "Pull failed, piping image for $IMG"
+                docker save ghcr.io/${REPO_LC}/$IMG:$IMG_TAG | gzip | gunzip | docker load
+              }
+            done
 
-          echo "=== Starting services ==="
-          ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "
+            echo "=== Starting services ==="
             cd ${REPO_DIR}
             sleep 2
             docker compose -f docker-compose.yml up -d --remove-orphans
             sleep 5
-          "
-          echo "COMPOSE_UP_EXIT=$?"
 
-          echo "=== Health check ==="
-          cat > /tmp/health.sh << 'CHECKEOF'
-          #!/bin/bash
-          cd /opt/chat
-          i=1
-          while [ $i -le 12 ]; do
-            if docker compose -f docker-compose.yml ps --format json | grep -q '"State":"running"'; then
-              echo "ALL HEALTHY"
-              docker image prune -af
-              exit 0
-            fi
-            echo "Attempt $i: waiting for API..."
-            sleep 10
-            i=$((i + 1))
-          done
-          echo "FAILED: Services did not become healthy"
-          docker compose -f docker-compose.yml logs --tail 50
-          exit 1
-          CHECKEOF
-          base64 -w0 /tmp/health.sh | ssh $SSH_OPTS -i /tmp/ssh_key root@$IP "base64 -d > /tmp/health.sh && chmod +x /tmp/health.sh && bash /tmp/health.sh"
-
-          rm -f /tmp/ssh_key
+            echo "=== Health check ==="
+            i=1
+            while [ $i -le 12 ]; do
+              if docker compose -f docker-compose.yml ps --format json | grep -q '"State":"running"'; then
+                echo "ALL HEALTHY"
+                docker image prune -af
+                exit 0
+              fi
+              echo "Attempt $i: waiting for API..."
+              sleep 10
+              i=$((i + 1))
+            done
+            echo "FAILED: Services did not become healthy"
+            docker compose -f docker-compose.yml logs --tail 50
+            exit 1
 
       - name: Health check
         run: |

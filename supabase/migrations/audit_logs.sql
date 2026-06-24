@@ -1,7 +1,8 @@
 -- Audit logging
 create table if not exists public.audit_logs (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid,
+  (),
+  organization_id uuid references public.workspaces(id) on delete set null,
   actor_user_id uuid references auth.users(id) on delete set null,
   actor_type text not null default 'user',
   action text not null,
@@ -20,12 +21,22 @@ create index if not exists idx_audit_logs_actor
 alter table public.audit_logs enable row level security;
 
 -- Users can read their own audit log entries
+-- Workspace admins/owners can read audit logs for their workspace
 -- Server-side writes use service_role which bypasses RLS
 create policy "audit_logs_select_authenticated"
 on public.audit_logs for select
 to authenticated
 using (
   actor_user_id = auth.uid()
+  or (
+    organization_id is not null
+    and exists (
+      select 1 from public.workspace_members
+      where workspace_id = audit_logs.organization_id
+        and user_id = auth.uid()
+        and role in ('owner', 'admin')
+    )
+  )
 );
 
 -- Inserts are handled server-side via service role, but if direct inserts are needed:
