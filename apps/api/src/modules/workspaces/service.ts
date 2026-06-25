@@ -1,4 +1,4 @@
-import { getSupabase } from "../../lib/supabase.js";
+import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
 import { webhookService } from "../webhooks/service.js";
 import type { Workspace } from "@chat/db";
@@ -40,7 +40,7 @@ export class WorkspaceService {
   }
 
   async create(input: CreateWorkspaceInput): Promise<Workspace | null> {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const slug = input.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -69,20 +69,6 @@ export class WorkspaceService {
     if (!data) {
       logger.error("Workspace insert returned no data", { input, slug });
       return null;
-    }
-
-    // Add creator as a member
-    const { error: memberError } = await supabase.from("workspace_members").insert({
-      workspace_id: data.id,
-      user_id: input.owner_id,
-    });
-
-    if (memberError) {
-      logger.error("Workspace member insert error", {
-        error: memberError.message,
-        workspaceId: data.id,
-        userId: input.owner_id,
-      });
     }
 
     webhookService

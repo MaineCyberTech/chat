@@ -18,6 +18,7 @@ COPY packages/db/src ./packages/db/src
 COPY apps/web/app ./apps/web/app
 COPY apps/web/components ./apps/web/components
 COPY apps/web/lib ./apps/web/lib
+COPY apps/web/public ./apps/web/public
 
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_SUPABASE_URL
