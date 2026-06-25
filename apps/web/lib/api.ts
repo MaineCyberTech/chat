@@ -1,6 +1,21 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const CSRF_COOKIE_NAME = "csrf_token";
+
+let csrfPromise: Promise<void> | null = null;
+
+function getCsrfToken(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_COOKIE_NAME}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
+async function ensureCsrfToken(): Promise<void> {
+  if (typeof document === "undefined") return;
+  if (getCsrfToken()) return;
+  await fetch(`${API_BASE}/healthz`, { method: "GET", credentials: "include" });
+}
 
 async function getToken(): Promise<string | null> {
   const supabase = getSupabaseBrowserClient();
@@ -15,6 +30,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...((options.headers as Record<string, string>) ?? {}),
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (options.method && options.method !== "GET" && options.method !== "HEAD") {
+    if (!csrfPromise) csrfPromise = ensureCsrfToken();
+    await csrfPromise;
+    const csrfToken = getCsrfToken();
+    if (csrfToken) headers["x-csrf-token"] = csrfToken;
+  }
 
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
