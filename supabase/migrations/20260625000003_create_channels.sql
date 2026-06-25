@@ -3,7 +3,7 @@
 -- Run after 002_workspaces.sql.
 
 CREATE TABLE IF NOT EXISTS public.channels (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id  UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
   name          TEXT NOT NULL,
   slug          TEXT NOT NULL,

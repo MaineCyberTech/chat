@@ -3,7 +3,7 @@
 -- Run after 003_channels.sql.
 
 CREATE TABLE IF NOT EXISTS public.messages (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   channel_id  UUID NOT NULL REFERENCES public.channels(id) ON DELETE CASCADE,
   user_id     UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   content     TEXT NOT NULL,
