@@ -92,6 +92,9 @@ importers:
       ioredis:
         specifier: ^5.4.0
         version: 5.11.1
+      jsdom:
+        specifier: ^26.1.0
+        version: 26.1.0
       opossum:
         specifier: ^8.1.0
         version: 8.5.0
