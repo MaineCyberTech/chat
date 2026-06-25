@@ -84,12 +84,12 @@ jobs:
 
             # Generate .env file with only non-empty secrets
             cat > ${{ env.REPO_DIR }}/.env << 'EOF'
-NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us
-NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us
-NODE_ENV=development
-API_BASE_URL=https://chat-api.mainecybertech.us
-FRONTEND_URL=https://chat.mainecybertech.us
-EOF
+            NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.us
+            NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us
+            NODE_ENV=development
+            API_BASE_URL=https://chat-api.mainecybertech.us
+            FRONTEND_URL=https://chat.mainecybertech.us
+            EOF
 
             # Add secrets only if they're set
             if [ -n "${{ secrets.SUPABASE_URL }}" ]; then
