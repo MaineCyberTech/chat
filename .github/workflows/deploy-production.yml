@@ -187,6 +187,10 @@ jobs:
           host: ${{ needs.provision.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY
+        env:
+          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
+          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
           script: |
             if [ ! -d "${{ env.REPO_DIR }}" ]; then
               git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }}
@@ -212,12 +216,8 @@ jobs:
             EOF
             CERT_DIR=/opt/chat/infra/docker/certs
             mkdir -p "$CERT_DIR"
-            cat > "$CERT_DIR/fullchain.pem" << 'CERTEOF'
-${{ secrets.CF_ORIGIN_CERT }}
-CERTEOF
-            cat > "$CERT_DIR/privkey.pem" << 'CERTEOF'
-${{ secrets.CF_ORIGIN_KEY }}
-CERTEOF
+            echo "$CF_ORIGIN_CERT" > "$CERT_DIR/fullchain.pem"
+            echo "$CF_ORIGIN_KEY" > "$CERT_DIR/privkey.pem"
             chmod 600 "$CERT_DIR/privkey.pem"
             mkdir -p /opt/chat/caddy-data /opt/chat/caddy-config
 
