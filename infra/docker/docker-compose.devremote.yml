@@ -38,16 +38,16 @@ services:
         condition: service_healthy
 
 api:
-    image: ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:dev}
-    container_name: chat-api-dev
-    restart: unless-stopped
-    mem_limit: 192m
-    command: ["sh", "-c", "node dist/server.js 2>&1"]
-    env_file: .env
-    environment:
-      <<: *common-env
-      PORT: 4000
-      NODE_ENV: development
+  image: ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:dev}
+  container_name: chat-api-dev
+  restart: unless-stopped
+  mem_limit: 192m
+  command: ["sh", "-c", "node dist/server.js 2>&1"]
+  env_file: .env
+  environment:
+    <<: *common-env
+    PORT: 4000
+    NODE_ENV: development
 
 networks:
   chat-dev:
