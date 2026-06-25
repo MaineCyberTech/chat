@@ -132,7 +132,7 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             docker pull ghcr.io/${{ env.REPO_LC }}/api:dev
             docker pull ghcr.io/${{ env.REPO_LC }}/web:dev
-            docker compose -f infra/docker/docker-compose.devremote.yml up -d --remove-orphans
+            docker compose -f infra/docker/docker-compose.devremote.yml up -d --force-recreate --remove-orphans
             docker image prune -af
 
             for i in $(seq 1 12); do
