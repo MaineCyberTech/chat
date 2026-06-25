@@ -48,6 +48,8 @@ services:
       <<: *common-env
       PORT: 4000
       NODE_ENV: development
+    networks:
+      - chat-dev
 
 networks:
   chat-dev:
