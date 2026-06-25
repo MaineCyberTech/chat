@@ -42,7 +42,7 @@ export class PushClient {
   private async fetchVapidKey(): Promise<void> {
     try {
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      const res = await fetch(`${apiBase}/notifications/push-subscriptions/vapid-key`);
+      const res = await fetch(`${apiBase}/v1/notifications/push-subscriptions/vapid-key`);
       if (res.ok) {
         const data = await res.json();
         this.vapidPublicKey = data.publicKey;

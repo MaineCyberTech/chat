@@ -23,6 +23,10 @@ async function getToken(): Promise<string | null> {
   return data.session?.access_token ?? null;
 }
 
+function apiPath(path: string): string {
+  return path.startsWith("/v1") ? path : `/v1${path}`;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = await getToken();
   const headers: Record<string, string> = {
@@ -37,7 +41,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (csrfToken) headers["x-csrf-token"] = csrfToken;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const res = await fetch(`${API_BASE}${apiPath(path)}`, { ...options, headers });
 
   if (res.status === 401) {
     const supabase = getSupabaseBrowserClient();

@@ -161,7 +161,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-            NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.com
+            NEXT_PUBLIC_API_URL=https://chat.mainecybertech.com
             NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.com
           tags: |
             ghcr.io/${{ env.REPO_LC }}/web:latest
@@ -199,13 +199,13 @@ jobs:
             SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
             SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-            NEXT_PUBLIC_API_URL=https://chat-api.mainecybertech.com
+            NEXT_PUBLIC_API_URL=https://chat.mainecybertech.com
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
             NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.com
             PORT=4000
             NODE_ENV=production
-            API_BASE_URL=https://chat-api.mainecybertech.com
+            API_BASE_URL=https://chat.mainecybertech.com
             FRONTEND_URL=https://chat.mainecybertech.com
             VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
             VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}
