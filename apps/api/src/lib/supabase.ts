@@ -40,6 +40,18 @@ export function getSupabaseAdmin(): SupabaseClient {
   return adminClient;
 }
 
+// Creates a Supabase client with the user's JWT for RLS-aware queries.
+// Each request should get its own client to avoid session conflicts.
+export function getSupabaseForUser(jwt: string): SupabaseClient {
+  if (!anonClient) {
+    throw new Error("Supabase not initialized. Call initSupabase() first.");
+  }
+  return createClient(anonClient.supabaseUrl, anonClient.supabaseKey, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: `Bearer ${jwt}` } },
+  });
+}
+
 export function getAdminOrAnon(): SupabaseClient {
   return adminClient ?? getSupabase();
 }

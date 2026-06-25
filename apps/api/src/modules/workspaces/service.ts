@@ -2,6 +2,7 @@ import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
 import { webhookService } from "../webhooks/service.js";
 import type { Workspace } from "@chat/db";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface CreateWorkspaceInput {
   name: string;
@@ -13,12 +14,16 @@ interface UpdateWorkspaceInput {
 }
 
 export class WorkspaceService {
+  private getClient(supabase?: SupabaseClient): SupabaseClient {
+    return supabase ?? getSupabase();
+  }
+
   // Returns all workspaces accessible to the current authenticated user.
   // Filtering is enforced by Row-Level Security (RLS) policies on the workspaces table,
   // which restrict results to workspaces where the user is a member.
-  async listByUser(): Promise<Workspace[]> {
-    const supabase = getSupabase();
-    const { data, error } = await supabase
+  async listByUser(supabase?: SupabaseClient): Promise<Workspace[]> {
+    const client = this.getClient(supabase);
+    const { data, error } = await client
       .from("workspaces")
       .select("*")
       .order("created_at", { ascending: true });
@@ -27,9 +32,9 @@ export class WorkspaceService {
     return (data ?? []) as Workspace[];
   }
 
-  async getById(workspaceId: string): Promise<Workspace | null> {
-    const supabase = getSupabase();
-    const { data, error } = await supabase
+  async getById(workspaceId: string, supabase?: SupabaseClient): Promise<Workspace | null> {
+    const client = this.getClient(supabase);
+    const { data, error } = await client
       .from("workspaces")
       .select("*")
       .eq("id", workspaceId)
@@ -83,8 +88,12 @@ export class WorkspaceService {
     return data as Workspace;
   }
 
-  async update(workspaceId: string, input: UpdateWorkspaceInput): Promise<Workspace | null> {
-    const supabase = getSupabase();
+  async update(
+    workspaceId: string,
+    input: UpdateWorkspaceInput,
+    supabase?: SupabaseClient,
+  ): Promise<Workspace | null> {
+    const client = this.getClient(supabase);
     const updates: Record<string, string> = {};
     if (input.name) {
       updates.name = input.name;
@@ -94,7 +103,7 @@ export class WorkspaceService {
         .replace(/(^-|-$)/g, "");
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from("workspaces")
       .update(updates)
       .eq("id", workspaceId)
@@ -114,9 +123,9 @@ export class WorkspaceService {
     return data as Workspace;
   }
 
-  async remove(workspaceId: string): Promise<boolean> {
-    const supabase = getSupabase();
-    const { error } = await supabase.from("workspaces").delete().eq("id", workspaceId);
+  async remove(workspaceId: string, supabase?: SupabaseClient): Promise<boolean> {
+    const client = this.getClient(supabase);
+    const { error } = await client.from("workspaces").delete().eq("id", workspaceId);
     const success = !error;
 
     if (success) {
@@ -132,11 +141,12 @@ export class WorkspaceService {
 
   async getMembers(
     workspaceId: string,
+    supabase?: SupabaseClient,
   ): Promise<
     { user_id: string; display_name: string | null; email: string; avatar_url: string | null }[]
   > {
-    const supabase = getSupabase();
-    const { data } = await supabase
+    const client = this.getClient(supabase);
+    const { data } = await client
       .from("workspace_members")
       .select("user_id, role, users!inner(display_name, email, avatar_url)")
       .eq("workspace_id", workspaceId);
@@ -164,9 +174,10 @@ export class WorkspaceService {
     workspaceId: string,
     userId: string,
     role: "owner" | "admin" | "member" = "member",
+    supabase?: SupabaseClient,
   ): Promise<boolean> {
-    const supabase = getSupabase();
-    const { error } = await supabase.from("workspace_members").insert({
+    const client = this.getClient(supabase);
+    const { error } = await client.from("workspace_members").insert({
       workspace_id: workspaceId,
       user_id: userId,
       role,
@@ -174,9 +185,13 @@ export class WorkspaceService {
     return !error;
   }
 
-  async removeMember(workspaceId: string, userId: string): Promise<boolean> {
-    const supabase = getSupabase();
-    const { error } = await supabase
+  async removeMember(
+    workspaceId: string,
+    userId: string,
+    supabase?: SupabaseClient,
+  ): Promise<boolean> {
+    const client = this.getClient(supabase);
+    const { error } = await client
       .from("workspace_members")
       .delete()
       .eq("workspace_id", workspaceId)
@@ -188,9 +203,10 @@ export class WorkspaceService {
     workspaceId: string,
     userId: string,
     role: "owner" | "admin" | "member",
+    supabase?: SupabaseClient,
   ): Promise<boolean> {
-    const supabase = getSupabase();
-    const { error } = await supabase
+    const client = this.getClient(supabase);
+    const { error } = await client
       .from("workspace_members")
       .update({ role })
       .eq("workspace_id", workspaceId)
