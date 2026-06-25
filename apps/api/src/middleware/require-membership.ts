@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { getSupabase } from "../lib/supabase.js";
+import { getSupabaseForUser } from "../lib/supabase.js";
 
 export function requireWorkspaceMembership(paramName = "workspaceId") {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -9,7 +9,12 @@ export function requireWorkspaceMembership(paramName = "workspaceId") {
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = (req as Request & { supabase?: ReturnType<typeof getSupabaseForUser> })
+      .supabase;
+    if (!supabase) {
+      res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
+      return;
+    }
     const { data, error } = await supabase
       .from("workspace_members")
       .select("role")
@@ -37,7 +42,12 @@ export function requireChannelAccess(paramName = "channelId") {
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = (req as Request & { supabase?: ReturnType<typeof getSupabaseForUser> })
+      .supabase;
+    if (!supabase) {
+      res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
+      return;
+    }
     const { data: channel, error: channelError } = await supabase
       .from("channels")
       .select("workspace_id, is_private")

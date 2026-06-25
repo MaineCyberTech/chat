@@ -16,7 +16,7 @@ const router: RouterType = Router();
 router.use(authenticate);
 
 router.get("/", async (req, res) => {
-  const workspaces = await workspaceService.listByUser();
+  const workspaces = await workspaceService.listByUser(req.supabase);
   res.json({ workspaces });
 });
 
@@ -59,7 +59,7 @@ router.post("/", async (req, res) => {
 });
 
 router.get("/:id", validateUuidParam("id"), requireWorkspaceMembership(), async (req, res) => {
-  const workspace = await workspaceService.getById(req.params.id as string);
+  const workspace = await workspaceService.getById(req.params.id as string, req.supabase);
   if (!workspace) {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
     return;
@@ -76,7 +76,11 @@ router.patch("/:id", validateUuidParam("id"), requireWorkspaceMembership(), asyn
     return;
   }
 
-  const workspace = await workspaceService.update(req.params.id as string, parsed.data);
+  const workspace = await workspaceService.update(
+    req.params.id as string,
+    parsed.data,
+    req.supabase,
+  );
   if (!workspace) {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
     return;
@@ -98,7 +102,7 @@ router.get(
   validateUuidParam("id"),
   requireWorkspaceMembership(),
   async (req, res) => {
-    const members = await workspaceService.getMembers(req.params.id as string);
+    const members = await workspaceService.getMembers(req.params.id as string, req.supabase);
     res.json({ members });
   },
 );
@@ -120,6 +124,7 @@ router.post(
       req.params.id as string,
       parsed.data.user_id,
       parsed.data.role,
+      req.supabase,
     );
     if (!success) {
       res.status(500).json({ error: { code: "CREATE_FAILED", message: "Could not add member" } });
@@ -156,6 +161,7 @@ router.patch(
       req.params.id as string,
       req.params.userId as string,
       parsed.data.role,
+      req.supabase,
     );
     if (!success) {
       res.status(404).json({ error: { code: "NOT_FOUND", message: "Member not found" } });
@@ -183,6 +189,7 @@ router.delete(
     const success = await workspaceService.removeMember(
       req.params.id as string,
       req.params.userId as string,
+      req.supabase,
     );
     if (!success) {
       res.status(404).json({ error: { code: "NOT_FOUND", message: "Member not found" } });
@@ -202,7 +209,7 @@ router.delete(
 );
 
 router.delete("/:id", validateUuidParam("id"), requireWorkspaceMembership(), async (req, res) => {
-  const deleted = await workspaceService.remove(req.params.id as string);
+  const deleted = await workspaceService.remove(req.params.id as string, req.supabase);
   if (!deleted) {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
     return;
