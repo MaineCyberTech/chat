@@ -1,0 +1,68 @@
+{
+  "waves": [
+    {
+      "id": "wave_0_inventory",
+      "name": "Feature Inventory and Architecture Readiness",
+      "required_outputs": [
+        "feature_gap_inventory.md",
+        "feature_implementation_plan.md",
+        "feature_risks.md"
+      ]
+    },
+    {
+      "id": "wave_1_foundation",
+      "name": "Core Collaboration Foundations",
+      "features": [
+        "threaded_conversations",
+        "notification_engine_mentions",
+        "rbac_channel_overrides"
+      ],
+      "required_outputs": [
+        "threaded_conversations_plan.md",
+        "notification_mentions_plan.md",
+        "rbac_and_overrides_plan.md"
+      ]
+    },
+    {
+      "id": "wave_2_integrations_discovery",
+      "name": "Integrations and Search",
+      "features": ["incoming_webhooks", "global_full_text_search"],
+      "required_outputs": ["incoming_webhooks_plan.md", "full_text_search_plan.md"]
+    },
+    {
+      "id": "wave_3_frontend_depth",
+      "name": "Frontend Interaction Depth",
+      "features": [
+        "virtualization",
+        "optimistic_ui",
+        "rich_text_editor",
+        "adaptive_theme_engine",
+        "liquid_responsive_layout"
+      ],
+      "required_outputs": [
+        "virtualization_and_scrolling_plan.md",
+        "optimistic_ui_plan.md",
+        "rich_text_editor_plan.md",
+        "adaptive_theme_engine_plan.md",
+        "liquid_responsive_layout_plan.md"
+      ]
+    },
+    {
+      "id": "wave_4_media",
+      "name": "Audio and Video Collaboration UX",
+      "features": ["audio_video_media_ui"],
+      "required_outputs": ["audio_video_media_ui_plan.md"]
+    },
+    {
+      "id": "wave_5_verification_release",
+      "name": "Test Expansion and Release Gate",
+      "required_outputs": ["feature_test_expansion_plan.md", "feature_release_gate.md"]
+    }
+  ],
+  "rollout_strategies": [
+    "dark_launch",
+    "feature_flag_partial_rollout",
+    "workspace_allowlist_rollout",
+    "staged_general_availability"
+  ]
+}

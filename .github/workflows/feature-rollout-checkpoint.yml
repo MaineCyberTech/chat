@@ -1,0 +1,24 @@
+name: feature-rollout-checkpoint
+on:
+  workflow_dispatch:
+    inputs:
+      wave:
+        description: Wave identifier
+        required: true
+        type: choice
+        options:
+          - wave_0_inventory
+          - wave_1_foundation
+          - wave_2_integrations_discovery
+          - wave_3_frontend_depth
+          - wave_4_media
+          - wave_5_verification_release
+jobs:
+  feature-rollout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Echo operator next step
+        run: |
+          echo "Open docs/feature_rollout_operator_pack/runbooks/WAVE_BY_WAVE_GUIDE.md"
+          echo "Requested wave: ${{ inputs.wave }}"
