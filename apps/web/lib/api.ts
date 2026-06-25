@@ -8,7 +8,7 @@ let csrfPromise: Promise<void> | null = null;
 function getCsrfToken(): string | undefined {
   if (typeof document === "undefined") return undefined;
   const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_COOKIE_NAME}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : undefined;
+  return match?.[1] ? decodeURIComponent(match[1]) : undefined;
 }
 
 async function ensureCsrfToken(): Promise<void> {
