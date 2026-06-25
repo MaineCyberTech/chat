@@ -158,20 +158,14 @@ jobs:
       - name: Health check
         run: |
           echo "=== External health check ==="
-          for i in $(seq 1 6); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://chat-api.mainecybertech.us/healthz 2>/dev/null || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "External API healthy (HTTP)"
-              exit 0
-            fi
+          for i in $(seq 1 12); do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://chat-api.mainecybertech.us/healthz --connect-timeout 5 2>/dev/null || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "External API healthy (HTTPS)"
               exit 0
             fi
-            echo "External attempt $i: HTTP=$STATUS, retrying..."
+            echo "Attempt $i: returned $STATUS, retrying..."
             sleep 5
           done
-          echo "External health check failed — likely DNS or cert still provisioning."
-          echo "Internal health check passed on droplet. Caddy may still be retrying certs."
-          exit 0
+          echo "Health check failed"
+          exit 1
