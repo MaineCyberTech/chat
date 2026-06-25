@@ -51,17 +51,39 @@ export class WorkspaceService {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    const { data, error } = await supabase
-      .from("workspaces")
-      .insert({
-        name: input.name,
-        slug,
-        owner_id: input.owner_id,
-      })
-      .select("*")
-      .single();
+    // Handle duplicate slugs
+    let attempt = 0;
+    let finalSlug = slug;
+    while (true) {
+      const { data, error } = await supabase
+        .from("workspaces")
+        .insert({
+          name: input.name,
+          slug: finalSlug,
+          owner_id: input.owner_id,
+        })
+        .select("*")
+        .single();
 
-    if (error) {
+      if (!error) {
+        logger.info("Workspace created", { workspaceId: data.id, slug: finalSlug });
+        webhookService
+          .triggerEvent("workspace.created", data.id, {
+            workspace_id: data.id,
+            name: data.name,
+            slug: data.slug,
+            owner_id: input.owner_id,
+          })
+          .catch(() => {});
+        return data as Workspace;
+      }
+
+      if (error.code === "23505" && error.message.includes("workspaces_slug_key")) {
+        attempt++;
+        finalSlug = `${slug}-${attempt}`;
+        continue;
+      }
+
       logger.error("Workspace insert error", {
         error: error.message,
         code: error.code,
@@ -70,22 +92,6 @@ export class WorkspaceService {
       });
       return null;
     }
-
-    if (!data) {
-      logger.error("Workspace insert returned no data", { input, slug });
-      return null;
-    }
-
-    webhookService
-      .triggerEvent("workspace.created", data.id, {
-        workspace_id: data.id,
-        name: data.name,
-        slug: data.slug,
-        owner_id: input.owner_id,
-      })
-      .catch(() => {});
-
-    return data as Workspace;
   }
 
   async update(
