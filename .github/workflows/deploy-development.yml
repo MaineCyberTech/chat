@@ -72,11 +72,15 @@ jobs:
             fi
             cd ${{ env.REPO_DIR }} && git fetch origin develop && git checkout develop && git reset --hard origin/develop
 
-            mkdir -p ${{ env.REPO_DIR }}/certs
-            if [ ! -f ${{ env.REPO_DIR }}/certs/fullchain.pem ]; then
-              apt-get install -y -qq openssl
-              openssl req -x509 -newkey rsa:2048 -keyout ${{ env.REPO_DIR }}/certs/privkey.pem -out ${{ env.REPO_DIR }}/certs/fullchain.pem -days 3650 -nodes -subj "/CN=*.mainecybertech.us/O=Chat Platform" 2>/dev/null
-            fi
+            CERT_DIR=${{ env.REPO_DIR }}/infra/docker/certs
+            mkdir -p "$CERT_DIR"
+            cat > "$CERT_DIR/fullchain.pem" << 'CERTEOF'
+${{ secrets.CF_ORIGIN_CERT }}
+CERTEOF
+            cat > "$CERT_DIR/privkey.pem" << 'CERTEOF'
+${{ secrets.CF_ORIGIN_KEY }}
+CERTEOF
+            chmod 600 "$CERT_DIR/privkey.pem"
             for i in $(seq 1 12); do docker info >/dev/null 2>&1 && break; echo 'Waiting for Docker...'; sleep 10; done
             if [ ! -f /swapfile ]; then
               fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile

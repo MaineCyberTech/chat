@@ -210,6 +210,15 @@ jobs:
             VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
             VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}
             EOF
+            CERT_DIR=/opt/chat/infra/docker/certs
+            mkdir -p "$CERT_DIR"
+            cat > "$CERT_DIR/fullchain.pem" << 'CERTEOF'
+${{ secrets.CF_ORIGIN_CERT }}
+CERTEOF
+            cat > "$CERT_DIR/privkey.pem" << 'CERTEOF'
+${{ secrets.CF_ORIGIN_KEY }}
+CERTEOF
+            chmod 600 "$CERT_DIR/privkey.pem"
             mkdir -p /opt/chat/caddy-data /opt/chat/caddy-config
 
       - name: Deploy containers
