@@ -7,8 +7,10 @@ vi.mock("../../lib/supabase.js", () => ({
   getSupabase: vi.fn(() => ({
     auth: {
       getUser: vi.fn(),
-      setSession: vi.fn(),
     },
+  })),
+  getSupabaseForUser: vi.fn(() => ({
+    auth: { getUser: vi.fn() },
   })),
 }));
 
@@ -22,6 +24,7 @@ function mockReq(headers: Record<string, string> = {}) {
     requestId: "test-id",
     userId: undefined,
     userEmail: undefined,
+    supabase: undefined,
   } as AnyObj;
 }
 
@@ -64,14 +67,14 @@ describe("authenticate middleware", () => {
   });
 
   it("calls next when token is valid", async () => {
-    const { getSupabase } = await import("../../lib/supabase.js");
+    const { getSupabase, getSupabaseForUser } = await import("../../lib/supabase.js");
     const mockGetUser = vi.fn().mockResolvedValue({
       data: { user: { id: "user-1", email: "test@example.com" } },
       error: null,
     });
-    (getSupabase as AnyObj).mockReturnValue({
-      auth: { getUser: mockGetUser, setSession: vi.fn().mockResolvedValue({ error: null }) },
-    });
+    const mockClient = { auth: { getUser: mockGetUser } };
+    (getSupabase as AnyObj).mockReturnValue({ auth: { getUser: mockGetUser } });
+    (getSupabaseForUser as AnyObj).mockReturnValue(mockClient);
 
     const req = mockReq({ authorization: "Bearer valid-token" });
     const res = mockRes();
@@ -81,6 +84,7 @@ describe("authenticate middleware", () => {
 
     expect(req.userId).toBe("user-1");
     expect(req.userEmail).toBe("test@example.com");
+    expect(req.supabase).toBe(mockClient);
     expect(next).toHaveBeenCalled();
   });
 
@@ -89,7 +93,6 @@ describe("authenticate middleware", () => {
     (getSupabase as AnyObj).mockReturnValue({
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: new Error("invalid") }),
-        setSession: vi.fn(),
       },
     });
 

@@ -3,12 +3,16 @@ import type { Env } from "../config/env.js";
 
 let anonClient: SupabaseClient | null = null;
 let adminClient: SupabaseClient | null = null;
+let anonUrl: string | null = null;
+let anonKey: string | null = null;
 
 export function initSupabase(env: Env) {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
     throw new Error("SUPABASE_URL and SUPABASE_ANON_KEY are required to initialize Supabase");
   }
-  anonClient = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+  anonUrl = env.SUPABASE_URL;
+  anonKey = env.SUPABASE_ANON_KEY;
+  anonClient = createClient(anonUrl, anonKey, {
     auth: { persistSession: false },
   });
 
@@ -43,10 +47,10 @@ export function getSupabaseAdmin(): SupabaseClient {
 // Creates a Supabase client with the user's JWT for RLS-aware queries.
 // Each request should get its own client to avoid session conflicts.
 export function getSupabaseForUser(jwt: string): SupabaseClient {
-  if (!anonClient) {
+  if (!anonClient || !anonUrl || !anonKey) {
     throw new Error("Supabase not initialized. Call initSupabase() first.");
   }
-  return createClient(anonClient.supabaseUrl, anonClient.supabaseKey, {
+  return createClient(anonUrl, anonKey, {
     auth: { persistSession: false },
     global: { headers: { Authorization: `Bearer ${jwt}` } },
   });
