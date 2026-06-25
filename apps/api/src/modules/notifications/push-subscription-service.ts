@@ -1,6 +1,6 @@
 import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import { loadEnv } from "../../config/env.js";
-import * as webPush from "web-push";
+import webPush from "web-push";
 import { logger } from "../../lib/logger.js";
 
 const env = loadEnv();
