@@ -135,72 +135,25 @@ jobs:
             docker compose -f infra/docker/docker-compose.devremote.yml up -d --remove-orphans
             docker image prune -af
 
-            # Check API logs immediately
-            echo "=== API container logs (immediate) ==="
-            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100 chat-api-dev 2>&1 || true
+            for i in $(seq 1 12); do
+              if docker compose -f infra/docker/docker-compose.devremote.yml ps | grep -q "Unhealthy"; then
+                echo "ERROR: Container unhealthy"
+                docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 50
+                exit 1
+              fi
+              if docker compose -f infra/docker/docker-compose.devremote.yml ps | grep -q "(healthy)"; then
+                echo "All containers healthy"
+                docker compose -f infra/docker/docker-compose.devremote.yml ps
+                exit 0
+              fi
+              echo "Waiting for containers to become healthy... ($i/12)"
+              sleep 5
+            done
 
-            # Wait a bit for container to start
-            sleep 3
-
-            # Check container status
-            echo "=== Container status ==="
+            echo "ERROR: Containers did not become healthy"
             docker compose -f infra/docker/docker-compose.devremote.yml ps
-
-            # Check API logs again
-            echo "=== API container logs (retry) ==="
-            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100 chat-api-dev 2>&1 || true
-
-            # Also check docker logs directly
-            echo "=== Docker logs chat-api-dev ==="
-            docker logs chat-api-dev --tail 100 2>&1 || true
-
-            # Check container details
-            echo "=== Container inspect ==="
-            docker inspect chat-api-dev --format='ExitCode={{.State.ExitCode}} Error={{.State.Error}} FinishedAt={{.State.FinishedAt}} OOMKilled={{.State.OOMKilled}}' 2>&1 || true
-
-            # Get container logs via docker inspect
-            echo "=== Container log path ==="
-            docker inspect chat-api-dev --format='{{.LogPath}}' 2>&1 || true
-
-            # Check container logs via cat
-            echo "=== Cat container log file ==="
-            LOGPATH=$(docker inspect chat-api-dev --format='{{.LogPath}}' 2>/dev/null)
-            if [ -n "$LOGPATH" ] && [ -f "$LOGPATH" ]; then
-              tail -100 "$LOGPATH" 2>&1 || true
-            else
-              echo "Log file not found or empty"
-            fi
-
-            # Check if container is actually running
-            echo "=== Container state ==="
-            docker inspect chat-api-dev --format='{{.State.Status}} {{.State.Running}} {{.State.Pid}} {{.State.ExitCode}}' 2>&1 || true
-
-            # Check container logs directly
-            echo "=== Docker logs chat-api-dev (full) ==="
-            docker logs chat-api-dev 2>&1 || true
-
-            # Run container directly to see error
-            echo "MARKER: before docker run"
-            docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev sh -c "echo 'hello from container'; pwd; ls -la /" 2>&1; echo "Exit code: $?"
-            echo "MARKER: done docker run"
-
-            # Also try running the actual server
-            echo "MARKER: running actual server"
-            docker run --rm --env-file /opt/chat/.env ghcr.io/mainecybertech/chat/api:dev node dist/server.js 2>&1; echo "Exit code: $?"
-            echo "MARKER: done server run"
-            echo "MARKER: file size check"
-            stat /tmp/docker-run-output.txt 2>&1 || true
-
-            # Wait for health check
-            sleep 5
-
-            # Verify services are running
-            docker compose -f infra/docker/docker-compose.devremote.yml ps
-            if ! docker compose -f infra/docker/docker-compose.devremote.yml ps | grep -q "Up"; then
-              echo "ERROR: Services not running"
-              docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 50
-              exit 1
-            fi
+            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 50
+            exit 1
 
       - name: Health check
         run: |
