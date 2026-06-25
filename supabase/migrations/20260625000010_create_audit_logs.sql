@@ -1,7 +1,6 @@
 -- Audit logging
 create table if not exists public.audit_logs (
   id uuid primary key default gen_random_uuid(),
-  (),
   organization_id uuid references public.workspaces(id) on delete set null,
   actor_user_id uuid references auth.users(id) on delete set null,
   actor_type text not null default 'user',
