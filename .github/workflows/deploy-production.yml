@@ -238,6 +238,7 @@ jobs:
           script: |
             cd ${{ env.REPO_DIR }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            docker system prune -af --volumes
             docker pull ghcr.io/${{ env.REPO_LC }}/api:latest
             docker pull ghcr.io/${{ env.REPO_LC }}/worker:latest
             docker pull ghcr.io/${{ env.REPO_LC }}/web:latest
@@ -281,6 +282,7 @@ jobs:
           script: |
             cd ${{ env.REPO_DIR }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            docker system prune -af --volumes
             ROLLBACK_SHA="${{ github.event.inputs.rollback_sha }}"
             docker pull ghcr.io/${{ env.REPO_LC }}/api:${ROLLBACK_SHA}
             docker pull ghcr.io/${{ env.REPO_LC }}/worker:${ROLLBACK_SHA}
