@@ -12,7 +12,6 @@ coverage/
 README.md
 *.md
 docs/
-scripts/
 infra/
 supabase/
 tests/

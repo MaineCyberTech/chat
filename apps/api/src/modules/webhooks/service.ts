@@ -3,6 +3,65 @@ import { logger } from "../../lib/logger.js";
 import { recordWebhookDelivery } from "../../lib/metrics.js";
 import { executeWithCircuitBreaker } from "../../lib/circuit-breaker.js";
 
+// SSRF protection: private IP ranges and localhost
+const PRIVATE_IP_RANGES = [
+  /^127\./, // localhost
+  /^10\./, // 10.0.0.0/8
+  /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // 172.16.0.0/12
+  /^192\.168\./, // 192.168.0.0/16
+  /^169\.254\./, // link-local
+  /^::1$/, // IPv6 localhost
+  /^fc00:/, // IPv6 unique local
+  /^fe80:/, // IPv6 link-local
+];
+
+function isPrivateIp(hostname: string): boolean {
+  return PRIVATE_IP_RANGES.some((range) => range.test(hostname));
+}
+
+async function resolveHostname(url: string): Promise<string[]> {
+  try {
+    const { hostname } = new URL(url);
+    // Check if it's already an IP address
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) || /^\[.+\]$/.test(hostname)) {
+      // eslint-disable-next-line no-useless-escape
+      return [hostname.replace(/[\[\]]/g, "")];
+    }
+    // Resolve hostname to IPs
+    const dns = await import("node:dns/promises");
+    const records = await dns.resolve4(hostname);
+    return records;
+  } catch {
+    return [];
+  }
+}
+
+export async function validateWebhookUrl(url: string): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") {
+      return { valid: false, error: "Only HTTPS URLs are allowed" };
+    }
+
+    // Check for private IPs in hostname
+    if (isPrivateIp(parsed.hostname)) {
+      return { valid: false, error: "Webhook URLs cannot point to private/internal IP addresses" };
+    }
+
+    // Resolve hostname and check resolved IPs
+    const ips = await resolveHostname(url);
+    for (const ip of ips) {
+      if (isPrivateIp(ip)) {
+        return { valid: false, error: "Webhook URL resolves to private/internal IP address" };
+      }
+    }
+
+    return { valid: true };
+  } catch {
+    return { valid: false, error: "Invalid webhook URL" };
+  }
+}
+
 interface WebhookEndpoint {
   id: string;
   workspace_id: string;
@@ -153,6 +212,20 @@ export class WebhookService {
 
       const idempotencyKey = crypto.randomUUID();
 
+      // SSRF protection: validate URL at delivery time (DNS may have changed)
+      const urlValidation = await validateWebhookUrl(endpoint.url);
+      if (!urlValidation.valid) {
+        logger.error("Webhook URL validation failed at delivery time", {
+          webhookId: endpoint.id,
+          error: urlValidation.error,
+        });
+        await admin
+          .from("webhook_endpoints")
+          .update({ last_failure_at: new Date().toISOString(), last_error: urlValidation.error })
+          .eq("id", endpoint.id);
+        return;
+      }
+
       const res = await executeWithCircuitBreaker(
         breakerName,
         async () => {
@@ -172,7 +245,29 @@ export class WebhookService {
       );
 
       responseStatus = res.status;
-      responseBody = await res.text().catch(() => null);
+
+      // Limit response body size to prevent memory issues (1MB)
+      const MAX_RESPONSE_SIZE = 1024 * 1024;
+      const reader = res.body?.getReader();
+      if (reader) {
+        const chunks: Uint8Array[] = [];
+        let totalSize = 0;
+        for await (const chunk of reader) {
+          totalSize += chunk.length;
+          if (totalSize > MAX_RESPONSE_SIZE) {
+            error = "Response size exceeds limit";
+            status = "failed";
+            break;
+          }
+          chunks.push(chunk);
+        }
+        if (status !== "failed") {
+          const decoder = new TextDecoder();
+          responseBody = decoder.decode(Buffer.concat(chunks));
+        }
+      } else {
+        responseBody = await res.text().catch(() => null);
+      }
 
       if (res.status >= 200 && res.status < 300) {
         await admin

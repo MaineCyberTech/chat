@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
-    "build": "next build",
+    "build": "pnpm generate:version && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "clean": "rimraf .next"
+    "clean": "rimraf .next",
+    "generate:version": "node scripts/generate-version.js"
   },
   "dependencies": {
     "@chat/db": "workspace:*",

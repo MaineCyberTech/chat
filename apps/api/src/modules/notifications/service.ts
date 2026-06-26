@@ -14,33 +14,42 @@ interface Notification {
 }
 
 export class NotificationService {
-  async list(userId: string, limit = 20): Promise<Notification[]> {
+  async list(userId: string, workspaceId?: string, limit = 20): Promise<Notification[]> {
     const supabase = getSupabase();
-    const { data } = await supabase
+    let query = supabase
       .from("notifications")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(limit);
+    if (workspaceId) {
+      query = query.eq("workspace_id", workspaceId);
+    }
+    const { data } = await query;
     return (data ?? []) as Notification[];
   }
 
-  async unreadCount(userId: string): Promise<number> {
+  async unreadCount(userId: string, workspaceId?: string): Promise<number> {
     const supabase = getSupabase();
-    const { count } = await supabase
+    let query = supabase
       .from("notifications")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("read", false);
+    if (workspaceId) {
+      query = query.eq("workspace_id", workspaceId);
+    }
+    const { count } = await query;
     return count ?? 0;
   }
 
-  async markRead(notificationId: string): Promise<boolean> {
+  async markRead(userId: string, notificationId: string): Promise<boolean> {
     const supabase = getSupabase();
     const { error } = await supabase
       .from("notifications")
       .update({ read: true })
-      .eq("id", notificationId);
+      .eq("id", notificationId)
+      .eq("user_id", userId);
     return !error;
   }
 

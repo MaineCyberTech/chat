@@ -19,6 +19,7 @@ COPY apps/web/app ./apps/web/app
 COPY apps/web/components ./apps/web/components
 COPY apps/web/lib ./apps/web/lib
 COPY apps/web/public ./apps/web/public
+COPY apps/web/scripts ./apps/web/scripts
 
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_SUPABASE_URL

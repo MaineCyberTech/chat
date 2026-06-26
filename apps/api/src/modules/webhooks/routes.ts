@@ -3,6 +3,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
 import { webhookService } from "./service.js";
+import { validateWebhookUrl } from "./service.js";
 import { logAuditEvent } from "../../services/audit.js";
 import { z } from "zod";
 
@@ -59,6 +60,14 @@ router.post("/webhooks", requireWorkspaceMembership("workspace_id"), async (req,
       .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
     return;
   }
+
+  // SSRF protection: validate webhook URL
+  const urlValidation = await validateWebhookUrl(parsed.data.url);
+  if (!urlValidation.valid) {
+    res.status(400).json({ error: { code: "INVALID_URL", message: urlValidation.error } });
+    return;
+  }
+
   const webhook = await webhookService.create({ ...parsed.data, created_by: req.userId! });
   if (!webhook) {
     res.status(500).json({ error: { code: "CREATE_FAILED", message: "Could not create webhook" } });
@@ -86,6 +95,16 @@ router.patch(
         .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
       return;
     }
+
+    // SSRF protection: validate webhook URL if provided
+    if (parsed.data.url) {
+      const urlValidation = await validateWebhookUrl(parsed.data.url);
+      if (!urlValidation.valid) {
+        res.status(400).json({ error: { code: "INVALID_URL", message: urlValidation.error } });
+        return;
+      }
+    }
+
     const webhook = await webhookService.update(req.params.id as string, parsed.data);
     if (!webhook) {
       res.status(404).json({ error: { code: "NOT_FOUND", message: "Webhook not found" } });
