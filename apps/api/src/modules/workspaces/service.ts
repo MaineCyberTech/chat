@@ -67,25 +67,6 @@ export class WorkspaceService {
 
       if (!error) {
         logger.info("Workspace created", { workspaceId: data.id, slug: finalSlug });
-
-        // Verify workspace member was created by trigger
-        const { data: member, error: memberError } = await supabase
-          .from("workspace_members")
-          .select("*")
-          .eq("workspace_id", data.id)
-          .eq("user_id", input.owner_id)
-          .single();
-
-        if (memberError || !member) {
-          logger.warn("Workspace member NOT created by trigger!", {
-            workspaceId: data.id,
-            ownerId: input.owner_id,
-            error: memberError?.message,
-          });
-        } else {
-          logger.info("Workspace member verified", { workspaceId: data.id, member });
-        }
-
         webhookService
           .triggerEvent("workspace.created", data.id, {
             workspace_id: data.id,
