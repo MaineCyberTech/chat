@@ -13,15 +13,14 @@ RUN corepack enable && corepack prepare pnpm@9 --activate
 # Copy root workspace files
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./
 
-# Copy workspace packages
+# Copy all workspace packages
+COPY packages ./packages
 COPY apps/api/package.json apps/api/tsconfig.json ./apps/api/
-COPY packages/db/package.json packages/db/tsconfig.json ./packages/db/
 
 # Install all deps
 RUN pnpm install --frozen-lockfile
 
 # Copy source
-COPY packages/db/src ./packages/db/src
 COPY apps/api/src ./apps/api/src
 
 # Build
