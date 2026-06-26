@@ -14,14 +14,6 @@ interface NotificationPrefs {
   digest: "never" | "daily" | "weekly";
 }
 
-const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
-  email_notifications: true,
-  push_notifications: true,
-  message_notifications: true,
-  mention_notifications: true,
-  digest: "never",
-};
-
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
@@ -225,9 +217,7 @@ function ToggleRow({
         onClick={() => onChange(!checked)}
         disabled={disabled}
         className={`relative ml-4 inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none ${
-          checked
-            ? "bg-[var(--color-button-primary-bg)]"
-            : "bg-[var(--color-background-tertiary)]"
+          checked ? "bg-[var(--color-button-primary-bg)]" : "bg-[var(--color-background-tertiary)]"
         }`}
       >
         <span
