@@ -22,10 +22,8 @@ exception when duplicate_object then null;
 end $$;
 
 -- Workspace Members
-do $$ begin
-  create policy "workspace_members_select_own" on public.workspace_members for select to authenticated using (user_id = auth.uid());
-exception when duplicate_object then null;
-end $$;
+drop policy if exists "workspace_members_select_own" on public.workspace_members;
+create policy "workspace_members_select_own" on public.workspace_members for select to authenticated using (user_id = auth.uid());
 
 -- Channels
 do $$ begin
