@@ -15,6 +15,19 @@ export class ReactionService {
     return (data ?? []) as Reaction[];
   }
 
+  async getByMessages(messageIds: string[]): Promise<Record<string, Reaction[]>> {
+    if (messageIds.length === 0) return {};
+    const supabase = getSupabase();
+    const { data } = await supabase.from("reactions").select("*").in("message_id", messageIds);
+    const rows = (data ?? []) as Reaction[];
+    const map: Record<string, Reaction[]> = {};
+    for (const row of rows) {
+      if (!map[row.message_id]) map[row.message_id] = [];
+      map[row.message_id].push(row);
+    }
+    return map;
+  }
+
   async add(messageId: string, userId: string, emoji: string): Promise<Reaction | null> {
     const supabase = getSupabase();
     const { data, error } = await supabase

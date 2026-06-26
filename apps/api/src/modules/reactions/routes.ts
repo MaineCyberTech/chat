@@ -11,6 +11,27 @@ router.get("/messages/:id/reactions", validateUuidParam("id"), async (req, res) 
   res.json({ reactions });
 });
 
+// Batch reactions endpoint: GET /reactions/batch?message_ids=id1,id2,id3
+router.get("/reactions/batch", async (req, res) => {
+  const idsParam = req.query.message_ids as string;
+  if (!idsParam) {
+    res
+      .status(400)
+      .json({ error: { code: "INVALID_INPUT", message: "message_ids query param required" } });
+    return;
+  }
+  const ids = idsParam
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (ids.length > 100) {
+    res.status(400).json({ error: { code: "INVALID_INPUT", message: "Maximum 100 message IDs" } });
+    return;
+  }
+  const reactions = await reactionService.getByMessages(ids);
+  res.json({ reactions });
+});
+
 router.post("/messages/:id/reactions", validateUuidParam("id"), async (req, res) => {
   const { emoji } = req.body;
   if (!emoji || typeof emoji !== "string" || emoji.length > 10) {

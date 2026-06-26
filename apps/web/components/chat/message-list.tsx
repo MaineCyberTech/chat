@@ -81,18 +81,49 @@ export function MessageList({
   useEffect(() => {
     const messageIds = messages.map((m) => m.id);
     if (messageIds.length === 0) return;
-    Promise.all(
-      messageIds.map((id) =>
-        api
-          .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
-          .then((res) => ({ id, reactions: res.reactions }))
-          .catch(() => ({ id, reactions: [] as Reaction[] })),
-      ),
-    ).then((results) => {
-      const map = new Map<string, Reaction[]>();
-      results.forEach((r) => map.set(r.id, r.reactions));
-      setReactions(map);
-    });
+    if (messageIds.length <= 20) {
+      // Use batch endpoint for efficiency (avoids N+1 fetches)
+      api
+        .get<{ reactions: Record<string, Reaction[]> }>(
+          `/reactions/batch?message_ids=${messageIds.join(",")}`,
+        )
+        .then((res) => {
+          const map = new Map<string, Reaction[]>();
+          for (const [id, reactionList] of Object.entries(res.reactions)) {
+            map.set(id, reactionList);
+          }
+          setReactions(map);
+        })
+        .catch(() => {
+          // Fallback to per-message fetches
+          Promise.all(
+            messageIds.map((id) =>
+              api
+                .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
+                .then((res) => ({ id, reactions: res.reactions }))
+                .catch(() => ({ id, reactions: [] as Reaction[] })),
+            ),
+          ).then((results) => {
+            const map = new Map<string, Reaction[]>();
+            results.forEach((r) => map.set(r.id, r.reactions));
+            setReactions(map);
+          });
+        });
+    } else {
+      // For very large sets, use per-message fetches
+      Promise.all(
+        messageIds.map((id) =>
+          api
+            .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
+            .then((res) => ({ id, reactions: res.reactions }))
+            .catch(() => ({ id, reactions: [] as Reaction[] })),
+        ),
+      ).then((results) => {
+        const map = new Map<string, Reaction[]>();
+        results.forEach((r) => map.set(r.id, r.reactions));
+        setReactions(map);
+      });
+    }
   }, [messages]);
 
   const handleScroll = useCallback(() => {
