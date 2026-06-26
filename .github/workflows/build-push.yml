@@ -47,6 +47,8 @@ jobs:
           tags: |
             ghcr.io/${{ env.REPO_LC }}/api:dev
             ghcr.io/${{ env.REPO_LC }}/api:${{ github.sha }}
+          build-args: |
+            CACHE_BUST=${{ github.sha }}
           cache-from: type=local,src=/tmp/empty
           cache-to: type=local,dest=/tmp/empty
 
