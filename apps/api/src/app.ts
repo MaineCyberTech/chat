@@ -45,6 +45,8 @@ function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
 export function createApp(frontendUrl: string): Express {
   const app = express();
 
+  app.set("trust proxy", true);
+
   app.use(
     cors({
       origin: (origin, callback) => {
