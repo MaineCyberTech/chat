@@ -6,6 +6,22 @@ import { useAuth } from "@/components/auth/auth-context";
 import { Button, SidebarGroup } from "@chat/ui";
 import type { UserPreferences, ThemePreference } from "@chat/db";
 
+interface NotificationPrefs {
+  email_notifications: boolean;
+  push_notifications: boolean;
+  message_notifications: boolean;
+  mention_notifications: boolean;
+  digest: "never" | "daily" | "weekly";
+}
+
+const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
+  email_notifications: true,
+  push_notifications: true,
+  message_notifications: true,
+  mention_notifications: true,
+  digest: "never",
+};
+
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
@@ -37,6 +53,18 @@ export default function SettingsPage() {
     await savePreferences({ theme });
   }
 
+  function handleNotificationChange(
+    key: keyof NotificationPrefs,
+    value: boolean | NotificationPrefs["digest"],
+  ) {
+    const current = (preferences?.notification_prefs ?? {}) as unknown as NotificationPrefs;
+    const updated = {
+      ...preferences,
+      notification_prefs: { ...current, [key]: value },
+    } as UserPreferences;
+    setPreferences(updated);
+  }
+
   async function savePreferences(patch: Partial<UserPreferences>) {
     if (!preferences) return;
     setSaving(true);
@@ -45,12 +73,21 @@ export default function SettingsPage() {
       await api.patch("/preferences", patch);
       setSaveStatus("success");
       setSaveMessage("Preferences saved");
+      setTimeout(() => setSaveStatus("idle"), 3000);
     } catch (err) {
       setSaveStatus("error");
       setSaveMessage(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleSaveAll() {
+    if (!preferences) return;
+    await savePreferences({
+      theme: preferences.theme,
+      notification_prefs: preferences.notification_prefs,
+    });
   }
 
   if (authLoading || loading) {
@@ -64,9 +101,10 @@ export default function SettingsPage() {
   if (!user) return null;
 
   const theme = preferences?.theme ?? "system";
+  const notifPrefs = (preferences?.notification_prefs ?? {}) as unknown as NotificationPrefs;
 
   return (
-    <div className="mx-auto flex max-w-3xl space-y-8 p-6">
+    <div className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
       <h1 className="text-2xl font-bold text-[var(--color-foreground-primary)]">Preferences</h1>
 
       <SidebarGroup title="Appearance" defaultOpen>
@@ -94,9 +132,51 @@ export default function SettingsPage() {
 
       <SidebarGroup title="Notifications" defaultOpen>
         <div className="space-y-4">
-          <p className="text-sm text-[var(--color-foreground-tertiary)]">
-            Notification preferences coming soon.
-          </p>
+          <ToggleRow
+            label="Email notifications"
+            description="Receive email notifications for important events"
+            checked={notifPrefs.email_notifications ?? true}
+            onChange={(v) => handleNotificationChange("email_notifications", v)}
+            disabled={saving}
+          />
+          <ToggleRow
+            label="Push notifications"
+            description="Receive push notifications in your browser"
+            checked={notifPrefs.push_notifications ?? true}
+            onChange={(v) => handleNotificationChange("push_notifications", v)}
+            disabled={saving}
+          />
+          <ToggleRow
+            label="Message notifications"
+            description="Get notified when new messages are posted"
+            checked={notifPrefs.message_notifications ?? true}
+            onChange={(v) => handleNotificationChange("message_notifications", v)}
+            disabled={saving}
+          />
+          <ToggleRow
+            label="Mention notifications"
+            description="Get notified when someone mentions you"
+            checked={notifPrefs.mention_notifications ?? true}
+            onChange={(v) => handleNotificationChange("mention_notifications", v)}
+            disabled={saving}
+          />
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[var(--color-foreground-secondary)]">
+              Email digest
+            </label>
+            <select
+              value={notifPrefs.digest ?? "never"}
+              onChange={(e) =>
+                handleNotificationChange("digest", e.target.value as NotificationPrefs["digest"])
+              }
+              disabled={saving}
+              className="rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-background-primary)] px-3 py-2 text-sm text-[var(--color-foreground-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
+            >
+              <option value="never">Never</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
         </div>
       </SidebarGroup>
 
@@ -113,13 +193,49 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <Button
-        variant="primary"
-        onClick={() => savePreferences(preferences || {})}
-        disabled={saving}
-      >
+      <Button variant="primary" onClick={handleSaveAll} disabled={saving}>
         {saving ? "Saving..." : "Save Preferences"}
       </Button>
+    </div>
+  );
+}
+
+function ToggleRow({
+  label,
+  description,
+  checked,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex-1">
+        <p className="text-sm font-medium text-[var(--color-foreground-primary)]">{label}</p>
+        <p className="text-xs text-[var(--color-foreground-tertiary)]">{description}</p>
+      </div>
+      <button
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        disabled={disabled}
+        className={`relative ml-4 inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none ${
+          checked
+            ? "bg-[var(--color-button-primary-bg)]"
+            : "bg-[var(--color-background-tertiary)]"
+        }`}
+      >
+        <span
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
+            checked ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </button>
     </div>
   );
 }
