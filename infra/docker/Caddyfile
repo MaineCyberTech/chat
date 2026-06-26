@@ -6,28 +6,7 @@ chat.mainecybertech.us {
     handle /healthz* {
         reverse_proxy api:4000
     }
-    handle /v1/auth* {
-        reverse_proxy api:4000
-    }
-    handle /v1/workspaces* {
-        reverse_proxy api:4000
-    }
-    handle /v1/channels* {
-        reverse_proxy api:4000
-    }
-    handle /v1/messages* {
-        reverse_proxy api:4000
-    }
-    handle /v1/webhooks* {
-        reverse_proxy api:4000
-    }
-    handle /v1/notifications* {
-        reverse_proxy api:4000
-    }
-    handle /v1/preferences* {
-        reverse_proxy api:4000
-    }
-    handle /v1/reactions* {
+    handle /v1* {
         reverse_proxy api:4000
     }
     handle /socket.io* {
