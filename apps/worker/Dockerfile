@@ -5,17 +5,12 @@ RUN corepack enable && corepack prepare pnpm@9 --activate
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./
 
+COPY packages ./packages
 COPY apps/worker/package.json apps/worker/tsconfig.json ./apps/worker/
-COPY packages/db/package.json packages/db/tsconfig.json ./packages/db/
-COPY packages/config/package.json packages/config/tsconfig.json ./packages/config/
-COPY packages/sdk/package.json packages/sdk/tsconfig.json ./packages/sdk/
 
 RUN pnpm install --frozen-lockfile
 
 COPY apps/worker/src ./apps/worker/src
-COPY packages/db/src ./packages/db/src
-COPY packages/config/src ./packages/config/src
-COPY packages/sdk/src ./packages/sdk/src
 
 RUN pnpm turbo build --filter @chat/worker
 
