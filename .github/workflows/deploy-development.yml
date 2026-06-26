@@ -82,7 +82,7 @@ jobs:
               rm -rf "${{ env.REPO_DIR }}"
               git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }} || { echo "ERROR: git clone failed"; exit 1; }
             fi
-            cd ${{ env.REPO_DIR }} && git fetch origin develop && git checkout develop && git reset --hard origin/develop
+            cd ${{ env.REPO_DIR }} && git fetch origin develop && git checkout -B develop origin/develop && git reset --hard origin/develop
 
             CERT_DIR=${{ env.REPO_DIR }}/infra/docker/certs
             mkdir -p "$CERT_DIR"

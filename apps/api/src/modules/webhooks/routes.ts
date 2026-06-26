@@ -1,6 +1,7 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
+import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
 import { webhookService } from "./service.js";
 import { logAuditEvent } from "../../services/audit.js";
 import { z } from "zod";
@@ -24,7 +25,7 @@ const updateWebhookSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-router.get("/webhooks", async (req, res) => {
+router.get("/webhooks", requireWorkspaceMembership("workspace_id"), async (req, res) => {
   const { workspace_id } = req.query;
   if (!workspace_id || typeof workspace_id !== "string") {
     res
@@ -36,16 +37,21 @@ router.get("/webhooks", async (req, res) => {
   res.json({ webhooks });
 });
 
-router.get("/webhooks/:id", validateUuidParam("id"), async (req, res) => {
-  const webhook = await webhookService.getById(req.params.id as string);
-  if (!webhook) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Webhook not found" } });
-    return;
-  }
-  res.json({ webhook });
-});
+router.get(
+  "/webhooks/:id",
+  validateUuidParam("id"),
+  requireWorkspaceMembership("id"),
+  async (req, res) => {
+    const webhook = await webhookService.getById(req.params.id as string);
+    if (!webhook) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Webhook not found" } });
+      return;
+    }
+    res.json({ webhook });
+  },
+);
 
-router.post("/webhooks", async (req, res) => {
+router.post("/webhooks", requireWorkspaceMembership("workspace_id"), async (req, res) => {
   const parsed = createWebhookSchema.safeParse(req.body);
   if (!parsed.success) {
     res
@@ -68,43 +74,53 @@ router.post("/webhooks", async (req, res) => {
   });
 });
 
-router.patch("/webhooks/:id", validateUuidParam("id"), async (req, res) => {
-  const parsed = updateWebhookSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
-  }
-  const webhook = await webhookService.update(req.params.id as string, parsed.data);
-  if (!webhook) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Webhook not found" } });
-    return;
-  }
-  res.json({ webhook });
-  logAuditEvent({
-    actorUserId: req.userId,
-    action: "webhook.update",
-    entityType: "webhook_endpoint",
-    entityId: webhook.id,
-    metadata: { name: webhook.name },
-  });
-});
+router.patch(
+  "/webhooks/:id",
+  validateUuidParam("id"),
+  requireWorkspaceMembership("id"),
+  async (req, res) => {
+    const parsed = updateWebhookSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
+      return;
+    }
+    const webhook = await webhookService.update(req.params.id as string, parsed.data);
+    if (!webhook) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Webhook not found" } });
+      return;
+    }
+    res.json({ webhook });
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "webhook.update",
+      entityType: "webhook_endpoint",
+      entityId: webhook.id,
+      metadata: { name: webhook.name },
+    });
+  },
+);
 
-router.delete("/webhooks/:id", validateUuidParam("id"), async (req, res) => {
-  const webhook = await webhookService.getById(req.params.id as string);
-  if (!webhook) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Webhook not found" } });
-    return;
-  }
-  logAuditEvent({
-    actorUserId: req.userId,
-    action: "webhook.delete",
-    entityType: "webhook_endpoint",
-    entityId: req.params.id as string,
-  });
-  await webhookService.remove(req.params.id as string);
-  res.status(204).send();
-});
+router.delete(
+  "/webhooks/:id",
+  validateUuidParam("id"),
+  requireWorkspaceMembership("id"),
+  async (req, res) => {
+    const webhook = await webhookService.getById(req.params.id as string);
+    if (!webhook) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Webhook not found" } });
+      return;
+    }
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "webhook.delete",
+      entityType: "webhook_endpoint",
+      entityId: req.params.id as string,
+    });
+    await webhookService.remove(req.params.id as string);
+    res.status(204).send();
+  },
+);
 
 export default router;

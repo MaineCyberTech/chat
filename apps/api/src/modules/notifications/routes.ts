@@ -50,18 +50,29 @@ router.get("/push-subscriptions/vapid-key", async (_req, res) => {
 
 // Existing notification routes
 router.get("/notifications", async (req, res) => {
-  const notifications = await notificationService.list(req.userId!);
-  const unread = await notificationService.unreadCount(req.userId!);
+  const { workspace_id } = req.query;
+  const notifications = await notificationService.list(
+    req.userId!,
+    workspace_id as string | undefined,
+  );
+  const unread = await notificationService.unreadCount(
+    req.userId!,
+    workspace_id as string | undefined,
+  );
   res.json({ notifications, unread });
 });
 
 router.get("/notifications/unread", async (_req, res) => {
-  const count = await notificationService.unreadCount(_req.userId!);
+  const { workspace_id } = _req.query;
+  const count = await notificationService.unreadCount(
+    _req.userId!,
+    workspace_id as string | undefined,
+  );
   res.json({ unread: count });
 });
 
 router.patch("/notifications/:id/read", validateUuidParam("id"), async (req, res) => {
-  await notificationService.markRead(req.params.id as string);
+  await notificationService.markRead(req.userId!, req.params.id as string);
   res.status(204).send();
 });
 
