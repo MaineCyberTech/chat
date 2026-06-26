@@ -6,6 +6,7 @@ export { Skeleton, SkeletonLine, SkeletonCircle, type SkeletonProps } from "./co
 export { Dialog, type DialogProps } from "./components/dialog";
 export { SidebarGroup, type SidebarGroupProps } from "./components/sidebar-group";
 export { ThemeToggle } from "./components/theme-toggle";
+export { ToastProvider, useToast, type Toast } from "./components/toast";
 export { useTheme, ThemeProvider } from "./hooks/use-theme";
 
 export * from "./tokens";

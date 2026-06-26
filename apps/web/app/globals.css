@@ -88,3 +88,18 @@ body {
 .animate-slide-in-left {
   animation: slideInLeft 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+@keyframes slideInBottom {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInBottom 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}

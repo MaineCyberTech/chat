@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/app-header";
 import { ThemeProvider } from "@chat/ui";
 import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { VersionBadge } from "@/components/version-badge";
+import { ToastProvider } from "@chat/ui/components/toast";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -46,12 +47,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen antialiased">
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-[var(--color-background-primary)] focus:p-4 focus:text-[var(--color-foreground-primary)]"
+        >
+          Skip to main content
+        </a>
         <ThemeProvider>
           <PWAProvider>
             <AuthProvider>
-              <AppHeader />
-              {children}
-              <VersionBadge />
+              <ToastProvider>
+                <AppHeader />
+                <main id="main-content" className="min-h-[calc(100vh-4rem)]">
+                  {children}
+                </main>
+                <VersionBadge />
+              </ToastProvider>
             </AuthProvider>
           </PWAProvider>
         </ThemeProvider>
