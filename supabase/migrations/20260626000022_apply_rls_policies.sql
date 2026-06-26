@@ -23,9 +23,7 @@ end $$;
 
 -- Workspace Members
 do $$ begin
-  create policy "workspace_members_select_own" on public.workspace_members for select to authenticated using (
-    workspace_id in (select workspace_id from public.workspace_members where user_id = auth.uid())
-  );
+  create policy "workspace_members_select_own" on public.workspace_members for select to authenticated using (user_id = auth.uid());
 exception when duplicate_object then null;
 end $$;
 
