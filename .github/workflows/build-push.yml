@@ -45,7 +45,7 @@ jobs:
           file: apps/api/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ env.REPO_LC }}/api:dev
+            ghcr.io/${{ env.REPO_LC }}/api:dev-new
             ghcr.io/${{ env.REPO_LC }}/api:${{ github.sha }}
           build-args: |
             CACHE_BUST=${{ github.sha }}

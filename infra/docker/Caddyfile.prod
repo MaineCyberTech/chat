@@ -1,52 +1,66 @@
-chat.mainecybertech.com {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
-    handle /health* {
-        reverse_proxy api:4000
+{
+    # Production Caddyfile
+    {
+        admin off
+        http_port 80
+        https_port 443
     }
-    handle /healthz* {
-        reverse_proxy api:4000
-    }
-    handle /v1/auth* {
-        reverse_proxy api:4000
-    }
-    handle /v1/workspaces* {
-        reverse_proxy api:4000
-    }
-    handle /v1/channels* {
-        reverse_proxy api:4000
-    }
-    handle /v1/messages* {
-        reverse_proxy api:4000
-    }
-    handle /v1/webhooks* {
-        reverse_proxy api:4000
-    }
-    handle /v1/notifications* {
-        reverse_proxy api:4000
-    }
-    handle /v1/preferences* {
-        reverse_proxy api:4000
-    }
-    handle /v1/reactions* {
-        reverse_proxy api:4000
-    }
-    handle /socket.io* {
-        reverse_proxy api:4000
-    }
-    reverse_proxy web:3000
-    header {
-        X-Frame-Options "DENY"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-    }
-}
 
-chat-api.mainecybertech.com {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
-    reverse_proxy api:4000
-    header {
-        X-Frame-Options "DENY"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
+    chat.mainecybertech.com {
+        # TLS via Cloudflare origin certs
+        tls /certs/cf-origin.pem /certs/cf-origin-key.pem
+
+        # Security headers
+        header {
+            Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+            X-Content-Type-Options "nosniff"
+            X-Frame-Options "DENY"
+            Referrer-Policy "strict-origin-when-cross-origin"
+            Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        }
+
+        # Static assets with caching
+        @static {
+            path /_next/static/*
+            path /static/*
+            path /manifest.json
+            path /sw.js
+        }
+        handle @static {
+            header Cache-Control "public, max-age=31536000, immutable"
+            root * /var/www/web
+            file_server
+        }
+
+        # API routes -> API container
+        @api {
+            path /v1/*
+        }
+        handle @api {
+            reverse_proxy api:4000
+        }
+
+        # WebSocket upgrade for Socket.io
+        @websocket {
+            path /socket.io/*
+            header Connection *Upgrade*
+            header Upgrade websocket
+        }
+        handle @websocket {
+            reverse_proxy api:4000
+        }
+
+        # Health check
+        @health {
+            path /health
+        }
+        handle @health {
+            reverse_proxy api:4000
+        }
+
+        # Next.js app
+        handle {
+            reverse_proxy web:3000
+        }
     }
 }

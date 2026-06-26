@@ -146,7 +146,7 @@ jobs:
             docker pull ghcr.io/${{ env.REPO_LC }}/worker:dev
             docker pull ghcr.io/${{ env.REPO_LC }}/web:dev
             docker compose -f infra/docker/docker-compose.devremote.yml up -d --force-recreate --remove-orphans
-            docker image prune -af
+            docker system prune -af --volumes
 
             for i in $(seq 1 12); do
               if docker compose -f infra/docker/docker-compose.devremote.yml ps | grep -q "Unhealthy"; then
