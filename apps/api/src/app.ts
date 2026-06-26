@@ -73,7 +73,6 @@ export function createApp(frontendUrl: string): Express {
         contentType: req.get("Content-Type"),
         contentLength: req.get("Content-Length"),
         body: req.body,
-        rawBody: req.rawBody,
       });
     }
     next();
