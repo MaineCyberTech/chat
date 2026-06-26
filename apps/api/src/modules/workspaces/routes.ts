@@ -3,6 +3,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
 import { workspaceService } from "./service.js";
+import { channelService } from "../channels/service.js";
 import { logAuditEvent } from "../../services/audit.js";
 import type { Workspace } from "@chat/db";
 import { logger } from "../../lib/logger.js";
@@ -21,6 +22,18 @@ router.get("/", async (req, res) => {
   const workspaces = await workspaceService.listByUser(req.supabase);
   logger.info("Workspaces list result", { userId: req.userId, count: workspaces.length });
   res.json({ workspaces });
+});
+
+// Consolidated bootstrap endpoint: returns workspaces with their channels in one call
+router.get("/bootstrap", async (req, res) => {
+  const workspaces = await workspaceService.listByUser(req.supabase);
+  const workspaceChannels = await Promise.all(
+    workspaces.map(async (ws) => {
+      const channels = await channelService.listByWorkspace(ws.id);
+      return { workspace: ws, channels };
+    }),
+  );
+  res.json({ workspaces: workspaceChannels });
 });
 
 router.post("/", async (req, res) => {
