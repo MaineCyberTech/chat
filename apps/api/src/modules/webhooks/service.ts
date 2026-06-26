@@ -252,14 +252,16 @@ export class WebhookService {
       if (reader) {
         const chunks: Uint8Array[] = [];
         let totalSize = 0;
-        for await (const chunk of reader) {
-          totalSize += chunk.length;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          totalSize += value.length;
           if (totalSize > MAX_RESPONSE_SIZE) {
             error = "Response size exceeds limit";
             status = "failed";
             break;
           }
-          chunks.push(chunk);
+          chunks.push(value);
         }
         if (status !== "failed") {
           const decoder = new TextDecoder();
