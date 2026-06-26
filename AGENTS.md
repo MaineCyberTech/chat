@@ -17,7 +17,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 | Directory            | Purpose                              | Key Files                                                                                                                                         |
 | -------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/api/`          | Express API server                   | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                                                                                      |
-| `apps/web/`          | Next.js 15 frontend                  | `app/`, `components/`, `lib/`                                                                                                                     |
+| `apps/web/`          | Next.js 15 frontend                  | `app/`, `components/`, `lib/`, `e2e/`                                                                                                             |
 | `packages/ui/`       | Shared React components              | `src/components/button.tsx`, etc.                                                                                                                 |
 | `packages/db/`       | Supabase client + types + migrations | `src/config.ts`, `sql/`, `sql/migrations/006_user_preferences.sql`                                                                                |
 | `infra/docker/`      | Compose files, Caddyfiles            | `docker-compose.devremote.yml`, `docker-compose.prod.yml`, `Caddyfile`, `Caddyfile.prod`                                                          |
@@ -105,6 +105,10 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - **Trust Proxy** — Added for correct X-Forwarded-For handling behind Caddy
 - **JSON Body Parsing** — Fixed (PowerShell inline JSON quote corruption; use `@file.json` for testing)
 - **Supabase CLI Migration Workflow** — Added `.github/workflows/supabase-migrations.yml` + migration step in deploy-development.yml
+- **Workspace Member Trigger Fix** — Added `ON CONFLICT DO NOTHING` + exception handling to `handle_new_workspace()` trigger so member is created even when admin client bypasses RLS
+- **Version Badge** — Added fixed bottom-right badge on all pages showing version (branch+run), git SHA, build date
+- **E2E Test Framework** — Added Playwright tests for auth→workspace→chat flow (`apps/web/e2e/auth-workspace-chat.spec.ts`)
+- **Test Endpoint** — Added `/v1/test-body` for debugging body parsing
 
 ### Remaining Work
 
@@ -149,7 +153,7 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
 **Testing/QA** (from `docs/audits/testing_qa_cicd_audit_summary.md`):
 
-- Add auth flow E2E tests (magic link → callback → workspace redirect)
+- Add auth flow E2E tests (magic link → callback → workspace redirect) — **ADDED** `apps/web/e2e/auth-workspace-chat.spec.ts`
 - Add messaging E2E flow (WebSocket connect → send → receive → edit → delete)
 - Add file upload E2E flow
 - Test remaining API route files (auth, workspaces, channels, messages)
