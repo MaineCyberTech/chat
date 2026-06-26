@@ -59,6 +59,9 @@ jobs:
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
             NEXT_PUBLIC_API_URL=https://chat.mainecybertech.us
             NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.us
+            NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}-${{ github.run_number }}
+            NEXT_PUBLIC_GIT_SHA=${{ github.sha }}
+            NEXT_PUBLIC_BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.pusher.date || '' }}
           tags: |
             ghcr.io/${{ env.REPO_LC }}/web:dev
             ghcr.io/${{ env.REPO_LC }}/web:${{ github.sha }}

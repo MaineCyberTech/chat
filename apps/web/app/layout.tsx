@@ -4,6 +4,7 @@ import { AuthProvider } from "@/components/auth/auth-context";
 import { AppHeader } from "@/components/app-header";
 import { ThemeProvider } from "@chat/ui";
 import { PWAProvider } from "@/components/pwa/pwa-provider";
+import { VersionBadge } from "@/components/version-badge";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AuthProvider>
               <AppHeader />
               {children}
+              <VersionBadge />
             </AuthProvider>
           </PWAProvider>
         </ThemeProvider>
