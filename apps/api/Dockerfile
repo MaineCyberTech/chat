@@ -1,10 +1,10 @@
 # apps/api/Dockerfile
 # Multi-stage production build for the Express API server.
 
-# Cache bust: 2026-06-26-3
-ARG CACHE_BUST=2026-06-26-3
+# Cache bust: 2026-06-26-4
+ARG CACHE_BUST=2026-06-26-4
 
-FROM node:22-alpine AS base
+FROM node:22.17-alpine AS base
 WORKDIR /app
 
 # pnpm
@@ -27,7 +27,7 @@ COPY apps/api/src ./apps/api/src
 RUN pnpm turbo build --filter @chat/api
 
 # ---- Runtime stage ----
-FROM node:22-alpine AS runtime
+FROM node:22.17-alpine AS runtime
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
