@@ -46,14 +46,20 @@ export function getSupabaseAdmin(): SupabaseClient {
 
 // Creates a Supabase client with the user's JWT for RLS-aware queries.
 // Each request should get its own client to avoid session conflicts.
-export function getSupabaseForUser(jwt: string): SupabaseClient {
+// Uses setSession() to properly configure auth for RLS.
+export async function getSupabaseForUser(jwt: string): Promise<SupabaseClient> {
   if (!anonClient || !anonUrl || !anonKey) {
     throw new Error("Supabase not initialized. Call initSupabase() first.");
   }
-  return createClient(anonUrl, anonKey, {
+  const client = createClient(anonUrl, anonKey, {
     auth: { persistSession: false },
-    global: { headers: { Authorization: `Bearer ${jwt}` } },
   });
+  // Set the session so that auth.uid() works in RLS policies
+  const { error } = await client.auth.setSession({ access_token: jwt, refresh_token: "" });
+  if (error) {
+    throw new Error(`Failed to set Supabase session: ${error.message}`);
+  }
+  return client;
 }
 
 export function getAdminOrAnon(): SupabaseClient {

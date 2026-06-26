@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { getSupabase, getSupabaseForUser } from "../lib/supabase.js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../lib/logger.js";
 
 declare global {
@@ -8,7 +9,7 @@ declare global {
     interface Request {
       userId?: string;
       userEmail?: string;
-      supabase?: ReturnType<typeof getSupabaseForUser>;
+      supabase?: SupabaseClient;
     }
   }
 }
@@ -32,7 +33,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     }
 
     // Create a per-request Supabase client with the user's JWT for RLS
-    req.supabase = getSupabaseForUser(token);
+    req.supabase = await getSupabaseForUser(token);
     req.userId = data.user.id;
     req.userEmail = data.user.email;
     next();
