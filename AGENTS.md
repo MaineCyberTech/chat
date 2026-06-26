@@ -14,95 +14,34 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 ## Repository Map
 
-| Directory            | Purpose                              | Key Files                                                                                                              |
-| -------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `apps/api/`          | Express API server                   | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                                                           |
-| `apps/web/`          | Next.js 15 frontend                  | `app/`, `components/`, `lib/`                                                                                          |
-| `packages/ui/`       | Shared React components              | `src/components/button.tsx`, etc.                                                                                      |
-| `packages/db/`       | Supabase client + types + migrations | `src/config.ts`, `sql/`, `sql/migrations/006_user_preferences.sql`                                                     |
-| `infra/docker/`      | Compose files, Caddyfiles            | `docker-compose.devremote.yml`, `docker-compose.prod.yml`, `Caddyfile`, `Caddyfile.prod`                               |
-| `infra/terraform/`   | DO droplet + DNS                     | `main.tf`, `templates/cloud-init.yaml.tftpl`                                                                           |
-| `.github/workflows/` | CI/CD pipelines                      | `ci.yml`, `validate.yml`, `build-push.yml`, `deploy-development.yml`, `deploy-production.yml`, `infra-development.yml` |
-| `scripts/`           | Dev tooling                          | `setup-dev.ps1`, `teardown-dev.ps1`                                                                                    |
-| `supabase/`          | Local Supabase config                | `config.toml`                                                                                                          |
-| `docs/`              | Architecture docs, runbooks, audits  | `docs/architecture/`, `docs/prompts/`, `docs/audits/`                                                                  |
+| Directory            | Purpose                              | Key Files                                                                                                                                         |
+| -------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/api/`          | Express API server                   | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                                                                                      |
+| `apps/web/`          | Next.js 15 frontend                  | `app/`, `components/`, `lib/`                                                                                                                     |
+| `packages/ui/`       | Shared React components              | `src/components/button.tsx`, etc.                                                                                                                 |
+| `packages/db/`       | Supabase client + types + migrations | `src/config.ts`, `sql/`, `sql/migrations/006_user_preferences.sql`                                                                                |
+| `infra/docker/`      | Compose files, Caddyfiles            | `docker-compose.devremote.yml`, `docker-compose.prod.yml`, `Caddyfile`, `Caddyfile.prod`                                                          |
+| `infra/terraform/`   | DO droplet + DNS                     | `main.tf`, `templates/cloud-init.yaml.tftpl`                                                                                                      |
+| `.github/workflows/` | CI/CD pipelines                      | `ci.yml`, `validate.yml`, `build-push.yml`, `deploy-development.yml`, `deploy-production.yml`, `infra-development.yml`, `supabase-migrations.yml` |
+| `scripts/`           | Dev tooling                          | `setup-dev.ps1`, `teardown-dev.ps1`                                                                                                               |
+| `supabase/`          | Local Supabase config                | `config.toml`                                                                                                                                     |
+| `docs/`              | Architecture docs, runbooks, audits  | `docs/architecture/`, `docs/prompts/`, `docs/audits/`                                                                                             |
 
 ## Implementation Status
 
 ### Complete
 
-- Magic link auth (Supabase) with JWT middleware
-- Workspaces & channels CRUD with RLS policies
-- Real-time messaging (Socket.io rooms, typing, presence)
-- Threaded replies, message edit/delete
-- File uploads (Supabase Storage signed URLs)
-- Full-text search (PostgreSQL tsvector)
-- Rate limiting + Zod validation on all API routes
-- 8 UI components (Avatar, Badge, Button, Dialog, Input, SidebarGroup, Skeleton, ThemeToggle)
-- 7 SQL migrations, 5 RLS policy sets, 1 function
-- 54 unit tests across 12 files
-- Caddy reverse proxy with auto-TLS
-- Docker multi-stage builds (node:22-alpine)
-- CI pipeline (validate → build images → push GHCR)
-- Deploy pipeline (provision → pipe images → compose up → health check)
-- Infra pipeline (Terraform import → apply → SSH health check)
-- Local dev with Supabase CLI
-- One-command setup/teardown scripts
-- Security headers middleware (CSP, HSTS, XSS, framing, referrer, permissions)
-- Dependabot config (weekly npm + GHA updates, grouped deps)
-- SECURITY.md (vulnerability disclosure, sensitive areas)
-- .editorconfig (consistent editor settings)
-- Graceful shutdown handlers (10s drain timeout on SIGTERM/SIGINT)
-- Health check with DB connectivity + latency (returns 503 when degraded)
-- Zod env validation with LOG_LEVEL, SENTRY_DSN, SMTP config
-- Sentry error tracking (API via @sentry/node, web via @sentry/nextjs)
-- husky + lint-staged pre-commit hooks (prettier on staged files)
-- Reusable validate.yml workflow_call (called by ci.yml)
-- Path filters on deploy/build workflows (reduce unnecessary runs)
-- Concurrency control with cancel-in-progress on deploy/build
-- .env.example files for API and Web (developer onboarding)
-- Pino structured logger (pino-pretty in dev, JSON in prod)
-- Audit logging on all mutations (message, channel, workspace create/update/delete)
-- Webhook endpoint + delivery tracking (SQL migrations + RLS policies)
-- Subdomain API routing (Caddy reverse proxies `chat-api.*` subdomain to `api:4000`) with fallback same-domain routing for `/socket.io`
-- Bundle analyzer for web (ANALYZE=true flag)
-- Docker HEALTHCHECK on both API and web containers
-- Server-side workspace membership checks on channel/message create routes
-- UUID validation middleware on all resource route params
-- In-app notification system (reply notifications, notification bell UI, unread polling)
-- Webhook delivery pipeline (CRUD routes, auto-trigger on message/channel events, delivery logging)
-- Responsive sidebar layout (hamburger menu at <768px breakpoint)
-- CI gate: build depends on test; E2E tests run with mock Supabase
-- Focus trap + close button on Dialog component
-- ErrorBoundary wrapping workspace layout
-- aria-labels on all icon buttons, focus-within for keyboard users
-- Channel name displayed in ChatView header (not raw ID)
-- aria-live polite region for new message announcements
-- Docker mem_limit on all services (web=256m, api=192m, caddy=64m)
-- Coverage thresholds (lines 40%, functions 30%, branches 30%)
-- Auth flow tests (login form render, success, error states)
-- Storage bucket RLS scoped by user_id
-- Terraform remote state config (DO Spaces backend configured)
-- CONTRIBUTING.md with dev workflow and PR guidelines
-- Avatar upload UI (dropdown upload from app header, signed URL flow)
-- Production deploy workflow tested (node version 22, SSH secrets, REPO_LC env)
-- Production approval gate configured (GitHub Environment on deploy job)
-- Design system token architecture (7 token modules in `packages/ui/src/tokens/`)
-- 7 UI components updated to use semantic CSS variables (`var(--color-*)`)
-- Tailwind v4 CSS-first configuration with `@theme` and automatic dark mode
-- 7 additional app components migrated (ChatView, AppSidebar, NotificationBell, AvatarUpload, CreateWorkspaceDialog, CreateChannelDialog, LandingShell)
-- Accessibility pass: ARIA roles, focus-visible, reduced motion, touch targets, body scroll lock
-- Client-side theme toggle (`ThemeToggle`) with `useTheme` hook, `ThemeProvider`, and `html.dark` class-based dark mode
-- Anti-FOUC inline script in root layout
-- User preferences DB migration (`006_user_preferences.sql`) with RLS policies
-- `GET /auth/preferences` and `PATCH /auth/preferences` API endpoints with Zod validation
-- User preferences TypeScript types (`UserPreferences`, `ThemePreference`)
-- Cross-tenant search leak fixed (SECURITY DEFINER → SECURITY INVOKER + auth.uid() check)
-- Route-level membership middleware (requireWorkspaceMembership, requireChannelAccess)
-- Workspace/channel member management endpoints (add, remove, update role)
-- Idempotency key support for message creation
-- Terraform firewall rules restricted to Cloudflare IP ranges
-- Incident response & database migration runbooks
+- Magic link auth (all previous items)
+- **CSRF/Same-Origin Architecture** — API now proxied via `/v1/*` on same domain (`chat.mainecybertech.us`) fixing cookie visibility and SameSite=Strict blocking
+- **Database Schema Applied** — 21 Supabase CLI migrations applied (users, workspaces, channels, messages, RLS, triggers, auto-profile creation, backfill)
+- **Workspace Creation RLS** — Uses admin client (service role) to bypass RLS; duplicate slug handling with retry logic (`-1`, `-2`, etc.)
+- **User Profiles Auto-Creation** — Trigger on `auth.users` insert + backfill migration for existing users
+- **Per-Request Supabase Client** — Each request gets client with user's JWT for proper RLS context (`getSupabaseForUser`)
+- **Manifest & Service Worker** — Served correctly with proper Content-Type headers (`application/manifest+json`, `application/javascript`)
+- **Caddy Routing** — All `/v1/*` routes to API container (catch-all handle)
+- **Trust Proxy** — Added for correct X-Forwarded-For handling behind Caddy
+- **JSON Body Parsing** — Fixed (PowerShell inline JSON quote corruption; use `@file.json` for testing)
+- **Supabase CLI Migration Workflow** — Added `.github/workflows/supabase-migrations.yml` + migration step in deploy-development.yml
 
 ### Audits Completed (June 22, 2026)
 
@@ -156,6 +95,16 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Husky pre-commit hook — Added with lint-staged
 - CONTRIBUTING.md / CHANGELOG.md — Created at root
 - Incident response & DB migration runbooks — Created in docs/runbooks/
+- **CSRF/Same-Origin Architecture** — API now proxied via `/v1/*` on same domain (`chat.mainecybertech.us`) fixing cookie visibility and SameSite=Strict blocking (was using `chat-api.*` subdomain)
+- **Database Schema Applied** — 21 Supabase CLI migrations applied (users, workspaces, channels, messages, RLS, triggers, auto-profile creation, backfill)
+- **Workspace Creation RLS** — Uses admin client (service role) to bypass RLS; duplicate slug handling with retry logic (`-1`, `-2`, etc.)
+- **User Profiles Auto-Creation** — Trigger on `auth.users` insert + backfill migration for existing users
+- **Per-Request Supabase Client** — Each request gets client with user's JWT for proper RLS context (`getSupabaseForUser`)
+- **Manifest & Service Worker** — Served correctly with proper Content-Type headers (`application/manifest+json`, `application/javascript`)
+- **Caddy Routing** — All `/v1/*` routes to API container (catch-all handle)
+- **Trust Proxy** — Added for correct X-Forwarded-For handling behind Caddy
+- **JSON Body Parsing** — Fixed (PowerShell inline JSON quote corruption; use `@file.json` for testing)
+- **Supabase CLI Migration Workflow** — Added `.github/workflows/supabase-migrations.yml` + migration step in deploy-development.yml
 
 ### Remaining Work
 
@@ -307,14 +256,15 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
 ## GitHub Actions Workflows
 
-| Workflow                 | Trigger                 | Purpose                                                                   |
-| ------------------------ | ----------------------- | ------------------------------------------------------------------------- |
-| `ci.yml`                 | push main/develop, PR   | Calls reusable validate.yml (test, lint, typecheck, build)                |
-| `validate.yml`           | workflow_call           | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache     |
-| `build-push.yml`         | push develop            | Build Docker images → push to GHCR `:dev` tag (path-filtered)             |
-| `deploy-development.yml` | push develop            | SSH to droplet, transfer files, pipe images, compose up, health check     |
-| `infra-development.yml`  | push infra/\*\* changes | Terraform provision droplet + DNS + firewall + SSH key registration       |
-| `deploy-production.yml`  | push main, manual       | Build + push `:latest` images, deploy to production droplet, health check |
+| Workflow                  | Trigger                  | Purpose                                                                   |
+| ------------------------- | ------------------------ | ------------------------------------------------------------------------- |
+| `ci.yml`                  | push main/develop, PR    | Calls reusable validate.yml (test, lint, typecheck, build)                |
+| `validate.yml`            | workflow_call            | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache     |
+| `build-push.yml`          | push develop             | Build Docker images → push to GHCR `:dev` tag (path-filtered)             |
+| `deploy-development.yml`  | push develop             | SSH to droplet, transfer files, pipe images, compose up, health check     |
+| `infra-development.yml`   | push infra/\*\* changes  | Terraform provision droplet + DNS + firewall + SSH key registration       |
+| `deploy-production.yml`   | push main, manual        | Build + push `:latest` images, deploy to production droplet, health check |
+| `supabase-migrations.yml` | push develop, infra/\*\* | Supabase link + db push (runs before deploy)                              |
 
 ## Environments
 
