@@ -37,6 +37,17 @@ services:
       api:
         condition: service_healthy
 
+  worker:
+    image: ${WORKER_IMAGE:-ghcr.io/mainecybertech/chat/worker:latest}
+    container_name: chat-worker-prod
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      <<: *common-env
+      REDIS_URL: ${REDIS_URL}
+    networks:
+      - chat-prod
+
   api:
     image: ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:latest}
     container_name: chat-api-prod

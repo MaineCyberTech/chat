@@ -1,7 +1,7 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
-import { validateUuidParam } from "../../middleware/validate-uuid.js";
+import { validateStringKeyParam } from "../../middleware/validate-string-key.js";
 import { featureFlagService } from "../../lib/feature-flags.js";
 import { z } from "zod";
 
@@ -72,7 +72,7 @@ router.post("/feature-flags", async (req, res) => {
   res.status(201).json({ flag });
 });
 
-router.patch("/feature-flags/:key", validateUuidParam("key"), async (req, res) => {
+router.patch("/feature-flags/:key", validateStringKeyParam("key"), async (req, res) => {
   const parsed = updateFlagSchema.safeParse(req.body);
   if (!parsed.success) {
     res
@@ -88,7 +88,7 @@ router.patch("/feature-flags/:key", validateUuidParam("key"), async (req, res) =
   res.json({ flag });
 });
 
-router.delete("/feature-flags/:key", validateUuidParam("key"), async (req, res) => {
+router.delete("/feature-flags/:key", validateStringKeyParam("key"), async (req, res) => {
   const deleted = await featureFlagService.deleteFlag(req.params.key as string);
   if (!deleted) {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Feature flag not found" } });

@@ -11,3 +11,4 @@ jobs:
   validate:
     name: Lint, Typecheck, Test, Build
     uses: ./.github/workflows/validate.yml
+    secrets: inherit

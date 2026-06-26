@@ -1,8 +1,0 @@
-# Risk Register Template
-
-| ID    | Area  | Risk                                              | Why it matters                                              | Likelihood | Impact   | Blast radius          | Mitigation                                       | Rollback                                      |
-| ----- | ----- | ------------------------------------------------- | ----------------------------------------------------------- | ---------- | -------- | --------------------- | ------------------------------------------------ | --------------------------------------------- |
-| R-001 | CI/CD | Example: workflow parity change breaks deployment | A deploy workflow can silently fail or push to wrong target | Medium     | High     | Dev or Prod pipelines | Dry run + branch-limited validation              | Revert workflow file                          |
-| R-002 | Infra | Example: Terraform var-file handling drift        | Wrong var source can apply wrong environment values         | Medium     | Critical | Shared infra          | Validate working directory and vars before apply | Restore previous workflow and tfvars handling |
-| R-003 | DB    | Example: missing migration adoption               | Schema drift can break API/runtime assumptions              | Medium     | High     | API + Web + Worker    | Explicit migration ordering review               | Revert migration commit / restore DB backup   |
-| R-004 | Web   | Example: Vercel deploy mode mismatch              | Build/deploy mismatch can produce runtime issues            | Medium     | High     | Frontend              | Compare prebuilt vs direct deploy behavior       | Revert workflow and redeploy last good build  |

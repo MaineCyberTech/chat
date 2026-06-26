@@ -1,1 +1,0 @@
-Database audit: schema + migrations.

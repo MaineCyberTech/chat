@@ -1,4 +1,0 @@
-# Governance Dashboard
-
-- trends
-- score

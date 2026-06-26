@@ -5,6 +5,7 @@ import { requireWorkspaceMembership } from "../../middleware/require-membership.
 import { workspaceService } from "./service.js";
 import { logAuditEvent } from "../../services/audit.js";
 import type { Workspace } from "@chat/db";
+import { logger } from "../../lib/logger.js";
 import {
   createWorkspaceSchema,
   updateWorkspaceSchema,
@@ -16,7 +17,9 @@ const router: RouterType = Router();
 router.use(authenticate);
 
 router.get("/", async (req, res) => {
+  logger.info("GET /v1/workspaces", { userId: req.userId, userEmail: req.userEmail });
   const workspaces = await workspaceService.listByUser(req.supabase);
+  logger.info("Workspaces list result", { userId: req.userId, count: workspaces.length });
   res.json({ workspaces });
 });
 

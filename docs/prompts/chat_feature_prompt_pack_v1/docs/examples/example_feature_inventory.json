@@ -1,7 +1,0 @@
-{
-  "feature": "threaded_conversations",
-  "status": "absent",
-  "priority": "P1",
-  "backend_touchpoints": ["apps/api/src/routes/messages.ts", "packages/db", "supabase/migrations"],
-  "frontend_touchpoints": ["apps/web/components/chat", "apps/web/app/(workspace)"]
-}

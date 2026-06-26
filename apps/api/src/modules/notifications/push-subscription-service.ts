@@ -1,9 +1,6 @@
 import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
-import { loadEnv } from "../../config/env.js";
 import webPush from "web-push";
 import { logger } from "../../lib/logger.js";
-
-const env = loadEnv();
 
 export interface PushSubscription {
   id: string;
@@ -39,13 +36,18 @@ export class PushSubscriptionService {
   private vapidKeys: { publicKey: string; privateKey: string } | null = null;
 
   constructor() {
-    if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) {
+    // Read VAPID keys directly from process.env to avoid loadEnv() crash at module scope
+    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+    const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+    const emailFrom = process.env.EMAIL_FROM;
+
+    if (vapidPublicKey && vapidPrivateKey) {
       this.vapidKeys = {
-        publicKey: env.VAPID_PUBLIC_KEY,
-        privateKey: env.VAPID_PRIVATE_KEY,
+        publicKey: vapidPublicKey,
+        privateKey: vapidPrivateKey,
       };
       webPush.setVapidDetails(
-        `mailto:${env.EMAIL_FROM || "admin@example.com"}`,
+        `mailto:${emailFrom || "admin@example.com"}`,
         this.vapidKeys.publicKey,
         this.vapidKeys.privateKey,
       );

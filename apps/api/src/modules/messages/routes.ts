@@ -1,7 +1,7 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
-import { requireChannelAccess } from "../../middleware/require-membership.js";
+import { requireChannelAccess, requireMessageAccess } from "../../middleware/require-membership.js";
 import { messageService } from "./service.js";
 import { getSupabase } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
@@ -123,48 +123,58 @@ router.post(
   },
 );
 
-router.patch("/messages/:id", validateUuidParam("id"), async (req, res) => {
-  const parsed = updateMessageSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
-  }
+router.patch(
+  "/messages/:id",
+  validateUuidParam("id"),
+  requireMessageAccess("id"),
+  async (req, res) => {
+    const parsed = updateMessageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
+      return;
+    }
 
-  const sanitizedContent = sanitizeContent(parsed.data.content);
+    const sanitizedContent = sanitizeContent(parsed.data.content);
 
-  const message = await messageService.update(req.params.id as string, sanitizedContent);
-  if (!message) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
-    return;
-  }
+    const message = await messageService.update(req.params.id as string, sanitizedContent);
+    if (!message) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
+      return;
+    }
 
-  res.json({ message });
-  logAuditEvent({
-    actorUserId: req.userId,
-    action: "message.update",
-    entityType: "message",
-    entityId: message.id,
-    metadata: { channel_id: message.channel_id },
-  });
-});
+    res.json({ message });
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "message.update",
+      entityType: "message",
+      entityId: message.id,
+      metadata: { channel_id: message.channel_id },
+    });
+  },
+);
 
-router.delete("/messages/:id", validateUuidParam("id"), async (req, res) => {
-  const result = await messageService.remove(req.params.id as string);
-  if (!result) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
-    return;
-  }
+router.delete(
+  "/messages/:id",
+  validateUuidParam("id"),
+  requireMessageAccess("id"),
+  async (req, res) => {
+    const result = await messageService.remove(req.params.id as string);
+    if (!result) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
+      return;
+    }
 
-  logAuditEvent({
-    actorUserId: req.userId,
-    action: "message.delete",
-    entityType: "message",
-    entityId: req.params.id as string,
-  });
-  res.status(204).send();
-});
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "message.delete",
+      entityType: "message",
+      entityId: req.params.id as string,
+    });
+    res.status(204).send();
+  },
+);
 
 router.post("/messages/upload", async (req, res) => {
   const parsed = uploadRequestSchema.safeParse(req.body);

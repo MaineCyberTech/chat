@@ -3,6 +3,7 @@ import { Server as SocketServer } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
 import Redis from "ioredis";
 import { logger } from "./logger.js";
+import { incrementWebsocketConnections } from "./metrics.js";
 
 let io: SocketServer | null = null;
 let pubClient: Redis | null = null;
@@ -80,6 +81,7 @@ export function initSocket(
   io.on("connection", (socket) => {
     const userId = socket.userId;
     logger.info("Socket connected", { userId });
+    incrementWebsocketConnections(1);
 
     socket.on("channel:join", (channelId: string) => {
       socket.join(`channel:${channelId}`);
@@ -100,6 +102,7 @@ export function initSocket(
 
     socket.on("disconnect", () => {
       logger.debug("Socket disconnected", { userId });
+      incrementWebsocketConnections(-1);
     });
   });
 
@@ -130,7 +133,13 @@ export async function shutdownSocket(): Promise<void> {
 }
 
 export function getOnlineUsers(): string[] {
-  // In distributed mode, this would need Redis SCAN across instances
-  // For now, return empty array - use presence events instead
-  return [];
+  if (!io) return [];
+  const sockets = io.sockets.sockets;
+  const userIds = new Set<string>();
+  for (const socket of sockets.values()) {
+    if (socket.userId) {
+      userIds.add(socket.userId);
+    }
+  }
+  return Array.from(userIds);
 }

@@ -1,1 +1,0 @@
-Release gate prompt
