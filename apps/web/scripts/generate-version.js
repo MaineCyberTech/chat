@@ -1,9 +1,14 @@
 const fs = require("fs");
 const path = require("path");
 
+const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || "unknown-0";
+const parts = appVersion.split("-");
+const run = parts.pop() || "0";
+const branch = parts.join("-") || "unknown";
+
 const version = {
-  branch: process.env.NEXT_PUBLIC_APP_VERSION || "unknown",
-  run: process.env.GITHUB_RUN_NUMBER || "0",
+  branch,
+  run,
   sha: process.env.NEXT_PUBLIC_GIT_SHA || "unknown",
   date: process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString(),
 };
