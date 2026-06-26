@@ -65,25 +65,6 @@ export function createApp(frontendUrl: string): Express {
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: true }));
   app.use(cookieParser());
-
-  // Test endpoint with only express.json()
-  app.post("/v1/test-body", (req, res) => {
-    console.log("TEST BODY:", { body: req.body, headers: req.headers });
-    res.json({ received: req.body });
-  });
-
-  // Debug: echo raw body for POST /v1/workspaces
-  app.use("/v1/workspaces", (req, res, next) => {
-    if (req.method === "POST") {
-      console.log("DEBUG POST /v1/workspaces:", {
-        contentType: req.get("Content-Type"),
-        contentLength: req.get("Content-Length"),
-        body: req.body,
-      });
-    }
-    next();
-  });
-
   app.use(doubleSubmitCookieCsrf);
   app.use(requestId);
   app.use(apiLimiter);

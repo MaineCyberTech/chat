@@ -44,15 +44,6 @@ router.post("/", async (req, res) => {
       return;
     }
 
-    // Verify workspace member was created
-    const member = await workspaceService.getMembers(workspace.id, req.supabase);
-    if (!member || member.length === 0) {
-      console.error("Workspace member not created!", {
-        workspaceId: workspace.id,
-        ownerId: req.userId,
-      });
-    }
-
     res.status(201).json({ workspace });
     logAuditEvent({
       actorUserId: req.userId,
