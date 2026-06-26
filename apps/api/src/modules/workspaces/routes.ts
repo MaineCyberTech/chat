@@ -44,6 +44,15 @@ router.post("/", async (req, res) => {
       return;
     }
 
+    // Verify workspace member was created
+    const member = await workspaceService.getMembers(workspace.id, req.supabase);
+    if (!member || member.length === 0) {
+      console.error("Workspace member not created!", {
+        workspaceId: workspace.id,
+        ownerId: req.userId,
+      });
+    }
+
     res.status(201).json({ workspace });
     logAuditEvent({
       actorUserId: req.userId,
@@ -54,6 +63,7 @@ router.post("/", async (req, res) => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error("Workspace creation error:", err);
     res.status(500).json({ error: { code: "CREATE_FAILED", message } });
   }
 });
