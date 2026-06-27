@@ -43,10 +43,10 @@ test.describe("Full auth → workspace → chat flow", () => {
   test("sign in → create workspace → create channel → send message", async ({ page: _page }) => {
     // Note: This test requires a test Supabase project with email auth enabled
     // and a test user. In CI, we would use a mock Supabase or test project.
-    await signIn(page);
-    await createWorkspace(page);
-    await createChannel(page);
-    await sendMessage(page);
+    await signIn(_page);
+    await createWorkspace(_page);
+    await createChannel(_page);
+    await sendMessage(_page);
   });
 
   test("can navigate between workspaces and channels", async ({ page: _page }) => {
