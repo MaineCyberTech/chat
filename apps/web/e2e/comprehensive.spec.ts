@@ -36,11 +36,11 @@ async function sendMessage(page: Page, content = "Hello E2E test!") {
 test.describe.configure({ retries: 1 });
 
 test.describe("Full auth → workspace → chat flow", () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page: _page }) => {
     // Clean up test data if needed
   });
 
-  test("sign in → create workspace → create channel → send message", async ({ page }) => {
+  test("sign in → create workspace → create channel → send message", async ({ page: _page }) => {
     // Note: This test requires a test Supabase project with email auth enabled
     // and a test user. In CI, we would use a mock Supabase or test project.
     await signIn(page);
@@ -49,162 +49,162 @@ test.describe("Full auth → workspace → chat flow", () => {
     await sendMessage(page);
   });
 
-  test("can navigate between workspaces and channels", async ({ page }) => {
+  test("can navigate between workspaces and channels", async ({ page: _page }) => {
     // Requires authenticated session
     test.skip(true, "Requires Supabase test project setup");
   });
 });
 
 test.describe("Workspace and Channel CRUD", () => {
-  test("create workspace via API", async ({ request }) => {
+  test("create workspace via API", async ({ request: _request }) => {
     // This would test the API directly with a valid token
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("create channel via API", async ({ request }) => {
+  test("create channel via API", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("list workspaces", async ({ request }) => {
+  test("list workspaces", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("list channels in workspace", async ({ request }) => {
+  test("list channels in workspace", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 });
 
 test.describe("Message operations", () => {
-  test("send and receive messages in real-time", async ({ page, browser }) => {
+  test("send and receive messages in real-time", async ({ page: _page, browser: _browser }) => {
     // Test WebSocket message delivery between two browser contexts
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("edit message", async ({ page }) => {
+  test("edit message", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("delete message", async ({ page }) => {
+  test("delete message", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("reply to message (thread)", async ({ page }) => {
+  test("reply to message (thread)", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("add reaction to message", async ({ page }) => {
+  test("add reaction to message", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 });
 
 test.describe("File upload", () => {
-  test("upload image file", async ({ page }) => {
+  test("upload image file", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("upload document file", async ({ page }) => {
+  test("upload document file", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("reject oversized file", async ({ page }) => {
+  test("reject oversized file", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("reject dangerous file extension", async ({ page }) => {
+  test("reject dangerous file extension", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 });
 
 test.describe("Authorization tests", () => {
-  test("cannot access workspace without membership", async ({ page }) => {
+  test("cannot access workspace without membership", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("cannot access private channel without membership", async ({ page }) => {
+  test("cannot access private channel without membership", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("cannot create webhook without workspace membership", async ({ request }) => {
+  test("cannot create webhook without workspace membership", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("cannot read notifications from other workspace", async ({ request }) => {
+  test("cannot read notifications from other workspace", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 });
 
 test.describe("WebSocket / Real-time", () => {
-  test("connect to WebSocket and receive messages", async ({ page }) => {
+  test("connect to WebSocket and receive messages", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("presence updates broadcast", async ({ page, browser }) => {
+  test("presence updates broadcast", async ({ page: _page, browser: _browser }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("typing indicator appears", async ({ page, browser }) => {
+  test("typing indicator appears", async ({ page: _page, browser: _browser }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 });
 
 test.describe("Notifications", () => {
-  test("notification bell shows unread count", async ({ page }) => {
+  test("notification bell shows unread count", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("mark notification as read", async ({ page }) => {
+  test("mark notification as read", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("mark all notifications as read", async ({ page }) => {
+  test("mark all notifications as read", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 });
 
 test.describe("Push subscriptions", () => {
-  test("register push subscription", async ({ request }) => {
+  test("register push subscription", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("unregister push subscription", async ({ request }) => {
+  test("unregister push subscription", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 });
 
 test.describe("Webhooks", () => {
-  test("create webhook endpoint", async ({ request }) => {
+  test("create webhook endpoint", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("trigger webhook on message create", async ({ request }) => {
+  test("trigger webhook on message create", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("webhook retry logic", async ({ request }) => {
+  test("webhook retry logic", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 });
 
 test.describe("Search", () => {
-  test("search messages in workspace", async ({ request }) => {
+  test("search messages in workspace", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("search users", async ({ request }) => {
+  test("search users", async ({ request: _request }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 });
 
 test.describe("Settings and preferences", () => {
-  test("update profile", async ({ page }) => {
+  test("update profile", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("change theme", async ({ page }) => {
+  test("change theme", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 
-  test("update notification preferences", async ({ page }) => {
+  test("update notification preferences", async ({ page: _page }) => {
     test.skip(true, "Requires Supabase test project setup");
   });
 });

@@ -46,9 +46,18 @@ if ($statusJson) {
 
 # 6. Run SQL migrations
 Write-Host "`n=== Running SQL migrations ===" -ForegroundColor Cyan
-Get-ChildItem packages/db/sql/migrations/*.sql, packages/db/sql/functions/*.sql, packages/db/sql/policies/*.sql | ForEach-Object {
+Get-ChildItem supabase/migrations/*.sql | Sort-Object Name | ForEach-Object {
     Write-Host "  Running $($_.Name)..."
     npx supabase db execute --file $_.FullName 2>$null
+}
+
+# 7. Load seed data
+if (Test-Path supabase/seeds) {
+    Write-Host "`n=== Loading seed data ===" -ForegroundColor Cyan
+    Get-ChildItem supabase/seeds/*.sql | Sort-Object Name | ForEach-Object {
+        Write-Host "  Seeding $($_.Name)..."
+        npx supabase db execute --file $_.FullName 2>$null
+    }
 }
 
 Write-Host "`n=== Setup complete! ===" -ForegroundColor Green
