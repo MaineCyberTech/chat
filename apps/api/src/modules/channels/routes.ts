@@ -21,7 +21,10 @@ router.get(
   validateUuidParam("workspaceId"),
   requireWorkspaceMembership("workspaceId"),
   async (req, res) => {
-    const channels = await channelService.listByWorkspace(req.params.workspaceId as string);
+    const channels = await channelService.listByWorkspace(
+      req.params.workspaceId as string,
+      req.supabase,
+    );
     res.json({ channels });
   },
 );
@@ -73,7 +76,7 @@ router.get(
   validateUuidParam("id"),
   requireChannelAccess("id"),
   async (req, res) => {
-    const channel = await channelService.getById(req.params.id as string);
+    const channel = await channelService.getById(req.params.id as string, req.supabase);
     if (!channel) {
       res.status(404).json({ error: { code: "NOT_FOUND", message: "Channel not found" } });
       return;

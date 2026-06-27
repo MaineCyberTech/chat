@@ -18,9 +18,13 @@ interface UpdateChannelInput {
 }
 
 export class ChannelService {
-  async listByWorkspace(workspaceId: string): Promise<Channel[]> {
-    const supabase = getSupabase();
-    const { data, error } = await supabase
+  private getClient(supabase?: SupabaseClient): SupabaseClient {
+    return supabase ?? getSupabase();
+  }
+
+  async listByWorkspace(workspaceId: string, supabase?: SupabaseClient): Promise<Channel[]> {
+    const client = this.getClient(supabase);
+    const { data, error } = await client
       .from("channels")
       .select("*")
       .eq("workspace_id", workspaceId)
@@ -30,13 +34,9 @@ export class ChannelService {
     return (data ?? []) as Channel[];
   }
 
-  async getById(channelId: string): Promise<Channel | null> {
-    const supabase = getSupabase();
-    const { data, error } = await supabase
-      .from("channels")
-      .select("*")
-      .eq("id", channelId)
-      .single();
+  async getById(channelId: string, supabase?: SupabaseClient): Promise<Channel | null> {
+    const client = this.getClient(supabase);
+    const { data, error } = await client.from("channels").select("*").eq("id", channelId).single();
 
     if (error) return null;
     return data as Channel;
