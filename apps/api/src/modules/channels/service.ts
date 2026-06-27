@@ -1,6 +1,7 @@
 import { getSupabase } from "../../lib/supabase.js";
 import { webhookService } from "../webhooks/service.js";
 import type { Channel } from "@chat/db";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface CreateChannelInput {
   name: string;
@@ -40,14 +41,14 @@ export class ChannelService {
     return data as Channel;
   }
 
-  async create(input: CreateChannelInput): Promise<Channel | null> {
-    const supabase = getSupabase();
+  async create(input: CreateChannelInput, supabase?: SupabaseClient): Promise<Channel | null> {
+    const client = supabase ?? getSupabase();
     const slug = input.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from("channels")
       .insert({
         name: input.name,

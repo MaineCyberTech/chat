@@ -39,13 +39,16 @@ router.post(
       return;
     }
 
-    const channel = await channelService.create({
-      name: parsed.data.name,
-      workspace_id: req.params.workspaceId as string,
-      created_by: req.userId!,
-      topic: parsed.data.topic,
-      is_private: parsed.data.is_private,
-    });
+    const channel = await channelService.create(
+      {
+        name: parsed.data.name,
+        workspace_id: req.params.workspaceId as string,
+        created_by: req.userId!,
+        topic: parsed.data.topic,
+        is_private: parsed.data.is_private,
+      },
+      req.supabase,
+    );
 
     if (!channel) {
       res

@@ -10,8 +10,13 @@ export interface DialogProps {
 }
 
 function useFocusTrap(containerRef: React.RefObject<HTMLDivElement | null>, isActive: boolean) {
+  const hasOpened = useRef(false);
+
   useEffect(() => {
-    if (!isActive || !containerRef.current) return;
+    if (!isActive || !containerRef.current) {
+      hasOpened.current = false;
+      return;
+    }
 
     const container = containerRef.current;
     const focusableSelector =
@@ -38,9 +43,11 @@ function useFocusTrap(containerRef: React.RefObject<HTMLDivElement | null>, isAc
       }
     }
 
-    // Focus first focusable element on open
-    const first = container.querySelector<HTMLElement>(focusableSelector);
-    first?.focus();
+    if (!hasOpened.current) {
+      hasOpened.current = true;
+      const first = container.querySelector<HTMLElement>(focusableSelector);
+      first?.focus();
+    }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);

@@ -1,39 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { APP_VERSION, GIT_SHA, BUILD_TIME } from "@/lib/version";
 
 export function VersionBadge() {
-  const [version, setVersion] = useState<string>("");
-
-  useEffect(() => {
-    fetch("/version.json")
-      .then((res) => res.json())
-      .then((data) =>
-        setVersion(`${data.branch}-${data.run} • ${data.sha.slice(0, 7)} • ${data.date}`),
-      )
-      .catch(() => setVersion("dev"));
-  }, []);
-
-  if (!version) return null;
+  const shortSha = GIT_SHA.length > 7 ? GIT_SHA.slice(0, 7) : GIT_SHA;
+  const buildDate = new Date(BUILD_TIME).toLocaleDateString();
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 12,
-        right: 12,
-        zIndex: 9999,
-        fontSize: 10,
-        fontFamily: "monospace",
-        background: "rgba(0,0,0,0.7)",
-        color: "#fff",
-        padding: "4px 8px",
-        borderRadius: 4,
-        pointerEvents: "none",
-        userSelect: "none",
-      }}
-    >
-      {version}
+    <div className="fixed right-2 bottom-2 z-40 flex items-center gap-1.5 rounded border border-[var(--color-border-primary)]/50 bg-[var(--color-background-secondary)]/80 px-2 py-1 font-mono text-xs text-[var(--color-foreground-tertiary)] shadow-sm backdrop-blur-sm select-none">
+      <span className="opacity-60">v</span>
+      <span>{APP_VERSION}</span>
+      <span className="opacity-40">·</span>
+      <span title={GIT_SHA}>{shortSha}</span>
+      <span className="opacity-40">·</span>
+      <span title={BUILD_TIME}>{buildDate}</span>
     </div>
   );
 }
