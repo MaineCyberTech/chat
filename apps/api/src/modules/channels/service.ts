@@ -1,5 +1,6 @@
 import { getSupabase } from "../../lib/supabase.js";
 import { webhookService } from "../webhooks/service.js";
+import { logger } from "../../lib/logger.js";
 import type { Channel } from "@chat/db";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -61,7 +62,17 @@ export class ChannelService {
       .select("*")
       .single();
 
-    if (error) return null;
+    if (error) {
+      logger.error("Channel insert error", {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        name: input.name,
+        workspace_id: input.workspace_id,
+      });
+      return null;
+    }
 
     const channel = data as Channel;
 
