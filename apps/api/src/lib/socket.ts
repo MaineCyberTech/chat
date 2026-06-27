@@ -21,6 +21,7 @@ export function initSocket(
   redisUrl?: string,
 ): SocketServer {
   io = new SocketServer(httpServer, {
+    path: "/v1/socket.io",
     cors: { origin: corsOrigin, credentials: true },
     transports: ["websocket", "polling"],
     // Reconnection/connection health settings

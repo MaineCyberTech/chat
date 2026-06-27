@@ -23,34 +23,36 @@ export async function getSocket(): Promise<Socket> {
 
   socket = io(API_BASE, {
     auth: { token },
-    transports: ["websocket"],
+    path: "/v1/socket.io",
+    transports: ["websocket", "polling"],
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 30000,
     reconnectionAttempts: Infinity,
     randomizationFactor: 0.5,
     timeout: 20000,
-    autoConnect: true,
+    autoConnect: false,
   });
 
   return new Promise((resolve, reject) => {
-    const onConnect = () => {
+    const timeout = setTimeout(() => {
       socket!.off("connect", onConnect);
       socket!.off("connect_error", onError);
+      socket!.close();
+      reject(new Error("Connection timeout"));
+    }, 15000);
+
+    const onConnect = () => {
+      clearTimeout(timeout);
       resolve(socket!);
     };
     const onError = (err: Error) => {
-      socket!.off("connect", onConnect);
-      socket!.off("connect_error", onError);
+      clearTimeout(timeout);
       reject(new Error(err.message));
     };
     socket!.on("connect", onConnect);
     socket!.on("connect_error", onError);
-    setTimeout(() => {
-      socket!.off("connect", onConnect);
-      socket!.off("connect_error", onError);
-      reject(new Error("Connection timeout"));
-    }, 10000);
+    socket!.connect();
   });
 }
 

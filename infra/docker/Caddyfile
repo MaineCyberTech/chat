@@ -9,9 +9,6 @@ chat.mainecybertech.us {
     handle /v1* {
         reverse_proxy api:4000
     }
-    handle /socket.io* {
-        reverse_proxy api:4000
-    }
     reverse_proxy web:3000
     header {
         X-Frame-Options "DENY"

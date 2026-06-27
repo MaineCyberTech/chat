@@ -32,21 +32,11 @@
             file_server
         }
 
-        # API routes -> API container
+        # API routes -> API container (includes /v1/socket.io for WebSocket)
         @api {
             path /v1/*
         }
         handle @api {
-            reverse_proxy api:4000
-        }
-
-        # WebSocket upgrade for Socket.io
-        @websocket {
-            path /socket.io/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-        }
-        handle @websocket {
             reverse_proxy api:4000
         }
 
