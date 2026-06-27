@@ -145,7 +145,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: "2.15.8"
+          version: "2.108.0"
 
       - name: Start Supabase local
         run: supabase start
