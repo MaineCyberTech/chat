@@ -69,7 +69,7 @@ export function MessageInput({
   useEffect(() => {
     if (!workspaceId) return;
     api
-      .get<{ members: Member[] }>(`/workspaces/${workspaceId}/members`)
+      .get<{ members: Member[] }>(`/v1/workspaces/${workspaceId}/members`)
       .then((res) => setMembers(res.members))
       .catch((err) => console.error("Failed to fetch members:", err));
   }, [workspaceId]);

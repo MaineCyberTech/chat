@@ -3,7 +3,7 @@ import { getSupabaseForUser, getSupabase } from "../lib/supabase.js";
 
 export function requireWorkspaceMembership(paramName = "workspaceId") {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const workspaceId = req.params[paramName] || req.query[paramName];
+    const workspaceId = req.params[paramName];
     if (!workspaceId) {
       res.status(400).json({ error: { code: "INVALID_INPUT", message: `Missing ${paramName}` } });
       return;
