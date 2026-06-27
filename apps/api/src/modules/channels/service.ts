@@ -44,25 +44,55 @@ export class ChannelService {
 
   async create(input: CreateChannelInput, supabase?: SupabaseClient): Promise<Channel | null> {
     const client = supabase ?? getSupabase();
-    const slug = input.name
+    const baseSlug = input.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    const { data, error } = await client
-      .from("channels")
-      .insert({
-        name: input.name,
-        slug,
-        workspace_id: input.workspace_id,
-        created_by: input.created_by,
-        topic: input.topic ?? null,
-        is_private: input.is_private ?? false,
-      })
-      .select("*")
-      .single();
+    // Handle duplicate slugs
+    let attempt = 0;
+    let slug = baseSlug;
+    while (true) {
+      const { data, error } = await client
+        .from("channels")
+        .insert({
+          name: input.name,
+          slug,
+          workspace_id: input.workspace_id,
+          created_by: input.created_by,
+          topic: input.topic ?? null,
+          is_private: input.is_private ?? false,
+        })
+        .select("*")
+        .single();
 
-    if (error) {
+      if (!error) {
+        const channel = data as Channel;
+
+        // Auto-add creator as channel member
+        await client.from("channel_members").insert({
+          channel_id: channel.id,
+          user_id: input.created_by,
+        });
+
+        webhookService
+          .triggerEvent("channel.created", input.workspace_id, {
+            channel_id: channel.id,
+            name: channel.name,
+            slug: channel.slug,
+            created_by: input.created_by,
+          })
+          .catch(() => {});
+
+        return channel;
+      }
+
+      if (error.code === "23505" && error.message.includes("channels_workspace_id_slug_key")) {
+        attempt++;
+        slug = `${baseSlug}-${attempt}`;
+        continue;
+      }
+
       logger.error("Channel insert error", {
         error: error.message,
         code: error.code,
@@ -73,25 +103,6 @@ export class ChannelService {
       });
       return null;
     }
-
-    const channel = data as Channel;
-
-    // Auto-add creator as channel member
-    await client.from("channel_members").insert({
-      channel_id: channel.id,
-      user_id: input.created_by,
-    });
-
-    webhookService
-      .triggerEvent("channel.created", input.workspace_id, {
-        channel_id: channel.id,
-        name: channel.name,
-        slug: channel.slug,
-        created_by: input.created_by,
-      })
-      .catch(() => {});
-
-    return channel;
   }
 
   async update(channelId: string, input: UpdateChannelInput): Promise<Channel | null> {
