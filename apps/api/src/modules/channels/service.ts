@@ -76,6 +76,12 @@ export class ChannelService {
 
     const channel = data as Channel;
 
+    // Auto-add creator as channel member
+    await client.from("channel_members").insert({
+      channel_id: channel.id,
+      user_id: input.created_by,
+    });
+
     webhookService
       .triggerEvent("channel.created", input.workspace_id, {
         channel_id: channel.id,

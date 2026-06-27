@@ -13,6 +13,19 @@ create policy "channels_select_member"
     )
   );
 
+-- Workspace members can create channels.
+
+create policy "channels_insert_member"
+  on public.channels for insert
+  to authenticated
+  with check (
+    exists (
+      select 1 from public.workspace_members
+      where workspace_id = channels.workspace_id
+      and user_id = auth.uid()
+    )
+  );
+
 -- RLS on public.channel_members:
 -- Members can see channel membership lists.
 create policy "channel_members_select_member"
