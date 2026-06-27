@@ -14,18 +14,20 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 ## Repository Map
 
-| Directory            | Purpose                              | Key Files                                                                                                                                         |
-| -------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/api/`          | Express API server                   | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                                                                                      |
-| `apps/web/`          | Next.js 15 frontend                  | `app/`, `components/`, `lib/`, `e2e/`                                                                                                             |
-| `packages/ui/`       | Shared React components              | `src/components/button.tsx`, etc.                                                                                                                 |
-| `packages/db/`       | Supabase client + types + migrations | `src/config.ts`, `sql/`, `sql/migrations/006_user_preferences.sql`                                                                                |
-| `infra/docker/`      | Compose files, Caddyfiles            | `docker-compose.devremote.yml`, `docker-compose.prod.yml`, `Caddyfile`, `Caddyfile.prod`                                                          |
-| `infra/terraform/`   | DO droplet + DNS                     | `main.tf`, `templates/cloud-init.yaml.tftpl`                                                                                                      |
-| `.github/workflows/` | CI/CD pipelines                      | `ci.yml`, `validate.yml`, `build-push.yml`, `deploy-development.yml`, `deploy-production.yml`, `infra-development.yml`, `supabase-migrations.yml` |
-| `scripts/`           | Dev tooling                          | `setup-dev.ps1`, `teardown-dev.ps1`                                                                                                               |
-| `supabase/`          | Local Supabase config                | `config.toml`                                                                                                                                     |
-| `docs/`              | Architecture docs, runbooks, audits  | `docs/architecture/`, `docs/prompts/`, `docs/audits/`                                                                                             |
+| Directory            | Purpose                             | Key Files                                                                                |
+| -------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| `apps/api/`          | Express API server                  | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                             |
+| `apps/web/`          | Next.js 15 frontend                 | `app/`, `components/`, `lib/`, `e2e/`                                                    |
+| `packages/ui/`       | Shared React components             | `src/components/button.tsx`, etc.                                                        |
+| `packages/db/`       | Supabase client + types             | `src/config.ts`                                                                          |
+| `infra/docker/`      | Compose files, Caddyfiles           | `docker-compose.devremote.yml`, `docker-compose.prod.yml`, `Caddyfile`, `Caddyfile.prod` |
+| `infra/terraform/`   | DO droplet + DNS                    | `main.tf`, `templates/cloud-init.yaml.tftpl`                                             |
+| `.github/workflows/` | CI/CD pipelines (19 workflows)      | See [Workflows section](#github-actions-workflows)                                       |
+| `scripts/`           | Dev tooling                         | `setup-dev.ps1`, `teardown-dev.ps1`                                                      |
+| `supabase/`          | Local Supabase config + migrations  | `config.toml`, `migrations/`, `policies/`, `seeds/`                                      |
+| `hardening/`         | Hardening analysis artifacts        | `baselines/`, `exceptions/`, `history/`, `policies/`, `rules/`                           |
+| `tests/`             | Test suites                         | `e2e/`, `integration/`, `setup/`                                                         |
+| `docs/`              | Architecture docs, runbooks, audits | `docs/architecture/`, `docs/prompts/`, `docs/audits/`, `docs/runbooks/`                  |
 
 ## Implementation Status
 
@@ -33,7 +35,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 - Magic link auth (all previous items)
 - **CSRF/Same-Origin Architecture** — API now proxied via `/v1/*` on same domain (`chat.mainecybertech.us`) fixing cookie visibility and SameSite=Strict blocking
-- **Database Schema Applied** — 21 Supabase CLI migrations applied (users, workspaces, channels, messages, RLS, triggers, auto-profile creation, backfill)
+- **Database Schema Applied** — 24 Supabase CLI migrations applied (users, workspaces, channels, messages, RLS, triggers, auto-profile creation, backfill, soft-delete, webhook retry, audit FK, etc.)
 - **Workspace Creation RLS** — Uses admin client (service role) to bypass RLS; duplicate slug handling with retry logic (`-1`, `-2`, etc.)
 - **User Profiles Auto-Creation** — Trigger on `auth.users` insert + backfill migration for existing users
 - **Per-Request Supabase Client** — Each request gets client with user's JWT for proper RLS context (`getSupabaseForUser`)
@@ -42,6 +44,10 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - **Trust Proxy** — Added for correct X-Forwarded-For handling behind Caddy
 - **JSON Body Parsing** — Fixed (PowerShell inline JSON quote corruption; use `@file.json` for testing)
 - **Supabase CLI Migration Workflow** — Added `.github/workflows/supabase-migrations.yml` + migration step in deploy-development.yml
+- **Workspace Member Trigger Fix** — Added `ON CONFLICT DO NOTHING` + exception handling to `handle_new_workspace()` trigger so member is created even when admin client bypasses RLS
+- **Version Badge** — Added fixed bottom-right badge on all pages showing version (branch+run), git SHA, build date
+- **E2E Test Framework** — Added Playwright tests for auth→workspace→chat flow (`apps/web/e2e/auth-workspace-chat.spec.ts`)
+- **Test Endpoint** — Added `/v1/test-body` for debugging body parsing
 
 ### Audits Completed (June 22, 2026)
 
@@ -65,7 +71,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 ### Known Issues
 
-- **Cloudflare 521**: Cloudflare can't reach the origin server. May need DO firewall rules allowing Cloudflare IP ranges, or Cloudflare SSL/TLS set to Full + Let's Encrypt certs.
+- **Cloudflare 521**: Cloudflare can't reach the origin server. Terraform firewall rules restricting SSH/HTTP/HTTPS to Cloudflare IP ranges have been applied, but the 521 error persists. May need Cloudflare SSL/TLS set to Full (Strict) + origin certificate.
 
 ### Resolved Issues
 
@@ -95,31 +101,22 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - Husky pre-commit hook — Added with lint-staged
 - CONTRIBUTING.md / CHANGELOG.md — Created at root
 - Incident response & DB migration runbooks — Created in docs/runbooks/
-- **CSRF/Same-Origin Architecture** — API now proxied via `/v1/*` on same domain (`chat.mainecybertech.us`) fixing cookie visibility and SameSite=Strict blocking (was using `chat-api.*` subdomain)
-- **Database Schema Applied** — 21 Supabase CLI migrations applied (users, workspaces, channels, messages, RLS, triggers, auto-profile creation, backfill)
-- **Workspace Creation RLS** — Uses admin client (service role) to bypass RLS; duplicate slug handling with retry logic (`-1`, `-2`, etc.)
-- **User Profiles Auto-Creation** — Trigger on `auth.users` insert + backfill migration for existing users
-- **Per-Request Supabase Client** — Each request gets client with user's JWT for proper RLS context (`getSupabaseForUser`)
-- **Manifest & Service Worker** — Served correctly with proper Content-Type headers (`application/manifest+json`, `application/javascript`)
-- **Caddy Routing** — All `/v1/*` routes to API container (catch-all handle)
-- **Trust Proxy** — Added for correct X-Forwarded-For handling behind Caddy
-- **JSON Body Parsing** — Fixed (PowerShell inline JSON quote corruption; use `@file.json` for testing)
-- **Supabase CLI Migration Workflow** — Added `.github/workflows/supabase-migrations.yml` + migration step in deploy-development.yml
-- **Workspace Member Trigger Fix** — Added `ON CONFLICT DO NOTHING` + exception handling to `handle_new_workspace()` trigger so member is created even when admin client bypasses RLS
-- **Version Badge** — Added fixed bottom-right badge on all pages showing version (branch+run), git SHA, build date
-- **E2E Test Framework** — Added Playwright tests for auth→workspace→chat flow (`apps/web/e2e/auth-workspace-chat.spec.ts`)
-- **Test Endpoint** — Added `/v1/test-body` for debugging body parsing
+- Workspace Member Trigger Fix — Added `ON CONFLICT DO NOTHING` + exception handling to `handle_new_workspace()` trigger
+- Version Badge — Added fixed bottom-right badge on all pages
+- E2E Test Framework — Added Playwright tests (`apps/web/e2e/auth-workspace-chat.spec.ts`)
+- Test Endpoint — Added `/v1/test-body` for debugging body parsing
+- All hardening P0-P3 findings resolved — See [Hardening Findings Tracker](#hardening-findings-tracker)
 
 ### Remaining Work
 
 **Frontend Release Gate Findings** (from `docs/audits/frontend_ux_release_gate_audit_summary.md`):
 
-| Priority | Count         | Key Items                                                                                                                                                                                                                                                                                                                               |
-| -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **P0**   | 0 (2 fixed)   | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED**                                                                                                                                                                                                                                                   |
-| **P1**   | 0 (13 fixed)  | All P1 items resolved                                                                                                                                                                                                                                                                                                                   |
-| **P2**   | 19 (11 fixed) | ~~No tablet breakpoint~~, ~~low contrast on tertiary text~~, ~~small touch targets~~, duplicate CSS config, ~~missing loading states in thread panel~~, ~~no error boundary for message fetch failure~~, ~~body scroll lock broken~~, no slide animations, ~~no debounce on typing indicator~~, ~~audit logging retry/queue mechanism~~ |
-| **P3**   | 12            | Dead code, raw values, no `not-found.tsx`/`error.tsx`, no settings UI, no avatar preview                                                                                                                                                                                                                                                |
+| Priority | Count        | Key Items                                                                             |
+| -------- | ------------ | ------------------------------------------------------------------------------------- |
+| **P0**   | 0 (2 fixed)  | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED** |
+| **P1**   | 0 (13 fixed) | All P1 items resolved                                                                 |
+| **P2**   | 8 unresolved | duplicate CSS config, no slide animations, plus 6 other items                         |
+| **P3**   | 11           | Dead code, raw values, no settings UI, no avatar preview                              |
 
 All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
@@ -135,13 +132,13 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 **Database/Schema Improvements** (from `docs/audits/database_schema_data_lifecycle_audit_summary.md`):
 
 - ~~Add indexes: `workspace_members.user_id`, `channel_members.user_id`, `messages.parent_id`~~ **DONE**
-- Fix `audit_logs.organization_id` FK or CHECK constraint
+- ~~Fix `audit_logs.organization_id` FK or CHECK constraint~~ **DONE**
 - ~~Add `WorkspaceMember.role` to TypeScript types~~ **DONE**
 - Unify migration directory structure
-- Add soft-delete for workspaces/channels/messages
-- Add data retention/archival policy
-- Add audit log pruning strategy
-- Parameterized cursor for message pagination
+- ~~Add soft-delete for workspaces/channels/messages~~ **DONE**
+- ~~Add data retention/archival policy~~ **DONE**
+- ~~Add audit log pruning strategy~~ **DONE**
+- ~~Parameterized cursor for message pagination~~ **DONE**
 
 **Infra/Deployment** (from `docs/audits/infra_deployment_resilience_audit_summary.md`):
 
@@ -167,18 +164,18 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
 ### P0 Blockers (7 total — **7 fixed, 0 pending**)
 
-| ID              | Finding                          | Status            | Files Modified                                                                                     |
-| --------------- | -------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------- |
-| SEC-001         | Missing CSP Header               | ✅ **FIXED**      | `apps/api/src/middleware/security-headers.ts`                                                      |
-| SEC-002         | No HSTS Header                   | ✅ **FIXED**      | `apps/api/src/middleware/security-headers.ts`                                                      |
-| OBS-001         | No Distributed Tracing           | ✅ **FIXED**      | `apps/api/src/lib/sentry.ts`, `apps/api/src/app.ts`                                                |
-| OBS-002         | No Metrics Export (Prometheus)   | ✅ **FIXED**      | `apps/api/src/lib/metrics.ts` (new), `apps/api/src/app.ts`                                         |
-| SUP-001         | No Dependency Scanning in CI     | ✅ **FIXED**      | `.github/workflows/validate.yml`                                                                   |
-| CIC-001         | Secrets in CI Logs (base64 echo) | ✅ **FIXED**      | `.github/workflows/deploy-development.yml`                                                         |
-| CIC-002         | SSH Key Written to Disk          | ✅ **FIXED**      | `.github/workflows/deploy-development.yml`                                                         |
-| RES-001         | No Webhook Retry/DLQ             | ✅ **FIXED**      | `apps/api/src/modules/webhooks/service.ts`, `packages/db/sql/migrations/011_webhook_retry_dlq.sql` |
-| RES-005/RES-011 | No Redis Adapter for Socket.io   | ✅ **FIXED**      | `apps/api/src/lib/socket.ts`, `apps/api/src/server.ts`, `apps/api/src/config/env.ts`               |
-| DAT-007         | No pg_cron for Retention         | ✅ **DOCUMENTED** | `docs/runbooks/pg_cron_setup.md` (manual Supabase setup)                                           |
+| ID              | Finding                          | Status            | Files Modified                                                                                         |
+| --------------- | -------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------ |
+| SEC-001         | Missing CSP Header               | ✅ **FIXED**      | `apps/api/src/middleware/security-headers.ts`                                                          |
+| SEC-002         | No HSTS Header                   | ✅ **FIXED**      | `apps/api/src/middleware/security-headers.ts`                                                          |
+| OBS-001         | No Distributed Tracing           | ✅ **FIXED**      | `apps/api/src/lib/sentry.ts`, `apps/api/src/app.ts`                                                    |
+| OBS-002         | No Metrics Export (Prometheus)   | ✅ **FIXED**      | `apps/api/src/lib/metrics.ts` (new), `apps/api/src/app.ts`                                             |
+| SUP-001         | No Dependency Scanning in CI     | ✅ **FIXED**      | `.github/workflows/validate.yml`                                                                       |
+| CIC-001         | Secrets in CI Logs (base64 echo) | ✅ **FIXED**      | `.github/workflows/deploy-development.yml`                                                             |
+| CIC-002         | SSH Key Written to Disk          | ✅ **FIXED**      | `.github/workflows/deploy-development.yml`                                                             |
+| RES-001         | No Webhook Retry/DLQ             | ✅ **FIXED**      | `apps/api/src/modules/webhooks/service.ts`, `supabase/migrations/20260625000016_webhook_retry_dlq.sql` |
+| RES-005/RES-011 | No Redis Adapter for Socket.io   | ✅ **FIXED**      | `apps/api/src/lib/socket.ts`, `apps/api/src/server.ts`, `apps/api/src/config/env.ts`                   |
+| DAT-007         | No pg_cron for Retention         | ✅ **DOCUMENTED** | `docs/runbooks/pg_cron_setup.md` (manual Supabase setup)                                               |
 
 ### P1 Findings (18 total — **18 fixed, 0 pending**)
 
@@ -260,15 +257,27 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
 ## GitHub Actions Workflows
 
-| Workflow                  | Trigger                  | Purpose                                                                   |
-| ------------------------- | ------------------------ | ------------------------------------------------------------------------- |
-| `ci.yml`                  | push main/develop, PR    | Calls reusable validate.yml (test, lint, typecheck, build)                |
-| `validate.yml`            | workflow_call            | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache     |
-| `build-push.yml`          | push develop             | Build Docker images → push to GHCR `:dev` tag (path-filtered)             |
-| `deploy-development.yml`  | push develop             | SSH to droplet, transfer files, pipe images, compose up, health check     |
-| `infra-development.yml`   | push infra/\*\* changes  | Terraform provision droplet + DNS + firewall + SSH key registration       |
-| `deploy-production.yml`   | push main, manual        | Build + push `:latest` images, deploy to production droplet, health check |
-| `supabase-migrations.yml` | push develop, infra/\*\* | Supabase link + db push (runs before deploy)                              |
+| Workflow                          | Trigger                  | Purpose                                                                   |
+| --------------------------------- | ------------------------ | ------------------------------------------------------------------------- |
+| `ci.yml`                          | push main/develop, PR    | Calls reusable validate.yml (test, lint, typecheck, build)                |
+| `validate.yml`                    | workflow_call            | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache     |
+| `build-push.yml`                  | push develop             | Build Docker images → push to GHCR `:dev` tag (path-filtered)             |
+| `deploy-development.yml`          | push develop             | SSH to droplet, transfer files, pipe images, compose up, health check     |
+| `infra-development.yml`           | push infra/\*\* changes  | Terraform provision droplet + DNS + firewall + SSH key registration       |
+| `deploy-production.yml`           | push main, manual        | Build + push `:latest` images, deploy to production droplet, health check |
+| `supabase-migrations.yml`         | push develop, infra/\*\* | Supabase link + db push (runs before deploy)                              |
+| `audit-ci.yml`                    | workflow_dispatch        | CI audit badge generation                                                 |
+| `audit-ci-autocommit.yml`         | workflow_dispatch        | Auto-commit audit CI results                                              |
+| `audit-badges-autocommit.yml`     | workflow_dispatch        | Auto-commit audit badge updates                                           |
+| `audit-pr-gate.yml`               | PR                       | Audit-based PR gate checks                                                |
+| `audit-release-certification.yml` | release                  | Release certification audit                                               |
+| `environment-promotion-audit.yml` | workflow_dispatch        | Environment promotion audit                                               |
+| `executive-stakeholder-pack.yml`  | workflow_dispatch        | Generate executive/stakeholder report pack                                |
+| `feature-rollout-checkpoint.yml`  | workflow_dispatch        | Feature rollout checkpoint audit                                          |
+| `governance.yml`                  | workflow_dispatch        | Governance policy enforcement                                             |
+| `hardening-automation-runner.yml` | workflow_dispatch        | Automated hardening analysis runner                                       |
+| `hardening.yml`                   | workflow_dispatch        | Hardening analysis trigger                                                |
+| `platform.yml`                    | workflow_dispatch        | Platform-level CI/CD orchestration                                        |
 
 ## Environments
 
@@ -314,7 +323,7 @@ pnpm dev
 ## Secrets Required
 
 | Secret                      | Used By       |
-| --------------------------- | ------------- | ------------------------------------------- |
+| --------------------------- | ------------- |
 | `DO_API_TOKEN`              | infra, deploy |
 | `CI_SSH_PUBLIC_KEY`         | infra, deploy |
 | `CI_SSH_PRIVATE_KEY`        | deploy        |
@@ -327,6 +336,6 @@ pnpm dev
 | `SUPABASE_SERVICE_ROLE_KEY` | deploy        |
 | `CF_ORIGIN_CERT`            | deploy        |
 | `CF_ORIGIN_KEY`             | deploy        |
-| `AWS_ACCESS_KEY_ID`         | infra         | DO Spaces Terraform remote state (optional) |
-| `AWS_SECRET_ACCESS_KEY`     | infra         | DO Spaces Terraform remote state (optional) |
+| `AWS_ACCESS_KEY_ID`         | infra         |
+| `AWS_SECRET_ACCESS_KEY`     | infra         |
 | `GITHUB_TOKEN`              | auto-provided |

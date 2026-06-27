@@ -33,7 +33,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     }
 
     // Create a per-request Supabase client with the user's JWT for RLS
-    req.supabase = await getSupabaseForUser(token);
+    req.supabase = getSupabaseForUser(token);
     req.userId = data.user.id;
     req.userEmail = data.user.email;
     next();
