@@ -118,10 +118,14 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
   useEffect(() => {
     let socket: Socket | null = null;
+    let isConnectionAttempted = false;
 
     function setup(s: Socket) {
       socket = s;
-      socket.emit("channel:join", channelId);
+      if (!isConnectionAttempted) {
+        isConnectionAttempted = true;
+        s.emit("channel:join", channelId);
+      }
 
       onReconnect(() => {
         socket?.emit("channel:join", channelId);

@@ -14,13 +14,15 @@ export async function getSocket(): Promise<Socket> {
 
   if (!token) throw new Error("Not authenticated");
 
+  // Clean up existing socket and all its listeners before reconnecting
   if (socket) {
+    socket.removeAllListeners();
     socket.disconnect();
     socket = null;
   }
 
   socket = io(API_BASE, {
-    extraHeaders: { Authorization: `Bearer ${token}` },
+    auth: { token },
     transports: ["websocket"],
     reconnection: true,
     reconnectionDelay: 1000,

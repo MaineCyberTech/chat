@@ -3,6 +3,7 @@ import { getIO } from "../../lib/socket.js";
 import { webhookService } from "../webhooks/service.js";
 import { notificationService } from "../notifications/service.js";
 import type { Message } from "@chat/db";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface CreateMessageInput {
   channel_id: string;
@@ -16,9 +17,10 @@ export class MessageService {
     channelId: string,
     limit = 50,
     cursor?: string,
+    supabase?: SupabaseClient,
   ): Promise<{ messages: Message[]; nextCursor: string | null }> {
-    const supabase = getSupabase();
-    let query = supabase
+    const client = supabase ?? getSupabase();
+    let query = client
       .from("messages")
       .select("*")
       .eq("channel_id", channelId)
@@ -48,21 +50,17 @@ export class MessageService {
     return { messages: results.reverse(), nextCursor };
   }
 
-  async getById(messageId: string): Promise<Message | null> {
-    const supabase = getSupabase();
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("id", messageId)
-      .single();
+  async getById(messageId: string, supabase?: SupabaseClient): Promise<Message | null> {
+    const client = supabase ?? getSupabase();
+    const { data, error } = await client.from("messages").select("*").eq("id", messageId).single();
 
     if (error) return null;
     return data as Message;
   }
 
-  async create(input: CreateMessageInput): Promise<Message | null> {
-    const supabase = getSupabase();
-    const { data, error } = await supabase
+  async create(input: CreateMessageInput, supabase?: SupabaseClient): Promise<Message | null> {
+    const client = supabase ?? getSupabase();
+    const { data, error } = await client
       .from("messages")
       .insert({
         channel_id: input.channel_id,
@@ -103,7 +101,7 @@ export class MessageService {
 
     // Notify parent message author on reply
     if (input.parent_id) {
-      this.getById(input.parent_id)
+      this.getById(input.parent_id, client)
         .then((parent) => {
           if (parent && parent.user_id !== input.user_id) {
             notificationService.create({
@@ -121,9 +119,13 @@ export class MessageService {
     return message;
   }
 
-  async update(messageId: string, content: string): Promise<Message | null> {
-    const supabase = getSupabase();
-    const { data, error } = await supabase
+  async update(
+    messageId: string,
+    content: string,
+    supabase?: SupabaseClient,
+  ): Promise<Message | null> {
+    const client = supabase ?? getSupabase();
+    const { data, error } = await client
       .from("messages")
       .update({ content, edited_at: new Date().toISOString() })
       .eq("id", messageId)
@@ -159,14 +161,17 @@ export class MessageService {
     return message;
   }
 
-  async remove(messageId: string): Promise<{ channel_id: string } | null> {
-    const supabase = getSupabase();
+  async remove(
+    messageId: string,
+    supabase?: SupabaseClient,
+  ): Promise<{ channel_id: string } | null> {
+    const client = supabase ?? getSupabase();
 
     // Get channel_id before deleting for broadcast
-    const existing = await this.getById(messageId);
+    const existing = await this.getById(messageId, client);
     if (!existing) return null;
 
-    const { error } = await supabase.from("messages").delete().eq("id", messageId);
+    const { error } = await client.from("messages").delete().eq("id", messageId);
     if (error) return null;
 
     try {

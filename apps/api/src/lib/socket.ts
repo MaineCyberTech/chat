@@ -53,9 +53,11 @@ export function initSocket(
   }
 
   io.use(async (socket, next) => {
-    // Read token from Authorization header (more secure than query/auth)
-    const authHeader = socket.handshake.headers?.authorization as string | undefined;
-    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+    // Read token from socket handshake auth (supported in all browsers)
+    // Alternatively from Authorization header for non-browser clients
+    const token =
+      (socket.handshake.auth?.token as string | undefined) ??
+      (socket.handshake.headers?.authorization as string | undefined)?.replace("Bearer ", "");
 
     if (!token) {
       return next(new Error("Missing auth token"));

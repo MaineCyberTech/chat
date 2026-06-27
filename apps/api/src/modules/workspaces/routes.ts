@@ -75,7 +75,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/:id", validateUuidParam("id"), requireWorkspaceMembership(), async (req, res) => {
+router.get("/:id", validateUuidParam("id"), requireWorkspaceMembership("id"), async (req, res) => {
   const workspace = await workspaceService.getById(req.params.id as string, req.supabase);
   if (!workspace) {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
@@ -84,40 +84,45 @@ router.get("/:id", validateUuidParam("id"), requireWorkspaceMembership(), async 
   res.json({ workspace });
 });
 
-router.patch("/:id", validateUuidParam("id"), requireWorkspaceMembership(), async (req, res) => {
-  const parsed = updateWorkspaceSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
-  }
+router.patch(
+  "/:id",
+  validateUuidParam("id"),
+  requireWorkspaceMembership("id"),
+  async (req, res) => {
+    const parsed = updateWorkspaceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
+      return;
+    }
 
-  const workspace = await workspaceService.update(
-    req.params.id as string,
-    parsed.data,
-    req.supabase,
-  );
-  if (!workspace) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
-    return;
-  }
+    const workspace = await workspaceService.update(
+      req.params.id as string,
+      parsed.data,
+      req.supabase,
+    );
+    if (!workspace) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
+      return;
+    }
 
-  const updatedWorkspace: Workspace = workspace;
-  res.json({ workspace: updatedWorkspace });
-  logAuditEvent({
-    actorUserId: req.userId,
-    action: "workspace.update",
-    entityType: "workspace",
-    entityId: updatedWorkspace.id,
-    metadata: { name: updatedWorkspace.name },
-  });
-});
+    const updatedWorkspace: Workspace = workspace;
+    res.json({ workspace: updatedWorkspace });
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "workspace.update",
+      entityType: "workspace",
+      entityId: updatedWorkspace.id,
+      metadata: { name: updatedWorkspace.name },
+    });
+  },
+);
 
 router.get(
   "/:id/members",
   validateUuidParam("id"),
-  requireWorkspaceMembership(),
+  requireWorkspaceMembership("id"),
   async (req, res) => {
     const members = await workspaceService.getMembers(req.params.id as string, req.supabase);
     res.json({ members });
@@ -127,7 +132,7 @@ router.get(
 router.post(
   "/:id/members",
   validateUuidParam("id"),
-  requireWorkspaceMembership(),
+  requireWorkspaceMembership("id"),
   async (req, res) => {
     const parsed = addWorkspaceMemberSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -164,7 +169,7 @@ router.patch(
   "/:id/members/:userId",
   validateUuidParam("id"),
   validateUuidParam("userId"),
-  requireWorkspaceMembership(),
+  requireWorkspaceMembership("id"),
   async (req, res) => {
     const parsed = updateWorkspaceMemberSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -201,7 +206,7 @@ router.delete(
   "/:id/members/:userId",
   validateUuidParam("id"),
   validateUuidParam("userId"),
-  requireWorkspaceMembership(),
+  requireWorkspaceMembership("id"),
   async (req, res) => {
     const success = await workspaceService.removeMember(
       req.params.id as string,
@@ -225,19 +230,24 @@ router.delete(
   },
 );
 
-router.delete("/:id", validateUuidParam("id"), requireWorkspaceMembership(), async (req, res) => {
-  const deleted = await workspaceService.remove(req.params.id as string, req.supabase);
-  if (!deleted) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
-    return;
-  }
-  logAuditEvent({
-    actorUserId: req.userId,
-    action: "workspace.delete",
-    entityType: "workspace",
-    entityId: req.params.id as string,
-  });
-  res.status(204).send();
-});
+router.delete(
+  "/:id",
+  validateUuidParam("id"),
+  requireWorkspaceMembership("id"),
+  async (req, res) => {
+    const deleted = await workspaceService.remove(req.params.id as string, req.supabase);
+    if (!deleted) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
+      return;
+    }
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "workspace.delete",
+      entityType: "workspace",
+      entityId: req.params.id as string,
+    });
+    res.status(204).send();
+  },
+);
 
 export default router;

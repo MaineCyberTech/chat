@@ -60,6 +60,7 @@ router.get(
       req.params.channelId as string,
       50,
       cursor as string | undefined,
+      req.supabase,
     );
     res.json({ messages: result.messages, nextCursor: result.nextCursor });
   },
@@ -75,7 +76,7 @@ router.post(
     if (idempotencyKey) {
       const existingMessageId = await checkIdempotencyKey(idempotencyKey);
       if (existingMessageId) {
-        const existingMessage = await messageService.getById(existingMessageId);
+        const existingMessage = await messageService.getById(existingMessageId, req.supabase);
         if (existingMessage) {
           res.set("Idempotency-Key", idempotencyKey);
           return res.status(200).json({ message: existingMessage, idempotent: true });
@@ -93,12 +94,15 @@ router.post(
 
     const sanitizedContent = sanitizeContent(parsed.data.content);
 
-    const message = await messageService.create({
-      channel_id: req.params.channelId as string,
-      user_id: req.userId!,
-      content: sanitizedContent,
-      parent_id: parsed.data.parent_id,
-    });
+    const message = await messageService.create(
+      {
+        channel_id: req.params.channelId as string,
+        user_id: req.userId!,
+        content: sanitizedContent,
+        parent_id: parsed.data.parent_id,
+      },
+      req.supabase,
+    );
 
     if (!message) {
       res
@@ -138,7 +142,11 @@ router.patch(
 
     const sanitizedContent = sanitizeContent(parsed.data.content);
 
-    const message = await messageService.update(req.params.id as string, sanitizedContent);
+    const message = await messageService.update(
+      req.params.id as string,
+      sanitizedContent,
+      req.supabase,
+    );
     if (!message) {
       res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
       return;
@@ -160,7 +168,7 @@ router.delete(
   validateUuidParam("id"),
   requireMessageAccess("id"),
   async (req, res) => {
-    const result = await messageService.remove(req.params.id as string);
+    const result = await messageService.remove(req.params.id as string, req.supabase);
     if (!result) {
       res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
       return;
