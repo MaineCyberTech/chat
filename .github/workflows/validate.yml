@@ -148,18 +148,18 @@ jobs:
           version: "2.6.1"
 
       - name: Start Supabase local
-        run: supabase start --workdir ./supabase
+        run: supabase start
 
       - name: Apply migrations
-        run: supabase db reset --workdir ./supabase
+        run: supabase db reset
 
       - name: Verify migration status
-        run: supabase migration list --workdir ./supabase || echo "Migration list not available (project not linked), skipping verification"
+        run: supabase migration list || echo "Migration list not available (project not linked), skipping verification"
 
       - name: Test migration up/down (dry run)
         run: |
           # Test that all migrations can be applied cleanly
-          supabase db diff --workdir ./supabase --schema public --dry-run || true
+          supabase db diff --schema public --dry-run || true
 
       - name: Run database tests (if any)
         run: |
@@ -167,7 +167,7 @@ jobs:
           if [ -d "./supabase/tests" ]; then
             for test in ./supabase/tests/*.sql; do
               echo "Running $test..."
-              supabase db execute --workdir ./supabase --file "$test" || exit 1
+              supabase db execute --file "$test" || exit 1
             done
           else
             echo "No SQL tests found, skipping"
