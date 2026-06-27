@@ -55,7 +55,6 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
             onChange={(e) => setName(e.target.value)}
             placeholder="general"
             error={error}
-            autoFocus
           />
           <Input
             label="Topic (optional)"

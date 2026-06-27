@@ -69,7 +69,6 @@ export function CreateWorkspaceDialog({ onCreated, children }: Props) {
             onChange={(e) => setName(e.target.value)}
             placeholder="My team"
             error={error}
-            autoFocus
           />
           <div className="flex gap-2">
             <Button type="submit" disabled={loading}>
