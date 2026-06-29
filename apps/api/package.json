@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@chat/db": "workspace:*",
-    "@sentry/node": "^10.59.0",
+    "@sentry/node": "^10.62.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "@supabase/supabase-js": "^2.49.0",
     "cookie-parser": "^1.4.7",
