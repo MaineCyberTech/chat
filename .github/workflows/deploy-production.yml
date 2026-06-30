@@ -242,7 +242,7 @@ jobs:
             docker pull ghcr.io/${{ env.REPO_LC }}/api:latest
             docker pull ghcr.io/${{ env.REPO_LC }}/worker:latest
             docker pull ghcr.io/${{ env.REPO_LC }}/web:latest
-            docker compose -f infra/docker/docker-compose.prod.yml up -d --remove-orphans
+            docker compose -f infra/docker/docker-compose.prod.yml up -d --remove-orphans --force-recreate
             docker image prune -af
 
       - name: Health check

@@ -53,8 +53,9 @@ export class WorkspaceService {
 
     // Handle duplicate slugs
     let attempt = 0;
+    const MAX_ATTEMPTS = 100;
     let finalSlug = slug;
-    while (true) {
+    while (attempt < MAX_ATTEMPTS) {
       const { data, error } = await supabase
         .from("workspaces")
         .insert({
@@ -92,6 +93,8 @@ export class WorkspaceService {
       });
       return null;
     }
+    logger.error("Workspace slug dedup exhausted", { slug, attempts: MAX_ATTEMPTS });
+    return null;
   }
 
   async update(

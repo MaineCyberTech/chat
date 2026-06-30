@@ -58,7 +58,7 @@ router.post("/profiles", authenticate, async (req, res) => {
 
 router.get("/search", authenticate, searchLimiter, async (req, res) => {
   const query = req.query.q as string;
-  if (!query || query.length < 2) {
+  if (!query || query.length < 2 || query.length > 100) {
     res
       .status(400)
       .json({ error: { code: "INVALID_INPUT", message: "Query must be at least 2 characters" } });

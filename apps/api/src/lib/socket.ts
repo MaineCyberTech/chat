@@ -76,7 +76,8 @@ export function initSocket(
 
       socket.userId = data.user.id;
       next();
-    } catch {
+    } catch (err) {
+      logger.warn("Socket.io auth failed", { error: String(err) });
       next(new Error("Authentication failed"));
     }
   });

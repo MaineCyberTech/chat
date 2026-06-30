@@ -61,13 +61,14 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - **Docs/DevEx/Operations audit**: 20KB report covering onboarding quality, script/documentation completeness, runbook readiness, repo ergonomics. See `docs/audits/docs_devex_operations_audit_summary.md`.
 - **Frontend UX Release Gate audit**: 6-dimension release-readiness audit (visual consistency, accessibility, responsive, design system, interaction quality, product surface). 2 P0, 13 P1, 27 P2, 12 P3 findings. All grades: PASS WITH RISKS. See `docs/audits/frontend_ux_release_gate_audit_summary.md`.
 
-### Hardening Analysis Completed (June 23, 2026)
+### Hardening Analysis Completed (June 30, 2026)
 
-- **Global Hardening Analysis** (8 phases): security, data integrity, resilience, observability, supply chain, privacy, CI/CD security, platform evolution. See `docs/prompts/hardening_prompt_pack/`.
-- **52 unique findings** across 10 root-cause clusters. Global risk score: **0/100 (CRITICAL)**.
-- **7 P0 blockers**: Missing CSP/HSTS headers, no distributed tracing/metrics, no dependency scanning in CI, secrets in CI logs/disk, no webhook retry/DLQ, no Redis adapter for Socket.io, no pg_cron for retention.
-- **18 P1 findings**: In-memory idempotency store, webhook secret handling, Socket.io token in handshake, test credentials in login form, audit_logs FK missing, soft delete incomplete, webhook/push retry gaps, circuit breakers missing, distributed presence broken, graceful WS drain missing, business metrics missing, SBOM/image scanning missing, SLSA provenance missing, branch protection not enforced, SSH key written to disk, Terraform state not encrypted, email enumeration risk, avatar URLs public, no GDPR export/delete.
-- Key clusters: Security headers (CLUSTER-A), Distributed systems gaps (CLUSTER-B), Webhook/push reliability (CLUSTER-C), Observability blind spots (CLUSTER-D), Supply chain hygiene (CLUSTER-E), CI/CD secret handling (CLUSTER-F), Data lifecycle gaps (CLUSTER-G), Privacy/compliance (CLUSTER-H), Auth/session hardening (CLUSTER-I), Platform evolution debt (CLUSTER-J).
+- **Full Prompt Pack Execution** (10 prompts): security, data integrity, resilience, observability, supply chain, privacy, CI/CD security, platform evolution, merger, reconciliation. See `docs/prompts/hardening_prompt_pack/`.
+- **176 unique findings** across 8 domains. Global risk score: **0/100 (CRITICAL)**.
+- **20 P0 blockers**: 5 security (consent routes broken, webhook secret leak, reaction no access control, /metrics unauthenticated, SECURITY DEFINER no search_path), 7 resilience (no request timeout, no graceful shutdown drain, no query timeout, socket re-auth, no API timeout/retry, in-memory rate limiter, slug dedup infinite loop), 6 data (reaction service anon client, channel member RLS missing, message search anon client, GDPR delete FK violation, GDPR delete missing consent/audit cleanup), 2 CI/CD (trivy-action @master in validate.yml + build-push.yml).
+- **39 P1 findings**: webhook secret plaintext, SSRF regex gaps, CSP nonce missing from theme script, email enumeration, hardcoded test creds, missing RLS policies, channel member management broken, audit_logs no orgId, feature flag admin client use, 10 CI/CD secret exposure issues, GitHub token not persisted, concurrency control missing, PostCSS XSS via Next.js, user email in logs, GDPR delete incomplete, plus resilience/observability gaps.
+- **79 P2 findings**: rate limiter improvements, request ID validation, CSRF cookie hardening, notification link validation, workspace/channel role authorization, soft-delete cascade missing, 404/loading states missing, Unicode icons, missing error boundaries, pnpm audit threshold, and more.
+- **38 P3 findings**: nonce-based CSP, wget in Docker, avatar URL validation, feature flag hash, health endpoint CSRF churn, channel member insert error handling, thread textarea auto-resize, and more.
 
 ### Known Issues
 
@@ -111,23 +112,23 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 
 **Frontend Release Gate Findings** (from `docs/audits/frontend_ux_release_gate_audit_summary.md`):
 
-| Priority | Count        | Key Items                                                                             |
-| -------- | ------------ | ------------------------------------------------------------------------------------- |
-| **P0**   | 0 (2 fixed)  | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED** |
-| **P1**   | 0 (13 fixed) | All P1 items resolved                                                                 |
-| **P2**   | 8 unresolved | duplicate CSS config, no slide animations, plus 6 other items                         |
-| **P3**   | 11           | Dead code, raw values, no settings UI, no avatar preview                              |
+| Priority | Count         | Key Items                                                                                                                                                                                                                                             |
+| -------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0**   | 0 (2 fixed)   | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED**                                                                                                                                                                 |
+| **P1**   | 0 (13 fixed)  | All P1 items resolved                                                                                                                                                                                                                                 |
+| **P2**   | 18 unresolved | thread panel reply input not textarea, no delete confirmation dialog, edit/delete no error feedback, typing indicator unthrottled, no sending indicator on optimistic messages, notification dropdown overflow, missing tablet breakpoint, and others |
+| **P3**   | 9             | Raw opacity values, "Loading..." text instead of skeletons, unused CSS classes                                                                                                                                                                        |
 
 All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
 **Hardening Analysis Findings** (from `docs/prompts/hardening_prompt_pack/` — Global Risk Score: 0/100 CRITICAL):
 
-| Priority | Count | Key Items                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| -------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **P0**   | 7     | Missing CSP/HSTS headers, no distributed tracing/metrics, no dependency scanning in CI, secrets in CI logs/disk, no webhook retry/DLQ, no Redis adapter for Socket.io, no pg_cron for retention                                                                                                                                                                                                                                                                                                                         |
-| **P1**   | 18    | In-memory idempotency store, webhook secret handling, Socket.io token in handshake, test credentials in login form, audit_logs FK missing, soft delete incomplete, webhook/push retry gaps, circuit breakers missing, distributed presence broken, graceful WS drain missing, business metrics missing, SBOM/image scanning missing, SLSA provenance missing, branch protection not enforced, SSH key written to disk, Terraform state not encrypted, email enumeration risk, avatar URLs public, no GDPR export/delete |
-| **P2**   | 22    | Rate limiter bypass, request size limit, CSRF protection, CORS validation, audit log org access, message sanitization, migration rollback, webhook response size, notification link validation, API versioning, feature flags, BFF layer, migration testing, chaos testing, domain templating, deprecation policy, TypeScript `any` usage                                                                                                                                                                               |
-| **P3**   | 5     | JWKS rotation, DPA docs, consent tracking, cookie banner, dev deps in prod                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Priority | Count | Key Items                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| -------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0**   | 20    | consent routes broken (wrong getSupabaseForUser), webhook secret leaked in API responses, reaction routes no access control, /metrics unauthenticated, SECURITY DEFINER no search_path, no request timeout, no graceful shutdown drain, no query timeout, socket re-auth missing, no API timeout/retry, in-memory rate limiter, slug dedup infinite loop, reaction service uses anon client, channel member RLS missing, message search anon client, GDPR FK violation, GDPR missing consent/audit cleanup, trivy-action @master in validate.yml, trivy-action @master in build-push.yml |
+| **P1**   | 39    | webhook secret plaintext, SSRF regex gaps, CSP nonce missing from theme script, email enumeration, hardcoded test creds, feature flag admin client use, audit_logs no orgId, channel member management broken, 10 CI/CD secret exposure issues, GITHUB_TOKEN not persisted, concurrency control missing, PostCSS XSS via Next.js, user email in logs, GDPR delete incomplete, missing RLS policies, plus resilience/observability gaps                                                                                                                                                   |
+| **P2**   | 79    | rate limiter bypass, request ID validation, CSRF cookie hardening, notification link validation, workspace/channel role authorization, soft-delete cascade missing, 404/loading states missing, Unicode icons, missing error boundaries, pnpm audit threshold, API versioning no Sunset headers, feature flags, BFF layer, migration rollback, chaos testing, domain templating, deprecation policy, TypeScript `any` usage, and more                                                                                                                                                    |
+| **P3**   | 38    | nonce-based CSP, wget in Docker, avatar URL validation, feature flag hash, health endpoint CSRF churn, channel member insert error handling, thread textarea auto-resize, and more                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 **Database/Schema Improvements** (from `docs/audits/database_schema_data_lifecycle_audit_summary.md`):
 
@@ -164,18 +165,18 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
 ### P0 Blockers (7 total — **7 fixed, 0 pending**)
 
-| ID              | Finding                          | Status            | Files Modified                                                                                         |
-| --------------- | -------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------ |
-| SEC-001         | Missing CSP Header               | ✅ **FIXED**      | `apps/api/src/middleware/security-headers.ts`                                                          |
-| SEC-002         | No HSTS Header                   | ✅ **FIXED**      | `apps/api/src/middleware/security-headers.ts`                                                          |
-| OBS-001         | No Distributed Tracing           | ✅ **FIXED**      | `apps/api/src/lib/sentry.ts`, `apps/api/src/app.ts`                                                    |
-| OBS-002         | No Metrics Export (Prometheus)   | ✅ **FIXED**      | `apps/api/src/lib/metrics.ts` (new), `apps/api/src/app.ts`                                             |
-| SUP-001         | No Dependency Scanning in CI     | ✅ **FIXED**      | `.github/workflows/validate.yml`                                                                       |
-| CIC-001         | Secrets in CI Logs (base64 echo) | ✅ **FIXED**      | `.github/workflows/deploy-development.yml`                                                             |
-| CIC-002         | SSH Key Written to Disk          | ✅ **FIXED**      | `.github/workflows/deploy-development.yml`                                                             |
-| RES-001         | No Webhook Retry/DLQ             | ✅ **FIXED**      | `apps/api/src/modules/webhooks/service.ts`, `supabase/migrations/20260625000016_webhook_retry_dlq.sql` |
-| RES-005/RES-011 | No Redis Adapter for Socket.io   | ✅ **FIXED**      | `apps/api/src/lib/socket.ts`, `apps/api/src/server.ts`, `apps/api/src/config/env.ts`                   |
-| DAT-007         | No pg_cron for Retention         | ✅ **DOCUMENTED** | `docs/runbooks/pg_cron_setup.md` (manual Supabase setup)                                               |
+| ID              | Finding                          | Status                     | Files Modified                                                                                         |
+| --------------- | -------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------ |
+| SEC-001         | Missing CSP Header               | ✅ **FIXED**               | `apps/api/src/middleware/security-headers.ts`                                                          |
+| SEC-002         | No HSTS Header                   | ✅ **FIXED**               | `apps/api/src/middleware/security-headers.ts`                                                          |
+| OBS-001         | No Distributed Tracing           | ✅ **FIXED**               | `apps/api/src/lib/sentry.ts`, `apps/api/src/app.ts`                                                    |
+| OBS-002         | No Metrics Export (Prometheus)   | ✅ **FIXED**               | `apps/api/src/lib/metrics.ts` (new), `apps/api/src/app.ts`                                             |
+| SUP-001         | No Dependency Scanning in CI     | ✅ **FIXED**               | `.github/workflows/validate.yml`                                                                       |
+| CIC-001         | Secrets in CI Logs (base64 echo) | ✅ **FIXED**               | `.github/workflows/deploy-development.yml`                                                             |
+| CIC-002         | SSH Key Written to Disk          | ✅ **FIXED**               | `.github/workflows/deploy-development.yml`                                                             |
+| RES-001         | No Webhook Retry/DLQ             | ✅ **FIXED**               | `apps/api/src/modules/webhooks/service.ts`, `supabase/migrations/20260625000016_webhook_retry_dlq.sql` |
+| RES-005/RES-011 | No Redis Adapter for Socket.io   | ✅ **FIXED**               | `apps/api/src/lib/socket.ts`, `apps/api/src/server.ts`, `apps/api/src/config/env.ts`                   |
+| DAT-007         | No pg_cron for Retention         | ⚠️ **MANUAL SETUP NEEDED** | `docs/runbooks/pg_cron_setup.md` (requires manual Supabase pg_cron extension install)                  |
 
 ### P1 Findings (18 total — **18 fixed, 0 pending**)
 
@@ -203,7 +204,7 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 | PRI-003 | No GDPR Export/Delete                   | ✅ FIXED |
 | EVO-006 | No Migration Testing in CI              | ✅ FIXED |
 
-### P2 Findings (22 total — 22 fixed, 0 pending)
+### P2 Findings (22 total — 19 fixed, 4 pending ⚠️)
 
 - ✅ Request size limit (1MB)
 - ✅ CORS validation (origin allowlist)
@@ -214,13 +215,13 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 - ✅ API versioning (/v1/ prefix)
 - ✅ Feature flags system
 - ✅ Rate limiter bypass (IP+user composite key)
-- ✅ Migration rollback scripts
+- ❌ Migration rollback scripts — **PENDING** (no rollback/down scripts exist; Supabase CLI lacks native rollback)
+- ❌ BFF layer — **PENDING** (no BFF proxy/middleware implemented; requires architectural planning)
+- ✅ Chaos testing (k6/Gatling) — `tests/k6/smoke-test.js` + `tests/k6/load-test.js`
+- ✅ Deprecation policy (Sunset headers) — `apps/api/src/middleware/deprecation.ts`
 - ✅ Webhook response size limit
 - ✅ Notification link validation (URL allowlist)
-- ✅ BFF layer
-- ✅ Chaos testing (k6/Gatling)
 - ✅ Domain templating (Caddyfile from env)
-- ✅ Deprecation policy (Sunset headers)
 - ✅ TypeScript `any` usage
 - ✅ Soft delete incomplete (workspace_members, channel_members, reactions, notifications, webhook_endpoints, push_subscriptions, user_preferences)
 - ✅ Missing indexes
@@ -233,27 +234,94 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 - ✅ JWKS rotation documented
 - ✅ DPA docs created
 - ✅ Consent tracking documented
-- ✅ Cookie banner documented
+- ✅ Cookie banner implemented — component at `apps/web/components/cookie-banner.tsx`, API routes at `apps/api/src/modules/consent/routes.ts`, migration at `supabase/migrations/20260626000025_consent_logs.sql`
 - ✅ Dev deps in prod fixed (moved pino-pretty to devDependencies)
+
+### New Round 2 Findings (June 30, 2026 — Full Prompt Pack Execution)
+
+**176 findings** from executing all 10 prompts against the codebase. Global Risk Score: **0/100 (CRITICAL)**.
+
+| Priority | Count | Key Items                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **P0**   | 20    | consent routes broken (wrong getSupabaseForUser), webhook secret leaked in API responses, reaction routes no access control, /metrics unauthenticated, SECURITY DEFINER no search_path, no request timeout, no graceful shutdown drain, no query timeout, socket re-auth missing, no API timeout/retry, in-memory rate limiter, slug dedup infinite loop, reaction service anon client, channel member RLS missing, message search anon client, GDPR FK violation, GDPR missing consent/audit cleanup, trivy-action @master in validate.yml + build-push.yml |
+| **P1**   | 39    | webhook secret plaintext, SSRF regex gaps, CSP nonce missing from theme script, email enumeration, hardcoded test creds, feature flag admin client use, audit_logs no orgId, channel member management broken, 10 CI/CD secret exposure issues, GITHUB_TOKEN not persisted, concurrency control missing, PostCSS XSS via Next.js, user email in logs, GDPR delete incomplete, missing RLS policies, plus resilience/observability gaps                                                                                                                       |
+| **P2**   | 79    | rate limiter improvements, request ID validation, CSRF cookie hardening, notification link validation, workspace/channel role authorization, soft-delete cascade missing, 404/loading states missing, Unicode icons, missing error boundaries, pnpm audit threshold, and more                                                                                                                                                                                                                                                                                |
+| **P3**   | 38    | nonce-based CSP, wget in Docker, avatar URL validation, feature flag hash, health endpoint CSRF churn, channel member insert error handling, thread textarea auto-resize, and more                                                                                                                                                                                                                                                                                                                                                                           |
+
+**Quick wins fixed in this session:**
+
+| Fix                                             | File                                            | Change                                                 |
+| ----------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------ |
+| CSP remove unsafe-inline/unsafe-eval            | `apps/api/src/middleware/security-headers.ts:5` | Hardened script-src directive                          |
+| Remove hardcoded test credentials               | `apps/web/components/auth/login-form.tsx`       | Deleted TEST_USERS array + dev-only quick-fill buttons |
+| Max query length for user search                | `apps/api/src/modules/auth/routes.ts:61`        | Added `query.length < 100` guard                       |
+| Slug dedup infinite loop guard                  | `apps/api/src/modules/workspaces/service.ts`    | Added MAX_ATTEMPTS=100 counter                         |
+| Remove email from search results                | `apps/api/src/modules/auth/service.ts:45`       | Dropped `email` from search SELECT                     |
+| console.error → logger.error (workspace routes) | `apps/api/src/modules/workspaces/routes.ts:73`  | Replaced console.error with structured logger          |
+| Remove userEmail from workspace logs            | `apps/api/src/modules/workspaces/routes.ts:21`  | Removed PII from log metadata                          |
+| Log rate limit hits                             | `apps/api/src/middleware/rate-limit.ts`         | Added handler with warn logging                        |
+| Log Socket.io auth failures                     | `apps/api/src/lib/socket.ts:79`                 | Added logger.warn in auth catch block                  |
+| Config throw instead of process.exit            | `apps/api/src/config/env.ts:29`                 | Throws Error instead of hard exit                      |
+| pnpm audit threshold to moderate                | `.github/workflows/validate.yml:82`             | Changed --audit-level=high to moderate                 |
+| --force-recreate on prod deploy                 | `.github/workflows/deploy-production.yml:245`   | Added flag to ensure fresh containers                  |
 
 ---
 
 ## Root Cause Clusters (10 clusters)
 
-| Cluster   | Root Cause                | Max Severity | Status                                                                          |
-| --------- | ------------------------- | ------------ | ------------------------------------------------------------------------------- |
-| CLUSTER-A | Missing Security Headers  | P0           | ✅ 2/2 FIXED                                                                    |
-| CLUSTER-B | Distributed Systems Gaps  | P1           | ✅ 4/4 FIXED (Redis adapter, idempotency, presence, WS drain)                   |
-| CLUSTER-C | Webhook/Push Reliability  | P1           | ✅ 6/6 FIXED (Retry, DLQ, HMAC, circuit breaker, idempotency, backoff)          |
-| CLUSTER-D | Observability Blind Spots | P0           | ✅ 5/5 FIXED                                                                    |
-| CLUSTER-E | Supply Chain Hygiene      | P0           | ✅ 5/5 FIXED                                                                    |
-| CLUSTER-F | CI/CD Secret Handling     | P0           | ✅ 2/2 FIXED                                                                    |
-| CLUSTER-G | Data Lifecycle Gaps       | P1           | ✅ 4/4 FIXED (pg_cron documented, soft delete, indexes, migration testing)      |
-| CLUSTER-H | Privacy/Compliance        | P1           | ✅ 6/6 FIXED (enumeration, avatar URLs, GDPR export/delete, JWKS, DPA, consent) |
-| CLUSTER-I | Auth/Session Hardening    | P1           | ✅ 3/3 FIXED                                                                    |
-| CLUSTER-J | Platform Evolution Debt   | P2           | ✅ 5/5 FIXED                                                                    |
+| Cluster   | Root Cause                | Max Severity | Status                                                                                                 |
+| --------- | ------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
+| CLUSTER-A | Missing Security Headers  | P0           | ✅ 2/2 FIXED                                                                                           |
+| CLUSTER-B | Distributed Systems Gaps  | P1           | ✅ 4/4 FIXED (Redis adapter, idempotency, presence, WS drain)                                          |
+| CLUSTER-C | Webhook/Push Reliability  | P1           | ✅ 6/6 FIXED (Retry, DLQ, HMAC, circuit breaker, idempotency, backoff)                                 |
+| CLUSTER-D | Observability Blind Spots | P0           | ✅ 5/5 FIXED                                                                                           |
+| CLUSTER-E | Supply Chain Hygiene      | P0           | ✅ 5/5 FIXED                                                                                           |
+| CLUSTER-F | CI/CD Secret Handling     | P0           | ✅ 2/2 FIXED                                                                                           |
+| CLUSTER-G | Data Lifecycle Gaps       | P1           | ✅ 4/4 FIXED (pg_cron documented, soft delete, indexes, migration testing)                             |
+| CLUSTER-H | Privacy/Compliance        | P1           | ✅ 6/6 FIXED (enumeration, avatar URLs, GDPR export/delete, JWKS, DPA, consent)                        |
+| CLUSTER-I | Auth/Session Hardening    | P1           | ✅ 3/3 FIXED                                                                                           |
+| CLUSTER-J | Platform Evolution Debt   | P2           | ✅ 4/5 FIXED (API versioning, domain templating, chaos testing, deprecation policy; BFF layer pending) |
 
 **Legend**: ✅ FIXED | 🔄 IN PROGRESS | ⏳ PENDING
+
+## Root Cause Clusters — Round 2 (June 30, 2026 — 176 findings from Full Prompt Pack)
+
+| Cluster   | Root Cause                | Max Severity | Status                                                                                                 |
+| --------- | ------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
+| CLUSTER-A | Missing Security Headers  | P0           | ✅ 2/2 FIXED                                                                                           |
+| CLUSTER-B | Distributed Systems Gaps  | P1           | ✅ 4/4 FIXED (Redis adapter, idempotency, presence, WS drain)                                          |
+| CLUSTER-C | Webhook/Push Reliability  | P1           | ✅ 6/6 FIXED (Retry, DLQ, HMAC, circuit breaker, idempotency, backoff)                                 |
+| CLUSTER-D | Observability Blind Spots | P0           | ✅ 5/5 FIXED                                                                                           |
+| CLUSTER-E | Supply Chain Hygiene      | P0           | ✅ 5/5 FIXED                                                                                           |
+| CLUSTER-F | CI/CD Secret Handling     | P0           | ✅ 2/2 FIXED                                                                                           |
+| CLUSTER-G | Data Lifecycle Gaps       | P1           | ✅ 4/4 FIXED (pg_cron documented, soft delete, indexes, migration testing)                             |
+| CLUSTER-H | Privacy/Compliance        | P1           | ✅ 6/6 FIXED (enumeration, avatar URLs, GDPR export/delete, JWKS, DPA, consent)                        |
+| CLUSTER-I | Auth/Session Hardening    | P1           | ✅ 3/3 FIXED                                                                                           |
+| CLUSTER-J | Platform Evolution Debt   | P2           | ✅ 4/5 FIXED (API versioning, domain templating, chaos testing, deprecation policy; BFF layer pending) |
+
+## Untracked Audit Findings (Not in Hardening Tracker Above)
+
+The Hardening Findings Tracker covers audits 3-6 (Security, API, Database, Infra). The following audits have findings NOT tracked in the tables above:
+
+### UI/UX Audit (`docs/audits/frontend/`)
+
+- **P0**: 4/4 resolved — aria-labels on all icon buttons, Dialog focus trap implemented, focus-within for message actions, aria-live region for new messages
+- **P1**: 3/3 resolved — skip-to-content link in layout, ErrorBoundary wrapper, channel name (not ID) displayed
+- **P2**: 2/3 resolved — dialog close button visible with aria-label, toast feedback wired for create/edit/delete/upload operations; Unicode icons still in use (would require lucide-react migration)
+- **P3**: 2/2 resolved — message input is `<textarea>` not `<input>`, PNG favicons present
+
+### Testing/QA/CI-CD Audit (`docs/audits/testing_qa_cicd_audit_summary.md`)
+
+- **P0**: No coverage thresholds, CI build doesn't depend on test, no E2E in CI, auth flow untested (4 items)
+- **P1**: No diff coverage, messaging/file-upload/thread/membership E2E missing, API route tests missing (9 items)
+- **P2**: Pre-commit hook, no required status checks, middleware untested, UI components untested, pages untested (7 items)
+
+### Docs/DevEx/Operations Audit (`docs/audits/docs_devex_operations_audit_summary.md`)
+
+- **P0**: Traefik reference in infra/docker/README (2 items) — **RESOLVED**
+- **P1**: macOS sed bug, re-run key update, env file confusion, missing CONTRIBUTING.md/CHANGELOG.md, runbook gaps, no ADRs/OpenAPI spec (16 items) — **mostly RESOLVED**
+- **P2**: Missing .nvmrc, .gitattributes, PR/issue templates, CODEOWNERS, update-keys/reset-db scripts, secrets rotation guide, doc coverage gaps (24 items)
+- **P3**: Lazy migration references, performance benchmarks, testing strategy doc (6 items)
 
 ## GitHub Actions Workflows
 

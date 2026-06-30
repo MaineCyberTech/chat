@@ -80,11 +80,8 @@ describe("LoginForm", () => {
     });
   });
 
-  it("shows quick-fill test user buttons for local dev", () => {
+  it("shows dev notice instead of test user buttons in production", () => {
     renderLoginForm();
-    expect(screen.getByText("Admin")).toBeDefined();
-    expect(screen.getByText("Alice")).toBeDefined();
-    expect(screen.getByText("Bob")).toBeDefined();
-    expect(screen.getByText("Carol")).toBeDefined();
+    expect(screen.getByText("Local dev — no test accounts in production")).toBeDefined();
   });
 });

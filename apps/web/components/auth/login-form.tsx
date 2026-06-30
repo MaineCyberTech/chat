@@ -6,13 +6,6 @@ import { Button, Input } from "@chat/ui";
 
 type Mode = "signin" | "signup";
 
-const TEST_USERS = [
-  { email: "admin@chat.example", password: "password123", label: "Admin" },
-  { email: "alice@chat.example", password: "password123", label: "Alice" },
-  { email: "bob@chat.example", password: "password123", label: "Bob" },
-  { email: "carol@chat.example", password: "password123", label: "Carol" },
-];
-
 const isDev = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
 
 export function LoginForm() {
@@ -69,14 +62,6 @@ export function LoginForm() {
   async function handleGoogleSignIn() {
     setStatus("loading");
     await signInWithGoogle();
-  }
-
-  async function handleQuickFill(user: { email: string; password: string }) {
-    setEmail(user.email);
-    setPassword(user.password);
-    setMode("signin");
-    setStatus("idle");
-    setMessage("");
   }
 
   if (status === "sent" || status === "signedup") {
@@ -196,19 +181,8 @@ export function LoginForm() {
       {isDev && (
         <div className="pt-2">
           <p className="mb-2 text-center text-xs text-[var(--color-foreground-tertiary)]">
-            Local test accounts
+            Local dev — no test accounts in production
           </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {TEST_USERS.map((user) => (
-              <button
-                key={user.email}
-                onClick={() => handleQuickFill(user)}
-                className="rounded border border-[var(--color-border-primary)] px-2 py-1 text-xs text-[var(--color-foreground-secondary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-              >
-                {user.label}
-              </button>
-            ))}
-          </div>
         </div>
       )}
     </div>

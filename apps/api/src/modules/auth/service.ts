@@ -42,8 +42,8 @@ export class AuthService {
     const supabase = getSupabase();
     const { data } = await supabase
       .from("users")
-      .select("id, email, display_name, avatar_url")
-      .or(`email.ilike.%${query}%,display_name.ilike.%${query}%`)
+      .select("id, display_name, avatar_url")
+      .or(`display_name.ilike.%${query}%`)
       .limit(20);
 
     return (data ?? []) as UserProfile[];

@@ -18,7 +18,7 @@ const router: RouterType = Router();
 router.use(authenticate);
 
 router.get("/", async (req, res) => {
-  logger.info("GET /v1/workspaces", { userId: req.userId, userEmail: req.userEmail });
+  logger.info("GET /v1/workspaces", { userId: req.userId });
   const workspaces = await workspaceService.listByUser(req.supabase);
   logger.info("Workspaces list result", { userId: req.userId, count: workspaces.length });
   res.json({ workspaces });
@@ -70,7 +70,7 @@ router.post("/", async (req, res) => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("Workspace creation error:", err);
+    logger.error("Workspace creation error", { userId: req.userId, error: String(err) });
     res.status(500).json({ error: { code: "CREATE_FAILED", message } });
   }
 });
