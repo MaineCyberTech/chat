@@ -1,0 +1,116 @@
+{
+  "stage": "reconciliation",
+  "prompt_name": "visible_diff_areas_analysis",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-01T19:10:10Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 3,
+    "P2": 4,
+    "P3": 3
+  },
+  "category_scores": {
+    "workflow_differences": 70,
+    "terraform_workflow": 60,
+    "vercel_deployment": 45,
+    "repo_tooling": 60,
+    "docs_content": 65,
+    "supabase_drift": 70,
+    "package_config": 75,
+    "web_app": 55
+  },
+  "readiness": 62.0,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "workflow_differences",
+      "file": ".github/workflows/",
+      "issue": "Workflows use pnpm/action-setup@v4 and actions/setup-node@v4 caching patterns but no Corepack-based pnpm enablement (visible in reference pattern)",
+      "impact": "CI workflows may fail if pnpm version is not pinned; no deterministic pnpm version across environments",
+      "fix": "Add corepack enable and pnpm version pinning to all CI workflows; keep existing setup-node caching"
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "vercel_deployment",
+      "file": "",
+      "issue": "No Vercel deployment workflow exists \u2014 frontend is deployed via Docker on DO droplet, not Vercel",
+      "impact": "Vercel workflow is not applicable; existing Docker-based deployment is correct for current architecture",
+      "fix": "No action needed \u2014 Docker deployment is intentional. Document as architectural decision."
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "repo_tooling",
+      "file": "",
+      "issue": "No .github/dependabot.yml exists \u2014 reference pattern shows this file in develop snapshot",
+      "impact": "No automated dependency update monitoring; vulnerability patches require manual tracking",
+      "fix": "Create .github/dependabot.yml with weekly npm + GitHub Actions ecosystem checks"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "terraform_workflow",
+      "file": ".github/workflows/",
+      "issue": "No Terraform stale lock cleanup logic in workflows \u2014 reference pattern shows tfvars file creation from secrets",
+      "impact": "Terraform apply may fail on stale lock files in multi-worker scenarios",
+      "fix": "Add stale lock cleanup step (terraform init -lockfile=readonly) before apply in terraform workflows"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "repo_tooling",
+      "file": "",
+      "issue": "Husky pre-commit hook exists and works but has deprecation warnings about v10 migration",
+      "impact": "Pre-commit hook will fail after husky v10 update",
+      "fix": "Remove deprecated husky .husky.sh reference lines from pre-commit file; prepare for v10 syntax"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "web_app",
+      "file": "",
+      "issue": "No instrumentation.ts or Vercel-specific config \u2014 reference pattern shows these as differences",
+      "impact": "These are Vercel-specific files not applicable to Docker deployment. Confirm as intentional skip.",
+      "fix": "No action needed \u2014 document as intentional architectural difference from reference pattern"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "supabase_drift",
+      "file": "supabase/migrations/",
+      "issue": "Reference pattern shows additional migrations (5302034_ticket_comment_editing.sql, 5302035_bootstrap_portal_access.sql) for a different project",
+      "impact": "These migrations are for the MCT Portal, not the Chat app \u2014 confirm they should NOT be adopted",
+      "fix": "No action needed \u2014 document as belonging to separate project. If Chat needs similar features, design new Chat-specific migrations."
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "package_config",
+      "file": "",
+      "issue": "Reference pattern uses .mjs config files (eslint.config.mjs, jest.config.mjs) \u2014 current repo uses .ts/.js",
+      "impact": "Cosmetic naming difference; both work. Standardizing is optional.",
+      "fix": "Defer: adopt .mjs for future config files but do not rename existing ones now"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "docs_content",
+      "file": "",
+      "issue": "Reference pattern has docs/portal_platform_formal_handoff_bundle/ \u2014 our repo has docs/architecture/ and docs/audits/ instead",
+      "impact": "Different documentation structure \u2014 intentional, project-specific organization",
+      "fix": "No action needed \u2014 Chat app has its own documentation structure that should be preserved"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "docs_content",
+      "file": "",
+      "issue": "No load-testing README exists \u2014 reference pattern shows scripts/load-testing/README.md",
+      "impact": "Load testing documentation gap; k6 scripts exist but undocumented",
+      "fix": "Add README.md to tests/k6/ explaining how to run load tests and interpret results"
+    }
+  ],
+  "run_id": "visible_diff_areas_analysis_20260701_191011"
+}
