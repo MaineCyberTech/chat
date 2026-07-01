@@ -106,7 +106,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
 
       - name: Run Trivy vulnerability scanner (API image)
-        uses: aquasecurity/trivy-action@595be6a2c054d21f550d18b29e7e9745d07da5c8 # v0.28.0
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: "ghcr.io/${{ env.REPO_LC }}/api:dev"
           format: "sarif"
@@ -114,7 +114,7 @@ jobs:
           severity: "HIGH,CRITICAL"
 
       - name: Run Trivy vulnerability scanner (Web image)
-        uses: aquasecurity/trivy-action@595be6a2c054d21f550d18b29e7e9745d07da5c8 # v0.28.0
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: "ghcr.io/${{ env.REPO_LC }}/web:dev"
           format: "sarif"

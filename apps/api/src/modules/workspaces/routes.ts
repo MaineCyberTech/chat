@@ -136,7 +136,7 @@ router.get(
 );
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  const role = (req as Record<string, unknown>).workspaceRole as string | undefined;
+  const role = (req as unknown as { workspaceRole?: string }).workspaceRole;
   if (role !== "owner" && role !== "admin") {
     res.status(403).json({ error: { code: "FORBIDDEN", message: "Admin role required" } });
     return;
