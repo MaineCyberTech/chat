@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 import { createRedisClient } from "./lib/redis.js";
@@ -7,6 +8,30 @@ import { registerSearchIndexer } from "./processors/search-indexer.js";
 import { registerCleanupProcessor } from "./processors/cleanup.js";
 
 loadEnv();
+
+const HEALTH_PORT = parseInt(process.env.HEALTH_PORT ?? "4100", 10);
+
+function startHealthServer(redis: ReturnType<typeof createRedisClient>) {
+  const server = createServer(async (req, res) => {
+    if (req.url === "/healthz" || req.url === "/health") {
+      const redisOk = redis?.status === "ready";
+      const status = redisOk ? "healthy" : "degraded";
+      const body = JSON.stringify({
+        status,
+        service: "worker",
+        redis: redisOk,
+        timestamp: new Date().toISOString(),
+      });
+      res.writeHead(redisOk ? 200 : 503, { "Content-Type": "application/json" });
+      res.end(body);
+    } else {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ status: "running", service: "worker" }));
+    }
+  });
+  server.listen(HEALTH_PORT, () => logger.info({ port: HEALTH_PORT }, "Health server started"));
+  return server;
+}
 
 async function main() {
   logger.info("Starting worker process");
@@ -18,6 +43,9 @@ async function main() {
     process.exit(1);
   }
 
+  // Start health endpoint
+  const healthServer = startHealthServer(redis);
+
   // Register processors (they create their own queues internally)
   registerWebhookProcessor();
   registerNotificationProcessor();
@@ -27,9 +55,7 @@ async function main() {
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "Shutting down worker");
-
-    // Note: In a production setup, you'd want to properly close all workers
-    // For now, we just close the Redis connection
+    healthServer.close();
     await redis.quit();
     logger.info("Worker shut down complete");
     process.exit(0);

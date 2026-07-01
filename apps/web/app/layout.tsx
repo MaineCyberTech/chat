@@ -5,6 +5,8 @@ import { AppHeader } from "@/components/app-header";
 import { ThemeProvider } from "@chat/ui";
 import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { VersionBadge } from "@/components/version-badge";
+import { CookieBanner } from "@/components/cookie-banner";
+import { KeyboardShortcuts } from "@/components/shared/keyboard-shortcuts";
 import { ToastProvider } from "@chat/ui/components/toast";
 import "./globals.css";
 
@@ -62,6 +64,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   {children}
                 </main>
                 <VersionBadge />
+                <CookieBanner />
+                <KeyboardShortcuts />
               </ToastProvider>
             </AuthProvider>
           </PWAProvider>
