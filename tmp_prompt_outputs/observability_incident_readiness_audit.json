@@ -1,0 +1,134 @@
+{
+  "prompt_name": "observability_incident_readiness_audit",
+  "domain": "ops",
+  "stage": "principal_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:11:05Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 4,
+    "P2": 4,
+    "P3": 2
+  },
+  "category_scores": {
+    "structured_logging": 60,
+    "error_tracking": 70,
+    "metrics": 55,
+    "health_checks": 75,
+    "alerting": 20,
+    "incident_runbooks": 55,
+    "tracing": 25,
+    "audit_logging": 60
+  },
+  "readiness": 50.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "alerting",
+      "file": "",
+      "issue": "No application-level alerting configured \u2014 no error rate, latency, auth failure, or health check alerts",
+      "impact": "Production incidents detected only when users report them \u2014 no proactive notification of system degradation",
+      "fix": "Configure Sentry alert rules for error threshold breaches and PagerDuty/Slack integration; add Prometheus alert rules"
+    },
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "uptime_monitoring",
+      "file": "",
+      "issue": "No external uptime monitoring service configured \u2014 no Pingdom, Checkly, Better Uptime, or UptimeRobot",
+      "impact": "Complete downtime is only detected when users report it or Docker HEALTHCHECK notices locally \u2014 no external view",
+      "fix": "Add free-tier uptime monitoring (UptimeRobot or Better Uptime) that checks /healthz every 5 minutes"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "alerting",
+      "file": "infra/terraform/main.tf",
+      "issue": "DigitalOcean alerts (CPU>80%, Memory>80%, Disk>90%) only go to email \u2014 no PagerDuty, Slack, or SMS integration",
+      "impact": "Critical infrastructure alerts may be missed if email notifications are not monitored promptly",
+      "fix": "Add Slack webhook or PagerDuty integration to DO monitoring alerts"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "structured_logging",
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "No automatic request logging middleware \u2014 every log line must include request context manually",
+      "impact": "Inconsistent log context; some requests produce no access log; correlation requires manual context passing",
+      "fix": "Add auto-request-logging middleware that captures method, path, status code, duration, and request ID for every request"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "tracing",
+      "file": "",
+      "issue": "No distributed tracing \u2014 only basic request IDs, no OpenTelemetry, span propagation, or trace correlation across services",
+      "impact": "Cannot trace a single user action across API -> DB -> WebSocket -> webhook; debugging complex failures requires manual log correlation",
+      "fix": "Add OpenTelemetry instrumentation for Express, database queries, and external HTTP calls"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "structured_logging",
+      "file": "",
+      "issue": "No log shipping or aggregation \u2014 logs are local Docker container stdout; no Papertrail, Logtail, Axiom, or Loki",
+      "impact": "No centralized log search; logs lost on container restart; cannot alert on log patterns",
+      "fix": "Add Docker log driver to send logs to a cloud log aggregation service; or add logagent sidecar"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "metrics",
+      "file": "apps/api/src/lib/metrics.ts",
+      "issue": "18 Prometheus metrics exposed but no remote collector, dashboard, or alert rules consume them",
+      "impact": "Metrics are generated and exposed but never visualized or alerted on \u2014 observability gap",
+      "fix": "Set up Grafana dashboard consuming API /metrics endpoint; define alert rules for error rate and latency"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "structured_logging",
+      "file": "",
+      "issue": "Frontend has no structured logging \u2014 console.log/error used ad-hoc",
+      "impact": "Client-side issues cannot be diagnosed from logs; no structured frontend telemetry",
+      "fix": "Add frontend logging library (e.g., loglevel) with remote log shipping for production errors"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "audit_logging",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit event queue is in-memory \u2014 lost on process restart; no Redis-backed persistence",
+      "impact": "Audit events during restart window are lost; compliance gap for sensitive operations",
+      "fix": "Replace in-memory queue with Redis-backed persistent queue or write directly with retry"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "health_checks",
+      "file": "apps/api/src/modules/health/routes.ts",
+      "issue": "Health checks only validate database connectivity \u2014 no check for Redis, Supabase Storage, or external service availability",
+      "impact": "Health check can pass while critical dependencies (Redis, Storage) are down",
+      "fix": "Add dependency checks for Redis (if configured), Supabase Storage connectivity, and circuit breaker states"
+    },
+    {
+      "severity": "P3",
+      "domain": "ops",
+      "category": "metrics",
+      "file": "",
+      "issue": "No business metrics dashboard \u2014 active users, messages/day, workspace growth not visualized anywhere",
+      "impact": "Business stakeholders lack visibility into platform growth and adoption",
+      "fix": "Create Grafana dashboard with business metrics: daily active users, messages/day, workspaces created, reactions"
+    },
+    {
+      "severity": "P3",
+      "domain": "ops",
+      "category": "audit_logging",
+      "file": "",
+      "issue": "No audit event for read operations (SELECT queries) \u2014 only mutation events are logged",
+      "impact": "Unauthorized read access to sensitive data leaves no audit trail",
+      "fix": "Add audit logging for read operations on sensitive data (user search, workspace member list, audit log views)"
+    }
+  ]
+}

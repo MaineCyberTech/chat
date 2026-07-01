@@ -1,0 +1,153 @@
+{
+  "run_id": "api_realtime_contract_audit_20260701_071112",
+  "generated_at": "2026-07-01T07:15:09+00:00",
+  "decision": "NO-GO",
+  "severity_totals": {
+    "P0": 2,
+    "P1": 5,
+    "P2": 4,
+    "P3": 3
+  },
+  "category_health_scores": {
+    "contract_drift": 42.0,
+    "realtime_behavior": 35.0,
+    "auth_gaps": 28.0
+  },
+  "finding_count": 14,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "issue": "Reaction routes have no workspace/channel membership check",
+      "impact": "Any authenticated user can read/add/remove reactions on any message across any workspace",
+      "fix": "Add requireChannelAccess middleware to GET/POST/DELETE /messages/:id/reactions and GET /reactions/batch",
+      "endpoint": "GET/POST/DELETE /v1/messages/:id/reactions, GET /v1/reactions/batch"
+    },
+    {
+      "severity": "P0",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/feature-flags/routes.ts",
+      "issue": "Feature-flag routes have broken middleware \u2014 requireWorkspaceMembership(\"workspaceId\") on paths without :workspaceId param",
+      "impact": "All feature-flag requests will fail with 400 \"Missing workspaceId\" \u2014 feature flags are non-functional",
+      "fix": "Remove requireWorkspaceMembership from feature-flag routes or add workspaceId as a query/body parameter",
+      "endpoint": "ALL /v1/feature-flags/*"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Message search uses getSupabase() (anon client) instead of req.supabase (JWT client)",
+      "impact": "auth.uid() is NULL in SECURITY INVOKER search function \u2014 cross-tenant search possible or no results returned",
+      "fix": "Replace getSupabase() with req.supabase in messages/routes.ts line 38",
+      "endpoint": "GET /v1/messages/search"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime_behavior",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "No Socket.io connection state recovery \u2014 clients lose all room state on disconnect",
+      "impact": "After reconnect, clients must manually re-join rooms and re-fetch state; messages may be lost during disconnect window",
+      "fix": "Enable connectionStateRecovery in Socket.io server config; implement room membership persistence",
+      "endpoint": "Socket.io connection"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime_behavior",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "No per-event authorization after initial Socket.io auth handshake",
+      "impact": "Any connected client can join any channel room by emitting channel:join with any channelId",
+      "fix": "Add per-event membership check in channel:join handler before adding socket to room",
+      "endpoint": "Socket.io channel:join event"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/lib/idempotency.ts",
+      "issue": "In-memory idempotency fallback has no size limit or eviction policy",
+      "impact": "Unbounded memory growth under high request volume \u2014 potential OOM",
+      "fix": "Add Map size limit with LRU eviction to in-memory fallback",
+      "endpoint": "POST /v1/channels/:channelId/messages"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "GET /webhooks reads workspace_id from query param but middleware checks req.params \u2014 workspace validation broken",
+      "impact": "Webhook listing bypasses workspace membership check",
+      "fix": "Create a middleware that reads from req.query.workspace_id instead of req.params.workspaceId",
+      "endpoint": "GET /v1/webhooks?workspace_id=..."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Message upload endpoint has no channel/workspace membership check",
+      "impact": "Any authenticated user can upload files without channel context",
+      "fix": "Add channel_id to upload payload and requireChannelAccess middleware",
+      "endpoint": "POST /v1/messages/upload"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/workspaces/service.ts",
+      "issue": "Workspace member list returns email field \u2014 PII exposure",
+      "impact": "Workspace members can see each other's email addresses unnecessarily",
+      "fix": "Remove email from SELECT query in getMembers(), return only display_name and avatar_url"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/channels/service.ts",
+      "issue": "Channel slug dedup loop has no max attempt safety limit",
+      "impact": "Infinite loop if all slug variants are taken \u2014 potential hang/DoS",
+      "fix": "Add MAX_ATTEMPTS=100 guard similar to workspace slug dedup"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "realtime_behavior",
+      "file": "apps/api/src/modules/messages/service.ts",
+      "issue": "Cursor pagination has no input validation \u2014 malformed cursor could cause unexpected query behavior",
+      "impact": "Malformed cursor could lead to SQL injection-like behavior via .or() filter",
+      "fix": "Validate cursor format (two parts separated by |) before using in query"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/notifications/service.ts",
+      "issue": "Uses console.error instead of structured logger.error for push notification failures",
+      "impact": "Push notification failures not captured in structured logging; harder to alert/diagnose",
+      "fix": "Replace console.error with logger.error"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Consent routes use lowercase error.message format inconsistent with uppercase error.code convention",
+      "impact": "Inconsistent API contract \u2014 clients must handle two error formats",
+      "fix": "Standardize consent error responses to use error.code uppercase convention"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/config/validators.ts",
+      "issue": "Idempotency-Key header has no format validation",
+      "impact": "Any string accepted \u2014 potential abuse with very long keys",
+      "fix": "Add UUID or length validation for idempotency-key header"
+    }
+  ]
+}

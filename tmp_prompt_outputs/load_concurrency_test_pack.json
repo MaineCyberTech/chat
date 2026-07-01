@@ -1,0 +1,113 @@
+{
+  "prompt_name": "load_concurrency_test_pack",
+  "domain": "testing",
+  "stage": "principal_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:11:05Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 4,
+    "P2": 2,
+    "P3": 2
+  },
+  "category_scores": {
+    "load_test_existing": 10,
+    "websocket_load": 0,
+    "search_load": 0,
+    "notification_throughput": 0,
+    "ci_integration": 0
+  },
+  "readiness": 2.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "load_test_existing",
+      "file": "tests/k6/",
+      "issue": "Existing k6 load tests only hit / and /healthz endpoints \u2014 no real API endpoints tested at all",
+      "impact": "Load tests provide no insight into actual system behavior under load \u2014 false sense of load-readiness",
+      "fix": "Replace k6 test scripts with meaningful scenarios: message send, workspace/channel listing, search, WebSocket connect"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "ci_integration",
+      "file": "",
+      "issue": "k6 is not invoked in any CI workflow \u2014 load tests exist but never run",
+      "impact": "No load regression detection in CI \u2014 performance degradation goes unnoticed until production",
+      "fix": "Add k6 smoke test (1 VU, 30s) to validate.yml; add full load test as nightly workflow"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "websocket_load",
+      "file": "",
+      "issue": "No WebSocket load test: concurrent socket connections, message send, and message delivery latency",
+      "impact": "Realtime system behavior under load completely unknown \u2014 socket fanout could become bottleneck",
+      "fix": "Build k6 WebSocket scenario: 50+ concurrent connections, each sending messages, measure p50/p95/p99 delivery latency"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "search_load",
+      "file": "",
+      "issue": "No search load test \u2014 concurrent search queries with varied terms",
+      "impact": "Full-text search performance under load unknown \u2014 could cause DB CPU spikes",
+      "fix": "Build k6 search scenario: concurrent search queries with varied terms, measure response time, verify result accuracy"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "notification_throughput",
+      "file": "",
+      "issue": "No notification fanout load test \u2014 one message triggering notifications for many members",
+      "impact": "Notification delivery latency under load unknown \u2014 push notification queue could back up",
+      "fix": "Build k6 scenario: one message triggers notification for 100 members, measure notification delivery latency"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "websocket_load",
+      "file": "",
+      "issue": "No reconnect storm load test \u2014 all sockets disconnect simultaneously",
+      "impact": "Reconnect behavior under stress unknown \u2014 server may not handle simultaneous reconnection",
+      "fix": "Build k6 scenario: 100+ concurrent sockets, disconnect all, measure reconnect time and message recovery"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "load_test_existing",
+      "file": "apps/api/src/lib/metrics.ts",
+      "issue": "18 Prometheus metrics defined but not consumed by k6 thresholds \u2014 k6 checks don't reference metrics",
+      "impact": "Cannot set metric-based pass/fail thresholds in load tests",
+      "fix": "Add metric endpoint polling to k6 test thresholds (error rate < 1%, p95 latency < 2000ms)"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "ci_integration",
+      "file": "",
+      "issue": "No capacity assumptions or success criteria documented for any load scenario",
+      "impact": "Cannot determine if load test results are acceptable \u2014 no baseline for comparison",
+      "fix": "Document expected capacity: max concurrent users, message rate, notification throughput; set k6 thresholds accordingly"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "load_test_existing",
+      "file": "package.json",
+      "issue": "k6 not declared as devDependency \u2014 requires separate CLI install",
+      "impact": "Load testing setup friction \u2014 no standard version pinned across team",
+      "fix": "Add k6 as devDependency or add Docker-based k6 runner script"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "ci_integration",
+      "file": "",
+      "issue": "No load test report artifact published in CI",
+      "impact": "Load test results not visible in PRs or dashboards \u2014 no trend tracking",
+      "fix": "Add k6 report output as CI artifact; consider Grafana k6 integration for dashboard"
+    }
+  ]
+}

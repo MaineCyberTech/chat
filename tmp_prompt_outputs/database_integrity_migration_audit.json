@@ -1,0 +1,121 @@
+{
+  "prompt_name": "database_integrity_migration_audit",
+  "domain": "database",
+  "stage": "principal_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:11:05Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 4,
+    "P2": 3,
+    "P3": 2
+  },
+  "category_scores": {
+    "migration_safety": 55,
+    "rls_posture": 45,
+    "index_coverage": 50,
+    "schema_drift": 30
+  },
+  "readiness": 45.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260625000002_create_workspaces.sql",
+      "issue": "SECURITY DEFINER functions missing SET search_path \u2014 4 functions affected",
+      "impact": "Search_path injection attack: user-created objects can hijack elevated privileges",
+      "fix": "Add SET search_path = 'public' to handle_new_user(), handle_new_channel(), handle_new_workspace(), and the fixed version in migration 22"
+    },
+    {
+      "severity": "P0",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260626000022_apply_rls_policies.sql",
+      "issue": "Missing INSERT/UPDATE/DELETE RLS policies for workspace_members and channel_members tables",
+      "impact": "Direct user operations on member tables bypass RLS \u2014 relies entirely on application-level middleware",
+      "fix": "Add INSERT/UPDATE/DELETE policies for workspace_members and channel_members with auth.uid() checks"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "packages/db/src/types.ts",
+      "issue": "TypeScript types significantly out of sync with database schema \u2014 6 types defined vs 16 tables exist",
+      "impact": "Type safety gaps: developers referencing missing types will fall back to any; soft-delete fields (deleted_at, archived_at) missing from Workspace, Channel, Message types",
+      "fix": "Run npx supabase gen types typescript --local > packages/db/src/types.ts; verify all tables represented"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "supabase/migrations/",
+      "issue": "Migration sequence gap in 20260626 batch \u2014 jumps from 01 to 22 with 21 missing sequence numbers",
+      "impact": "Suggests migrations were deleted or renumbered; Supabase CLI tracking by filename may conflict",
+      "fix": "Audit migration sequence; create placeholder files or renumber to eliminate gaps"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "supabase/migrations/20260625000012_create_webhooks.sql",
+      "issue": "Webhook_endpoints.created_by FK has no ON DELETE action \u2014 defaults to RESTRICT",
+      "impact": "Deleting an auth user who created webhooks will fail with FK violation",
+      "fix": "Add ON DELETE SET NULL or ON DELETE CASCADE to webhook_endpoints.created_by FK constraint"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "docs/runbooks/database-migrations.md",
+      "issue": "Runbook incorrectly states 'PostgreSQL does not support transactional DDL rollback'",
+      "impact": "Misguided operator guidance \u2014 DDL inside BEGIN/ROLLBACK IS supported, preventing safe rollback",
+      "fix": "Correct the runbook: PostgreSQL fully supports DDL rollback within transaction blocks"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "index_coverage",
+      "file": "supabase/migrations/20260625000008_create_reactions.sql",
+      "issue": "Missing index on reactions.message_id \u2014 all reaction queries filter by message_id",
+      "impact": "Full table scans on reaction queries for channels with many messages and reactions",
+      "fix": "CREATE INDEX idx_reactions_message_id ON public.reactions(message_id)"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "index_coverage",
+      "file": "supabase/migrations/20260625000011_create_notifications.sql",
+      "issue": "Missing index on notifications.workspace_id \u2014 workspace-level notification queries",
+      "impact": "Full table scans for workspace notification listing",
+      "fix": "CREATE INDEX idx_notifications_workspace_id ON public.notifications(workspace_id)"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "supabase/seeds/07_webhooks.sql",
+      "issue": "Seed data contains plaintext webhook secrets visible in repository",
+      "impact": "Development secrets committed to git \u2014 if repository access is compromised, secrets are exposed",
+      "fix": "Remove hardcoded secrets from seed files; use placeholder values like 'CHANGE_ME'"
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "supabase/migrations/",
+      "issue": "No down/rollback scripts exist for any of the 26 migrations",
+      "impact": "Rollback requires manual SQL construction per incident or PITR with data loss",
+      "fix": "Write .down.sql reversal scripts for each migration, starting with the last 5 additive-column migrations"
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "supabase/migrations/",
+      "issue": "Dual migration application paths: supabase db execute (dev scripts) vs supabase db push (CI)",
+      "impact": "Different code paths may produce different results \u2014 db push uses migration tracking, db execute runs raw SQL",
+      "fix": "Standardize on supabase db push for all environments; remove db execute fallback path"
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "prompt_name": "backup_restore_verification_audit",
+  "domain": "ops",
+  "stage": "principal_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:11:05Z",
+  "severity_counts": {
+    "P0": 3,
+    "P1": 3,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "database_backup": 20,
+    "file_storage_backup": 0,
+    "restore_procedure": 10,
+    "rto_rpo": 0,
+    "tf_state_backup": 70
+  },
+  "readiness": 20.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "file_storage_backup",
+      "file": "",
+      "issue": "No backup strategy for Supabase Storage files (chat-uploads bucket \u2014 avatars and file uploads)",
+      "impact": "All user-uploaded content (avatars, shared files) has zero backup \u2014 complete data loss if storage bucket is corrupted or deleted",
+      "fix": "Create script to export Supabase Storage bucket to DO Spaces or S3 on a schedule; document restore procedure"
+    },
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "restore_procedure",
+      "file": "",
+      "issue": "No restore test evidence exists \u2014 no documented restore drill procedure, no scripts, no evidence of any restore being tested",
+      "impact": "Backup may be non-functional or incomplete; first restore attempt will be during a real outage",
+      "fix": "Write and execute a quarterly restore drill; document procedure; create restore script"
+    },
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "rto_rpo",
+      "file": "",
+      "issue": "RTO (Recovery Time Objective) and RPO (Recovery Point Objective) not defined anywhere in the codebase",
+      "impact": "No recovery expectations documented \u2014 operators cannot determine if recovery is 'fast enough'",
+      "fix": "Define RTO (e.g., 4 hours) and RPO (e.g., 1 hour) based on business requirements; document in runbook"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "database_backup",
+      "file": "",
+      "issue": "No dedicated backup runbook in docs/runbooks/ \u2014 Supabase PITR mentioned only in passing in migration runbook",
+      "impact": "Operators lack step-by-step backup/restore guidance during incident",
+      "fix": "Create docs/runbooks/backup-restore.md with: Supabase PITR procedure, storage bucket export, full DR (droplet loss) recovery"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "database_backup",
+      "file": "",
+      "issue": "No automated Supabase backup verification \u2014 no script to check that daily Supabase backup completed successfully",
+      "impact": "Backup failures go unnoticed until restore is attempted \u2014 worst-case: no valid backup exists",
+      "fix": "Add daily cron job or GitHub scheduled workflow to check Supabase backup status via API"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "database_backup",
+      "file": "scripts/",
+      "issue": "No pg_dump or Supabase export scripts exist \u2014 only relies on Supabase managed backups",
+      "impact": "No offline backup available if Supabase service is unavailable",
+      "fix": "Add scripts/pg_dump.sh or scripts/export-supabase.sh for on-demand or scheduled export"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "restore_procedure",
+      "file": "",
+      "issue": "No full disaster recovery runbook covering total droplet loss scenario",
+      "impact": "If the DO droplet is lost, operators must reconstruct recovery steps from multiple scattered documents",
+      "fix": "Create full DR runbook: Terraform init -> apply -> restore DB via PITR -> restore storage -> smoke test"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "restore_procedure",
+      "file": "",
+      "issue": "Docker HEALTHCHECK succeeded but no application-level smoke test after restore",
+      "impact": "Restore can pass health check while critical features are still broken (auth, messaging, realtime)",
+      "fix": "Add smoke test step to restore runbook: verify auth flow, message send, WebSocket connect, file access"
+    },
+    {
+      "severity": "P3",
+      "domain": "ops",
+      "category": "tf_state_backup",
+      "file": "infra/terraform/versions.tf",
+      "issue": "Terraform state has no DR backup plan \u2014 DO Spaces bucket has no cross-region replication configured",
+      "impact": "If DO Spaces bucket is lost, Terraform state is unrecoverable \u2014 infrastructure must be rebuilt from scratch",
+      "fix": "Document Terraform state recovery: import existing resources from cloud provider; consider state bucket replication"
+    }
+  ]
+}

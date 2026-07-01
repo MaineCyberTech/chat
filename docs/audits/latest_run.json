@@ -1,16 +1,1883 @@
 {
-  "run_id": "testrun_automation_001",
-  "generated_at": "2026-06-22T08:05:00+00:00",
+  "run_id": "combined_audits_20260701_071536",
+  "generated_at": "2026-07-01T07:15:36Z",
   "decision": "NO-GO",
   "severity_totals": {
-    "P0": 1,
-    "P1": 3,
-    "P2": 2,
-    "P3": 1
+    "P0": 34,
+    "P1": 64,
+    "P2": 65,
+    "P3": 33
   },
   "category_health_scores": {
-    "platform": 68.0,
-    "frontend": 72.0
+    "contract_drift": 42,
+    "realtime_behavior": 35,
+    "auth_gaps": 28,
+    "database_backup": 20,
+    "file_storage_backup": 0,
+    "restore_procedure": 10,
+    "rto_rpo": 0,
+    "tf_state_backup": 70,
+    "migration_safety": 55,
+    "rls_posture": 45,
+    "index_coverage": 50,
+    "schema_drift": 30,
+    "auth_journey": 10,
+    "workspace_crud": 5,
+    "messaging": 5,
+    "realtime": 0,
+    "authorization": 35,
+    "env_variable_parity": 35,
+    "domain_consistency": 30,
+    "cors_cookie_alignment": 45,
+    "feature_flag_gaps": 40,
+    "chaos_tooling": 0,
+    "unit_level_failure": 20,
+    "integration_failure": 10,
+    "degraded_ux": 15,
+    "keyboard_navigation": 60,
+    "screen_reader": 65,
+    "focus_management": 55,
+    "contrast": 70,
+    "motion": 80,
+    "design_system_integrity": 45,
+    "chat_ux": 50,
+    "state_management": 55,
+    "visual_consistency": 50,
+    "bundle_optimization": 35,
+    "hydration_cost": 20,
+    "transcript_rendering": 20,
+    "image_font_loading": 60,
+    "policy_architecture": 60,
+    "enforcement": 30,
+    "hotfix_controls": 20,
+    "branch_protection": 20,
+    "policy_change_governance": 15,
+    "reconciliation": 95,
+    "principal_audit": 95,
+    "quality_confirmation": 95,
+    "frontend_release_gate": 80,
+    "load_test_existing": 10,
+    "websocket_load": 0,
+    "search_load": 0,
+    "notification_throughput": 0,
+    "ci_integration": 0,
+    "structured_logging": 60,
+    "error_tracking": 70,
+    "metrics": 55,
+    "health_checks": 75,
+    "alerting": 20,
+    "incident_runbooks": 55,
+    "tracing": 25,
+    "audit_logging": 60,
+    "artifact_rollback": 50,
+    "database_rollback": 20,
+    "feature_flag_kill_switch": 30,
+    "operator_runbooks": 45,
+    "post_rollback_validation": 20,
+    "Auth": 45,
+    "Headers": 30,
+    "Secrets": 80,
+    "Auth Middleware": 85,
+    "RLS Policies": 72,
+    "Secrets Handling": 90,
+    "Rate Limiting": 65,
+    "authentication": 50,
+    "secret_handling": 30,
+    "defense_in_depth": 40,
+    "A Monorepo Workspace Package Governance": 50,
+    "B TypeScript Build Import Integrity": 50,
+    "C Frontend Backend Database Contract Alignment": 50,
+    "D Authentication Authorization Security Surface": 50,
+    "E Environment Domain Consistency": 50,
+    "F API Realtime Socket Correctness": 50,
+    "G Frontend Routing UX State Provider Integrity": 50,
+    "H UXUI Design Quality": 50,
+    "I Accessibility Readiness": 50,
+    "J Responsive Readiness": 50,
+    "K Quality Tooling Test Validation Infrastructure": 50,
+    "L CICD GitHub Environments Release Automation": 50,
+    "M Docker Traefik Runtime Orchestration": 50,
+    "N Terraform Cloud-Init Host Provisioning": 50,
+    "O Documentation Runbooks Contributor Guidance": 50,
+    "P Dead Files Duplicate Systems Stale Artifacts": 50,
+    "F1 Design System Integrity": 80,
+    "F2 Layout and Navigation": 80,
+    "F3 Chat UX": 80,
+    "F4 State Management and Data Flow": 80,
+    "F5 Accessibility": 80,
+    "F6 Responsive Design": 80,
+    "F7 Performance": 80,
+    "F8 Interaction Quality": 80,
+    "F9 Visual Consistency": 80,
+    "F10 Component Architecture": 80,
+    "auth": 90,
+    "data": 80,
+    "tooling": 0,
+    "core_screens": 0,
+    "dark_mode": 0,
+    "responsive": 0
   },
-  "findings": []
+  "readiness": 44.5,
+  "finding_count": 196,
+  "summaries_aggregated": 26,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "issue": "Reaction routes have no workspace/channel membership check",
+      "impact": "Any authenticated user can read/add/remove reactions on any message across any workspace",
+      "fix": "Add requireChannelAccess middleware to GET/POST/DELETE /messages/:id/reactions and GET /reactions/batch",
+      "endpoint": "GET/POST/DELETE /v1/messages/:id/reactions, GET /v1/reactions/batch"
+    },
+    {
+      "severity": "P0",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/feature-flags/routes.ts",
+      "issue": "Feature-flag routes have broken middleware \u2014 requireWorkspaceMembership(\"workspaceId\") on paths without :workspaceId param",
+      "impact": "All feature-flag requests will fail with 400 \"Missing workspaceId\" \u2014 feature flags are non-functional",
+      "fix": "Remove requireWorkspaceMembership from feature-flag routes or add workspaceId as a query/body parameter",
+      "endpoint": "ALL /v1/feature-flags/*"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Message search uses getSupabase() (anon client) instead of req.supabase (JWT client)",
+      "impact": "auth.uid() is NULL in SECURITY INVOKER search function \u2014 cross-tenant search possible or no results returned",
+      "fix": "Replace getSupabase() with req.supabase in messages/routes.ts line 38",
+      "endpoint": "GET /v1/messages/search"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime_behavior",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "No Socket.io connection state recovery \u2014 clients lose all room state on disconnect",
+      "impact": "After reconnect, clients must manually re-join rooms and re-fetch state; messages may be lost during disconnect window",
+      "fix": "Enable connectionStateRecovery in Socket.io server config; implement room membership persistence",
+      "endpoint": "Socket.io connection"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime_behavior",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "No per-event authorization after initial Socket.io auth handshake",
+      "impact": "Any connected client can join any channel room by emitting channel:join with any channelId",
+      "fix": "Add per-event membership check in channel:join handler before adding socket to room",
+      "endpoint": "Socket.io channel:join event"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/lib/idempotency.ts",
+      "issue": "In-memory idempotency fallback has no size limit or eviction policy",
+      "impact": "Unbounded memory growth under high request volume \u2014 potential OOM",
+      "fix": "Add Map size limit with LRU eviction to in-memory fallback",
+      "endpoint": "POST /v1/channels/:channelId/messages"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "GET /webhooks reads workspace_id from query param but middleware checks req.params \u2014 workspace validation broken",
+      "impact": "Webhook listing bypasses workspace membership check",
+      "fix": "Create a middleware that reads from req.query.workspace_id instead of req.params.workspaceId",
+      "endpoint": "GET /v1/webhooks?workspace_id=..."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Message upload endpoint has no channel/workspace membership check",
+      "impact": "Any authenticated user can upload files without channel context",
+      "fix": "Add channel_id to upload payload and requireChannelAccess middleware",
+      "endpoint": "POST /v1/messages/upload"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/workspaces/service.ts",
+      "issue": "Workspace member list returns email field \u2014 PII exposure",
+      "impact": "Workspace members can see each other's email addresses unnecessarily",
+      "fix": "Remove email from SELECT query in getMembers(), return only display_name and avatar_url"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/channels/service.ts",
+      "issue": "Channel slug dedup loop has no max attempt safety limit",
+      "impact": "Infinite loop if all slug variants are taken \u2014 potential hang/DoS",
+      "fix": "Add MAX_ATTEMPTS=100 guard similar to workspace slug dedup"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "realtime_behavior",
+      "file": "apps/api/src/modules/messages/service.ts",
+      "issue": "Cursor pagination has no input validation \u2014 malformed cursor could cause unexpected query behavior",
+      "impact": "Malformed cursor could lead to SQL injection-like behavior via .or() filter",
+      "fix": "Validate cursor format (two parts separated by |) before using in query"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/notifications/service.ts",
+      "issue": "Uses console.error instead of structured logger.error for push notification failures",
+      "impact": "Push notification failures not captured in structured logging; harder to alert/diagnose",
+      "fix": "Replace console.error with logger.error"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Consent routes use lowercase error.message format inconsistent with uppercase error.code convention",
+      "impact": "Inconsistent API contract \u2014 clients must handle two error formats",
+      "fix": "Standardize consent error responses to use error.code uppercase convention"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/config/validators.ts",
+      "issue": "Idempotency-Key header has no format validation",
+      "impact": "Any string accepted \u2014 potential abuse with very long keys",
+      "fix": "Add UUID or length validation for idempotency-key header"
+    },
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "file_storage_backup",
+      "file": "",
+      "issue": "No backup strategy for Supabase Storage files (chat-uploads bucket \u2014 avatars and file uploads)",
+      "impact": "All user-uploaded content (avatars, shared files) has zero backup \u2014 complete data loss if storage bucket is corrupted or deleted",
+      "fix": "Create script to export Supabase Storage bucket to DO Spaces or S3 on a schedule; document restore procedure"
+    },
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "restore_procedure",
+      "file": "",
+      "issue": "No restore test evidence exists \u2014 no documented restore drill procedure, no scripts, no evidence of any restore being tested",
+      "impact": "Backup may be non-functional or incomplete; first restore attempt will be during a real outage",
+      "fix": "Write and execute a quarterly restore drill; document procedure; create restore script"
+    },
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "rto_rpo",
+      "file": "",
+      "issue": "RTO (Recovery Time Objective) and RPO (Recovery Point Objective) not defined anywhere in the codebase",
+      "impact": "No recovery expectations documented \u2014 operators cannot determine if recovery is 'fast enough'",
+      "fix": "Define RTO (e.g., 4 hours) and RPO (e.g., 1 hour) based on business requirements; document in runbook"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "database_backup",
+      "file": "",
+      "issue": "No dedicated backup runbook in docs/runbooks/ \u2014 Supabase PITR mentioned only in passing in migration runbook",
+      "impact": "Operators lack step-by-step backup/restore guidance during incident",
+      "fix": "Create docs/runbooks/backup-restore.md with: Supabase PITR procedure, storage bucket export, full DR (droplet loss) recovery"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "database_backup",
+      "file": "",
+      "issue": "No automated Supabase backup verification \u2014 no script to check that daily Supabase backup completed successfully",
+      "impact": "Backup failures go unnoticed until restore is attempted \u2014 worst-case: no valid backup exists",
+      "fix": "Add daily cron job or GitHub scheduled workflow to check Supabase backup status via API"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "database_backup",
+      "file": "scripts/",
+      "issue": "No pg_dump or Supabase export scripts exist \u2014 only relies on Supabase managed backups",
+      "impact": "No offline backup available if Supabase service is unavailable",
+      "fix": "Add scripts/pg_dump.sh or scripts/export-supabase.sh for on-demand or scheduled export"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "restore_procedure",
+      "file": "",
+      "issue": "No full disaster recovery runbook covering total droplet loss scenario",
+      "impact": "If the DO droplet is lost, operators must reconstruct recovery steps from multiple scattered documents",
+      "fix": "Create full DR runbook: Terraform init -> apply -> restore DB via PITR -> restore storage -> smoke test"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "restore_procedure",
+      "file": "",
+      "issue": "Docker HEALTHCHECK succeeded but no application-level smoke test after restore",
+      "impact": "Restore can pass health check while critical features are still broken (auth, messaging, realtime)",
+      "fix": "Add smoke test step to restore runbook: verify auth flow, message send, WebSocket connect, file access"
+    },
+    {
+      "severity": "P3",
+      "domain": "ops",
+      "category": "tf_state_backup",
+      "file": "infra/terraform/versions.tf",
+      "issue": "Terraform state has no DR backup plan \u2014 DO Spaces bucket has no cross-region replication configured",
+      "impact": "If DO Spaces bucket is lost, Terraform state is unrecoverable \u2014 infrastructure must be rebuilt from scratch",
+      "fix": "Document Terraform state recovery: import existing resources from cloud provider; consider state bucket replication"
+    },
+    {
+      "severity": "P0",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260625000002_create_workspaces.sql",
+      "issue": "SECURITY DEFINER functions missing SET search_path \u2014 4 functions affected",
+      "impact": "Search_path injection attack: user-created objects can hijack elevated privileges",
+      "fix": "Add SET search_path = 'public' to handle_new_user(), handle_new_channel(), handle_new_workspace(), and the fixed version in migration 22"
+    },
+    {
+      "severity": "P0",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260626000022_apply_rls_policies.sql",
+      "issue": "Missing INSERT/UPDATE/DELETE RLS policies for workspace_members and channel_members tables",
+      "impact": "Direct user operations on member tables bypass RLS \u2014 relies entirely on application-level middleware",
+      "fix": "Add INSERT/UPDATE/DELETE policies for workspace_members and channel_members with auth.uid() checks"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "packages/db/src/types.ts",
+      "issue": "TypeScript types significantly out of sync with database schema \u2014 6 types defined vs 16 tables exist",
+      "impact": "Type safety gaps: developers referencing missing types will fall back to any; soft-delete fields (deleted_at, archived_at) missing from Workspace, Channel, Message types",
+      "fix": "Run npx supabase gen types typescript --local > packages/db/src/types.ts; verify all tables represented"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "supabase/migrations/",
+      "issue": "Migration sequence gap in 20260626 batch \u2014 jumps from 01 to 22 with 21 missing sequence numbers",
+      "impact": "Suggests migrations were deleted or renumbered; Supabase CLI tracking by filename may conflict",
+      "fix": "Audit migration sequence; create placeholder files or renumber to eliminate gaps"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "supabase/migrations/20260625000012_create_webhooks.sql",
+      "issue": "Webhook_endpoints.created_by FK has no ON DELETE action \u2014 defaults to RESTRICT",
+      "impact": "Deleting an auth user who created webhooks will fail with FK violation",
+      "fix": "Add ON DELETE SET NULL or ON DELETE CASCADE to webhook_endpoints.created_by FK constraint"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "docs/runbooks/database-migrations.md",
+      "issue": "Runbook incorrectly states 'PostgreSQL does not support transactional DDL rollback'",
+      "impact": "Misguided operator guidance \u2014 DDL inside BEGIN/ROLLBACK IS supported, preventing safe rollback",
+      "fix": "Correct the runbook: PostgreSQL fully supports DDL rollback within transaction blocks"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "index_coverage",
+      "file": "supabase/migrations/20260625000008_create_reactions.sql",
+      "issue": "Missing index on reactions.message_id \u2014 all reaction queries filter by message_id",
+      "impact": "Full table scans on reaction queries for channels with many messages and reactions",
+      "fix": "CREATE INDEX idx_reactions_message_id ON public.reactions(message_id)"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "index_coverage",
+      "file": "supabase/migrations/20260625000011_create_notifications.sql",
+      "issue": "Missing index on notifications.workspace_id \u2014 workspace-level notification queries",
+      "impact": "Full table scans for workspace notification listing",
+      "fix": "CREATE INDEX idx_notifications_workspace_id ON public.notifications(workspace_id)"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "supabase/seeds/07_webhooks.sql",
+      "issue": "Seed data contains plaintext webhook secrets visible in repository",
+      "impact": "Development secrets committed to git \u2014 if repository access is compromised, secrets are exposed",
+      "fix": "Remove hardcoded secrets from seed files; use placeholder values like 'CHANGE_ME'"
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "supabase/migrations/",
+      "issue": "No down/rollback scripts exist for any of the 26 migrations",
+      "impact": "Rollback requires manual SQL construction per incident or PITR with data loss",
+      "fix": "Write .down.sql reversal scripts for each migration, starting with the last 5 additive-column migrations"
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "supabase/migrations/",
+      "issue": "Dual migration application paths: supabase db execute (dev scripts) vs supabase db push (CI)",
+      "impact": "Different code paths may produce different results \u2014 db push uses migration tracking, db execute runs raw SQL",
+      "fix": "Standardize on supabase db push for all environments; remove db execute fallback path"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "auth_journey",
+      "file": "tests/e2e/",
+      "issue": "No E2E test for the core auth flow (magic link -> callback -> workspace redirect) \u2014 all auth tests stubbed/skipped",
+      "impact": "Cannot detect auth flow regressions in CI \u2014 the most critical user journey is untested",
+      "fix": "Build Tier 1 auth scenario: mock magic link, verify callback redirect, validate session persistence, test workspace list render"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "workspace_crud",
+      "file": "tests/e2e/",
+      "issue": "No E2E test for workspace create, channel create, or message send flow \u2014 core product journey untested",
+      "impact": "Cannot detect regressions in the primary user action sequence in CI",
+      "fix": "Build Tier 1 product scenario: create workspace -> create channel -> send message -> verify message appears"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "authorization",
+      "file": "tests/e2e/",
+      "issue": "No E2E test for cross-tenant isolation \u2014 user A cannot see user B's data",
+      "impact": "Cannot detect tenant isolation regressions \u2014 a single regression could expose all data across workspaces",
+      "fix": "Build Tier 2 authorization scenario: user A creates workspace and data, user B attempts to access \u2014 verify 403"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "messaging",
+      "file": "tests/e2e/",
+      "issue": "No E2E test for message edit and delete workflows",
+      "impact": "Cannot detect regressions in message update/delete UX",
+      "fix": "Build Tier 1 messaging scenario: send message -> edit content -> verify update; send -> delete -> verify removal"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "messaging",
+      "file": "tests/e2e/",
+      "issue": "No E2E test for file upload (image + document)",
+      "impact": "Upload path regressions undetected until production",
+      "fix": "Build Tier 2 file upload scenario: upload image, verify preview; upload document, verify download link"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "realtime",
+      "file": "tests/e2e/",
+      "issue": "No E2E test for real-time message delivery between two browser contexts",
+      "impact": "Core realtime feature \u2014 multi-user message delivery untested in CI",
+      "fix": "Build Tier 2 realtime scenario: two browser contexts, one sends message, verify other receives it via WebSocket"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "realtime",
+      "file": "tests/e2e/",
+      "issue": "No E2E test for WebSocket reconnect behavior after disconnect",
+      "impact": "Reconnect logic untested \u2014 messages could be lost during disconnect window",
+      "fix": "Build Tier 2 reconnect scenario: disconnect socket, reconnect, verify room membership restored and no messages lost"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "auth_journey",
+      "file": "tests/e2e/",
+      "issue": "54 E2E test stubs exist in comprehensive.spec.ts but all are test.skip \u2014 effectively zero E2E coverage",
+      "impact": "48 test cases defined but none execute in CI; false sense of coverage",
+      "fix": "Prioritize un-skipping auth, workspace, and message tests with proper test data seeding"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "test_infrastructure",
+      "file": "tests/",
+      "issue": "No test data factories or fixture files \u2014 all test data inlined per test file",
+      "impact": "Brittle tests; any schema change requires updating multiple test files",
+      "fix": "Create shared test data factories for users, workspaces, channels, messages"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "test_infrastructure",
+      "file": "playwright.config.ts",
+      "issue": "Two Playwright configs exist but only root config (chromium-only) runs in CI \u2014 apps/web/e2e/ config with 3 browsers unused",
+      "impact": "Firefox and WebKit E2E coverage never tested in CI",
+      "fix": "Consolidate to single Playwright config or add multi-browser execution in CI"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "test_infrastructure",
+      "file": "apps/worker/",
+      "issue": "Worker package has no test script at all \u2014 zero test coverage",
+      "impact": "Background worker failures undetected by CI",
+      "fix": "Add vitest configuration and basic worker logic tests"
+    },
+    {
+      "severity": "P0",
+      "domain": "environment",
+      "category": "domain_consistency",
+      "file": "infra/docker/Caddyfile.prod",
+      "issue": "Production Caddyfile missing API subdomain block \u2014 chat-api.mainecybertech.com DNS exists but Caddy does not serve it",
+      "impact": "Direct API access to production API subdomain gets no TLS termination \u2014 mysterious connection failures",
+      "fix": "Add site block for chat-api.mainecybertech.com to Caddyfile.prod, or remove the unused DNS record"
+    },
+    {
+      "severity": "P0",
+      "domain": "environment",
+      "category": "domain_consistency",
+      "file": "infra/terraform/versions.tf",
+      "issue": "Same Terraform state key for both environments \u2014 no environment isolation in state key",
+      "impact": "Dev and prod Terraform operations use the same state \u2014 one environment's changes can corrupt the other",
+      "fix": "Use environment-specific state keys (e.g., infra/terraform/${var.environment}.tfstate)"
+    },
+    {
+      "severity": "P0",
+      "domain": "environment",
+      "category": "env_variable_parity",
+      "file": "apps/api/src/config/env.ts",
+      "issue": "API env schema and shared config package have 11 variable mismatches (optional vs required, missing vars, name conflicts)",
+      "impact": "API starts with missing required config; EMAIL_FROM vs SMTP_FROM name collision causes silent fallback",
+      "fix": "Synchronize env.ts with env-schema.ts; resolve EMAIL_FROM/SMTP_FROM naming; add REDIS_TLS, SENTRY_ENVIRONMENT, VAPID_SUBJECT"
+    },
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "env_variable_parity",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "SMTP/email env vars not set in any deployment workflow \u2014 SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM all missing",
+      "impact": "Password reset emails and transactional emails will fail in deployed environments",
+      "fix": "Add SMTP configuration with SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM secrets to both deploy workflows"
+    },
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "feature_flag_gaps",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "Sentry DSN never set in any deployment \u2014 SENTRY_DSN and NEXT_PUBLIC_SENTRY_DSN not configured",
+      "impact": "Error tracking in deployed environments silently falls back to unconfigured state \u2014 no error capture",
+      "fix": "Add SENTRY_DSN and NEXT_PUBLIC_SENTRY_DSN secrets to both deploy workflows"
+    },
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "domain_consistency",
+      "file": "infra/terraform/main.tf",
+      "issue": "Dev API subdomain (chat-api.mainecybertech.us) deployed but unused \u2014 DNS + Caddy block but nothing uses it",
+      "impact": "Wasted TLS cert issuance, DNS record, and Caddy config \u2014 all API traffic goes through same-domain /v1/* proxy",
+      "fix": "Remove API subdomain DNS record for development, or document as future architecture option"
+    },
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "env_variable_parity",
+      "file": "apps/web/lib/env.ts",
+      "issue": "Web env schema missing 4 validated variables: NEXT_PUBLIC_SENTRY_DSN, NEXT_PUBLIC_APP_VERSION, NEXT_PUBLIC_GIT_SHA, NEXT_PUBLIC_BUILD_TIME",
+      "impact": "Version badge always shows '0.0.0-dev' and 'local' in production; Sentry not configured on frontend",
+      "fix": "Add these vars to apps/web/lib/env.ts Zod schema"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "env_variable_parity",
+      "file": "infra/terraform/variables.tf",
+      "issue": "Default droplet size is s-1vcpu-512mb-10gb but 512MB is known to cause OOM (documented in AGENTS.md)",
+      "impact": "Development droplet will run out of memory under normal load",
+      "fix": "Update default droplet size to s-2vcpu-2gb in terraform variables.tf"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "domain_consistency",
+      "file": ".github/workflows/supabase-migrations.yml",
+      "issue": "Supabase migrations use same SUPABASE_PROJECT_REF for both dev and prod \u2014 no separate Supabase project",
+      "impact": "Migrations applied via develop branch directly affect the same database as main",
+      "fix": "Use separate Supabase projects for development and production with separate project ref secrets"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "feature_flag_gaps",
+      "file": "apps/api/src/lib/feature-flags.ts",
+      "issue": "No frontend feature flag client \u2014 flags only available server-side through API",
+      "impact": "Cannot gate frontend features with feature flags; flag evaluation requires API round-trip",
+      "fix": "Create frontend feature flag client (or inject flags from server props) for client-side feature gating"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "feature_flag_gaps",
+      "file": "apps/api/src/lib/feature-flags.ts",
+      "issue": "Feature flags use in-memory cache per instance \u2014 no Redis-backed cache invalidation",
+      "impact": "Multi-instance deployments see stale flag state up to 60s; flag change on one instance invalidates only that instance's cache",
+      "fix": "Use Redis pub/sub for cross-instance cache invalidation"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "domain_consistency",
+      "file": "infra/docker/Caddyfile",
+      "issue": "Dev Caddyfile lacks static asset caching that prod has \u2014 no Cache-Control max-age for static assets",
+      "impact": "Development environment serves static assets without browser caching \u2014 slower local dev experience",
+      "fix": "Add @static matcher with max-age directive to dev Caddyfile"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "env_variable_parity",
+      "file": "apps/api/src/modules/notifications/push-subscription-service.ts",
+      "issue": "Push subscription service reads VAPID_PUBLIC_KEY and EMAIL_FROM directly from process.env instead of validated env schema",
+      "impact": "Env var validation bypassed \u2014 missing vars cause silent runtime failures instead of startup errors",
+      "fix": "Import validated env config instead of reading process.env directly"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "chaos_tooling",
+      "file": "",
+      "issue": "No chaos testing scripts or tooling exist \u2014 zero failure injection capability",
+      "impact": "System has never been tested under failure conditions; brittle assumptions about degraded behavior are unvalidated",
+      "fix": "Implement Tier 1 failure tests using unit-level mocking (DB timeout, socket failure, webhook 500) in existing service tests"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "degraded_ux",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "No E2E test for database unavailable scenario \u2014 API should return 503, client should show 'connection lost' state",
+      "impact": "User-facing degraded state never validated \u2014 users may see confusing errors or blank screens",
+      "fix": "Use Playwright route interception to simulate API 503; verify correct degraded UI is shown"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "degraded_ux",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "No test for socket disconnect/reconnect behavior \u2014 client message queuing and replay on reconnect untested",
+      "impact": "Messages written during disconnect period may be silently lost",
+      "fix": "Write integration test: disconnect socket client, send message via API, reconnect, verify message received via socket"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "unit_level_failure",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker (opossum) is a dependency but has zero test coverage",
+      "impact": "Circuit breaker logic \u2014 open, half-open, recovery \u2014 never tested; unexpected behavior in production",
+      "fix": "Write unit tests for circuit breaker: simulate 50%+ failures, verify open state; simulate recovery, verify half-open"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "unit_level_failure",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "issue": "Webhook retry logic, DLQ, and exponential backoff have zero integration test coverage",
+      "impact": "Retry mechanism may silently fail; DLQ may not capture failed deliveries; backoff may misbehave under load",
+      "fix": "Write tests: mock webhook endpoint returning 500, verify retry count increments, verify DLQ capture after max retries"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "integration_failure",
+      "file": "",
+      "issue": "No test for rate limiter being hit \u2014 client should show 'too many requests' with retry-after header",
+      "impact": "Rate limiting UX never validated \u2014 users may see unhelpful errors or silent failures",
+      "fix": "Write E2E test: burst requests beyond rate limit, verify 429 status and Retry-After header, verify correct client message"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "integration_failure",
+      "file": "",
+      "issue": "No test for Redis unavailability (for Socket.io adapter) \u2014 fallback to in-memory mode untested",
+      "impact": "If Redis fails, Socket.io may fail entirely or exhibit undefined behavior",
+      "fix": "Write integration test: start server without Redis, verify Socket.io falls back to in-memory adapter, verify messaging still works"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "unit_level_failure",
+      "file": "",
+      "issue": "No test for file upload failure (image processing error, oversized file, invalid type)",
+      "impact": "Upload error UX never validated \u2014 users may see confusing errors or hang state",
+      "fix": "Write E2E test with oversized file, invalid content type, and simulated processing failure; verify appropriate error messages"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "unit_level_failure",
+      "file": "",
+      "issue": "No test for webhook delivery timeout \u2014 circuit breaker open, DLQ capture, and operator notification",
+      "impact": "Timeout behavior never validated; circuit breaker may not open as expected",
+      "fix": "Write integration test: mock slow webhook endpoint (>10s), verify timeout, verify circuit breaker opens, verify DLQ capture"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "chaos_tooling",
+      "file": "",
+      "issue": "No synthetic endpoint for triggering controlled failures (e.g., /debug/fail-webhooks, /debug/slow-db)",
+      "impact": "Chaos testing requires modifying production services \u2014 no safe test harness",
+      "fix": "Add debug endpoints (guarded by NODE_ENV) for triggering controlled failures in test environments"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "visual_consistency",
+      "file": "apps/web/components/",
+      "issue": "Unicode/emoji icons used instead of SVG icons \u2014 poor contrast and inconsistent rendering across platforms",
+      "impact": "Accessibility: emoji icons have inconsistent rendering and may not be announced by screen readers consistently",
+      "fix": "Migrate Unicode icons to lucide-react SVG icons with proper aria-hidden and aria-label attributes"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "loading_states",
+      "file": "apps/web/app/(workspace)/layout.tsx",
+      "issue": "Loading state shows text 'Loading...' instead of skeleton component \u2014 inconsistent with rest of app",
+      "impact": "Poor user experience during loading \u2014 no visual placeholder for layout structure",
+      "fix": "Replace 'Loading...' text with Skeleton component matching workspace layout structure"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "focus_management",
+      "file": "apps/web/components/shared/app-sidebar.tsx",
+      "issue": "Focus not returned to hamburger button after closing mobile sidebar via overlay click or Escape",
+      "impact": "Keyboard users lose context after closing sidebar \u2014 focus jumps to unexpected location",
+      "fix": "Store reference to trigger element and call .focus() after sidebar close"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "keyboard_navigation",
+      "file": "apps/web/components/workspace/create-workspace-dialog.tsx",
+      "issue": "Create workspace trigger uses role='button' on a div with tabIndex=0 instead of native <button>",
+      "impact": "Not keyboard accessible in all browsers; no native button semantics (Space key may not activate)",
+      "fix": "Replace div with actual <button> element"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "screen_reader",
+      "file": "apps/web/components/channel/channel-list.tsx",
+      "issue": "Channel list items (Link elements inside role='listbox') lack aria-label identifying them as navigation items",
+      "impact": "Screen reader users cannot distinguish channel links from other list items",
+      "fix": "Add aria-label='Navigate to channel {channel.name}' on each channel Link element"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "screen_reader",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "Theme toggle button in app header may lack aria-label \u2014 ThemeToggle component from @chat/ui needs verification",
+      "impact": "Screen reader users may not know the theme toggle button's purpose",
+      "fix": "Ensure ThemeToggle component accepts and propagates aria-label prop"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "keyboard_navigation",
+      "file": "",
+      "issue": "No keyboard shortcut help menu \u2014 bulk actions require mouse",
+      "impact": "Power users cannot learn keyboard shortcuts; no documented shortcut reference",
+      "fix": "Add Ctrl+/ or ? keyboard shortcut help overlay; document common shortcuts"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "screen_reader",
+      "file": "",
+      "issue": "No i18n/internationalization support \u2014 lang='en' hardcoded",
+      "impact": "Screen reader pronunciation may be wrong for non-English content",
+      "fix": "Add next-intl or similar i18n library; make lang attribute dynamic"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "screen_reader",
+      "file": "apps/web/components/search/search-bar.tsx",
+      "issue": "Search results use aria-selected but do not set aria-activedescendant on the search input",
+      "impact": "Screen reader cursor tracking is imprecise during keyboard navigation of search results",
+      "fix": "Set aria-activedescendant on the search input pointing to the currently highlighted result"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "chat_ux",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "No message pagination in chat-view \u2014 fetches all messages at once with no cursor/offset limit",
+      "impact": "Long channels have unbounded load times and memory consumption",
+      "fix": "Implement cursor-based pagination: load initial 50 messages, fetch older on scroll-to-top"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "chat_ux",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "Typing indicator events not throttled on the server side \u2014 only client-side throttle at 2000ms",
+      "impact": "Rapid typing changes still fire many events; no server-side protection against flooding",
+      "fix": "Add rate limiting on socket typing:start events server-side; keep client throttle as defense-in-depth"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "chat_ux",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "Optimistic messages lack visual distinction (e.g., grayed out) for 'sending' state",
+      "impact": "Users cannot distinguish between pending (optimistic) and confirmed messages \u2014 confusion if message fails",
+      "fix": "Apply reduced opacity or spinner indicator to optimistic messages; revert on failure with toast error"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "chat_ux",
+      "file": "apps/web/components/chat/thread-panel.tsx",
+      "issue": "Thread reply input uses fixed rows={2} \u2014 does not auto-resize unlike the main message input",
+      "impact": "Long thread replies require manual scrolling in the textarea; inconsistent with main message input UX",
+      "fix": "Replace fixed rows with auto-resize behavior matching message-input.tsx"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "design_system_integrity",
+      "file": "apps/web/globals.css",
+      "issue": "No icon library \u2014 all icons are Unicode/emoji characters throughout the app",
+      "impact": "Inconsistent cross-platform rendering; no accessibility attributes on emoji icons; no SVG theming",
+      "fix": "Adopt an icon library (lucide-react recommended) with consistent aria-label and aria-hidden patterns"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "design_system_integrity",
+      "file": "apps/web/globals.css",
+      "issue": "No typography scale or design tokens for heading/text variants \u2014 uses raw Tailwind classes",
+      "impact": "Inconsistent text sizing across pages; no design system guardrails for typography",
+      "fix": "Define typography scale tokens in globals.css; create Text and Heading components"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "design_system_integrity",
+      "file": "apps/web/",
+      "issue": "Raw opacity values used directly (opacity-50, opacity-70, etc.) \u2014 no design tokens",
+      "impact": "Inconsistent transparency patterns across components",
+      "fix": "Define semantic opacity tokens (--opacity-disabled, --opacity-subtle, --opacity-overlay)"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "chat_ux",
+      "file": "apps/web/components/notifications/notification-bell.tsx",
+      "issue": "Notification dropdown lacks max-height \u2014 long notification lists extend beyond viewport",
+      "impact": "Users with many notifications cannot scroll within the dropdown; notifications overflow below viewport",
+      "fix": "Add max-h-96 overflow-y-auto to notification dropdown container"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "chat_ux",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "Reply-to bar shows only 'Replying to [name]' without preview of the replied-to message content",
+      "impact": "Users must remember or scroll to find the original message they're replying to",
+      "fix": "Add truncated preview of the replied-to message content below the name in the reply bar"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "chat_ux",
+      "file": "apps/web/components/search/search-bar.tsx",
+      "issue": "Search results don't highlight the matched query terms in the excerpt",
+      "impact": "Users cannot quickly see why a result matched their search query",
+      "fix": "Highlight matching query terms in search result snippets using <mark> or bold"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "chat_ux",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "Message actions (reply, react, edit, delete) are hidden until hover \u2014 opacity-0 group-hover:opacity-100",
+      "impact": "On touch devices or with mouse-free navigation, message actions are not visible",
+      "fix": "Show message actions always on mobile/touch; keep hover-with-focus pattern for desktop"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "design_system_integrity",
+      "file": "",
+      "issue": "No shared ButtonGroup component \u2014 login form mode toggle (Sign In/Sign Up) uses manually styled buttons",
+      "impact": "Inconsistent button group styling; no reusable pattern for segmented controls",
+      "fix": "Create shared ButtonGroup component with active state styling"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "bundle_optimization",
+      "file": "apps/web/app/",
+      "issue": "All pages use 'use client' directive \u2014 zero server components \u2014 full JS bundle downloaded on every route",
+      "impact": "No React Server Component benefits: no streaming SSR, larger initial JS payload, slower time-to-interactive",
+      "fix": "Convert non-interactive sections (landing page, workspace list) to server components; use 'use client' only where interactivity requires it"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "bundle_optimization",
+      "file": "apps/web/next.config.ts",
+      "issue": "No route-level code splitting \u2014 all components eagerly imported via static imports",
+      "impact": "Large components (ChatView, ThreadPanel, SettingsPage) bundled into main chunk \u2014 slower initial load",
+      "fix": "Use next/dynamic for lazy-loading heavy components: ChatView, ThreadPanel, SettingsPage"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "transcript_rendering",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "No virtual list for long transcripts \u2014 all messages rendered as flat DOM nodes",
+      "impact": "Channels with thousands of messages cause full DOM rendering; unbounded memory growth; long session performance degrades",
+      "fix": "Implement virtual scrolling with react-window or @tanstack/react-virtual for message list"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "transcript_rendering",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "Reaction data fetched for ALL visible messages on every messages change \u2014 N+1 query pattern",
+      "impact": "Each message render triggers a batch reaction fetch; with 50 visible messages per page, significant overhead",
+      "fix": "Cache reaction data by message ID; only re-fetch when new messages appear in viewport"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "image_font_loading",
+      "file": "apps/web/components/settings/avatar-upload.tsx",
+      "issue": "Avatar image uses <img> instead of Next.js <Image> \u2014 no lazy loading or responsive images",
+      "impact": "Avatar images block initial load; no automatic srcset generation for responsive sizes",
+      "fix": "Replace <img> with Next.js <Image> component with lazy loading"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "bundle_optimization",
+      "file": "apps/web/next.config.ts",
+      "issue": "Socket.io client imported eagerly even on pages that don't need real-time (workspace overview, settings)",
+      "impact": "~50KB socket.io client JS loaded on every page regardless of whether real-time features are used",
+      "fix": "Dynamic import socket.io client only on pages that require real-time features"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "hydration_cost",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "All messages stored in single flat array \u2014 no pagination, windowing, or pruning of old messages",
+      "impact": "Long chat sessions accumulate unbounded memory; page grows slower over time",
+      "fix": "Limit in-memory message store to last N messages (e.g., 500); implement cursor-based load on scroll"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "bundle_optimization",
+      "file": "apps/web/next.config.ts",
+      "issue": "transpilePackages: ['@chat/ui'] increases build time",
+      "impact": "Every pnpm build transpiles the shared UI package \u2014 necessary but can be optimized",
+      "fix": "Consider building @chat/ui as pre-compiled package to reduce transpilation overhead"
+    },
+    {
+      "severity": "P0",
+      "domain": "governance",
+      "category": "enforcement",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No deploy-time audit gating for production \u2014 deploy-production.yml runs without evaluating gate-policy.prod.json",
+      "impact": "P0/P1 findings can reach production with zero governance gate \u2014 the entire policy gating system is advisory",
+      "fix": "Add evaluate_gate.py step to deploy-production.yml before docker compose up, using gate-policy.prod.json with fail-on-violation"
+    },
+    {
+      "severity": "P0",
+      "domain": "governance",
+      "category": "enforcement",
+      "file": ".github/workflows/governance.yml",
+      "issue": "governance.yml and platform.yml workflows are broken on every push \u2014 call run_full.ps1 referencing 5 nonexistent scripts",
+      "impact": "CI noise on every push; no actual governance enforcement from these workflows",
+      "fix": "Fix or disable governance.yml and platform.yml; consolidate into working evaluate_gate.py invocations"
+    },
+    {
+      "severity": "P0",
+      "domain": "governance",
+      "category": "hotfix_controls",
+      "file": "docs/hardening_super_bundle/policies/gate-policy.hotfix.json",
+      "issue": "Hotfix policy special_requirements (executive_signoff_required, rollback_plan_required, post_release_validation_required) are not enforced by any script",
+      "impact": "Hotfix policy is functionally identical to RC \u2014 three compensating controls are documented but never checked",
+      "fix": "Implement special_requirements enforcement in evaluate_gate.py and evaluate_promotion_gate.py"
+    },
+    {
+      "severity": "P1",
+      "domain": "governance",
+      "category": "enforcement",
+      "file": ".github/workflows/audit-pr-gate.yml",
+      "issue": "audit-pr-gate.yml uses dev policy for ALL PRs \u2014 PRs targeting main should use RC or prod policy",
+      "impact": "PRs to production branch evaluated against permissive dev thresholds (max_p1=5 instead of max_p1=0)",
+      "fix": "Make audit-pr-gate.yml policy file selection aware of target branch: dev-policy for develop, rc-policy for release/*, prod-policy for main"
+    },
+    {
+      "severity": "P1",
+      "domain": "governance",
+      "category": "enforcement",
+      "file": "docs/hardening_super_bundle/policies/",
+      "issue": "Duplicate policy file sets exist (hardening_super_bundle/policies/ and docs/audits/policies/) \u2014 risk of drift",
+      "impact": "Policy changes made to one set may not be reflected in the other \u2014 inconsistent gating",
+      "fix": "Consolidate to single source of truth (recommend hardening/policies/) with symlinks or CI sync check"
+    },
+    {
+      "severity": "P1",
+      "domain": "governance",
+      "category": "branch_protection",
+      "file": ".github/workflows/validate.yml",
+      "issue": "Branch protection checks exist but only read-check and warn \u2014 no enforced required status checks on main",
+      "impact": "PRs can merge to main without passing audit gates, lint, or tests \u2014 no CI enforcement",
+      "fix": "Enforce branch protection via Terraform github_branch_protection resource or GitHub API; make audit-gate a required check"
+    },
+    {
+      "severity": "P1",
+      "domain": "governance",
+      "category": "policy_change_governance",
+      "file": "",
+      "issue": "No approval process for policy file changes \u2014 any PR can silently relax gate thresholds",
+      "impact": "Developers can bypass governance by relaxing thresholds without review",
+      "fix": "Add CODEOWNERS for hardening/policies/* and hardening/rules/* requiring senior engineer approval"
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "hotfix_controls",
+      "file": "",
+      "issue": "Hotfix gate not wired to any workflow \u2014 gate-policy.hotfix.json exists but no workflow references it",
+      "impact": "Hotfix tier is defined but unused; emergencies follow production path with no hotfix-specific controls",
+      "fix": "Create hotfix/* branch workflow with hotfix-policy; implement expedited deploy path with compensating controls"
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "enforcement",
+      "file": "docs/hardening_super_bundle/policies/gate-policy.rc.json",
+      "issue": "RC gate not wired to any workflow \u2014 gate-policy.rc.json exists but no workflow evaluates it",
+      "impact": "Release candidate tier is defined but completely unused in CI",
+      "fix": "Add RC evaluation to release branch PRs or a pre-deploy gate in the release workflow"
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "policy_change_governance",
+      "file": "",
+      "issue": "No policy versioning or schema validation \u2014 policy files are ad-hoc JSON with no schema enforcement",
+      "impact": "Invalid policy entries may be silently ignored; no backward compatibility validation",
+      "fix": "Add JSON schema for policy files; add version field; validate policy format in CI"
+    },
+    {
+      "severity": "P3",
+      "domain": "governance",
+      "category": "enforcement",
+      "file": "hardening/exceptions/exceptions.json",
+      "issue": "Exceptions.json is always empty \u2014 no historical exception tracking",
+      "impact": "Cannot audit how often policy gates were bypassed or what waivers were granted",
+      "fix": "Populate exceptions.json from PR audit gate overrides; add exception review workflow"
+    },
+    {
+      "severity": "P3",
+      "domain": "governance",
+      "category": "policy_change_governance",
+      "file": "",
+      "issue": "No policy inheritance mechanism \u2014 each tier policy file is a full copy instead of extending a base",
+      "impact": "Policy changes must be duplicated across 4 files; risk of inconsistency",
+      "fix": "Implement base-policy.json with tier-specific overrides; merge at evaluation time"
+    },
+    {
+      "id": "F-008",
+      "severity": "P2",
+      "category": "N",
+      "description": "Migration rollback scripts missing",
+      "status": "Pending",
+      "release_impact": "Low"
+    },
+    {
+      "id": "F-016",
+      "severity": "P2",
+      "category": "J",
+      "description": "BFF layer not implemented",
+      "status": "Pending",
+      "release_impact": "Medium"
+    },
+    {
+      "id": "F-023",
+      "severity": "P2",
+      "category": "K",
+      "description": "Missing tablet breakpoint in UI",
+      "status": "Pending",
+      "release_impact": "Medium"
+    },
+    {
+      "id": "F-027",
+      "severity": "P2",
+      "category": "F3",
+      "description": "Typing indicator unthrottled",
+      "status": "Pending",
+      "release_impact": "Low"
+    },
+    {
+      "id": "F-028",
+      "severity": "P2",
+      "category": "F3",
+      "description": "No sending indicator on optimistic messages",
+      "status": "Pending",
+      "release_impact": "Low"
+    },
+    {
+      "id": "F-029",
+      "severity": "P2",
+      "category": "F6",
+      "description": "Missing tablet breakpoint in chat layout",
+      "status": "Pending",
+      "release_impact": "Medium"
+    },
+    {
+      "id": "F-030",
+      "severity": "P2",
+      "category": "F7",
+      "description": "Notification dropdown overflow",
+      "status": "Pending",
+      "release_impact": "Low"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "load_test_existing",
+      "file": "tests/k6/",
+      "issue": "Existing k6 load tests only hit / and /healthz endpoints \u2014 no real API endpoints tested at all",
+      "impact": "Load tests provide no insight into actual system behavior under load \u2014 false sense of load-readiness",
+      "fix": "Replace k6 test scripts with meaningful scenarios: message send, workspace/channel listing, search, WebSocket connect"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "ci_integration",
+      "file": "",
+      "issue": "k6 is not invoked in any CI workflow \u2014 load tests exist but never run",
+      "impact": "No load regression detection in CI \u2014 performance degradation goes unnoticed until production",
+      "fix": "Add k6 smoke test (1 VU, 30s) to validate.yml; add full load test as nightly workflow"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "websocket_load",
+      "file": "",
+      "issue": "No WebSocket load test: concurrent socket connections, message send, and message delivery latency",
+      "impact": "Realtime system behavior under load completely unknown \u2014 socket fanout could become bottleneck",
+      "fix": "Build k6 WebSocket scenario: 50+ concurrent connections, each sending messages, measure p50/p95/p99 delivery latency"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "search_load",
+      "file": "",
+      "issue": "No search load test \u2014 concurrent search queries with varied terms",
+      "impact": "Full-text search performance under load unknown \u2014 could cause DB CPU spikes",
+      "fix": "Build k6 search scenario: concurrent search queries with varied terms, measure response time, verify result accuracy"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "notification_throughput",
+      "file": "",
+      "issue": "No notification fanout load test \u2014 one message triggering notifications for many members",
+      "impact": "Notification delivery latency under load unknown \u2014 push notification queue could back up",
+      "fix": "Build k6 scenario: one message triggers notification for 100 members, measure notification delivery latency"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "websocket_load",
+      "file": "",
+      "issue": "No reconnect storm load test \u2014 all sockets disconnect simultaneously",
+      "impact": "Reconnect behavior under stress unknown \u2014 server may not handle simultaneous reconnection",
+      "fix": "Build k6 scenario: 100+ concurrent sockets, disconnect all, measure reconnect time and message recovery"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "load_test_existing",
+      "file": "apps/api/src/lib/metrics.ts",
+      "issue": "18 Prometheus metrics defined but not consumed by k6 thresholds \u2014 k6 checks don't reference metrics",
+      "impact": "Cannot set metric-based pass/fail thresholds in load tests",
+      "fix": "Add metric endpoint polling to k6 test thresholds (error rate < 1%, p95 latency < 2000ms)"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "ci_integration",
+      "file": "",
+      "issue": "No capacity assumptions or success criteria documented for any load scenario",
+      "impact": "Cannot determine if load test results are acceptable \u2014 no baseline for comparison",
+      "fix": "Document expected capacity: max concurrent users, message rate, notification throughput; set k6 thresholds accordingly"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "load_test_existing",
+      "file": "package.json",
+      "issue": "k6 not declared as devDependency \u2014 requires separate CLI install",
+      "impact": "Load testing setup friction \u2014 no standard version pinned across team",
+      "fix": "Add k6 as devDependency or add Docker-based k6 runner script"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "ci_integration",
+      "file": "",
+      "issue": "No load test report artifact published in CI",
+      "impact": "Load test results not visible in PRs or dashboards \u2014 no trend tracking",
+      "fix": "Add k6 report output as CI artifact; consider Grafana k6 integration for dashboard"
+    },
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "alerting",
+      "file": "",
+      "issue": "No application-level alerting configured \u2014 no error rate, latency, auth failure, or health check alerts",
+      "impact": "Production incidents detected only when users report them \u2014 no proactive notification of system degradation",
+      "fix": "Configure Sentry alert rules for error threshold breaches and PagerDuty/Slack integration; add Prometheus alert rules"
+    },
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "uptime_monitoring",
+      "file": "",
+      "issue": "No external uptime monitoring service configured \u2014 no Pingdom, Checkly, Better Uptime, or UptimeRobot",
+      "impact": "Complete downtime is only detected when users report it or Docker HEALTHCHECK notices locally \u2014 no external view",
+      "fix": "Add free-tier uptime monitoring (UptimeRobot or Better Uptime) that checks /healthz every 5 minutes"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "alerting",
+      "file": "infra/terraform/main.tf",
+      "issue": "DigitalOcean alerts (CPU>80%, Memory>80%, Disk>90%) only go to email \u2014 no PagerDuty, Slack, or SMS integration",
+      "impact": "Critical infrastructure alerts may be missed if email notifications are not monitored promptly",
+      "fix": "Add Slack webhook or PagerDuty integration to DO monitoring alerts"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "structured_logging",
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "No automatic request logging middleware \u2014 every log line must include request context manually",
+      "impact": "Inconsistent log context; some requests produce no access log; correlation requires manual context passing",
+      "fix": "Add auto-request-logging middleware that captures method, path, status code, duration, and request ID for every request"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "tracing",
+      "file": "",
+      "issue": "No distributed tracing \u2014 only basic request IDs, no OpenTelemetry, span propagation, or trace correlation across services",
+      "impact": "Cannot trace a single user action across API -> DB -> WebSocket -> webhook; debugging complex failures requires manual log correlation",
+      "fix": "Add OpenTelemetry instrumentation for Express, database queries, and external HTTP calls"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "structured_logging",
+      "file": "",
+      "issue": "No log shipping or aggregation \u2014 logs are local Docker container stdout; no Papertrail, Logtail, Axiom, or Loki",
+      "impact": "No centralized log search; logs lost on container restart; cannot alert on log patterns",
+      "fix": "Add Docker log driver to send logs to a cloud log aggregation service; or add logagent sidecar"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "metrics",
+      "file": "apps/api/src/lib/metrics.ts",
+      "issue": "18 Prometheus metrics exposed but no remote collector, dashboard, or alert rules consume them",
+      "impact": "Metrics are generated and exposed but never visualized or alerted on \u2014 observability gap",
+      "fix": "Set up Grafana dashboard consuming API /metrics endpoint; define alert rules for error rate and latency"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "structured_logging",
+      "file": "",
+      "issue": "Frontend has no structured logging \u2014 console.log/error used ad-hoc",
+      "impact": "Client-side issues cannot be diagnosed from logs; no structured frontend telemetry",
+      "fix": "Add frontend logging library (e.g., loglevel) with remote log shipping for production errors"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "audit_logging",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit event queue is in-memory \u2014 lost on process restart; no Redis-backed persistence",
+      "impact": "Audit events during restart window are lost; compliance gap for sensitive operations",
+      "fix": "Replace in-memory queue with Redis-backed persistent queue or write directly with retry"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "health_checks",
+      "file": "apps/api/src/modules/health/routes.ts",
+      "issue": "Health checks only validate database connectivity \u2014 no check for Redis, Supabase Storage, or external service availability",
+      "impact": "Health check can pass while critical dependencies (Redis, Storage) are down",
+      "fix": "Add dependency checks for Redis (if configured), Supabase Storage connectivity, and circuit breaker states"
+    },
+    {
+      "severity": "P3",
+      "domain": "ops",
+      "category": "metrics",
+      "file": "",
+      "issue": "No business metrics dashboard \u2014 active users, messages/day, workspace growth not visualized anywhere",
+      "impact": "Business stakeholders lack visibility into platform growth and adoption",
+      "fix": "Create Grafana dashboard with business metrics: daily active users, messages/day, workspaces created, reactions"
+    },
+    {
+      "severity": "P3",
+      "domain": "ops",
+      "category": "audit_logging",
+      "file": "",
+      "issue": "No audit event for read operations (SELECT queries) \u2014 only mutation events are logged",
+      "impact": "Unauthorized read access to sensitive data leaves no audit trail",
+      "fix": "Add audit logging for read operations on sensitive data (user search, workspace member list, audit log views)"
+    },
+    {
+      "severity": "P0",
+      "domain": "release",
+      "category": "artifact_rollback",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "Production deploy runs docker system prune -af --volumes and docker image prune -af before health check succeeds",
+      "impact": "Previous SHA-tagged images (needed for rollback) are destroyed before the current deploy is verified. If deploy fails, there is nothing to roll back to.",
+      "fix": "Move docker prune steps to AFTER successful health check; or use timestamp-based pruning that preserves at least the previous release's SHA images"
+    },
+    {
+      "severity": "P0",
+      "domain": "release",
+      "category": "artifact_rollback",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "Rollback job has needs: build-images \u2014 triggers unnecessary image build before rollback can execute",
+      "impact": "Rollback delayed by 20+ minutes (unnecessary image build) while production is degraded",
+      "fix": "Change rollback job needs to [provision] only \u2014 rollback pulls existing SHA images without building new ones"
+    },
+    {
+      "severity": "P0",
+      "domain": "release",
+      "category": "post_rollback_validation",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "Production version badge build-args (NEXT_PUBLIC_APP_VERSION, NEXT_PUBLIC_GIT_SHA, NEXT_PUBLIC_BUILD_TIME) not passed",
+      "impact": "Production always shows 'v0.0.0-dev' and 'local' \u2014 operators cannot identify which version is running without inspecting GHCR tags",
+      "fix": "Add NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}-${{ github.run_number }}, NEXT_PUBLIC_GIT_SHA, NEXT_PUBLIC_BUILD_TIME build-args to web Docker build step"
+    },
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "database_rollback",
+      "file": "supabase/migrations/",
+      "issue": "No database down/rollback scripts exist for any of the 26 migrations",
+      "impact": "Forward-fix is the only path for migration issues; PITR causes data loss for the entire database",
+      "fix": "Write down scripts (.down.sql) for each migration, starting with the 5 ALTER TABLE migrations (#14, #15, #16) that add columns"
+    },
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "artifact_rollback",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "No rollback job exists for development environment \u2014 always deploys latest origin/develop",
+      "impact": "Broken develop deploy requires manual SSH intervention; no automated recovery path",
+      "fix": "Add workflow_dispatch with rollback_sha input to deploy-development.yml matching production pattern"
+    },
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "feature_flag_kill_switch",
+      "file": "apps/api/src/modules/feature-flags/",
+      "issue": "Feature flags exist in database but are not wired to any application code \u2014 5 seed flags control nothing",
+      "impact": "In an emergency, there is no kill-switch mechanism to disable features (push notifications, realtime, file upload)",
+      "fix": "Audit all feature boundaries and add featureFlagService.evaluateFlag() checks; implement global kill-switch flag"
+    },
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "post_rollback_validation",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "Post-rollback validation only checks /healthz HTTP 200 \u2014 no functional smoke tests",
+      "impact": "Rollback can pass health check while critical features (auth, messaging, realtime) are still broken",
+      "fix": "Add smoke-test step after rollback: send test message via API, verify WebSocket connect, check auth flow"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "operator_runbooks",
+      "file": "docs/runbooks/database-migrations.md",
+      "issue": "Migration rollback runbook incorrectly states PostgreSQL does not support DDL rollback",
+      "impact": "Operators may not attempt safe DDL rollback (BEGIN; ... ROLLBACK;) thinking it's impossible",
+      "fix": "Correct the runbook: PostgreSQL fully supports DDL rollback within transaction blocks"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "operator_runbooks",
+      "file": "docs/runbooks/development-deploy-overview.md",
+      "issue": "Development deploy runbook has no rollback section at all",
+      "impact": "Operators lack documented recovery steps for failed development deployments",
+      "fix": "Add rollback section to development-deploy-overview.md referencing the production rollback pattern"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "feature_flag_kill_switch",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker implemented but not wired to any feature flag or kill-switch",
+      "impact": "Circuit breaker opens silently on external dependency failure but no kill-switch mechanism exists to manually disable the failing integration",
+      "fix": "Wire circuit breaker state to feature flag evaluation so operators can manually disable failing integrations"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "artifact_rollback",
+      "file": "",
+      "issue": "No git tags or semver releases \u2014 only git SHAs identify releases",
+      "impact": "Cannot easily reference known-good states; no release notes; git describe falls back to bare SHA",
+      "fix": "Add git tag (e.g., vYYYYMMDD-runNumber) at end of deploy-production.yml; create release notes"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "operator_runbooks",
+      "file": "",
+      "issue": "Rollback readiness checklists exist in docs/ but are not referenced by any workflow or runbook",
+      "impact": "Checklists are undiscoverable during incident response",
+      "fix": "Reference rollback_readiness_checklist.md from production-deploy-overview.md and incident-response.md"
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "auth",
+      "file": "apps/api/src/routes/users.ts",
+      "issue": "No auth on users route",
+      "impact": "Full data access",
+      "fix": "Add requireAuth"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "auth",
+      "file": "apps/api/src/routes/users.ts",
+      "issue": "Users search endpoint missing requireOrgAccess",
+      "impact": "Authenticated users can search across all tenants",
+      "fix": "Add requireOrgAccess middleware to search route"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "headers",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "issue": "CSP missing frame-ancestors directive",
+      "impact": "Clickjacking risk on all pages",
+      "fix": "Add frame-ancestors 'self' to CSP header"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "validation",
+      "file": "apps/api/src/routes/auth.ts",
+      "issue": "Magic link email not normalized before send",
+      "impact": "user@Example.com and user@example.com treated differently",
+      "fix": "Lowercase email before sending magic link"
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/app.ts",
+      "issue": "/metrics endpoint is completely unauthenticated \u2014 exposes request counts, durations, WS connections, DB query durations",
+      "impact": "Anyone can access internal metrics \u2014 information disclosure of system topology, traffic patterns, and performance data",
+      "fix": "Add authenticate middleware to /metrics route or restrict to internal network",
+      "endpoint": "GET /metrics"
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/reactions/service.ts",
+      "issue": "Reaction service uses getSupabase() (anon client) \u2014 bypasses RLS entirely for all reaction CRUD",
+      "impact": "Any authenticated user can add/remove reactions on any message in any workspace \u2014 no tenant isolation",
+      "fix": "Replace getSupabase() with req.supabase (JWT client) in reactions/service.ts for all operations"
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "authentication",
+      "file": "supabase/migrations/20260625000020_auto_create_user_profile.sql",
+      "issue": "4 SECURITY DEFINER functions missing SET search_path \u2014 search_path injection vulnerability",
+      "impact": "User with CREATE privilege can create malicious objects that hijack these functions' elevated privileges",
+      "fix": "Add SET search_path = 'public' to all SECURITY DEFINER function definitions"
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "authentication",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Message search uses getSupabase() (anon client) \u2014 auth.uid() is NULL in SECURITY INVOKER search function",
+      "impact": "Search function cannot verify user membership \u2014 cross-tenant data leakage or no results returned",
+      "fix": "Replace getSupabase() with req.supabase on messages/routes.ts line 38"
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "issue": "Webhook HMAC signature uses JSON.stringify with non-deterministic property ordering",
+      "impact": "Receivers cannot verify the HMAC signature as JSON.stringify property order is not guaranteed",
+      "fix": "Use a deterministic serialization method (e.g., object key sorting) before HMAC computation"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authentication",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "CI/CD secrets written to disk via inline echo commands \u2014 GitHub Actions masking can fail",
+      "impact": "If shell fails in specific ways, secrets (origin TLS cert, private key, etc.) could appear in logs",
+      "fix": "Use GitHub Actions environment file ($GITHUB_ENV) or secret files instead of echo; or use docker secret injection"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "issue": "Workspace member management (add/remove/update role) lacks admin/owner role check \u2014 any member can manage members",
+      "impact": "Any workspace member can add, remove, or change roles of other members \u2014 privilege escalation",
+      "fix": "Add admin/owner role check in POST/PATCH/DELETE workspace member routes"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "secret_handling",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "issue": "Webhook secret stored in plaintext in database and returned in API responses to all workspace members",
+      "impact": "Workspace members can read webhook secrets \u2014 if a webhook is used for CI/CD triggers, full CI pipeline access",
+      "fix": "Encrypt webhook secret at rest (pgcrypto); mask secret in API responses"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "defense_in_depth",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "Socket.io has allowEIO3: true enabling Engine.IO v3 legacy protocol",
+      "impact": "Expanded attack surface \u2014 Engine.IO v3 has known vulnerabilities and fewer security features",
+      "fix": "Set allowEIO3: false unless backward compatibility is required"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authentication",
+      "file": "apps/web/components/auth/auth-context.tsx",
+      "issue": "Auth redirect URL uses window.location.origin without validation or allowlist",
+      "impact": "Open redirect vulnerability \u2014 attacker could craft a login URL that redirects to a malicious site after auth",
+      "fix": "Validate redirectTo against an allowlist of known origins before using"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/lib/membership.ts",
+      "issue": "isWorkspaceMember helper uses getSupabase() (anon client) without user JWT context",
+      "impact": "Membership check bypasses RLS \u2014 could return incorrect results or be bypassed",
+      "fix": "Pass per-request Supabase client to isWorkspaceMember instead of using global anon client"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "logging",
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "issue": "User email logged in workspace list operations \u2014 PII exposure in logs",
+      "impact": "User email addresses exposed in structured logs \u2014 potential PII breach in log aggregation",
+      "fix": "Remove userEmail from log metadata; log only userId where needed"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "defense_in_depth",
+      "file": "apps/api/src/middleware/rate-limit.ts",
+      "issue": "Auth and search rate limiters key by IP only \u2014 not user+IP composite",
+      "impact": "Multiple users behind same NAT share rate limit bucket; single attacker with rotating IPs bypasses limits",
+      "fix": "Use composite key {userId + ip} when user is authenticated, fall back to IP only for unauthenticated"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "defense_in_depth",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "issue": "CSP includes 'unsafe-inline' for styles and allows cdn.jsdelivr.net for scripts",
+      "impact": "Inline styles enable CSS-based data exfiltration; jsdelivr CDN allows any script from that domain",
+      "fix": "Use nonce-based CSP for inline styles; restrict CDN allowlist to specific known script paths"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "defense_in_depth",
+      "file": "apps/api/src/middleware/csrf.ts",
+      "issue": "CSRF cookie has httpOnly: false (by design for SPA) \u2014 any XSS can exfiltrate the token",
+      "impact": "If XSS is present, CSRF protection is completely bypassed",
+      "fix": "Consider additional CSRF measures like origin/referer header checking alongside double-submit cookie"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "defense_in_depth",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "No Socket.io rate limiting \u2014 channel:join, typing:start/stop events not rate-limited",
+      "impact": "Malicious client can flood server with socket events, impacting all users",
+      "fix": "Add per-socket rate limiting for chat events (e.g., max 10 typing events per 5 seconds)"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "Avatar upload and retrieval routes use getSupabase() (anon client) \u2014 storage RLS bypassed",
+      "impact": "Storage operations may not have proper RLS context \u2014 potential unauthorized access",
+      "fix": "Use getSupabaseAdmin() for avatar upload, req.supabase for avatar retrieval"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/lib/feature-flags.ts",
+      "issue": "Feature flag service uses getSupabaseAdmin() for all operations including reads",
+      "impact": "Regular users cannot be prevented from accessing feature flags at DB level \u2014 overprivileged reads",
+      "fix": "Use req.supabase for reads, getSupabaseAdmin() only for writes"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "compliance",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR delete does not clean up audit_logs or consent_logs for the deleted user",
+      "impact": "User's audit trail and consent records remain after GDPR deletion request \u2014 compliance gap",
+      "fix": "Add cascade or explicit deletion of audit_logs and consent_logs in the GDPR delete endpoint"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "compliance",
+      "file": ".github/workflows/validate.yml",
+      "issue": "Trivy vulnerability scanner uses @master tag \u2014 mutable reference",
+      "impact": "Supply chain risk \u2014 unpinned action version could introduce breaking changes or malicious code",
+      "fix": "Pin trivy-action to a specific SHA or semver tag"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "defense_in_depth",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "issue": "CSP lacks nonce-based protection for inline scripts",
+      "impact": "Any injected <script> tag executes in older browsers without CSP enforcement",
+      "fix": "Implement nonce-based CSP for inline script tags"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "defense_in_depth",
+      "file": "apps/api/Dockerfile",
+      "issue": "wget installed in production Docker image \u2014 unnecessary package increases attack surface",
+      "impact": "Extra package in runtime image could be used as attack vector",
+      "fix": "Remove wget from production Dockerfile; use curl or built-in health check mechanism"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "logging",
+      "file": "apps/web/components/auth/callback/page.tsx",
+      "issue": "console.error in auth callback exposes errors client-side in browser console",
+      "impact": "Auth errors visible to end users in browser dev tools",
+      "fix": "Replace console.error with silent logging or Sentry capture"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "defense_in_depth",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "No webhook event type allowlist \u2014 any event string accepted",
+      "impact": "Invalid or unexpected event types could trigger webhooks unnecessarily",
+      "fix": "Add Zod enum validation for supported event types"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "compliance",
+      "file": ".github/workflows/validate.yml",
+      "issue": "pnpm audit threshold set to moderate \u2014 high/critical advisories below threshold won't block CI",
+      "impact": "High-severity dependency vulnerabilities may not block deployment",
+      "fix": "Raise pnpm audit threshold to high to at minimum block high-severity issues"
+    },
+    {
+      "id": "F-001",
+      "severity": "P1",
+      "category": "Category A",
+      "description": "Script drift",
+      "status": "Fixed",
+      "release_impact": "High"
+    },
+    {
+      "id": "F-002",
+      "severity": "P2",
+      "category": "Category O",
+      "description": "Docs drift",
+      "status": "Fixed",
+      "release_impact": "Medium"
+    },
+    {
+      "id": "F-003",
+      "severity": "P1",
+      "category": "Category C",
+      "description": "Contract mismatch",
+      "status": "Partially Fixed",
+      "release_impact": "High"
+    },
+    {
+      "id": "F-004",
+      "severity": "P3",
+      "category": "Category P",
+      "description": "Cleanup item",
+      "status": "Accepted Risk",
+      "release_impact": "Low"
+    },
+    {
+      "id": "F-005",
+      "severity": "P0",
+      "category": "Category J",
+      "description": "Mobile responsive failure",
+      "status": "Unresolved",
+      "release_impact": "Blocking"
+    },
+    {
+      "id": "F-006",
+      "severity": "P1",
+      "category": "Category H",
+      "description": "Visual inconsistency",
+      "status": "Partially Fixed",
+      "release_impact": "High"
+    },
+    {
+      "id": "F-007",
+      "severity": "P1",
+      "category": "F5 Accessibility",
+      "description": "Missing focus states",
+      "status": "Partially Fixed",
+      "release_impact": "High"
+    },
+    {
+      "id": "F-008",
+      "severity": "P2",
+      "category": "F9 Visual Consistency",
+      "description": "Minor spacing drift",
+      "status": "Fixed",
+      "release_impact": "Medium"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "tooling",
+      "file": "",
+      "issue": "No visual regression testing tooling of any kind installed \u2014 no Percy, Chromatic, Playwright snapshots, or Applitools",
+      "impact": "UI regressions reach production undetected \u2014 every deploy risks visual breakage with zero automated detection",
+      "fix": "Install Playwright's built-in visual comparison (await expect(page).toHaveScreenshot()) \u2014 no extra dependencies needed"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "core_screens",
+      "file": "apps/web/app/",
+      "issue": "No screenshot baselines for any of the 4 critical screens: login form, workspace main view, channel view, settings page",
+      "impact": "Visual regression on the most-visited screens goes undetected",
+      "fix": "Add Playwright visual snapshot tests for login form (desktop + mobile), workspace with sidebar + channel list, and message area"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "dark_mode",
+      "file": "",
+      "issue": "No dark mode visual regression coverage \u2014 contrast issues in dark theme go undetected",
+      "impact": "Dark mode UI can degrade without detection \u2014 poor user experience for dark mode users",
+      "fix": "Add dark mode snapshots for all critical screens by toggling class='dark' on html element before screenshot"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "responsive",
+      "file": "",
+      "issue": "No mobile/tablet viewport snapshots \u2014 responsive layout regressions undetected",
+      "impact": "Mobile users may see broken layouts without automated detection",
+      "fix": "Add Playwright snapshot tests at 375px (mobile) and 768px (tablet) viewport widths for critical screens"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "ci_integration",
+      "file": "",
+      "issue": "No visual diff CI job \u2014 screenshot comparison not part of any workflow",
+      "impact": "Visual regression tests exist (if created) but never execute in CI",
+      "fix": "Add visual-diff step to E2E CI job with configurable sensitivity threshold (0.1% pixel difference)"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "core_screens",
+      "file": "",
+      "issue": "No snapshot coverage for empty/loading/error states across any component or page",
+      "impact": "Edge case UI regressions (empty state, error display, loading skeleton) go undetected",
+      "fix": "Add snapshot tests for: empty workspace list, empty channel list, empty message area, loading skeleton states, 404 page, error display"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "core_screens",
+      "file": "",
+      "issue": "No snapshot coverage for notification dropdown, thread panel, or file upload preview",
+      "impact": "Secondary UI surface regressions undetected",
+      "fix": "Add snapshot tests for notification dropdown (populated + empty), thread panel with replies, file upload preview"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "tooling",
+      "file": "",
+      "issue": "No Storybook installation \u2014 no component development environment for visual testing",
+      "impact": "Component-level visual testing requires full page renders; no isolated component snapshot capability",
+      "fix": "Consider adding Storybook for component-level visual regression with Chromatic"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "ci_integration",
+      "file": "",
+      "issue": "No screenshot baseline update mechanism documented",
+      "impact": "Intentional UI changes require manual baseline replacement \u2014 no workflow to approve new baselines",
+      "fix": "Document baseline update process: CI generates diff report, reviewer approves, new baseline committed"
+    }
+  ]
 }
