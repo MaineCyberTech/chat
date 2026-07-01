@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { Dialog, Button, Input } from "@chat/ui";
+import { Dialog, Button, Input, useToast } from "@chat/ui";
 
 interface Props {
   onCreated?: () => void;
@@ -16,6 +16,7 @@ export function CreateWorkspaceDialog({ onCreated, children }: Props) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { addToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,14 +30,17 @@ export function CreateWorkspaceDialog({ onCreated, children }: Props) {
       });
       setName("");
       setOpen(false);
+      addToast({
+        title: "Workspace created",
+        description: `${name.trim()} is ready.`,
+        variant: "success",
+      });
       if (onCreated) {
         onCreated();
       } else if (res.workspace?.slug) {
         router.push(`/${res.workspace.slug}`);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create workspace");
-    } finally {
+    } catch {
       setLoading(false);
     }
   }

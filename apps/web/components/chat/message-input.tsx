@@ -22,6 +22,8 @@ interface Member {
 }
 
 const DRAFT_KEY_PREFIX = "chat-draft:";
+const DRAFT_SAVE_DEBOUNCE_MS = 500;
+const TYPING_THROTTLE_MS = 2000;
 
 export function MessageInput({
   channelId,
@@ -41,6 +43,7 @@ export function MessageInput({
   const [loadedDraft, setLoadedDraft] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
+  const lastTypingEmitRef = useRef(0);
 
   // Load draft on mount
   useEffect(() => {
@@ -61,7 +64,7 @@ export function MessageInput({
       } else {
         localStorage.removeItem(`${DRAFT_KEY_PREFIX}${channelId}`);
       }
-    }, 500);
+    }, DRAFT_SAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [content, channelId, loadedDraft]);
 
@@ -71,7 +74,7 @@ export function MessageInput({
     api
       .get<{ members: Member[] }>(`/v1/workspaces/${workspaceId}/members`)
       .then((res) => setMembers(res.members))
-      .catch((err) => console.error("Failed to fetch members:", err));
+      .catch(() => {});
   }, [workspaceId]);
 
   const filteredMembers = useMemo(() => {
@@ -123,8 +126,15 @@ export function MessageInput({
       const cursorPos = e.target.selectionStart;
       setContent(value);
 
-      if (value.trim() && onTypingStart) onTypingStart();
-      else if (!value.trim() && onTypingStop) onTypingStop();
+      if (value.trim() && onTypingStart) {
+        const now = Date.now();
+        if (now - lastTypingEmitRef.current > TYPING_THROTTLE_MS) {
+          lastTypingEmitRef.current = now;
+          onTypingStart();
+        }
+      } else if (!value.trim() && onTypingStop) {
+        onTypingStop();
+      }
 
       // Check for @mention
       const mention = getMentionAtCursor(value, cursorPos);
@@ -220,7 +230,7 @@ export function MessageInput({
               key={`${file.name}-${index}`}
               className="flex items-center gap-1 rounded bg-[var(--color-background-tertiary)] px-2 py-0.5 text-xs text-[var(--color-foreground-secondary)]"
             >
-              {file.type.startsWith("image/") ? "🖼" : "📎"}
+              {file.type.startsWith("image/") ? "ðŸ–¼" : "ðŸ“Ž"}
               {file.name}
               <button
                 type="button"
@@ -228,7 +238,7 @@ export function MessageInput({
                 className="ml-1 p-0.5 text-[var(--color-foreground-tertiary)] hover:text-[var(--color-status-danger-fg)]"
                 aria-label={`Remove ${file.name}`}
               >
-                ✕
+                âœ•
               </button>
             </span>
           ))}
@@ -247,7 +257,7 @@ export function MessageInput({
           className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
           aria-label="Attach file"
         >
-          📎
+          ðŸ“Ž
         </label>
         <div className="relative min-w-0 flex-1">
           <textarea
@@ -296,7 +306,7 @@ export function MessageInput({
             onClick={handleSubmit}
             disabled={sending || (!content.trim() && files.length === 0)}
           >
-            ➤
+            âž¤
           </Button>
         </div>
       </div>

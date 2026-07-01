@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { api } from "@/lib/api";
-import { Dialog, Button, Input } from "@chat/ui";
+import { Dialog, Button, Input, useToast } from "@chat/ui";
 
 interface Props {
   workspaceId: string;
@@ -15,6 +15,7 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
   const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { addToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,10 +31,13 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
       setName("");
       setTopic("");
       setOpen(false);
+      addToast({
+        title: "Channel created",
+        description: `#${name.trim()} has been created.`,
+        variant: "success",
+      });
       onCreated();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create channel");
-    } finally {
+    } catch {
       setLoading(false);
     }
   }

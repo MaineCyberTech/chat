@@ -23,7 +23,7 @@ function ConnectionBanner() {
         s.on("reconnect_attempt", () => setStatus("reconnecting"));
         s.io.on("reconnect_error", () => setStatus("disconnected"));
       })
-      .catch((err) => console.error("Socket events setup failed:", err));
+      .catch(() => {});
 
     return () => {
       getSocket()
@@ -33,7 +33,7 @@ function ConnectionBanner() {
           s.off("reconnect_attempt");
           s.io.off("reconnect_error");
         })
-        .catch((err) => console.error("Socket cleanup failed:", err));
+        .catch(() => {});
     };
   }, []);
 
@@ -96,8 +96,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         res.profiles.forEach((p) => next.set(p.id, p));
         return next;
       });
-    } catch (err) {
-      console.error("Failed to fetch profiles:", err);
+    } catch {
+      /* ignore */
     }
   }, []);
 
@@ -110,9 +110,9 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         setMessages(res.messages);
         loadProfiles(res.messages);
       })
-      .catch((err) => {
+      .catch(() => {
         setError("Failed to load messages. Please try again.");
-        console.error("Failed to load messages:", err);
+
         setMessages([]);
       })
       .finally(() => setLoading(false));
@@ -163,7 +163,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
     getSocket()
       .then(setup)
-      .catch((err) => console.error("Socket setup failed:", err));
+      .catch(() => {});
 
     return () => {
       offReconnect(() => {});
@@ -241,7 +241,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         await fetch(res.uploadUrl, { method: "PUT", body: file });
         const displayName = file.type.startsWith("image/")
           ? `![${file.name}](${res.publicUrl})`
-          : `📎 [${file.name}](${res.publicUrl})`;
+          : `ðŸ“Ž [${file.name}](${res.publicUrl})`;
         await api.post(`/channels/${channelId}/messages`, { content: displayName });
         addToast({ title: "File uploaded", variant: "success", duration: 3000 });
       } catch {
@@ -261,7 +261,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     }
     getSocket()
       .then((s) => s.emit("typing:start", channelId))
-      .catch((err) => console.error("Failed to emit typing:start:", err));
+      .catch(() => {});
 
     typingTimeoutRef.current = setTimeout(() => {
       handleTypingStop();
@@ -275,7 +275,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     }
     getSocket()
       .then((s) => s.emit("typing:stop", channelId))
-      .catch((err) => console.error("Failed to emit typing:stop:", err));
+      .catch(() => {});
   }, [channelId]);
 
   // Cleanup typing timeout on unmount
@@ -396,7 +396,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               className="shrink-0 rounded p-1 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
               aria-label="Cancel reply"
             >
-              ✕
+              âœ•
             </button>
           </div>
         )}
@@ -433,7 +433,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
                   className="rounded p-1 text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)]"
                   aria-label="Close thread"
                 >
-                  ← Back
+                  â† Back
                 </button>
                 <h2 className="text-sm font-semibold text-[var(--color-foreground-primary)]">
                   Thread

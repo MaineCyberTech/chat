@@ -24,8 +24,8 @@ export function NotificationBell() {
     try {
       const res = await api.get<{ unread: number }>("/notifications/unread");
       setUnread(res.unread);
-    } catch (err) {
-      console.error("Failed to fetch unread count:", err);
+    } catch {
+      /* ignore */
     }
   }, []);
 
@@ -36,8 +36,8 @@ export function NotificationBell() {
       );
       setNotifications(res.notifications);
       setUnread(res.unread);
-    } catch (err) {
-      console.error("Failed to fetch notifications:", err);
+    } catch {
+      /* ignore */
     }
   }, []);
 
@@ -108,7 +108,7 @@ export function NotificationBell() {
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        🔔
+        ðŸ””
         {unread > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-status-danger-bg)] px-1 text-[10px] font-bold text-[var(--color-status-danger-fg)]">
             {unread > 99 ? "99+" : unread}
@@ -120,7 +120,7 @@ export function NotificationBell() {
           ref={menuRef}
           role="menu"
           onKeyDown={handleKeyDown}
-          className="absolute top-full right-0 z-50 mt-1 w-80 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] shadow-[var(--shadow-xl)]"
+          className="absolute top-full right-0 z-50 mt-1 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] shadow-[var(--shadow-xl)]"
         >
           <div className="border-b border-[var(--color-border-primary)] px-4 py-2">
             <p className="text-sm font-semibold text-[var(--color-foreground-primary)]">

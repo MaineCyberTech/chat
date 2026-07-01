@@ -57,8 +57,7 @@ function AuthCallbackContent() {
       }
     }
 
-    handleAuth().catch((err) => {
-      console.error("Auth callback error:", err);
+    handleAuth().catch(() => {
       setError("An unexpected error occurred.");
     });
   }, [router, searchParams]);

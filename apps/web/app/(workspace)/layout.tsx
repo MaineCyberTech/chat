@@ -28,9 +28,8 @@ function WorkspaceBreadcrumbs({
       const res = await api.get<{ workspaces: Workspace[] }>("/workspaces");
       const ws = res.workspaces.find((w) => w.slug === slug);
       setWorkspace(ws ?? null);
-    } catch (err) {
-      console.error("Failed to fetch workspace:", err);
-      setWorkspace(null);
+    } catch {
+      /* ignore */
     } finally {
       setLoading(false);
     }
@@ -42,9 +41,8 @@ function WorkspaceBreadcrumbs({
       const res = await api.get<{ channels: Channel[] }>(`/workspaces/${wsId}/channels`);
       const ch = res.channels.find((c) => c.id === chId);
       setChannel(ch ?? null);
-    } catch (err) {
-      console.error("Failed to fetch channel:", err);
-      setChannel(null);
+    } catch {
+      /* ignore */
     }
   }, []);
 
@@ -149,7 +147,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             aria-expanded={sidebarOpen}
             aria-controls="sidebar"
           >
-            ☰
+            â˜°
           </button>
         </div>
         <ErrorBoundary>{children}</ErrorBoundary>

@@ -29,8 +29,8 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
         "/notifications/push-subscriptions",
       );
       setIsSubscribed(res.subscriptions.length > 0);
-    } catch (err) {
-      console.error("Failed to check subscription:", err);
+    } catch {
+      /* ignore */
     }
   }
 
@@ -67,8 +67,8 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
       await pushClient.unsubscribe();
       setIsSubscribed(false);
       onClose();
-    } catch (err) {
-      console.error("Failed to disable notifications:", err);
+    } catch {
+      /* ignore */
     } finally {
       setIsSubscribing(false);
     }
