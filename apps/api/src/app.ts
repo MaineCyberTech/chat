@@ -9,12 +9,14 @@ import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { requestId } from "./middleware/request-id.js";
+import { deprecationMiddleware } from "./middleware/deprecation.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { apiLimiter } from "./middleware/rate-limit.js";
 import { securityHeaders } from "./middleware/security-headers.js";
 import { doubleSubmitCookieCsrf } from "./middleware/csrf.js";
 import { register, httpRequestsTotal, httpRequestDuration } from "./lib/metrics.js";
 import { sentryErrorMiddleware } from "./lib/sentry.js";
+import { authenticate } from "./middleware/authenticate.js";
 import healthRoutes from "./modules/health/routes.js";
 import authRoutes from "./modules/auth/routes.js";
 import workspaceRoutes from "./modules/workspaces/routes.js";
@@ -25,6 +27,7 @@ import notificationRoutes from "./modules/notifications/routes.js";
 import preferencesRoutes from "./modules/preferences/routes.js";
 import reactionRoutes from "./modules/reactions/routes.js";
 import featureFlagRoutes from "./modules/feature-flags/routes.js";
+import consentRoutes from "./modules/consent/routes.js";
 
 function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = process.hrtime.bigint();
@@ -69,6 +72,7 @@ export function createApp(frontendUrl: string): Express {
   app.use(requestId);
   app.use(apiLimiter);
   app.use(metricsMiddleware);
+  app.use(deprecationMiddleware);
 
   app.use(healthRoutes);
   app.use("/v1/auth", authRoutes);
@@ -80,12 +84,13 @@ export function createApp(frontendUrl: string): Express {
   app.use("/v1/auth", preferencesRoutes);
   app.use("/v1", reactionRoutes);
   app.use("/v1", featureFlagRoutes);
+  app.use("/v1", consentRoutes);
 
   app.get("/", (_req, res) => {
     res.json({ name: "chat-api", status: "running" });
   });
 
-  app.get("/metrics", async (_req: Request, res: Response) => {
+  app.get("/metrics", authenticate, async (_req: Request, res: Response) => {
     res.set("Content-Type", register.contentType);
     res.send(await register.metrics());
   });

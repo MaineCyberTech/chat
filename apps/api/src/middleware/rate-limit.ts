@@ -16,13 +16,18 @@ export const apiLimiter = rateLimit({
   },
 });
 
+function compositeKey(req: { ip?: string; userId?: string }): string {
+  const ip = req.ip ?? "unknown";
+  return req.userId ? `${req.userId}:${ip}` : ip;
+}
+
 export const authLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: "RATE_LIMITED", message: "Too many auth attempts" } },
-  keyGenerator: (req) => req.ip ?? "unknown",
+  keyGenerator: compositeKey,
 });
 
 export const searchLimiter = rateLimit({
@@ -31,5 +36,5 @@ export const searchLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: "RATE_LIMITED", message: "Too many search requests" } },
-  keyGenerator: (req) => req.ip ?? "unknown",
+  keyGenerator: compositeKey,
 });

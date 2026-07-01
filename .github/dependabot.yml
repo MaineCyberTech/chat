@@ -4,22 +4,15 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
     open-pull-requests-limit: 10
     groups:
-      dev-dependencies:
-        patterns:
-          - "@types/*"
-          - "eslint*"
-          - "prettier"
-          - "typescript"
-          - "vitest*"
-          - "turbo"
-      sentry:
-        patterns:
-          - "@sentry/*"
+      minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
+    open-pull-requests-limit: 5

@@ -68,6 +68,19 @@ export function csrfMiddleware(req: CSRFRequest, res: Response, next: NextFuncti
 }
 
 export function doubleSubmitCookieCsrf(req: CSRFRequest, res: Response, next: NextFunction) {
+  // Origin/referer check as defense-in-depth
+  const origin = req.headers["origin"];
+  const referer = req.headers["referer"];
+  const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:3000";
+  if (req.method !== "GET" && req.method !== "HEAD" && req.method !== "OPTIONS") {
+    const source = origin || referer || "";
+    if (source && !source.startsWith(frontendUrl.replace(/\/$/, ""))) {
+      return res.status(403).json({
+        error: { code: "CSRF_INVALID", message: "Cross-origin request rejected" },
+      });
+    }
+  }
+
   if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
     const token = generateToken();
     res.cookie(CSRF_COOKIE_NAME, token, {
