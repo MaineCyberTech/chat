@@ -51,8 +51,9 @@ export class ChannelService {
 
     // Handle duplicate slugs
     let attempt = 0;
+    const MAX_ATTEMPTS = 100;
     let slug = baseSlug;
-    while (true) {
+    while (attempt < MAX_ATTEMPTS) {
       const { data, error } = await client
         .from("channels")
         .insert({
@@ -103,6 +104,8 @@ export class ChannelService {
       });
       return null;
     }
+    logger.error("Channel slug dedup exhausted", { slug: baseSlug, attempts: MAX_ATTEMPTS });
+    return null;
   }
 
   async update(channelId: string, input: UpdateChannelInput): Promise<Channel | null> {

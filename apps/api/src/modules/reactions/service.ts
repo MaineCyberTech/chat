@@ -1,4 +1,4 @@
-import { getSupabase } from "../../lib/supabase.js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface Reaction {
   id: string;
@@ -9,15 +9,16 @@ interface Reaction {
 }
 
 export class ReactionService {
-  async getByMessage(messageId: string): Promise<Reaction[]> {
-    const supabase = getSupabase();
+  async getByMessage(messageId: string, supabase: SupabaseClient): Promise<Reaction[]> {
     const { data } = await supabase.from("reactions").select("*").eq("message_id", messageId);
     return (data ?? []) as Reaction[];
   }
 
-  async getByMessages(messageIds: string[]): Promise<Record<string, Reaction[]>> {
+  async getByMessages(
+    messageIds: string[],
+    supabase: SupabaseClient,
+  ): Promise<Record<string, Reaction[]>> {
     if (messageIds.length === 0) return {};
-    const supabase = getSupabase();
     const { data } = await supabase.from("reactions").select("*").in("message_id", messageIds);
     const rows = (data ?? []) as Reaction[];
     const map: Record<string, Reaction[]> = {};
@@ -28,8 +29,12 @@ export class ReactionService {
     return map;
   }
 
-  async add(messageId: string, userId: string, emoji: string): Promise<Reaction | null> {
-    const supabase = getSupabase();
+  async add(
+    messageId: string,
+    userId: string,
+    emoji: string,
+    supabase: SupabaseClient,
+  ): Promise<Reaction | null> {
     const { data, error } = await supabase
       .from("reactions")
       .upsert(
@@ -42,8 +47,12 @@ export class ReactionService {
     return data as Reaction;
   }
 
-  async remove(messageId: string, userId: string, emoji: string): Promise<boolean> {
-    const supabase = getSupabase();
+  async remove(
+    messageId: string,
+    userId: string,
+    emoji: string,
+    supabase: SupabaseClient,
+  ): Promise<boolean> {
     const { error } = await supabase
       .from("reactions")
       .delete()

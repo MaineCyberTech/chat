@@ -138,7 +138,7 @@ describe("WorkspaceService", () => {
   it("lists workspace members", async () => {
     const members = await service.getMembers("ws-1");
     expect(members).toHaveLength(1);
-    expect(members[0].email).toBe("owner@test.com");
+    expect(members[0].display_name).toBe("Owner");
   });
 
   it("adds a member", async () => {

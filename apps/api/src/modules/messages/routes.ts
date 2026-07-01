@@ -35,8 +35,11 @@ router.get("/messages/search", async (req, res) => {
     return;
   }
 
-  const supabase = getSupabase();
-  const { data, error } = await supabase.rpc("search_messages", {
+  if (!req.supabase) {
+    res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
+    return;
+  }
+  const { data, error } = await req.supabase.rpc("search_messages", {
     workspace_id: parsed.data.workspace_id,
     query_text: parsed.data.q,
     result_limit: 20,

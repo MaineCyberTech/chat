@@ -1,4 +1,10 @@
-import { Router, type Router as RouterType } from "express";
+import {
+  Router,
+  type Request,
+  type Response,
+  type NextFunction,
+  type Router as RouterType,
+} from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
@@ -129,10 +135,20 @@ router.get(
   },
 );
 
+function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const role = (req as Record<string, unknown>).workspaceRole as string | undefined;
+  if (role !== "owner" && role !== "admin") {
+    res.status(403).json({ error: { code: "FORBIDDEN", message: "Admin role required" } });
+    return;
+  }
+  next();
+}
+
 router.post(
   "/:id/members",
   validateUuidParam("id"),
   requireWorkspaceMembership("id"),
+  requireAdmin,
   async (req, res) => {
     const parsed = addWorkspaceMemberSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -170,6 +186,7 @@ router.patch(
   validateUuidParam("id"),
   validateUuidParam("userId"),
   requireWorkspaceMembership("id"),
+  requireAdmin,
   async (req, res) => {
     const parsed = updateWorkspaceMemberSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -207,6 +224,7 @@ router.delete(
   validateUuidParam("id"),
   validateUuidParam("userId"),
   requireWorkspaceMembership("id"),
+  requireAdmin,
   async (req, res) => {
     const success = await workspaceService.removeMember(
       req.params.id as string,

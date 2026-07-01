@@ -33,7 +33,7 @@ BEGIN
   VALUES (NEW.id, NEW.created_by);
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
 DROP TRIGGER IF EXISTS on_channel_created ON public.channels;
 CREATE TRIGGER on_channel_created

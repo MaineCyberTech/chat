@@ -1,4 +1,10 @@
-import { Router, type Router as RouterType } from "express";
+import {
+  Router,
+  type Request,
+  type Response,
+  type NextFunction,
+  type Router as RouterType,
+} from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
@@ -6,6 +12,7 @@ import { webhookService } from "./service.js";
 import { validateWebhookUrl } from "./service.js";
 import { logAuditEvent } from "../../services/audit.js";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -26,16 +33,46 @@ const updateWebhookSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-router.get("/webhooks", requireWorkspaceMembership("workspace_id"), async (req, res) => {
-  const { workspace_id } = req.query;
-  if (!workspace_id || typeof workspace_id !== "string") {
+function requireWorkspaceQueryParam(req: Request, res: Response, next: NextFunction) {
+  const workspaceId = req.query.workspace_id as string | undefined;
+  if (!workspaceId) {
     res
       .status(400)
       .json({ error: { code: "INVALID_INPUT", message: "workspace_id query param required" } });
     return;
   }
+  const extReq = req as unknown as { supabase?: SupabaseClient; userId?: string };
+  const supabase = extReq.supabase;
+  if (!supabase) {
+    res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
+    return;
+  }
+  supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", extReq.userId ?? "")
+    .single()
+    .then(({ data, error }: { data: { role: string } | null; error: unknown }) => {
+      if (error || !data) {
+        res
+          .status(403)
+          .json({ error: { code: "FORBIDDEN", message: "Not a member of this workspace" } });
+        return;
+      }
+      next();
+    });
+}
+
+router.get("/webhooks", requireWorkspaceQueryParam, async (req, res) => {
+  const workspace_id = req.query.workspace_id as string;
   const webhooks = await webhookService.listByWorkspace(workspace_id);
-  res.json({ webhooks });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const masked = webhooks.map((w: any) => ({
+    ...w,
+    secret: w.secret ? `${w.secret.slice(0, 4)}...${w.secret.slice(-4)}` : "",
+  }));
+  res.json({ webhooks: masked });
 });
 
 router.get(
@@ -48,7 +85,12 @@ router.get(
       res.status(404).json({ error: { code: "NOT_FOUND", message: "Webhook not found" } });
       return;
     }
-    res.json({ webhook });
+    // Mask secret in response
+    const masked = {
+      ...webhook,
+      secret: webhook.secret ? `${webhook.secret.slice(0, 4)}...${webhook.secret.slice(-4)}` : "",
+    };
+    res.json({ webhook: masked });
   },
 );
 
@@ -73,7 +115,11 @@ router.post("/webhooks", requireWorkspaceMembership("workspace_id"), async (req,
     res.status(500).json({ error: { code: "CREATE_FAILED", message: "Could not create webhook" } });
     return;
   }
-  res.status(201).json({ webhook });
+  const masked = {
+    ...webhook,
+    secret: webhook.secret ? `${webhook.secret.slice(0, 4)}...${webhook.secret.slice(-4)}` : "",
+  };
+  res.status(201).json({ webhook: masked });
   logAuditEvent({
     actorUserId: req.userId,
     action: "webhook.create",

@@ -35,7 +35,7 @@ EXCEPTION
     RAISE NOTICE 'handle_new_workspace failed: %', SQLERRM;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
 
 DROP TRIGGER IF EXISTS on_workspace_created ON public.workspaces;
 CREATE TRIGGER on_workspace_created

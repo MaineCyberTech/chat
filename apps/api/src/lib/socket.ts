@@ -28,7 +28,7 @@ export function initSocket(
     pingInterval: 25000, // Send ping every 25s
     pingTimeout: 20000, // Wait 20s for pong before considering dead
     maxHttpBufferSize: 1e6, // 1MB max message size
-    allowEIO3: true, // Support older clients
+    allowEIO3: false, // Only support EIO4 for security
   });
 
   // Initialize Redis adapter if URL provided (for multi-instance deployments)
@@ -87,9 +87,30 @@ export function initSocket(
     logger.info("Socket connected", { userId });
     incrementWebsocketConnections(1);
 
-    socket.on("channel:join", (channelId: string) => {
-      socket.join(`channel:${channelId}`);
-      logger.debug("Socket joined channel", { userId, channelId });
+    socket.on("channel:join", async (channelId: string) => {
+      try {
+        const { getSupabase } = await import("./supabase.js");
+        const supabase = getSupabase();
+        const { data: channel, error } = await supabase
+          .from("channels")
+          .select("workspace_id")
+          .eq("id", channelId)
+          .single();
+        if (error || !channel) return;
+
+        const { data: member } = await supabase
+          .from("workspace_members")
+          .select("user_id")
+          .eq("workspace_id", channel.workspace_id)
+          .eq("user_id", userId)
+          .single();
+        if (!member) return;
+
+        socket.join(`channel:${channelId}`);
+        logger.debug("Socket joined channel", { userId, channelId });
+      } catch {
+        logger.warn("Socket channel:join failed", { userId, channelId });
+      }
     });
 
     socket.on("channel:leave", (channelId: string) => {

@@ -1,0 +1,53 @@
+{
+  "stage": "quality_confirmation",
+  "prompt_name": "release_gate",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T19:21:21Z",
+  "severity_counts": {
+    "P0": 105,
+    "P1": 192,
+    "P2": 199,
+    "P3": 124
+  },
+  "category_scores": {},
+  "readiness": 44.06,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "release_gate",
+      "category": "p0_check",
+      "file": "docs/audits/latest_run.json",
+      "issue": "P0 count 105 far exceeds production policy maximum of 0",
+      "impact": "Cannot release to production with 105 unresolved P0 issues",
+      "fix": "Resolve all P0 findings. Priority: SECURITY DEFINER search_path, reaction routes middleware, search client swap, feature-flag routes, socket per-event auth."
+    },
+    {
+      "severity": "P0",
+      "domain": "release_gate",
+      "category": "p1_check",
+      "file": "docs/audits/latest_run.json",
+      "issue": "P1 count 192 far exceeds production policy maximum of 0",
+      "impact": "192 unresolved P1 issues represent major production risks",
+      "fix": "Resolve all P1 findings before production release."
+    },
+    {
+      "severity": "P0",
+      "domain": "release_gate",
+      "category": "readiness_check",
+      "file": "docs/audits/latest_run.json",
+      "issue": "Readiness score 44.06% is well below production policy minimum of 85%",
+      "impact": "Platform not ready for production release",
+      "fix": "Address infrastructure hardening, security fixes, and test coverage."
+    },
+    {
+      "severity": "P0",
+      "domain": "release_gate",
+      "category": "decision_check",
+      "file": "docs/audits/latest_run.json",
+      "issue": "Overall decision is NO-GO \u2014 production gate requires GO",
+      "impact": "All gate criteria must pass before production release",
+      "fix": "Execute reconciled roadmap. Re-evaluate gate after each phase."
+    }
+  ],
+  "run_id": "release_gate_20260701_192121"
+}

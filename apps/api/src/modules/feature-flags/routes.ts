@@ -1,13 +1,11 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
-import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
 import { validateStringKeyParam } from "../../middleware/validate-string-key.js";
 import { featureFlagService } from "../../lib/feature-flags.js";
 import { z } from "zod";
 
 const router: RouterType = Router();
 router.use(authenticate);
-router.use(requireWorkspaceMembership("workspaceId"));
 
 const createFlagSchema = z.object({
   key: z
