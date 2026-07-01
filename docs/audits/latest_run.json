@@ -1,12 +1,12 @@
 {
-  "run_id": "combined_audits_20260701_073221",
-  "generated_at": "2026-07-01T07:32:21Z",
+  "run_id": "combined_audits_20260701_073601",
+  "generated_at": "2026-07-01T07:36:01Z",
   "decision": "NO-GO",
   "severity_totals": {
-    "P0": 60,
-    "P1": 104,
-    "P2": 101,
-    "P3": 52
+    "P0": 71,
+    "P1": 127,
+    "P2": 130,
+    "P3": 69
   },
   "category_health_scores": {
     "current_theme_audit": 50,
@@ -25,6 +25,11 @@
     "restore_procedure": 10,
     "rto_rpo": 0,
     "tf_state_backup": 70,
+    "phaseA_message_stream": 35,
+    "phaseB_thread_ux": 30,
+    "phaseC_composer": 25,
+    "phaseD_presence_reactions": 40,
+    "phaseE_mobile_chat": 30,
     "migration_safety": 25,
     "rls_posture": 45,
     "index_coverage": 50,
@@ -67,6 +72,16 @@
     "hydration_cost": 20,
     "transcript_rendering": 20,
     "image_font_loading": 60,
+    "F1 Design System Integrity": 80,
+    "F2 Layout and Navigation": 80,
+    "F3 Chat UX": 80,
+    "F4 State Management": 50,
+    "F5 Accessibility": 80,
+    "F6 Responsive Design": 80,
+    "F7 Performance": 80,
+    "F8 Interaction Quality": 80,
+    "F9 Visual Consistency": 80,
+    "F10 Component Architecture": 80,
     "index_schema": 50,
     "query_performance": 45,
     "api_design": 35,
@@ -160,28 +175,40 @@
     "N Terraform Cloud-Init Host Provisioning": 50,
     "O Documentation Runbooks Contributor Guidance": 50,
     "P Dead Files Duplicate Systems Stale Artifacts": 50,
-    "F1 Design System Integrity": 80,
-    "F2 Layout and Navigation": 80,
-    "F3 Chat UX": 80,
     "F4 State Management and Data Flow": 80,
-    "F5 Accessibility": 80,
-    "F6 Responsive Design": 80,
-    "F7 Performance": 80,
-    "F8 Interaction Quality": 80,
-    "F9 Visual Consistency": 80,
-    "F10 Component Architecture": 80,
     "api_contract": 35,
     "frontend_ux": 25,
     "test_plan": 20,
+    "global_app_shell": 45,
+    "navigation": 50,
+    "chat_surfaces": 40,
+    "search_command": 35,
+    "profile_member": 50,
+    "notifications": 45,
+    "settings_admin": 55,
+    "theme_architecture": 35,
+    "token_architecture": 35,
+    "semantic_color": 40,
+    "typography": 30,
+    "density_model": 40,
+    "motion_model": 35,
+    "primitive_components": 45,
+    "phase1_design_system": 35,
+    "phase2_app_shell": 40,
+    "phase3_chat_ux": 35,
+    "phase4_search_settings": 30,
+    "phase5_responsive_accessibility": 35,
+    "phase6_customization": 30,
+    "phase7_validation": 25,
     "auth": 90,
     "data": 80,
     "core_screens": 0,
     "dark_mode": 0,
     "responsive": 0
   },
-  "readiness": 39.12,
-  "finding_count": 317,
-  "summaries_aggregated": 42,
+  "readiness": 38.94,
+  "finding_count": 397,
+  "summaries_aggregated": 47,
   "findings": [
     {
       "severity": "P1",
@@ -487,6 +514,132 @@
       "issue": "Terraform state has no DR backup plan \u2014 DO Spaces bucket has no cross-region replication configured",
       "impact": "If DO Spaces bucket is lost, Terraform state is unrecoverable \u2014 infrastructure must be rebuilt from scratch",
       "fix": "Document Terraform state recovery: import existing resources from cloud provider; consider state bucket replication"
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "phaseA_message_stream",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "[Phase A] Message stream renders all messages as flat DOM \u2014 no virtualization, no inverted scroll, no scroll anchoring",
+      "impact": "Channels with 1000+ messages freeze browser; new messages push scrolled-up position",
+      "fix": "Virtualize message list with @tanstack/react-virtual; implement inverted scroll; add scroll anchoring via IntersectionObserver"
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "phaseC_composer",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "[Phase C] Composer is a plain <textarea> \u2014 no markdown preview, no @mention autocomplete, no emoji picker, no drag-drop file upload",
+      "impact": "Core composing experience is primitive; users cannot use modern chat interaction patterns",
+      "fix": "Implement rich composer: markdown preview toggle, @mention popover with debounced search, emoji picker triggered by : or button, drag-drop zone with upload progress, Ctrl+B/I for bold/italic"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "phaseA_message_stream",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "[Phase A] No message grouping date separators or time-based grouping \u2014 all messages shown as flat continuous list",
+      "impact": "Users cannot quickly identify when messages were sent; no visual temporal navigation",
+      "fix": "Add date separator headers ('Today', 'Yesterday', 'Monday', 'June 15') between message groups; group messages by time proximity (within 5 minutes = same group)"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "phaseB_thread_ux",
+      "file": "apps/web/components/chat/thread-panel.tsx",
+      "issue": "[Phase B] Thread panel shows replies without parent message context \u2014 users must remember or scroll to find parent",
+      "impact": "Thread context is lost; users cannot see what message is being replied to without navigating away",
+      "fix": "Sticky parent message preview at top of thread panel: truncated content, author avatar, timestamp, clickable link to parent in channel"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "phaseB_thread_ux",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "[Phase B] No thread indicator on messages \u2014 no reply count badge, last reply preview, or thread activity indicator",
+      "impact": "Users cannot see which messages have active threads without clicking each message",
+      "fix": "Add thread reply count badge (e.g., '3 replies') below message; show last reply preview text on hover; highlight messages with unread thread replies"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "phaseC_composer",
+      "file": "",
+      "issue": "[Phase C] No draft persistence for messages \u2014 composing a long message and navigating away loses content",
+      "impact": "Users lose unsent messages on navigation or accidental refresh; no recovery",
+      "fix": "Save message draft to localStorage per channel+thread; restore on compose focus; show draft indicator ('Draft: ...') in channel list"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "phaseA_message_stream",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "[Phase A] Message actions (reply, react, edit, delete) hidden on hover \u2014 opacity-0 group-hover:opacity-100",
+      "impact": "Touch users cannot access message actions; keyboard users must tab to each message",
+      "fix": "Show actions on group-focus-within for keyboard; always visible on touch devices; minimum 44x44px touch targets"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "phaseD_presence_reactions",
+      "file": "",
+      "issue": "[Phase D] Typing indicator not throttled server-side \u2014 only client-side throttle at 2000ms",
+      "impact": "Rapid typing changes fire many events; no server protection against flooding",
+      "fix": "Add server-side rate limiting for typing:start (max 1 per 2s per user per channel); keep client throttle as defense-in-depth"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "phaseD_presence_reactions",
+      "file": "",
+      "issue": "[Phase D] Connection banner shows 'Connecting...' but no reconnection progress or ETA",
+      "impact": "Users see generic message during disconnect with no indication of recovery",
+      "fix": "Add reconnection progress: spinner animation, elapsed time, 'Still trying...' after 10s, 'Connection lost' after 30s with manual retry button"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "phaseE_mobile_chat",
+      "file": "",
+      "issue": "[Phase E] No mobile bottom action bar \u2014 message actions require long-press or scrolling back to header",
+      "impact": "Mobile chat has no quick-action bar for common operations (search, notifications, recent mentions)",
+      "fix": "Add mobile bottom action bar: compose FAB button, unread badge, notification bell, search icon; floating over message list"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "phaseE_mobile_chat",
+      "file": "",
+      "issue": "[Phase E] Thread panel on mobile is full-screen overlay with no back-navigation to channel context",
+      "impact": "Mobile thread traps users; no way to see channel while reading thread",
+      "fix": "Mobile thread: full-screen view with back arrow returning to channel at preserved scroll position; swipe-right gesture to go back"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "phaseA_message_stream",
+      "file": "",
+      "issue": "[Phase A] System messages (user joined, channel created, message pinned) not visually distinguished from user messages",
+      "impact": "System events blend with user content; hard to scan for actual conversation",
+      "fix": "Style system messages with reduced opacity, smaller font, italic text, no avatar \u2014 visually distinct from user messages"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "phaseD_presence_reactions",
+      "file": "",
+      "issue": "[Phase D] No 'Jump to present' button when scrolled up \u2014 users must manually scroll to bottom",
+      "impact": "Inconvenient to return to latest messages after reviewing history",
+      "fix": "Add floating 'Jump to present' FAB button with # new messages count; click scrolls smoothly to latest with animation"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "phaseE_mobile_chat",
+      "file": "",
+      "issue": "[Phase E] Message selection on mobile is accidental \u2014 no haptic feedback or visual selection indicator",
+      "impact": "Users may accidentally trigger message actions while scrolling on mobile",
+      "fix": "Add haptic feedback (navigator.vibrate) on message action trigger; add 300ms long-press threshold before showing action menu"
     },
     {
       "severity": "P0",
@@ -1378,6 +1531,150 @@
       "issue": "transpilePackages: ['@chat/ui'] increases build time",
       "impact": "Every pnpm build transpiles the shared UI package \u2014 necessary but can be optimized",
       "fix": "Consider building @chat/ui as pre-compiled package to reduce transpilation overhead"
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "F3 Chat UX",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "[F3] Message list has no virtualization \u2014 all messages rendered as flat DOM. No scroll anchoring. No cursor pagination.",
+      "impact": "Channels with 1000+ messages freeze browser. New messages push scrolled-up readers. Cannot load history beyond initial fetch.",
+      "fix": "Implement @tanstack/react-virtual with inverted scroll. Add scroll anchoring. Implement cursor-based pagination with scroll-to-top trigger."
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "F6 Responsive Design",
+      "file": "",
+      "issue": "[F6] No tablet-specific breakpoint \u2014 layout jumps from 3-column desktop to single-column mobile at 768px with no intermediate state",
+      "impact": "Tablet users on 768-1024px devices get cramped desktop or overly expanded mobile; no progressive collapse pattern",
+      "fix": "Add 1024px breakpoint: collapsed channel sidebar with slide-out drawer, always-visible workspace icons, compact message area"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "F1 Design System Integrity",
+      "file": "",
+      "issue": "[F1] No semantic color or typography system \u2014 raw Tailwind values used throughout; theme changes require hundreds of per-component edits",
+      "impact": "Design system cannot be consistently themed or maintained; visual language drifts over time",
+      "fix": "Define complete semantic token system: --color-bg-*, --color-text-*, --color-border-*, --spacing-*, --font-size-*. Replace all raw values with tokens."
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "F3 Chat UX",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "[F3] Message composer is a plain textarea \u2014 no rich editing, @mention autocomplete, emoji picker, drag-drop upload, markdown preview",
+      "impact": "Core composing experience lacks modern collaboration features; users cannot @mention, paste images, or preview markdown",
+      "fix": "Implement enhanced composer: @mention popover, emoji picker, drag-drop zone with progress, markdown preview toggle, /slash commands"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "F5 Accessibility",
+      "file": "",
+      "issue": "[F5] No global keyboard shortcut help \u2014 users cannot discover available keyboard shortcuts for navigation or actions",
+      "impact": "Keyboard productivity features go unused; users cannot learn efficient workflows",
+      "fix": "Add Ctrl+/ shortcut help overlay listing all keyboard shortcuts: workspace nav, channel nav, search, message actions, media controls"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "F7 Performance",
+      "file": "",
+      "issue": "[F7] All 9 pages use 'use client' directive \u2014 no React Server Components. No route-level code splitting.",
+      "impact": "Full JS bundle downloaded on every route; no streaming SSR; slow time-to-interactive on all pages",
+      "fix": "Convert non-interactive sections to server components; use next/dynamic for lazy-loading ChatView, ThreadPanel, SettingsPage"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "F2 Layout and Navigation",
+      "file": "",
+      "issue": "[F2] No global command palette (Ctrl+K) for searching and navigating to channels, users, settings",
+      "impact": "Navigation requires mouse or sidebar; no quick keyboard access to any context",
+      "fix": "Implement Ctrl+K command palette with fuzzy search across channels, recent conversations, users, settings pages"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "F3 Chat UX",
+      "file": "apps/web/components/chat/thread-panel.tsx",
+      "issue": "[F3] Thread panel lacks parent message context \u2014 users see replies without the original message quote or preview",
+      "impact": "Thread context is lost; users must navigate to parent message to understand the thread",
+      "fix": "Add sticky parent message card at top of thread with truncated content, timestamp, and clickable channel link"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "F4 State Management",
+      "file": "",
+      "issue": "[F4] No optimistic updates for message sending \u2014 UI waits for API response before showing message",
+      "impact": "Noticeable delay between pressing Send and message appearing; chat feels sluggish",
+      "fix": "Implement optimistic send: temporary UUID, 'sending' indicator, replace on server confirmation, show retry on failure with inline error"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "F6 Responsive Design",
+      "file": "",
+      "issue": "[F6] No mobile bottom navigation bar \u2014 requires sidebar open for every context switch",
+      "impact": "Mobile navigation requires 3+ taps to switch channels; awkward one-handed use",
+      "fix": "Add mobile bottom tab bar with workspace button, channel list access, notifications bell, search icon, user menu"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "F8 Interaction Quality",
+      "file": "",
+      "issue": "[F8] No notification sounds or subtle audio cues \u2014 @mentions and direct messages arrive silently",
+      "impact": "Urgent messages may be missed when user is not looking at the chat pane",
+      "fix": "Add configurable notification sounds for @mentions and DMs; mute setting per notification type"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "F9 Visual Consistency",
+      "file": "",
+      "issue": "[F9] Unicode/emoji characters used as icons throughout (\ud83d\udcf1, \ud83d\udd14, \u21a9, \ud83d\ude0a, \u270e, \u2715) \u2014 no icon library",
+      "impact": "Inconsistent cross-platform rendering; no accessibility attributes; no theming support",
+      "fix": "Migrate to lucide-react icons with consistent aria-hidden and aria-label patterns; replace all Unicode icons"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "F2 Layout and Navigation",
+      "file": "",
+      "issue": "[F2] Breadcrumbs present but not clickable for workspace navigation",
+      "impact": "Users cannot navigate up the workspace hierarchy from breadcrumbs",
+      "fix": "Make breadcrumb segments clickable links; add dropdown on workspace name showing channel list"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "F4 State Management",
+      "file": "",
+      "issue": "[F4] No 'Jump to present' button when scrolled up in message list",
+      "impact": "Users must manually scroll to bottom after reviewing history",
+      "fix": "Add floating 'Jump to present' FAB with unread count; appears when scrolled >500px from bottom"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "F10 Component Architecture",
+      "file": "",
+      "issue": "[F10] No Storybook for isolated component development and visual testing",
+      "impact": "New components must be developed in-page; no isolated testing environment",
+      "fix": "Install Storybook with @chat/ui package; create stories for Button, Input, Dialog, Avatar, Badge, Skeleton"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "F10 Component Architecture",
+      "file": "packages/ui/src/components/button.tsx",
+      "issue": "[F10] Button component lacks danger and success semantic variants \u2014 only primary/secondary/ghost",
+      "impact": "Destructive actions use inconsistent styling; no semantic color-coded actions",
+      "fix": "Add danger (red), success (green), warning (amber) variants to Button; add loading state with spinner"
     },
     {
       "severity": "P1",
@@ -2948,6 +3245,456 @@
       "issue": "No thread-specific tests \u2014 no E2E for thread creation, reply, join/leave, unread counts, realtime sync",
       "impact": "Thread feature will ship without automated regression coverage",
       "fix": "Write tests: create thread via reply API, fetch thread participants, join/leave, verify unread counts, verify realtime events"
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "chat_surfaces",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "Message list has no virtualization \u2014 all messages rendered as flat DOM, no inverted scroll, no scroll anchoring",
+      "impact": "Channels with 1000+ messages freeze browser; no scroll anchoring causes position loss on new messages; no scroll-to-load-older",
+      "fix": "Integrate @tanstack/react-virtual with inverted scroll; implement scroll anchoring and cursor pagination"
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "global_app_shell",
+      "file": "apps/web/app/(workspace)/layout.tsx",
+      "issue": "Workspace layout shows 'Loading...' text instead of skeleton \u2014 no visual placeholder for layout structure during auth",
+      "impact": "First paint shows raw text loading state instead of progressive layout skeleton \u2014 poor perceived performance",
+      "fix": "Replace 'Loading...' with Skeleton components matching workspace layout (sidebar placeholder, header placeholder)"
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "theme_architecture",
+      "file": "packages/ui/src/styles.css",
+      "issue": "Theme system lacks SSR-safe hydration \u2014 flash-of-unstyled-theme (FOUT) on page load",
+      "impact": "Users see light theme briefly before dark theme applies; jarring visual flash on every navigation",
+      "fix": "Implement cookie-based theme persistence; inject theme class on server before React hydration; suppress hydration warnings"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "navigation",
+      "file": "apps/web/components/shared/app-sidebar.tsx",
+      "issue": "No keyboard shortcut for workspace/channel navigation \u2014 users must mouse-click to switch contexts",
+      "impact": "Power users cannot keyboard-navigate between workspaces or channels; Ctrl+K search is only keyboard path",
+      "fix": "Add Ctrl+1-9 workspace shortcuts, Ctrl+Shift+Up/Down channel navigation, Ctrl+K global command palette"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "chat_surfaces",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "Message composer is a plain textarea \u2014 no markdown preview, no mention autocomplete, no emoji picker, no drag-drop",
+      "impact": "Message input lacks modern collaboration features; no inline formatting feedback, no @mention discoverability",
+      "fix": "Implement enhanced textarea with markdown preview toolbar, @mention popover, #channel autocomplete, emoji picker, drag-drop zone"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "chat_surfaces",
+      "file": "apps/web/components/chat/thread-panel.tsx",
+      "issue": "Thread panel lacks parent message context preview \u2014 users see replies without the original message context",
+      "impact": "Thread viewers must scroll up or remember the parent message; thread context is lost in split-view",
+      "fix": "Show quoted parent message at top of thread panel with truncated content, timestamp, and author"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "search_command",
+      "file": "apps/web/components/search/search-bar.tsx",
+      "issue": "Search results show flat text excerpts without highlighting matched terms, date range filters, or channel/author filters",
+      "impact": "Users cannot quickly understand why a result matched; no ability to narrow search by date or channel",
+      "fix": "Add search term highlighting in results, date range picker, channel filter dropdown, author filter, result type icons (message vs file)"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "profile_member",
+      "file": "apps/web/components/settings/avatar-upload.tsx",
+      "issue": "Avatar upload uses <img> instead of Next.js <Image> \u2014 no lazy loading, no responsive images, no blur placeholder",
+      "impact": "Avatar images block initial load; no progressive image loading; no fallback animation",
+      "fix": "Replace <img> with Next.js Image component with lazy loading, blur placeholder, and responsive srcset"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "notifications",
+      "file": "apps/web/components/notifications/notification-bell.tsx",
+      "issue": "Notification dropdown lacks max-height \u2014 long notification lists overflow below viewport on small screens",
+      "impact": "Users with many notifications cannot scroll within the dropdown; notifications extend beyond visible area",
+      "fix": "Add max-h-96 with overflow-y-auto; show 'Mark all read' at top; add notification type icons (mention, reply, reaction)"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "global_app_shell",
+      "file": "",
+      "issue": "No keyboard shortcut help overlay \u2014 Ctrl+/ or ? should show available keyboard shortcuts",
+      "impact": "Power users cannot discover keyboard shortcuts; productivity features go unused",
+      "fix": "Add Ctrl+/ shortcut help dialog listing all keyboard shortcuts with search"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "navigation",
+      "file": "apps/web/components/channel/channel-list.tsx",
+      "issue": "Channel list uses Link elements inside role='listbox' without distinguishing aria-labels",
+      "impact": "Screen reader users cannot distinguish channel navigation items from other list items",
+      "fix": "Add aria-label='Navigate to channel {channel.name}' on each channel Link; add aria-current='page' for active channel"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "chat_surfaces",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "Message actions (reply, react, edit, delete) hidden on hover only \u2014 opacity-0 group-hover:opacity-100",
+      "impact": "On touch devices and keyboard-only navigation, message actions are invisible",
+      "fix": "Show message actions on focus-within for keyboard users; show permanently on mobile/touch; add touch-friendly larger touch targets"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "chat_surfaces",
+      "file": "apps/web/components/chat/thread-panel.tsx",
+      "issue": "Thread reply input uses fixed rows={2} with no auto-resize \u2014 unlike main message input which auto-resizes",
+      "impact": "Inconsistent composing experience between main chat and threads",
+      "fix": "Replace fixed rows with auto-resize textarea matching message-input.tsx pattern"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "search_command",
+      "file": "",
+      "issue": "No global command palette (Cmd+K / Ctrl+K) \u2014 search only available via search bar in sidebar",
+      "impact": "Users cannot quickly navigate to channels, users, or settings from anywhere via keyboard",
+      "fix": "Implement Ctrl+K global command palette: search channels, users, settings, recent conversations; keyboard-navigable results"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "settings_admin",
+      "file": "",
+      "issue": "Settings page has no loading skeleton or section navigation \u2014 full page reloads on setting change",
+      "impact": "Settings UX feels sluggish; no progressive loading or section-based navigation",
+      "fix": "Add settings sidebar navigation with sections (Profile, Preferences, Notifications, Theme); implement Skeleton loading for each section"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "theme_architecture",
+      "file": "",
+      "issue": "Theme toggle lacks transition animation \u2014 theme change is instantaneous with no gradual color transition",
+      "impact": "Theme switch is jarring; no smooth visual transition between themes",
+      "fix": "Add CSS transition on color properties with `transition: color 0.3s, background-color 0.3s` on root elements"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "notifications",
+      "file": "",
+      "issue": "No notification sound or visual ping \u2014 new messages visually appear but have no audio/visual attention cue",
+      "impact": "Users may miss messages when not actively looking at the chat pane",
+      "fix": "Add subtle notification sound for @mentions and direct replies; configurable in preferences"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "chat_surfaces",
+      "file": "",
+      "issue": "No 'Jump to present' button when scrolled up \u2014 users must scroll to bottom manually after reviewing history",
+      "impact": "Inconvenient to return to latest messages after reading history",
+      "fix": "Add floating 'Jump to present' button with unread count badge that appears when scrolled up beyond last read"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "profile_member",
+      "file": "",
+      "issue": "Avatar shows first letter of email as fallback \u2014 may display '@' or other invalid characters",
+      "impact": "Poor visual presentation for users without display names set",
+      "fix": "Use display_name if available, then email prefix (before @), then '?' as last resort"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "notifications",
+      "file": "",
+      "issue": "Notification bell shows unread count but no visual distinction for mention types (@user vs @everyone vs thread reply)",
+      "impact": "Users cannot prioritize attention based on notification type",
+      "fix": "Add color-coded indicators: red for @mentions, blue for direct replies, gray for @everyone, neutral for other notifications"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "theme_architecture",
+      "file": "",
+      "issue": "No reduced-motion preference detected \u2014 animations play regardless of prefers-reduced-motion setting",
+      "impact": "Users with motion sensitivity get unnecessary animations",
+      "fix": "Add prefers-reduced-motion media query check and disable non-essential animations"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "settings_admin",
+      "file": "",
+      "issue": "No confirmation dialog for destructive settings actions (delete account, reset preferences)",
+      "impact": "Users may accidentally delete account or lose custom preferences",
+      "fix": "Add confirmation dialogs with 'Are you sure?' text for destructive actions; require typing 'DELETE' for account deletion"
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "token_architecture",
+      "file": "packages/ui/src/styles.css",
+      "issue": "No comprehensive design token system \u2014 color tokens are ad-hoc CSS variables mixed with raw Tailwind values",
+      "impact": "Inconsistent colors, spacing, and typography across components; theme changes require per-component edits",
+      "fix": "Define complete token architecture: --color-*, --spacing-*, --radius-*, --shadow-*, --font-*, --opacity-* tokens in globals.css. Replace all raw Tailwind values with token references."
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "semantic_color",
+      "file": "packages/ui/src/styles.css",
+      "issue": "No semantic color system \u2014 colors are named by visual property (--color-blue-500) instead of semantic purpose (--color-link-primary)",
+      "impact": "Theme changes require updating every blue shade rather than just remapping semantic tokens; inconsistent color application",
+      "fix": "Define semantic color tokens: --color-bg-primary, --color-bg-secondary, --color-text-primary, --color-text-secondary, --color-link, --color-brand, --color-danger, --color-success, --color-warning, --color-border. Map to theme-specific values."
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "typography",
+      "file": "",
+      "issue": "No typography system \u2014 text sizing uses ad-hoc Tailwind classes (text-sm, text-base, text-lg, text-2xl, text-3xl) with no design scale",
+      "impact": "Inconsistent text sizing across pages; no design system guardrails for heading hierarchy",
+      "fix": "Define typography scale: 12/14/16/20/24/32/40px with corresponding line-heights. Create Text and Heading components wrapping tailwind-merge for consistent usage."
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "density_model",
+      "file": "",
+      "issue": "No density/spacing model \u2014 spacing values are scattered as raw Tailwind classes (p-2, p-3, p-4, gap-2, gap-4) with no semantic mapping",
+      "impact": "Inconsistent component spacing; layout density changes require per-component edits rather than global token adjustment",
+      "fix": "Define spacing scale: --spacing-xs (4px), --spacing-sm (8px), --spacing-md (16px), --spacing-lg (24px), --spacing-xl (32px). Map to semantic contexts: --spacing-inset, --spacing-stack, --spacing-inline."
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "theme_architecture",
+      "file": "",
+      "issue": "Only 2 themes (light/dark) with limited token coverage \u2014 no Slate Dark, OLED High-Contrast, or system-level theme inheritance",
+      "impact": "Theme expansion requires rewriting all tokens; no graceful system-preference fallback",
+      "fix": "Implement multi-theme architecture: .theme-light, .theme-dark-slate, .theme-dark-oled CSS classes with complete token sets. Add theme inheritance (system -> preferred -> default). SSR-safe hydration."
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "primitive_components",
+      "file": "packages/ui/src/components/",
+      "issue": "Primitive components (Button, Input, Dialog) lack state-style coverage \u2014 no disabled, error, loading, or focused states for all variants",
+      "impact": "Components show inconsistent disabled/error/loading visuals; accessibility gaps in state announcement",
+      "fix": "Add explicit state styles to each primitive: :disabled, :focus-visible, :invalid, [aria-invalid], .loading state with spinner. Use tailwind-merge for composed class names."
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "motion_model",
+      "file": "",
+      "issue": "No motion system \u2014 animations use raw @keyframes with no timing tokens, easing curves, or duration scale",
+      "impact": "Inconsistent animation durations and easing; no design system for motion",
+      "fix": "Define motion tokens: --duration-fast (150ms), --duration-normal (250ms), --duration-slow (400ms); --easing-in, --easing-out, --easing-in-out. Apply consistently to transitions and animations."
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "semantic_color",
+      "file": "",
+      "issue": "Background colors use raw opacity values (opacity-50, opacity-70) instead of semantic overlay tokens",
+      "impact": "Opacity stacking creates unpredictable colors; theme changes break overlay colors",
+      "fix": "Define overlay tokens: --color-overlay-subtle, --color-overlay-hover, --color-overlay-active with proper alpha values instead of tailwind opacity classes"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "primitive_components",
+      "file": "packages/ui/src/components/button.tsx",
+      "issue": "Button component supports only primary/secondary/ghost variants \u2014 no danger, success, or warning semantic variants",
+      "impact": "Destructive actions use manual danger styling; no consistent semantic button pattern",
+      "fix": "Add danger (red), success (green), and warning (amber) variants to Button component with proper hover/focus/disabled states"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "typography",
+      "file": "",
+      "issue": "No focus styling token \u2014 focus-visible rings use hardcoded classes (focus-visible:ring-2 focus-visible:ring-blue-500)",
+      "impact": "Focus ring color/style changes require per-component edits; inconsistent focus visibility across themes",
+      "fix": "Define --color-focus-ring token; create .focus-ring utility class; ensure all interactive elements use it"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "theme_architecture",
+      "file": "",
+      "issue": "No reduced-motion token \u2014 prefers-reduced-motion not checked, animations play unconditionally",
+      "impact": "Users with motion sensitivity get distracting animations",
+      "fix": "Add --motion-reduced boolean; wrap non-essential animations in prefers-reduced-motion: reduce @media query"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "token_architecture",
+      "file": "",
+      "issue": "No shadow/elevation token system \u2014 box-shadow values are ad-hoc across components",
+      "impact": "Inconsistent elevation styling; no design system for visual hierarchy",
+      "fix": "Define shadow scale: --shadow-sm, --shadow-md, --shadow-lg, --shadow-xl, --shadow-dialog"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "density_model",
+      "file": "",
+      "issue": "No compact/comfortable/spacious density mode \u2014 layout density is fixed",
+      "impact": "Users cannot adjust information density, especially in message list",
+      "fix": "Add density CSS variable (--density) with compact/comfortable/spacious values; adjust padding, margins, and font sizes proportionally"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "documentation",
+      "file": "",
+      "issue": "No design token documentation \u2014 tokens exist only in CSS files with no reference or usage guide",
+      "impact": "Developers cannot discover available tokens; inconsistent token usage across codebase",
+      "fix": "Create DESIGN_TOKENS.md documenting all tokens with examples; add token usage lint rule"
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "phase3_chat_ux",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "[Phase 3] Message list has no virtualization \u2014 all messages as flat DOM, no inverted scroll, no scroll anchoring, no cursor pagination",
+      "impact": "OOM on large channels; scroll position lost on new messages; cannot load older history",
+      "fix": "Implement virtualization with @tanstack/react-virtual, inverted scroll for chat, scroll anchoring, cursor-based pagination. This is the highest-impact UX improvement."
+    },
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "phase1_design_system",
+      "file": "",
+      "issue": "[Phase 1] No semantic color or typography system \u2014 raw Tailwind classes used throughout",
+      "impact": "Theme changes require hundreds of per-component edits; inconsistent visual language",
+      "fix": "Implement full design token system: semantic colors, typography scale, spacing scale, motion tokens. Create Text and Heading primitives."
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "phase2_app_shell",
+      "file": "apps/web/app/(workspace)/layout.tsx",
+      "issue": "[Phase 2] Workspace layout skeleton missing \u2014 'Loading...' text shown during auth initialization",
+      "impact": "Poor perceived performance; no progressive layout rendering",
+      "fix": "Create AppShellSkeleton component matching workspace layout structure with animated pulse placeholders"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "phase3_chat_ux",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "[Phase 3] Message composer is plain textarea \u2014 no rich editing, markdown preview, @mention autocomplete, emoji picker, drag-drop",
+      "impact": "Core composing experience lacks modern collaboration features",
+      "fix": "Phase 3 implementation: enhanced textarea with markdown preview toolbar, @mention popover, #channel autocomplete, emoji picker, drag-drop zone with upload progress"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "phase4_search_settings",
+      "file": "apps/web/components/search/search-bar.tsx",
+      "issue": "[Phase 4] Search lacks filters and result highlighting \u2014 no date range, channel filter, author filter, term highlighting",
+      "impact": "Search UX is basic; users cannot narrow results or see why content matched",
+      "fix": "Add search filters: date picker, channel multi-select, author; add <mark> term highlighting in excerpts; show file vs message type icon"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "phase5_responsive_accessibility",
+      "file": "",
+      "issue": "[Phase 5] No tablet-specific breakpoint \u2014 layout jumps from 3-column desktop to single-column mobile at 768px",
+      "impact": "Tablet users get suboptimal layout; no progressive collapse pattern",
+      "fix": "Add tablet breakpoint (1024px): collapsed sidebar as slide-out drawer, always-visible workspace icons, compact message area"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "phase6_customization",
+      "file": "",
+      "issue": "[Phase 6] Theme customization limited to light/dark/system \u2014 no Slate Dark, OLED High-Contrast, or user-definable accent colors",
+      "impact": "Users cannot customize the app appearance beyond basic light/dark toggle",
+      "fix": "Add Slate Dark and OLED High-Contrast themes; add accent color picker in settings; persist preferences"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "phase2_app_shell",
+      "file": "",
+      "issue": "[Phase 2] No global keyboard command palette (Ctrl+K) for searching channels, users, settings",
+      "impact": "Navigation requires mouse or sidebar clicking; no quick keyboard access to any page",
+      "fix": "Implement Ctrl+K command palette with search across channels, users, settings, recent conversations; keyboard navigable"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "phase3_chat_ux",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "[Phase 3] Message actions (reply, react, edit, delete) hidden on hover only \u2014 not keyboard accessible",
+      "impact": "Touch and keyboard users cannot access message actions",
+      "fix": "Show actions on group-focus-within; add permanent visibility on mobile/touch devices; increase touch target size"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "phase4_search_settings",
+      "file": "",
+      "issue": "[Phase 4] Settings page has no section navigation or loading skeletons \u2014 full page reloads",
+      "impact": "Settings UX is slow; no visual feedback during section switching",
+      "fix": "Add settings sidebar with sections (Profile, Notifications, Preferences, Theme, Account); add Skeleton loading per section; implement client-side section switching"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "phase5_responsive_accessibility",
+      "file": "",
+      "issue": "[Phase 5] No bottom navigation bar on mobile \u2014 users must open sidebar for every context switch",
+      "impact": "Mobile navigation is slow; requires 2+ taps to switch context",
+      "fix": "Add mobile bottom tab bar: workspace indicators, channel list access, notifications, search, user menu"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "phase6_customization",
+      "file": "",
+      "issue": "[Phase 6] No font size or density preference in user settings \u2014 all users get same text size and spacing",
+      "impact": "Users cannot adjust readability to their preference",
+      "fix": "Add font size slider (small/medium/large) and density selector (compact/comfortable/spacious) in preferences"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "phase7_validation",
+      "file": "",
+      "issue": "[Phase 7] No visual regression testing \u2014 Playwright screenshot comparison not configured",
+      "impact": "UX changes in any phase risk visual regressions without detection",
+      "fix": "Add Playwright visual snapshot tests for each phase's output: design system, app shell, chat view, settings, mobile breakpoints"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "phase3_chat_ux",
+      "file": "",
+      "issue": "[Phase 3] No audio notification for @mentions or direct messages \u2014 new messages arrive silently",
+      "impact": "Users may miss urgent messages when not focused on the chat window",
+      "fix": "Add configurable notification sounds for @mentions and DMs; respect channel mute preferences"
     },
     {
       "severity": "P0",
