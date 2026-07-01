@@ -1,0 +1,7 @@
+{
+  "run_id": "final_reconciliation_phase0_operator_20260701_191447",
+  "created_at": "2026-07-01T19:14:47+00:00",
+  "prompt_name": "final_reconciliation_phase0_operator",
+  "domain": "reconciliation",
+  "status": "initialized"
+}

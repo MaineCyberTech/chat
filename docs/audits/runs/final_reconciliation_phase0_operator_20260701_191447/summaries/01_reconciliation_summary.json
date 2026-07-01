@@ -1,0 +1,103 @@
+{
+  "stage": "reconciliation",
+  "prompt_name": "final_reconciliation_phase0_operator",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-01T19:14:47Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 3,
+    "P3": 4
+  },
+  "category_scores": {
+    "skepticism_evidence": 70,
+    "terminology_normalization": 60,
+    "contradiction_detection": 65,
+    "production_safety": 75
+  },
+  "readiness": 67.0,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "terminology_normalization",
+      "file": "docs/audits/runs/",
+      "issue": "Severity definitions vary across prompt packs: audit prompts use 'blocking production risk', hardening ultras use 'direct data breach', feature prompts use 'unusable critical flow'. Same label (P0) means different things.",
+      "impact": "Risk severity inflation/deflation across domains; P0 in one context may be P2 in another, making cross-domain prioritization unreliable",
+      "fix": "Normalize all P0 definitions to: 'Direct security breach, cross-tenant access, auth bypass, or deployment blocker with no workaround'. Reclassify findings that don't meet this bar."
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "contradiction_detection",
+      "file": "",
+      "issue": "Multiple prompts recommend adding WebRTC infrastructure (audio/video media) while platform readiness prompts flag 'no background job infrastructure' as P0 \u2014 these compete for the same limited engineering capacity",
+      "impact": "Roadmap sequencing conflicts: both are large efforts but only one can be addressed per sprint",
+      "fix": "Priority order: infrastructure (jobs, Redis scaling, observability) before feature additions (WebRTC, rich editor)"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "skepticism_evidence",
+      "file": "",
+      "issue": "114 P2 findings across 63 summaries include both 'missing index on reactions.message_id' (quantifiable perf impact) and 'Unicode icons used instead of SVG' (cosmetic). These have drastically different actual risk.",
+      "impact": "P2 severity bucket is overbroad \u2014 conflates moderate performance issues with minor cosmetic concerns, making prioritization fuzzy",
+      "fix": "Split P2 into P2a (performance/security hardening) and P2b (UX polish, tech debt). Group by category in final report."
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "production_safety",
+      "file": "",
+      "issue": "Feature prompts recommend 11 new features (threads, mentions, RBAC, webhooks, search, editor, themes, virtual list, optimistic UI, responsive, media). But infra audit shows Redis not deployed, no worker, no rollback scripts.",
+      "impact": "Feature expansion on fragile infrastructure risks destabilizing existing working features",
+      "fix": "Declare infrastructure hardening (Redis deployment, worker creation, backup/restore) as prerequisite gates before any feature expansion"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "terminology_normalization",
+      "file": "",
+      "issue": "'readiness' score computed differently across prompts: some use category_scores mean, some use hardcoded estimates, some omit entirely",
+      "impact": "Global readiness metric of 42.4 is an average of heterogeneous scoring methods \u2014 not apples-to-apples comparable",
+      "fix": "Recompute readiness uniformly: weighted average of severity_counts (P0*0 + P1*25 + P2*50 + P3*75 + clean*100) / total"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "skepticism_evidence",
+      "file": "",
+      "issue": "Multiple prompts identify 'missing virtualization in message list' \u2014 this appears in 7+ separate prompt outputs with varying severity (P0 to P2)",
+      "impact": "Duplicate effort tracking the same issue across audit dimensions",
+      "fix": "Deduplicate: track once as a consolidated finding. Scope: message-list.tsx, priority based on channel size distribution"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "skepticism_evidence",
+      "file": "",
+      "issue": "'Feature flags not wired to code' flagged in 3 prompts \u2014 correct but redundant",
+      "impact": "Counting same gap multiple times inflates finding count",
+      "fix": "Consolidate into single finding: 'Feature flag service exists but no application code checks featureFlagService.evaluateFlag()'"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "production_safety",
+      "file": "",
+      "issue": "Production version badge broken (always shows 0.0.0-dev) \u2014 flagged in rollback and environment prompts",
+      "impact": "Cannot identify deployed version from badge; duplicate tracking",
+      "fix": "Consolidate: add NEXT_PUBLIC_APP_VERSION, NEXT_PUBLIC_GIT_SHA, NEXT_PUBLIC_BUILD_TIME to deploy-production.yml"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "terminology_normalization",
+      "file": "",
+      "issue": "Terms 'NO-GO', 'GO WITH RISKS', 'GO' used inconsistently \u2014 some prompts default to NO-GO as safe, others as blocker",
+      "impact": "Pipeline gate evaluation treats all NO-GO decisions equally when they have different implications",
+      "fix": "Standardize: NO-GO = cannot deploy without fixing listed issues; GO WITH RISKS = can deploy with documented acceptance of risks"
+    }
+  ],
+  "run_id": "final_reconciliation_phase0_operator_20260701_191447"
+}
