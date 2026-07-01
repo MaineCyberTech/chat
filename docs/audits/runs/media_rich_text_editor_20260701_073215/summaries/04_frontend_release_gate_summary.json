@@ -1,0 +1,76 @@
+{
+  "stage": "frontend_release_gate",
+  "prompt_name": "media_rich_text_editor",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:32:14Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 2,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "editor_architecture": 20,
+    "mention_autocomplete": 20,
+    "attachment_pipeline": 25,
+    "accessibility": 30
+  },
+  "readiness": 23.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "editor_architecture",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "Message input is a simple <textarea> with no rich editing capabilities \u2014 no markdown, no mentions, no emoji, no drag-drop",
+      "impact": "Core message input must be completely re-architected for rich editing \u2014 cannot incrementally enhance a plain textarea",
+      "fix": "Choose enhanced-textarea architecture (TipTap/ProseMirror for rich editing, or textarea with overlay components for simpler approach); implement markdown preview, slash commands, and keyboard shortcuts"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "mention_autocomplete",
+      "file": "",
+      "issue": "No mention/channel autocomplete popover \u2014 @ and # triggers have no suggestion UI",
+      "impact": "Users must type exact @usernames and #channel-slugs from memory; no discoverability",
+      "fix": "Implement @mention popover: trigger on @keypress, debounced user search across workspace members, keyboard navigation (arrow keys + Enter), multi-word display names with avatar. Same pattern for #channel autocomplete."
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "attachment_pipeline",
+      "file": "",
+      "issue": "File upload is a separate API call with no inline drag-drop or paste support in message input",
+      "impact": "Users must use separate upload UI; no inline image pasting or drag-drop from desktop",
+      "fix": "Implement drag-drop zone on message input area, paste event handler for images, upload progress indicator in compose bar, attachment preview pills before send"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "editor_architecture",
+      "file": "",
+      "issue": "No emoji picker in message input \u2014 users cannot add emoji to messages from compose UI",
+      "impact": "Emoji usage requires typing :emoji_name: manually or using separate emoji picker for reactions only",
+      "fix": "Integrate emoji-mart or custom emoji picker: trigger on :keypress or toolbar button, frequently used/recent emoji section, search/filter"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "accessibility",
+      "file": "",
+      "issue": "Rich editor risks breaking keyboard accessibility \u2014 arrow keys, Enter, and Escape in autocomplete must not interfere with normal text editing",
+      "impact": "Keyboard users may be unable to type @ or # characters normally, or autocomplete may trap focus",
+      "fix": "Ensure keyboard navigation: Escape closes autocomplete without selecting, Backspace on empty mention removes mention chip, Enter selects without submitting form"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "test_plan",
+      "file": "",
+      "issue": "No tests for paste, drag-drop, emoji, or mention interaction flows",
+      "impact": "Rich editor UX changes will ship without regression coverage",
+      "fix": "Write Playwright tests: paste image creates upload, drag-drop file shows preview, @mention selects user, emoji picker inserts emoji"
+    }
+  ],
+  "run_id": "media_rich_text_editor_20260701_073215"
+}

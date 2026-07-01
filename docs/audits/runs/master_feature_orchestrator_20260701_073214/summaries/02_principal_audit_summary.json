@@ -1,0 +1,229 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "master_feature_orchestrator",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:32:14Z",
+  "severity_counts": {
+    "P0": 5,
+    "P1": 8,
+    "P2": 6,
+    "P3": 4
+  },
+  "category_scores": {
+    "feature_inventory": 40,
+    "architecture_readiness": 35,
+    "implementation_plan": 30,
+    "risk_management": 25
+  },
+  "readiness": 32.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "architecture_readiness",
+      "file": "apps/api/src/modules/messages/service.ts",
+      "issue": "Thread support exists (parent_id FK) but no thread metadata, participant tracking, reply counts, or unread count logic",
+      "impact": "Threaded conversations cannot be built on current schema without significant DB and API changes",
+      "fix": "Add thread_metadata table, thread_participants table, thread_last_read tracking, thread unread count infrastructure"
+    },
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "feature_inventory",
+      "file": "apps/api/src/modules/notifications/service.ts",
+      "issue": "Notification system has basic CRUD but no @mention parsing, @role/@everyone support, channel muting, or offline queues",
+      "impact": "Mention-driven communication and granular notification control completely absent",
+      "fix": "Implement mention parsing at message create time, mention validation, notification preference model, offline queue storage"
+    },
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "architecture_readiness",
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "issue": "RBAC has only owner/admin/member roles with no channel-level override model or custom roles",
+      "impact": "Granular channel permissions, hidden channels, and role-based channel access impossible",
+      "fix": "Design role hierarchy with channel override model; add channel_role_overrides table; update middleware chain"
+    },
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "feature_inventory",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "Message list renders all messages as flat DOM with no virtualization \u2014 no virtual list, no inverted scroll, no windowing",
+      "impact": "Channels with thousands of messages cause OOM and browser freezes",
+      "fix": "Integrate @tanstack/react-virtual with inverted scroll support; implement cursor-based pagination on scroll-to-top"
+    },
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "feature_inventory",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "Message input is a plain textarea with no rich text, markdown preview, @mention autocomplete, emoji picker, or drag-drop",
+      "impact": "Core message input lacks modern collaboration features; no inline media or mention support",
+      "fix": "Implement enhanced textarea with mention autocomplete (#channels, @users), emoji picker, drag-drop file upload, markdown preview"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "architecture_readiness",
+      "file": "infra/docker/",
+      "issue": "No WebRTC/STUN/TURN infrastructure for audio/video \u2014 no media server, no signaling channel, no ICE configuration",
+      "impact": "Audio/video collaboration feature requires new infrastructure: TURN server, signaling service, room management",
+      "fix": "Design WebRTC architecture: consider LiveKit, Daily.co, or self-hosted mediasoup for media server"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "feature_inventory",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Full-text search exists via search_messages RPC but has no date range filter, file metadata search, or search ranking",
+      "impact": "Search is functional but limited \u2014 no advanced filtering or relevance ranking",
+      "fix": "Add tsvector ranking with relevance scoring, date range filtering, file metadata search, paginated results"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "architecture_readiness",
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "issue": "No incoming webhook endpoints exist \u2014 only outgoing webhook delivery pipeline",
+      "impact": "External systems cannot post messages into channels via webhook URLs",
+      "fix": "Design incoming webhook registration model, payload formatting, secret generation, rate limiting"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "apps/web/components/",
+      "issue": "No optimistic UI system \u2014 all mutations wait for API response before updating UI",
+      "impact": "Chat feels sluggish; no zero-latency interaction pattern",
+      "fix": "Create optimistic state management: temporary IDs for messages, reactions, edits; rollback on failure; deduplicate on server echo"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "architecture_readiness",
+      "file": "apps/api/src/app.ts",
+      "issue": "No background job/worker infrastructure for async processing (notification fanout, webhook delivery queuing)",
+      "impact": "Feature expansion will require worker processes; current architecture has no job queue or worker pattern",
+      "fix": "Design job queue abstraction (Bull/BullMQ with Redis), worker process pattern, job retry/dead-letter handling"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "feature_inventory",
+      "file": "apps/web/",
+      "issue": "Current theme supports only light/dark/system \u2014 no slate dark, OLED high-contrast black, or multi-theme architecture",
+      "impact": "Theme engine needs expansion to support multiple named themes with SSR-safe hydration",
+      "fix": "Expand CSS variable token system for multiple themes; implement SSR-safe theme hydration with cookie-based persistence"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "apps/web/",
+      "issue": "No responsive breakpoint strategy for tablet \u2014 only desktop (768px+) and mobile (full-screen overlays)",
+      "impact": "Tablet users get suboptimal layout; no three-column layout adaptation for medium screens",
+      "fix": "Design three-column layout with proper collapse/restore behavior at 1024px, 768px, and 480px breakpoints"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "tests/",
+      "issue": "No E2E or integration tests for any of the 5 core features (threads, mentions, RBAC, webhooks, search)",
+      "impact": "Feature expansion without test coverage will produce regressions in production",
+      "fix": "Write test matrix covering all 11 features with unit, integration, E2E, and performance tiers"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "apps/web/components/chat/thread-panel.tsx",
+      "issue": "Thread panel exists but has no thread participant tracking, thread-specific unread counts, or join/leave semantics",
+      "impact": "Thread feature lacks participant isolation and thread-specific UX patterns",
+      "fix": "Add thread participant model, thread unread counts, thread join/leave API, thread notification preferences"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "",
+      "issue": "No feature flag system wired to application code \u2014 5 seed flags exist but control nothing",
+      "impact": "Cannot use feature flags to safely roll out new features incrementally",
+      "fix": "Wire feature flag evaluation into feature boundaries: threads, mentions, webhooks, search improvements, new editor"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "",
+      "issue": "No release gate process for feature expansion \u2014 no checklist, no sign-off, no staged rollout plan",
+      "impact": "Feature releases have no quality gate beyond existing CI checks",
+      "fix": "Implement feature release gate with: P0/P1 resolution check, migration safety, E2E coverage threshold, feature flag rollout plan"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "packages/db/src/types.ts",
+      "issue": "TypeScript types significantly out of sync with DB schema \u2014 must regenerate before any feature work",
+      "impact": "New feature development will produce type errors or require any-casts",
+      "fix": "Run supabase gen types typescript before starting feature implementation"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "",
+      "issue": "No media/WebRTC support at all \u2014 no WebRTC service, no media streams, no device permission management",
+      "impact": "Audio/video media is a greenfield feature requiring new infrastructure, new API service, and new frontend",
+      "fix": "Phase 3: evaluate LiveKit for managed WebRTC; design signaling protocol; implement media grid UI"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "",
+      "issue": "No shared @mention or autocomplete infrastructure \u2014 search-bar.tsx has its own search, no reusable mention picker",
+      "impact": "Mention autocomplete in message input requires building from scratch",
+      "fix": "Create shared MentionPicker component with debounced user/channel search, keyboard navigation, and position anchoring"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "",
+      "issue": "No Storybook or component development environment for building new UI components",
+      "impact": "New frontend features (editor, media grid, theme) require testing components in isolation",
+      "fix": "Install Storybook with @chat/ui package; create stories for new feature components"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "",
+      "issue": "No avatar URL validation \u2014 avatar URLs are stored as-is with no format or security check",
+      "impact": "Malformed or malicious avatar URLs could cause issues in theme/display",
+      "fix": "Add avatar_url validation in profile update schema"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "",
+      "issue": "No emoji picker component \u2014 reactions use hardcoded emoji buttons",
+      "impact": "Users cannot browse/search emojis for reactions or rich text input",
+      "fix": "Integrate emoji-mart or emoji-picker-react for reaction and editor use"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "implementation_plan",
+      "file": "",
+      "issue": "No keyboard shortcut documentation or help menu",
+      "impact": "Power users cannot discover shortcuts for new features (mentions, threads, media controls)",
+      "fix": "Document keyboard shortcuts in app; add Ctrl+/ shortcut help overlay"
+    }
+  ],
+  "run_id": "master_feature_orchestrator_20260701_073214"
+}

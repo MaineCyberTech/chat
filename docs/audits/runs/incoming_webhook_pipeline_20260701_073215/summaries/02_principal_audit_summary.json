@@ -1,0 +1,76 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "incoming_webhook_pipeline",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:32:14Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 2,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "schema_design": 30,
+    "api_design": 35,
+    "security_abuse": 30,
+    "frontend_ui": 35
+  },
+  "readiness": 32.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "api_design",
+      "file": "",
+      "issue": "No incoming webhook endpoint exists \u2014 cannot POST to channels from external systems",
+      "impact": "Core webhook feature completely absent; greenfield implementation required",
+      "fix": "Design POST /v1/webhooks/incoming/:webhookId/:secret endpoint that authenticates via URL token, validates signature (if present), transforms payload into message, and inserts into target channel"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "schema_design",
+      "file": "supabase/migrations/",
+      "issue": "No incoming_webhooks table \u2014 no webhook registration, secret generation, or channel ownership model",
+      "impact": "Cannot create, manage, or revoke incoming webhook URLs per channel",
+      "fix": "Create incoming_webhooks table: id UUID PK, channel_id FK, name TEXT, secret TEXT (hashed), created_by FK, is_active BOOLEAN, last_used_at TIMESTAMPTZ, created_at"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "security_abuse",
+      "file": "",
+      "issue": "No incoming webhook rate limiting or payload size limits \u2014 external systems could flood channels with messages",
+      "impact": "Without abuse controls, a misconfigured or compromised webhook could DoS a channel",
+      "fix": "Add per-webhook rate limiting (max 30 req/min), max payload size (1MB), payload validation with Zod schema, optional HMAC signature verification"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "api_design",
+      "file": "",
+      "issue": "No payload formatting/templating strategy \u2014 incoming JSON payload needs transformation into rich chat message",
+      "impact": "Raw JSON payloads are not user-friendly; need structured message formatting (title, description, color, fields, footer)",
+      "fix": "Design payload formatter: support common webhook formats (Slack-compatible, GitHub, GitLab, Datadog) with fallback to raw JSON embed"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "frontend_ui",
+      "file": "",
+      "issue": "No webhook management UI in frontend \u2014 cannot create, view, or revoke incoming webhooks from app",
+      "impact": "Users must use API directly to manage webhooks \u2014 poor UX",
+      "fix": "Add webhook management page under channel settings: create webhook, copy URL, regenerate secret, view delivery logs, revoke"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "test_plan",
+      "file": "",
+      "issue": "No incoming webhook test coverage \u2014 invalid payloads, expired secrets, flood conditions, rate limiting",
+      "impact": "Webhook delivery reliability untested; abuse controls may not work as designed",
+      "fix": "Write tests: valid webhook POST creates message, invalid signature returns 401, rate limit exceeded returns 429, oversized payload returns 413"
+    }
+  ],
+  "run_id": "incoming_webhook_pipeline_20260701_073215"
+}

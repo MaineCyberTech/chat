@@ -1,0 +1,58 @@
+{
+  "stage": "frontend_release_gate",
+  "prompt_name": "adaptive_theme_engine",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-01T07:32:14Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "current_theme_audit": 50,
+    "token_strategy": 40,
+    "ssr_hydration": 35,
+    "contrast_accessibility": 45
+  },
+  "readiness": 42.0,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "ssr_hydration",
+      "file": "apps/web/",
+      "issue": "Theme system has no SSR-safe hydration \u2014 theme class is set client-side after hydration, causing flash-of-unstyled-theme (FOUT)",
+      "impact": "Users see light theme briefly before dark theme applies on page load; poor perceived performance",
+      "fix": "Implement SSR-safe theme hydration: read theme preference from cookie on server, inject theme class into <html> before React hydration, suppress hydration warning"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "token_strategy",
+      "file": "packages/ui/src/styles.css",
+      "issue": "Only 2 themes (light/dark) defined via CSS class \u2014 no slate dark, OLED high-contrast, or multi-theme token system",
+      "impact": "Cannot support 4+ named themes without expanding token system to multi-variable per theme pattern",
+      "fix": "Redesign CSS variable system: define all color tokens per theme (--color-bg-primary, --color-text-primary, etc.), create theme classes (.theme-light, .theme-slate-dark, .theme-oled-black), migrate existing light/dark tokens"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "current_theme_audit",
+      "file": "",
+      "issue": "Theme toggle only supports system/light/dark \u2014 no named theme selection UI",
+      "impact": "Users cannot choose Slate Dark or OLED High-Contrast themes from preferences",
+      "fix": "Update theme preferences: add theme selection UI in settings (Light, Slate Dark, OLED Black, System), persist as theme_name in user_preferences table"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "contrast_accessibility",
+      "file": "",
+      "issue": "No automated contrast validation for theme tokens \u2014 dark mode and OLED mode contrast not verified",
+      "impact": "New themes may fail WCAG AA contrast requirements; accessibility regressions",
+      "fix": "Add automated contrast check in CI: compare all theme token combinations against WCAG AA ratios; fail build on contrast violations"
+    }
+  ],
+  "run_id": "adaptive_theme_engine_20260701_073215"
+}

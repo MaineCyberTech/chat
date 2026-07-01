@@ -1,0 +1,96 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "platform_readiness_expansion",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:32:14Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 3,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "shared_types": 30,
+    "package_boundaries": 35,
+    "migration_discipline": 25,
+    "api_versioning": 30,
+    "observability": 30,
+    "worker_needs": 15
+  },
+  "readiness": 27.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "shared_types",
+      "file": "packages/db/src/types.ts",
+      "issue": "TypeScript types are severely out of sync with DB schema \u2014 6 types defined vs 16 tables exist; soft-delete fields missing",
+      "impact": "Feature expansion will produce type errors across all packages; developers forced to use 'any'",
+      "fix": "Run supabase gen types typescript --local > packages/db/src/types.ts before starting feature implementation; add CI check for type-schema drift"
+    },
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "worker_needs",
+      "file": "",
+      "issue": "No background job infrastructure \u2014 no job queue (Bull/BullMQ), no worker process, no scheduled task framework",
+      "impact": "Notification fanout, webhook delivery retry, search indexing, and media processing all require async workers; current architecture handles these synchronously or not at all",
+      "fix": "Design job queue abstraction: Redis-backed BullMQ for Node.js, worker process pattern (apps/worker/), job retry/DLQ handling, scheduled job support for retention/pruning"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "api_versioning",
+      "file": "apps/api/src/",
+      "issue": "API versioning uses /v1/ prefix but no version negotiation headers (Accept-version, Sunset, Deprecation)",
+      "impact": "Expanding API for new features cannot gracefully deprecate old endpoints; breaking changes affect all clients",
+      "fix": "Implement version negotiation: Accept-Version header support, Deprecation/Sunset headers on old versions, version migration guide in docs"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "migration_discipline",
+      "file": "supabase/migrations/",
+      "issue": "No down/rollback scripts for any existing 26 migrations \u2014 feature expansion adds more migrations without rollback capability",
+      "impact": "Schema changes for 11 new features will compound the rollback problem; forward-fix becomes only option",
+      "fix": "Write down scripts for existing ALTER TABLE migrations (#14-16); mandate down scripts for all future migrations"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "observability",
+      "file": "",
+      "issue": "No business analytics or feature usage tracking \u2014 cannot measure adoption of new features",
+      "impact": "Cannot determine whether feature investments (threads, mentions, search) are being used or are having impact",
+      "fix": "Add feature usage tracking: create feature_events table (event_type TEXT, user_id, metadata JSONB); instrument feature entry points; create adoption dashboard"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "package_boundaries",
+      "file": "",
+      "issue": "No realtime event naming convention or registry \u2014 socket events are ad-hoc in service files",
+      "impact": "New feature realtime events will have inconsistent naming; clients must reverse-engineer event payloads",
+      "fix": "Create realtime event registry (TypeScript enum or const object) in packages/realtime/ with typed payloads for all events"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "shared_types",
+      "file": "",
+      "issue": "No API contract validation between frontend and backend \u2014 types are duplicated or manually maintained",
+      "impact": "Frontend/backend contract drift for new features will cause silent production failures",
+      "fix": "Create packages/contract/ with shared API request/response types shared between apps/api and apps/web; add JSON Schema validation or use tRPC"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "feature_flag_infrastructure",
+      "file": "",
+      "issue": "Feature flags exist in DB but are not wired to code \u2014 cannot dark-launch new features",
+      "impact": "New features must be deployed all-at-once; no gradual rollout or kill-switch capability",
+      "fix": "Wire featureFlagService.evaluateFlag() into feature boundaries before implementing new features; set up flag evaluation in frontend via API"
+    }
+  ],
+  "run_id": "platform_readiness_expansion_20260701_073216"
+}

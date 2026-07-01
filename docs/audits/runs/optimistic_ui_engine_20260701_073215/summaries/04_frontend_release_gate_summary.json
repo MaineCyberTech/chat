@@ -1,0 +1,67 @@
+{
+  "stage": "frontend_release_gate",
+  "prompt_name": "optimistic_ui_engine",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-01T07:32:14Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "action_matrix": 35,
+    "state_model": 30,
+    "rollback_ux": 30,
+    "server_echo_dedup": 35
+  },
+  "readiness": 32.0,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "action_matrix",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "Message sending is synchronous \u2014 waits for API response before showing message in list",
+      "impact": "Noticeable delay between pressing Send and message appearing; chat feels sluggish",
+      "fix": "Implement optimistic send: generate temporary UUID, add message to state immediately with 'sending' flag, replace ID on server confirmation, show retry on failure"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "state_model",
+      "file": "apps/web/components/chat/",
+      "issue": "No temporary entity ID strategy \u2014 message, reaction, and edit operations all use real IDs from server",
+      "impact": "Cannot perform optimistic updates without knowing the final ID; delays all mutation feedback",
+      "fix": "Create temporary ID generation strategy (crypto.randomUUID()); map temp IDs to server IDs on confirmation; reconcile state"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "rollback_ux",
+      "file": "",
+      "issue": "No rollback visual feedback \u2014 when optimistic update fails, user sees no error indication or retry mechanism",
+      "impact": "Failed sends silently disappear; users must retype messages",
+      "fix": "Show failed message inline with 'Failed to send \u2014 tap to retry' banner; preserve message content in local draft on failure"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "server_echo_dedup",
+      "file": "",
+      "issue": "No deduplication strategy for server echoes \u2014 when server confirms via WebSocket, optimistic message may duplicate",
+      "impact": "Duplicate messages appear when server echoes back the same message that was optimistically inserted",
+      "fix": "Use temporary UUID as dedup key: on receiving socket message:new, check if temp ID exists in state; if yes, replace with server data; if no, insert as new"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "action_matrix",
+      "file": "",
+      "issue": "Reactions, edits, and deletes are not in optimistic UI scope \u2014 only message sends considered",
+      "impact": "Partial optimistic coverage; reaction and edit feedback still delayed",
+      "fix": "Extend optimistic engine: optimistic reaction toggle (immediate visual change, revert on failure), optimistic edit (immediate update, revert on server reject)"
+    }
+  ],
+  "run_id": "optimistic_ui_engine_20260701_073215"
+}

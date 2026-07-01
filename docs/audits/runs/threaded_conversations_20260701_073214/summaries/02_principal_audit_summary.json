@@ -1,0 +1,86 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "threaded_conversations",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:32:14Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 2,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "schema_design": 30,
+    "api_contract": 35,
+    "frontend_ux": 25,
+    "realtime": 40,
+    "test_plan": 20
+  },
+  "readiness": 30.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "schema_design",
+      "file": "supabase/migrations/",
+      "issue": "No thread_metadata table \u2014 reply_count, participant_count, last_activity_at, view_count not tracked",
+      "impact": "Thread list cannot show reply counts, sort by activity, or track participant engagement",
+      "fix": "Create thread_metadata table: id (PK = message_id), reply_count INT DEFAULT 0, participant_count INT DEFAULT 0, last_activity_at TIMESTAMPTZ, view_count INT DEFAULT 0"
+    },
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "frontend_ux",
+      "file": "apps/web/components/chat/thread-panel.tsx",
+      "issue": "Thread panel has no thread participant tracking, no join/leave semantics, no thread unread counts, no participant list",
+      "impact": "Thread UX is basic \u2014 users cannot see who is in a thread or control thread participation",
+      "fix": "Add thread participants sidebar, join/leave buttons, thread unread badge, participant count display"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "schema_design",
+      "file": "supabase/migrations/",
+      "issue": "No thread_participants table \u2014 cannot track who has joined/left a thread for notification routing",
+      "impact": "Thread notifications must go to all workspace members instead of thread participants only",
+      "fix": "Create thread_participants table: thread_id FK, user_id FK, joined_at, last_read_at TIMESTAMPTZ. Unique (thread_id, user_id)"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "api_contract",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "No thread-specific API endpoints \u2014 no get thread participants, join thread, leave thread, get thread unread count",
+      "impact": "Frontend cannot manage thread participation or display thread-specific state",
+      "fix": "Add API endpoints: GET /threads/:id, POST /threads/:id/join, POST /threads/:id/leave, GET /threads/:id/unread"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "realtime",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "No thread-specific realtime events \u2014 thread:reply, thread:participant_joined, thread:participant_left",
+      "impact": "Thread updates not pushed in real-time; clients must poll",
+      "fix": "Add socket events: thread:reply (with parent context), thread:participant_joined, thread:participant_left"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "frontend_ux",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "No thread indicator on messages that have threads \u2014 no reply count badge, no thread preview",
+      "impact": "Users cannot see which messages have active threads without clicking each one",
+      "fix": "Add thread reply count badge, last reply preview text, and click-to-open-thread on message"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "test_plan",
+      "file": "",
+      "issue": "No thread-specific tests \u2014 no E2E for thread creation, reply, join/leave, unread counts, realtime sync",
+      "impact": "Thread feature will ship without automated regression coverage",
+      "fix": "Write tests: create thread via reply API, fetch thread participants, join/leave, verify unread counts, verify realtime events"
+    }
+  ],
+  "run_id": "threaded_conversations_20260701_073214"
+}

@@ -1,0 +1,76 @@
+{
+  "prompt_name": "rbac_channel_overrides",
+  "domain": "features",
+  "stage": "principal_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:32:14Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 2,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "permission_matrix": 35,
+    "schema_migration": 30,
+    "rls_enforcement": 35,
+    "frontend_settings": 40
+  },
+  "readiness": 35.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "permission_matrix",
+      "file": "",
+      "issue": "No channel-level permission override model \u2014 all channel access is binary (member of workspace = can see all public channels)",
+      "impact": "Cannot restrict specific channels to specific roles; hidden/staff-only channels impossible",
+      "fix": "Design permission matrix: workspace roles (Admin, Moderator, Member, Guest) + channel overrides (allow/deny per role or per user). Precedence: explicit deny > explicit allow > workspace role default."
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "schema_migration",
+      "file": "supabase/migrations/",
+      "issue": "No channel_role_overrides table \u2014 cannot define per-role or per-user channel access exceptions",
+      "impact": "Channel-level access control requires new database table plus RLS changes",
+      "fix": "Create channel_role_overrides: channel_id FK, role TEXT (or user_id UUID nullable), permission TEXT (allow/deny), scope TEXT (read/write/admin). Unique (channel_id, role) or (channel_id, user_id)"
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "rls_enforcement",
+      "file": "supabase/policies/",
+      "issue": "Current RLS policies for channels and messages are binary \u2014 workspace member sees all public channels. No override resolution logic.",
+      "impact": "RLS must be updated to consider channel_role_overrides for hidden channels and restricted content",
+      "fix": "Update channel SELECT RLS: if channel has override restricting role=user_role, exclude from results. Add admin-bypass policy for workspace admins."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "frontend_settings",
+      "file": "",
+      "issue": "No channel settings UI for managing role overrides \u2014 cannot configure channel permissions from frontend",
+      "impact": "Channel permission management requires direct DB access or API calls",
+      "fix": "Add channel settings page with members tab showing current role assignments and override controls (channel admin only)"
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "rls_enforcement",
+      "file": "apps/api/src/middleware/require-membership.ts",
+      "issue": "Channel access middleware checks workspace membership but not channel-level role overrides",
+      "impact": "Middleware bypasses channel-level permissions; overrides only enforced at RLS level (bypassable if service_role client used)",
+      "fix": "Add channel_role_override check to requireChannelAccess middleware: if user has explicit deny on channel, return 403"
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "test_plan",
+      "file": "",
+      "issue": "No privilege escalation or hidden-channel leakage tests",
+      "impact": "RBAC changes risk introducing authorization bypasses without detection",
+      "fix": "Write test cases: user without channel override cannot access channel, user with explicit deny gets 403, admin bypasses overrides, hidden channel not in list"
+    }
+  ]
+}
