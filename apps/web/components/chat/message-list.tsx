@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Avatar } from "@chat/ui";
+import { Avatar, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
 import type { Message, UserProfile } from "@chat/db";
 
@@ -24,6 +24,7 @@ interface Props {
   onDelete?: (messageId: string) => Promise<void>;
   onThreadOpen?: (message: Message) => void;
   replyCounts?: Map<string, number>;
+  sendingIds?: Set<string>;
 }
 
 function authorName(userId: string, profiles: Map<string, UserProfile>): string {
@@ -66,6 +67,7 @@ export function MessageList({
   onDelete,
   onThreadOpen,
   replyCounts,
+  sendingIds,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -74,8 +76,12 @@ export function MessageList({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Map<string, Reaction[]>>(new Map());
   const [pickerMessageId, setPickerMessageId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [editError, setEditError] = useState("");
 
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const { addToast } = useToast();
 
   // Fetch reactions for visible messages
   useEffect(() => {
@@ -152,8 +158,28 @@ export function MessageList({
 
   async function submitEdit() {
     if (!editingId || !onEdit) return;
-    await onEdit(editingId, editContent);
-    setEditingId(null);
+    setEditError("");
+    try {
+      await onEdit(editingId, editContent);
+      setEditingId(null);
+      addToast({ title: "Message edited", variant: "success", duration: 3000 });
+    } catch {
+      setEditError("Failed to edit message. Please try again.");
+      addToast({ title: "Error", description: "Failed to edit message.", variant: "error" });
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteConfirmId || !onDelete) return;
+    setDeleteError("");
+    try {
+      await onDelete(deleteConfirmId);
+      setDeleteConfirmId(null);
+      addToast({ title: "Message deleted", variant: "success", duration: 3000 });
+    } catch {
+      setDeleteError("Failed to delete message. Please try again.");
+      addToast({ title: "Error", description: "Failed to delete message.", variant: "error" });
+    }
   }
 
   async function toggleReaction(messageId: string, emoji: string) {
@@ -291,33 +317,40 @@ export function MessageList({
 
                   <div className="flex items-start gap-1">
                     {editingId === msg.id ? (
-                      <div className="flex w-full gap-1">
-                        <input
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Escape") setEditingId(null);
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              submitEdit();
-                            }
-                          }}
-                          className="flex-1 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-1 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
-                          autoFocus
-                          aria-label="Edit message"
-                        />
-                        <button
-                          onClick={submitEdit}
-                          className="shrink-0 text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingId(null)}
-                          className="shrink-0 text-xs text-[var(--color-foreground-tertiary)] hover:underline"
-                        >
-                          Cancel
-                        </button>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex w-full gap-1">
+                          <input
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Escape") setEditingId(null);
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                submitEdit();
+                              }
+                            }}
+                            className="flex-1 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-1 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
+                            autoFocus
+                            aria-label="Edit message"
+                          />
+                          <button
+                            onClick={submitEdit}
+                            className="shrink-0 text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="shrink-0 text-xs text-[var(--color-foreground-tertiary)] hover:underline"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        {editError && (
+                          <p className="text-xs text-[var(--color-status-danger-fg)]" role="alert">
+                            {editError}
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <div
@@ -332,6 +365,9 @@ export function MessageList({
                         )}
                         <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
                         {msg.edited_at && <p className="mt-0.5 text-xs opacity-70">edited</p>}
+                        {sendingIds?.has(msg.id) && (
+                          <p className="mt-0.5 text-xs italic opacity-60">sending...</p>
+                        )}
                         {msg.isGroupEnd || isHovered ? (
                           <p className="mt-0.5 text-right text-xs opacity-50">
                             {formatTime(msg.created_at)}
@@ -388,7 +424,10 @@ export function MessageList({
                       )}
                       {isOwn && onDelete && (
                         <button
-                          onClick={() => onDelete(msg.id)}
+                          onClick={() => {
+                            setDeleteConfirmId(msg.id);
+                            setDeleteError("");
+                          }}
                           className="flex min-h-[24px] min-w-[24px] items-center justify-center rounded px-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-status-danger-fg)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
                           aria-label="Delete message"
                         >
@@ -445,6 +484,50 @@ export function MessageList({
         })
       )}
       <div ref={bottomRef} />
+
+      {/* Delete confirmation dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)]">
+          <div
+            className="mx-4 max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]"
+            role="dialog"
+            aria-labelledby="delete-dialog-title"
+            aria-modal="true"
+          >
+            <h2
+              id="delete-dialog-title"
+              className="text-lg font-semibold text-[var(--color-foreground-primary)]"
+            >
+              Delete message?
+            </h2>
+            <p className="mt-2 text-sm text-[var(--color-foreground-secondary)]">
+              This action cannot be undone. The message will be removed for everyone.
+            </p>
+            {deleteError && (
+              <p className="mt-2 text-xs text-[var(--color-status-danger-fg)]" role="alert">
+                {deleteError}
+              </p>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setDeleteConfirmId(null);
+                  setDeleteError("");
+                }}
+                className="rounded-lg border border-[var(--color-border-primary)] px-4 py-2 text-sm font-medium text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="rounded-lg bg-[var(--color-status-danger-fg)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--color-status-danger-fg)] focus-visible:outline-none"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
