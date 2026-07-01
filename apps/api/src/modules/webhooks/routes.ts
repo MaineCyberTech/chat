@@ -156,7 +156,11 @@ router.patch(
       res.status(404).json({ error: { code: "NOT_FOUND", message: "Webhook not found" } });
       return;
     }
-    res.json({ webhook });
+    const masked = {
+      ...webhook,
+      secret: webhook.secret ? `${webhook.secret.slice(0, 4)}...${webhook.secret.slice(-4)}` : "",
+    };
+    res.json({ webhook: masked });
     logAuditEvent({
       actorUserId: req.userId,
       action: "webhook.update",

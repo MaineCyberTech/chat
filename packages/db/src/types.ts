@@ -19,6 +19,7 @@ export interface Workspace {
   name: string;
   slug: string;
   owner_id: string;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -40,6 +41,7 @@ export interface Channel {
   topic: string | null;
   is_private: boolean;
   created_by: string;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -57,6 +59,8 @@ export interface Message {
   content: string;
   parent_id: string | null;
   edited_at: string | null;
+  deleted_at: string | null;
+  archived_at: string | null;
   created_at: string;
 }
 
@@ -86,4 +90,101 @@ export interface UserPreferences {
   notification_prefs: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+}
+
+export interface Reaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  organization_id: string | null;
+  actor_user_id: string | null;
+  actor_type: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  workspace_id: string | null;
+  type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read: boolean;
+  created_at: string;
+}
+
+export interface WebhookEndpoint {
+  id: string;
+  workspace_id: string;
+  name: string;
+  url: string;
+  secret: string;
+  events: string[];
+  is_active: boolean;
+  last_success_at: string | null;
+  last_failure_at: string | null;
+  last_error: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WebhookDelivery {
+  id: string;
+  webhook_id: string;
+  event: string;
+  status: string;
+  request_body: Record<string, unknown> | null;
+  response_status: number | null;
+  response_body: string | null;
+  error: string | null;
+  duration_ms: number | null;
+  retry_count: number;
+  next_retry_at: string | null;
+  dead_letter: boolean;
+  created_at: string;
+}
+
+export interface WebhookDeadLetter {
+  id: string;
+  webhook_id: string;
+  event: string;
+  request_body: Record<string, unknown>;
+  last_error: string | null;
+  attempt_count: number;
+  created_at: string;
+  last_attempt_at: string | null;
+}
+
+export interface FeatureFlag {
+  key: string;
+  name: string;
+  description: string | null;
+  enabled: boolean;
+  rollout_percentage: number;
+  target_roles: string[];
+  target_user_ids: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConsentLog {
+  id: string;
+  user_id: string;
+  consent_type: string;
+  granted: boolean;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
 }

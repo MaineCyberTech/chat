@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Avatar, Input, Button } from "@chat/ui";
+import { Avatar, Button } from "@chat/ui";
 import type { Message, UserProfile } from "@chat/db";
 
 interface Props {
@@ -42,6 +42,7 @@ export function ThreadPanel({
   const [replyContent, setReplyContent] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const replyRef = useRef<HTMLTextAreaElement>(null);
 
   const replies = React.useMemo(
     () => allMessages.filter((m) => m.parent_id === parentMessage.id),
@@ -51,6 +52,13 @@ export function ThreadPanel({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [replies.length]);
+
+  useEffect(() => {
+    if (replyRef.current) {
+      replyRef.current.style.height = "auto";
+      replyRef.current.style.height = `${Math.min(replyRef.current.scrollHeight, 120)}px`;
+    }
+  }, [replyContent]);
 
   async function handleSubmit() {
     const trimmed = replyContent.trim();
@@ -176,7 +184,8 @@ export function ThreadPanel({
       {/* Reply input */}
       <div className="border-t border-[var(--color-border-primary)] p-3">
         <div className="flex gap-2">
-          <Input
+          <textarea
+            ref={replyRef}
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
             onKeyDown={(e) => {
@@ -185,11 +194,18 @@ export function ThreadPanel({
                 handleSubmit();
               }
             }}
+            rows={1}
             placeholder="Reply in thread..."
             aria-label="Reply in thread"
+            className="min-h-[44px] w-full resize-none rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           />
-          <Button variant="primary" size="sm" onClick={handleSubmit} disabled={sending}>
-            Send
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSubmit}
+            disabled={sending || !replyContent.trim()}
+          >
+            {sending ? "Sending..." : "Send"}
           </Button>
         </div>
       </div>

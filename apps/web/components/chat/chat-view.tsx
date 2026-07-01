@@ -8,7 +8,7 @@ import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { ThreadPanel } from "./thread-panel";
 import { SearchBar } from "./search-bar";
-import { Badge, Skeleton } from "@chat/ui";
+import { Badge, Skeleton, useToast } from "@chat/ui";
 import type { Message, UserProfile } from "@chat/db";
 import type { Socket } from "socket.io-client";
 
@@ -70,6 +70,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const [profiles, setProfiles] = useState<Map<string, UserProfile>>(new Map());
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
+  const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
+  const { addToast } = useToast();
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const replyCounts = useMemo(() => {
@@ -187,14 +189,22 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         content,
         parent_id: replyTo?.id ?? null,
         edited_at: null,
+        deleted_at: null,
+        archived_at: null,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, optimistic]);
+      setSendingIds((prev) => new Set(prev).add(tempId));
 
       try {
         await api.post(`/channels/${channelId}/messages`, { content, parent_id: replyTo?.id });
       } finally {
         setReplyTo(null);
+        setSendingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(tempId);
+          return next;
+        });
         // Remove temp message if real one hasn't arrived via socket yet
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
       }
@@ -223,17 +233,26 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
   const handleFileUpload = useCallback(
     async (file: File) => {
-      const res = await api.post<{ uploadUrl: string; publicUrl: string }>("/messages/upload", {
-        fileName: file.name,
-        contentType: file.type,
-      });
-      await fetch(res.uploadUrl, { method: "PUT", body: file });
-      const displayName = file.type.startsWith("image/")
-        ? `![${file.name}](${res.publicUrl})`
-        : `📎 [${file.name}](${res.publicUrl})`;
-      await api.post(`/channels/${channelId}/messages`, { content: displayName });
+      try {
+        const res = await api.post<{ uploadUrl: string; publicUrl: string }>("/messages/upload", {
+          fileName: file.name,
+          contentType: file.type,
+        });
+        await fetch(res.uploadUrl, { method: "PUT", body: file });
+        const displayName = file.type.startsWith("image/")
+          ? `![${file.name}](${res.publicUrl})`
+          : `📎 [${file.name}](${res.publicUrl})`;
+        await api.post(`/channels/${channelId}/messages`, { content: displayName });
+        addToast({ title: "File uploaded", variant: "success", duration: 3000 });
+      } catch {
+        addToast({
+          title: "Upload failed",
+          description: `Could not upload ${file.name}.`,
+          variant: "error",
+        });
+      }
     },
-    [channelId],
+    [channelId, addToast],
   );
 
   const handleTypingStart = useCallback(() => {
@@ -363,6 +382,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             onDelete={handleDelete}
             onThreadOpen={setThreadMessage}
             replyCounts={replyCounts}
+            sendingIds={sendingIds}
           />
         </div>
         {replyTo && (
