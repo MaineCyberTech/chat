@@ -21,3 +21,9 @@ supabase/.temp/
 
 # LLM prompt archives (bloated, stored externally)
 docs/prompts/
+
+# Build artifacts
+__pycache__/
+*.pyc
+.playwright-results/
+.next/*
