@@ -12,7 +12,6 @@ export class AppError extends Error {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof AppError) {
     logger.warn("Application error", {
