@@ -63,6 +63,9 @@ interface Props {
 export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }: Props) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasMoreOlder, setHasMoreOlder] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
@@ -101,13 +104,35 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     }
   }, []);
 
+  const loadOlder = useCallback(async () => {
+    if (!nextCursor || loadingOlder || !hasMoreOlder) return;
+    setLoadingOlder(true);
+    try {
+      const res = await api.get<{ messages: Message[]; nextCursor: string | null }>(
+        `/channels/${channelId}/messages?cursor=${nextCursor}`,
+      );
+      setMessages((prev) => [...prev, ...res.messages]);
+      setNextCursor(res.nextCursor);
+      if (!res.nextCursor) setHasMoreOlder(false);
+      loadProfiles(res.messages);
+    } catch {
+      // Silently fail — user can try again by scrolling up
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [channelId, nextCursor, loadingOlder, hasMoreOlder, loadProfiles]);
+
   useEffect(() => {
     setError(null);
     setLoading(true);
+    setNextCursor(null);
+    setHasMoreOlder(true);
     api
-      .get<{ messages: Message[] }>(`/channels/${channelId}/messages`)
+      .get<{ messages: Message[]; nextCursor: string | null }>(`/channels/${channelId}/messages`)
       .then((res) => {
         setMessages(res.messages);
+        setNextCursor(res.nextCursor);
+        setHasMoreOlder(!!res.nextCursor);
         loadProfiles(res.messages);
       })
       .catch(() => {
@@ -371,7 +396,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           aria-live="polite"
           aria-atomic="false"
           aria-label="Messages"
-          className="flex-1 overflow-y-auto"
+          className="flex-1"
         >
           <MessageList
             messages={messages}
@@ -381,6 +406,9 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             onEdit={handleEdit}
             onDelete={handleDelete}
             onThreadOpen={setThreadMessage}
+            onLoadOlder={loadOlder}
+            hasMoreOlder={hasMoreOlder}
+            loadingOlder={loadingOlder}
             replyCounts={replyCounts}
             sendingIds={sendingIds}
           />
