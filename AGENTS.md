@@ -63,6 +63,25 @@ All scripts connected: `run_hardening_pipeline.py` → `evaluate_gate.py` → `s
 - **E2E Test Framework** — Added Playwright tests for auth→workspace→chat flow (`apps/web/e2e/auth-workspace-chat.spec.ts`)
 - **Test Endpoint** — Added `/v1/test-body` for debugging body parsing
 
+### Full Audit Pipeline Execution (July 1, 2026)
+
+**58 prompts executed across 8 batches, 68 stage summaries aggregated, 624 total findings:**
+
+| Batch                        | Prompts | Findings | P0  | P1  | Key Domains                                                                        |
+| ---------------------------- | ------- | -------- | --- | --- | ---------------------------------------------------------------------------------- |
+| 1 — Principal Audits         | 14      | 177      | 32  | 59  | api, database, security, environment, release, testing, frontend, ops, governance  |
+| 2 — Feature Implementation   | 16      | 196      | 34  | 64  | orchestrator, core features, frontend, media, platform, testing, release           |
+| 3 — UX/UI                    | 5       | 80       | 11  | 19  | design system, chat UX, accessibility, responsive, release gate                    |
+| 4 — Hardening Ultras         | 8       | 72       | 17  | 24  | security, data, resilience, observability, supply chain, privacy, CI/CD, evolution |
+| 5 — Platform Audits          | 4       | 57       | 11  | 18  | reconciliation, principal audit, quality confirmation, environment promotion       |
+| 6 — Reconciliation Preflight | 4       | 42       | 2   | 11  | master reconciliation, checklist, diff analysis, chat intake                       |
+| 7 — Final Reconciliation     | 5       | 52       | 4   | 14  | 5-phase SSOT synthesis, contradiction detection, guardrail normalization           |
+| 8 — Release Gate             | 1       | 4        | 4   | 0   | production gate evaluation (NO-GO)                                                 |
+
+**Cumulative gate result: FAIL** — 624 findings (105 P0, 192 P1, 199 P2, 124 P3), readiness 44.06%.
+
+**Key SSOT finding:** 568 raw findings deduplicate to ~310 unique items (45% overlap rate). Reconciled roadmap: Phase 0 (infra hardening) → Phase 1 (security fixes) → Phase 2 (core features) → Phase 3 (frontend depth) → Phase 4 (UX polish) → Phase 5 (media, deferred).
+
 ### Audits Completed (June 22, 2026)
 
 - **Comparative repo audit** (8 phases): structural baseline, feature mapping, strengths/weaknesses, risk analysis, alignment roadmap, file-by-file change plan, patch set design. See `docs/audits/compare/`.
@@ -88,6 +107,23 @@ All scripts connected: `run_hardening_pipeline.py` → `evaluate_gate.py` → `s
 
 - **Cloudflare 521**: Cloudflare can't reach the origin server. Terraform firewall rules restricting SSH/HTTP/HTTPS to Cloudflare IP ranges have been applied, but the 521 error persists. May need Cloudflare SSL/TLS set to Full (Strict) + origin certificate.
 - **`hardening/` data store now connected**: All 5 stores (baselines, history, rules, policies, exceptions) populated by `sync_baseline.py`. Still disconnected from `engine/full_engine.ps1` which reads `docs/audits/latest/findings.json` (stale stub).
+
+### Security & P0/P1 Fixes Applied (July 1, 2026)
+
+| Finding                                            | Severity | Files Changed                   | Fix                                                                                                  |
+| -------------------------------------------------- | -------- | ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| SECURITY DEFINER missing SET search_path           | P0       | 4 migration files               | Added `SET search_path = 'public'` to handle_new_user, handle_new_workspace (x2), handle_new_channel |
+| Reaction routes no membership check                | P0       | reactions/routes.ts, service.ts | Added `requireChannelAccess("id")` middleware; changed service to accept req.supabase                |
+| Message search uses anon client                    | P0       | messages/routes.ts              | Replaced `getSupabase()` with `req.supabase` + null guard                                            |
+| Feature-flag routes always 400 (broken middleware) | P0       | feature-flags/routes.ts         | Removed broken `requireWorkspaceMembership` middleware                                               |
+| Socket.io no per-event auth                        | P0       | socket.ts                       | Added workspace membership check in channel:join; disabled allowEIO3                                 |
+| Member mgmt no admin role check                    | P1       | workspaces/routes.ts            | Added `requireAdmin` middleware to POST/PATCH/DELETE member routes                                   |
+| Webhook secret exposed in API responses            | P1       | webhooks/routes.ts              | Masked secrets as `abcd...wxyz` in all responses                                                     |
+| Webhook GET query param mismatch (params vs query) | P1       | webhooks/routes.ts              | Replaced params middleware with query-based `requireWorkspaceQueryParam`                             |
+| Channel slug dedup infinite loop                   | P1       | channels/service.ts             | Added `MAX_ATTEMPTS=100` guard                                                                       |
+| Email in member list (PII exposure)                | P1       | workspaces/service.ts           | Removed `email` from getMembers() SELECT                                                             |
+| console.error in notifications service             | P1       | notifications/service.ts        | Replaced with `logger.error`                                                                         |
+| Workspace service test for email removal           | P1       | workspace.service.test.ts       | Updated test to check display_name instead of email                                                  |
 
 ### Resolved Issues
 
@@ -411,6 +447,21 @@ Prompt execution (AI) → JSON output → scripts/prompts/ingest_output.py
                                       → evaluate_gate.py / generate_dashboard.py / etc.
 ```
 
+### Prompt Execution Stats (July 1, 2026)
+
+58 prompts executed across 8 batches, 68 stage summaries → 624 findings (105 P0, 192 P1, 199 P2, 124 P3).
+
+| Batch                    | Prompts | Source Directory                                                                            | Stage                                                   |
+| ------------------------ | ------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Principal Audits         | 14      | `docs/prompts/{api,database,security,environment,release,testing,frontend,ops,governance}/` | principal_audit + frontend_release_gate                 |
+| Feature Implementation   | 16      | `docs/prompts/chat_feature_prompt_pack_v1/docs/prompts/`                                    | principal_audit + frontend_release_gate                 |
+| UX/UI                    | 5       | `docs/prompts/uxui/`                                                                        | frontend_release_gate                                   |
+| Hardening Ultras         | 8       | `docs/prompts/hardening_prompt_pack/prompts/`                                               | principal_audit                                         |
+| Platform Audits          | 4       | `docs/prompts/platform/audits/`                                                             | reconciliation + principal_audit + quality_confirmation |
+| Reconciliation Preflight | 4       | `docs/prompts/reconciliation_preflight_bundle/`                                             | reconciliation                                          |
+| Final Reconciliation     | 5       | `docs/prompts/final_reconciliation_prompt_pack/`                                            | reconciliation + quality_confirmation                   |
+| Release Gate             | 1       | `docs/prompts/audit/release_gate.md`                                                        | quality_confirmation                                    |
+
 ### Prompt Architecture (after July 1 cleanup)
 
 | Layer                         | Directory                                                                                                    | Status                                                                          |
@@ -468,6 +519,7 @@ Full end-to-end test completed successfully:
 - **`hardening_prompt_pack/ci/hardening_runner.yml` lives inside `docs/prompts/`** not in `.github/workflows/` — never executed
 - **`ingest_output.py` schema validation** — Added basic type checking + required fields validation against `output_schema.json`; no `jsonschema` library dependency
 - **`setup-dev.sh` uses wrong migration paths** — `packages/db/sql/migrations/*.sql` doesn't exist (PowerShell version uses `supabase/migrations/*.sql` correctly)
+- **`aggregate_runs.py`** — Created to combine all run summaries into `latest_run.json` for gate evaluation. Reads all `docs/audits/runs/*/summaries/*_summary.json` files.
 
 ## Local Development
 
