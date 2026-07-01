@@ -1,0 +1,122 @@
+{
+  "prompt_name": "final_reconciliation_repo_audit",
+  "domain": "reconciliation",
+  "stage": "reconciliation",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-01T18:25:38Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 3,
+    "P2": 4,
+    "P3": 3
+  },
+  "category_scores": {
+    "env_drift": 70,
+    "import_errors": 85,
+    "dead_files": 60,
+    "naming_consistency": 75,
+    "phase_contracts": 65
+  },
+  "readiness": 71.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "reconciliation",
+      "category": "phase_contracts",
+      "file": "apps/api/src/modules/feature-flags/routes.ts",
+      "issue": "Feature-flag routes reference requireWorkspaceMembership('workspaceId') but no :workspaceId param exists in route path \u2014 every request returns 400",
+      "impact": "Feature flags completely non-functional; all workspace feature-flag operations silently fail",
+      "fix": "Remove requireWorkspaceMembership or add workspaceId as a body/query parameter"
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "env_drift",
+      "file": "apps/api/src/config/env.ts",
+      "issue": "API env schema uses EMAIL_FROM while shared packages/config/env-schema.ts uses SMTP_FROM \u2014 same purpose, different env var names",
+      "impact": "Operators may set SMTP_FROM expecting it to be read, but API reads EMAIL_FROM and falls back silently",
+      "fix": "Standardize on a single name (EMAIL_FROM), update shared schema to match"
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "env_drift",
+      "file": "apps/web/lib/env.ts",
+      "issue": "Web env schema missing NEXT_PUBLIC_SENTRY_DSN, NEXT_PUBLIC_APP_VERSION, NEXT_PUBLIC_GIT_SHA, NEXT_PUBLIC_BUILD_TIME \u2014 all used in code but not validated",
+      "impact": "Version badge shows '0.0.0-dev' and 'local' in production; Sentry not configured on frontend",
+      "fix": "Add missing vars to apps/web/lib/env.ts Zod schema"
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "naming_consistency",
+      "file": "infra/terraform/versions.tf",
+      "issue": "Terraform state key is hardcoded with no environment interpolation \u2014 same state key for dev and prod",
+      "impact": "Parallel dev and prod Terraform operations corrupt each other's state",
+      "fix": "Use ${var.environment} in state key to isolate environments"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "dead_files",
+      "file": "docs/runbooks/database-migrations.md",
+      "issue": "Runbook references packages/db/sql/migrations/ directory which no longer exists \u2014 all migrations consolidated under supabase/migrations/",
+      "impact": "Operators following runbook will look in wrong directory for migration files",
+      "fix": "Update runbook to reference supabase/migrations/ as the single source of migrations"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "dead_files",
+      "file": "",
+      "issue": "Duplicate policy file sets exist: docs/hardening_super_bundle/policies/ and docs/audits/policies/ \u2014 risk of drift",
+      "impact": "Policy changes may be applied to one set but not the other; inconsistent gating",
+      "fix": "Consolidate to single source of truth (hardening/policies/) and remove duplicates"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "naming_consistency",
+      "file": "",
+      "issue": "Migration sequence gap in 20260626 batch \u2014 jumps from 01 to 22 suggesting deleted or renumbered migrations",
+      "impact": "Potential confusion about migration history; Supabase CLI tracking may conflict",
+      "fix": "Audit migration sequence; renumber or add placeholder files to fill gaps"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "phase_contracts",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "Webhook GET route reads workspace_id from query param but middleware checks req.params.workspaceId \u2014 they never match",
+      "impact": "Webhook listing bypasses workspace membership check via query param",
+      "fix": "Create middleware that reads from req.query.workspace_id instead of req.params"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "naming_consistency",
+      "file": "infra/docker/Caddyfile.prod",
+      "issue": "Production Caddyfile missing API subdomain block for chat-api.mainecybertech.com \u2014 DNS record exists but Caddy does not serve it",
+      "impact": "Wasted DNS record; direct API subdomain access gets no response",
+      "fix": "Remove unused DNS record or add Caddy site block for completeness"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "env_drift",
+      "file": "infra/terraform/variables.tf",
+      "issue": "Default droplet size still s-1vcpu-512mb-10gb despite known OOM issues \u2014 AGENTS.md documents upgrade to s-2vcpu-2gb",
+      "impact": "New dev droplets provisioned with undersized spec will experience OOM",
+      "fix": "Update default droplet_size to s-2vcpu-2gb in terraform variables.tf"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "dead_files",
+      "file": "docs/audits/",
+      "issue": "Stale index (2).md file found in dashboard directory \u2014 appears to be a duplicate from a copy conflict",
+      "impact": "Git tracking noise; confusing for maintainers",
+      "fix": "Remove duplicate index (2).md file"
+    }
+  ]
+}
