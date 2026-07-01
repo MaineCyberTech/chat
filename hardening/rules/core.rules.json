@@ -1,10 +1,50 @@
 [
   {
     "id": "AUTH-001",
-    "severity": "P0"
+    "severity": "P0",
+    "desc": "All route files have requireAuth middleware",
+    "grep": "requireAuth",
+    "path": "apps/api/src/routes/",
+    "expect": "present in every .ts except health.ts, docs.ts, public.ts"
+  },
+  {
+    "id": "AUTH-002",
+    "severity": "P0",
+    "desc": "All entity routes have requireOrgAccess",
+    "grep": "requireOrgAccess",
+    "path": "apps/api/src/routes/",
+    "expect": "present in all entity CRUD routes"
+  },
+  {
+    "id": "SEC-001",
+    "severity": "P1",
+    "desc": "Cookie has httpOnly+secure+sameSite flags",
+    "grep": "httpOnly|secure|sameSite",
+    "path": "apps/api/src/lib/auth.ts",
+    "expect": "httpOnly=true, secure=true, sameSite=strict|lax"
+  },
+  {
+    "id": "SEC-002",
+    "severity": "P1",
+    "desc": "No hardcoded secrets in .env.example",
+    "grep": "<your-|placeholder|changeme",
+    "path": "apps/*/.env.example",
+    "expect": "all sensitive values use placeholder tokens"
   },
   {
     "id": "INFRA-001",
-    "severity": "P1"
+    "severity": "P1",
+    "desc": "Health endpoint returns 200",
+    "grep": "health",
+    "path": "apps/api/src/",
+    "expect": "health route returns 200 with service status"
+  },
+  {
+    "id": "DATA-001",
+    "severity": "P1",
+    "desc": "All user-data tables have RLS enabled",
+    "grep": "alter publication supabase_realtime",
+    "path": "supabase/migrations/",
+    "expect": "RLS enabled on all user-owned tables"
   }
 ]

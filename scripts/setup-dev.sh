@@ -56,8 +56,11 @@ fi
 
 # 7. Run SQL migrations
 echo "=== Running SQL migrations ==="
-for f in packages/db/sql/migrations/*.sql packages/db/sql/functions/*.sql packages/db/sql/policies/*.sql; do
+for f in supabase/migrations/*.sql; do
   [ -f "$f" ] && echo "  Running $(basename $f)..." && npx supabase db execute --file "$f" 2>/dev/null || true
+done
+for f in supabase/seed.sql supabase/seeds/*.sql; do
+  [ -f "$f" ] && echo "  Loading $(basename $f)..." && npx supabase db execute --file "$f" 2>/dev/null || true
 done
 
 echo ""

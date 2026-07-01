@@ -12,22 +12,36 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 **DNS**: Cloudflare (proxied for DDoS protection)
 **Compute**: Single DigitalOcean droplet (Ubuntu 24.04, s-2vcpu-2gb)
 
+### Hardening Data Store Connected (July 1, 2026)
+
+The `hardening/` data store is now synchronized with the audit pipeline via `scripts/hardening/sync_baseline.py`:
+
+| Store          | File                                   | Content                                             |
+| -------------- | -------------------------------------- | --------------------------------------------------- |
+| **Baselines**  | `hardening/baselines/current.json`     | Latest finding set from `latest_run.json`           |
+| **History**    | `hardening/history/history.json`       | Append-only snapshot log (run_id, decision, totals) |
+| **Rules**      | `hardening/rules/core.rules.json`      | 6 check patterns (grep-based rules)                 |
+| **Policies**   | `hardening/policies/governance.json`   | Gate thresholds (block on P0/P1)                    |
+| **Exceptions** | `hardening/exceptions/exceptions.json` | Empty until manually populated                      |
+
+All scripts connected: `run_hardening_pipeline.py` → `evaluate_gate.py` → `sync_baseline.py`. Shell (bash) and PowerShell (`run_pipeline.ps1`) both include the sync step.
+
 ## Repository Map
 
-| Directory            | Purpose                             | Key Files                                                                                |
-| -------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
-| `apps/api/`          | Express API server                  | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                             |
-| `apps/web/`          | Next.js 15 frontend                 | `app/`, `components/`, `lib/`, `e2e/`                                                    |
-| `packages/ui/`       | Shared React components             | `src/components/button.tsx`, etc.                                                        |
-| `packages/db/`       | Supabase client + types             | `src/config.ts`                                                                          |
-| `infra/docker/`      | Compose files, Caddyfiles           | `docker-compose.devremote.yml`, `docker-compose.prod.yml`, `Caddyfile`, `Caddyfile.prod` |
-| `infra/terraform/`   | DO droplet + DNS                    | `main.tf`, `templates/cloud-init.yaml.tftpl`                                             |
-| `.github/workflows/` | CI/CD pipelines (19 workflows)      | See [Workflows section](#github-actions-workflows)                                       |
-| `scripts/`           | Dev tooling                         | `setup-dev.ps1`, `teardown-dev.ps1`                                                      |
-| `supabase/`          | Local Supabase config + migrations  | `config.toml`, `migrations/`, `policies/`, `seeds/`                                      |
-| `hardening/`         | Hardening analysis artifacts        | `baselines/`, `exceptions/`, `history/`, `policies/`, `rules/`                           |
-| `tests/`             | Test suites                         | `e2e/`, `integration/`, `setup/`                                                         |
-| `docs/`              | Architecture docs, runbooks, audits | `docs/architecture/`, `docs/prompts/`, `docs/audits/`, `docs/runbooks/`                  |
+| Directory            | Purpose                             | Key Files                                                                                                                                              |
+| -------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/api/`          | Express API server                  | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                                                                                           |
+| `apps/web/`          | Next.js 15 frontend                 | `app/`, `components/`, `lib/`, `e2e/`                                                                                                                  |
+| `packages/ui/`       | Shared React components             | `src/components/button.tsx`, etc.                                                                                                                      |
+| `packages/db/`       | Supabase client + types             | `src/config.ts`                                                                                                                                        |
+| `infra/docker/`      | Compose files, Caddyfiles           | `docker-compose.devremote.yml`, `docker-compose.prod.yml`, `Caddyfile`, `Caddyfile.prod`                                                               |
+| `infra/terraform/`   | DO droplet + DNS                    | `main.tf`, `templates/cloud-init.yaml.tftpl`                                                                                                           |
+| `.github/workflows/` | CI/CD pipelines (19 workflows)      | See [Workflows section](#github-actions-workflows)                                                                                                     |
+| `scripts/`           | Dev tooling + audit pipeline        | `setup-dev.ps1`, `teardown-dev.ps1`, `start-local-stack.ps1`, `audits/`, `hardening_runner/`, `hardening/sync_baseline.py`, `prompts/ingest_output.py` |
+| `supabase/`          | Local Supabase config + migrations  | `config.toml`, `migrations/`, `policies/`, `seeds/`                                                                                                    |
+| `hardening/`         | Hardening analysis artifacts        | `baselines/`, `exceptions/`, `history/`, `policies/`, `rules/`                                                                                         |
+| `tests/`             | Test suites                         | `e2e/`, `integration/`, `setup/`                                                                                                                       |
+| `docs/`              | Architecture docs, runbooks, audits | `docs/architecture/`, `docs/prompts/`, `docs/audits/`, `docs/runbooks/`                                                                                |
 
 ## Implementation Status
 
@@ -73,6 +87,7 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 ### Known Issues
 
 - **Cloudflare 521**: Cloudflare can't reach the origin server. Terraform firewall rules restricting SSH/HTTP/HTTPS to Cloudflare IP ranges have been applied, but the 521 error persists. May need Cloudflare SSL/TLS set to Full (Strict) + origin certificate.
+- **`hardening/` data store now connected**: All 5 stores (baselines, history, rules, policies, exceptions) populated by `sync_baseline.py`. Still disconnected from `engine/full_engine.ps1` which reads `docs/audits/latest/findings.json` (stale stub).
 
 ### Resolved Issues
 
@@ -107,6 +122,8 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 - E2E Test Framework — Added Playwright tests (`apps/web/e2e/auth-workspace-chat.spec.ts`)
 - Test Endpoint — Added `/v1/test-body` for debugging body parsing
 - All hardening P0-P3 findings resolved — See [Hardening Findings Tracker](#hardening-findings-tracker)
+- **Consent routes TypeScript fix** — `apps/api/src/modules/consent/routes.ts` now uses `req.supabase`/`req.userId` instead of incorrectly passing Request object to `getSupabaseForUser()`
+- **Login-form test updated** — Updated to assert on dev notice text instead of removed quick-fill test user buttons
 
 ### Remaining Work
 
@@ -250,20 +267,27 @@ All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
 **Quick wins fixed in this session:**
 
-| Fix                                             | File                                            | Change                                                 |
-| ----------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------ |
-| CSP remove unsafe-inline/unsafe-eval            | `apps/api/src/middleware/security-headers.ts:5` | Hardened script-src directive                          |
-| Remove hardcoded test credentials               | `apps/web/components/auth/login-form.tsx`       | Deleted TEST_USERS array + dev-only quick-fill buttons |
-| Max query length for user search                | `apps/api/src/modules/auth/routes.ts:61`        | Added `query.length < 100` guard                       |
-| Slug dedup infinite loop guard                  | `apps/api/src/modules/workspaces/service.ts`    | Added MAX_ATTEMPTS=100 counter                         |
-| Remove email from search results                | `apps/api/src/modules/auth/service.ts:45`       | Dropped `email` from search SELECT                     |
-| console.error → logger.error (workspace routes) | `apps/api/src/modules/workspaces/routes.ts:73`  | Replaced console.error with structured logger          |
-| Remove userEmail from workspace logs            | `apps/api/src/modules/workspaces/routes.ts:21`  | Removed PII from log metadata                          |
-| Log rate limit hits                             | `apps/api/src/middleware/rate-limit.ts`         | Added handler with warn logging                        |
-| Log Socket.io auth failures                     | `apps/api/src/lib/socket.ts:79`                 | Added logger.warn in auth catch block                  |
-| Config throw instead of process.exit            | `apps/api/src/config/env.ts:29`                 | Throws Error instead of hard exit                      |
-| pnpm audit threshold to moderate                | `.github/workflows/validate.yml:82`             | Changed --audit-level=high to moderate                 |
-| --force-recreate on prod deploy                 | `.github/workflows/deploy-production.yml:245`   | Added flag to ensure fresh containers                  |
+| Fix                                             | File                                                                                                                                   | Change                                                               |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| CSP remove unsafe-inline/unsafe-eval            | `apps/api/src/middleware/security-headers.ts:5`                                                                                        | Hardened script-src directive                                        |
+| Remove hardcoded test credentials               | `apps/web/components/auth/login-form.tsx`                                                                                              | Deleted TEST_USERS array + dev-only quick-fill buttons               |
+| Max query length for user search                | `apps/api/src/modules/auth/routes.ts:61`                                                                                               | Added `query.length < 100` guard                                     |
+| Slug dedup infinite loop guard                  | `apps/api/src/modules/workspaces/service.ts`                                                                                           | Added MAX_ATTEMPTS=100 counter                                       |
+| Remove email from search results                | `apps/api/src/modules/auth/service.ts:45`                                                                                              | Dropped `email` from search SELECT                                   |
+| console.error → logger.error (workspace routes) | `apps/api/src/modules/workspaces/routes.ts:73`                                                                                         | Replaced console.error with structured logger                        |
+| Remove userEmail from workspace logs            | `apps/api/src/modules/workspaces/routes.ts:21`                                                                                         | Removed PII from log metadata                                        |
+| Log rate limit hits                             | `apps/api/src/middleware/rate-limit.ts`                                                                                                | Added handler with warn logging                                      |
+| Log Socket.io auth failures                     | `apps/api/src/lib/socket.ts:79`                                                                                                        | Added logger.warn in auth catch block                                |
+| Config throw instead of process.exit            | `apps/api/src/config/env.ts:29`                                                                                                        | Throws Error instead of hard exit                                    |
+| pnpm audit threshold to moderate                | `.github/workflows/validate.yml:82`                                                                                                    | Changed --audit-level=high to moderate                               |
+| --force-recreate on prod deploy                 | `.github/workflows/deploy-production.yml:245`                                                                                          | Added flag to ensure fresh containers                                |
+| Fix consent routes TypeScript errors            | `apps/api/src/modules/consent/routes.ts`                                                                                               | Use `req.supabase`/`req.userId` instead of `getSupabaseForUser(req)` |
+| Fix login-form test for removed dev creds       | `apps/web/components/auth/__tests__/login-form.test.tsx`                                                                               | Update test to check for dev notice instead of quick-fill buttons    |
+| Ingest script + output schema created           | `scripts/prompts/ingest_output.py`, `docs/prompts/_contracts/output_schema.json`                                                       | Bridges prompt execution → audit pipeline                            |
+| 15 stub prompts built out with real content     | `audit/` (4), `platform/audits/` (4), `features/` (2), `ai/`, `_contracts/`, `uxui/audits/` (1), `hardening_prompt_pack/runbooks/` (2) | Full execution-mode prompts with output schema references            |
+| 30 pre_reconciliation_super_bundle files built  | `pre_reconciliation_super_bundle/*_audit_pack/`                                                                                        | 6 domain audit packs with 5-phase structure each                     |
+| Deleted reconciliation/ and ux/ stub dirs       | `docs/prompts/reconciliation/`, `docs/prompts/ux/`                                                                                     | Consolidated into canonical locations                                |
+| Created docs/prompts/INDEX.md                   | `docs/prompts/INDEX.md`                                                                                                                | Master navigation for all 32 prompt directories                      |
 
 ---
 
@@ -325,27 +349,27 @@ The Hardening Findings Tracker covers audits 3-6 (Security, API, Database, Infra
 
 ## GitHub Actions Workflows
 
-| Workflow                          | Trigger                  | Purpose                                                                   |
-| --------------------------------- | ------------------------ | ------------------------------------------------------------------------- |
-| `ci.yml`                          | push main/develop, PR    | Calls reusable validate.yml (test, lint, typecheck, build)                |
-| `validate.yml`                    | workflow_call            | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache     |
-| `build-push.yml`                  | push develop             | Build Docker images → push to GHCR `:dev` tag (path-filtered)             |
-| `deploy-development.yml`          | push develop             | SSH to droplet, transfer files, pipe images, compose up, health check     |
-| `infra-development.yml`           | push infra/\*\* changes  | Terraform provision droplet + DNS + firewall + SSH key registration       |
-| `deploy-production.yml`           | push main, manual        | Build + push `:latest` images, deploy to production droplet, health check |
-| `supabase-migrations.yml`         | push develop, infra/\*\* | Supabase link + db push (runs before deploy)                              |
-| `audit-ci.yml`                    | workflow_dispatch        | CI audit badge generation                                                 |
-| `audit-ci-autocommit.yml`         | workflow_dispatch        | Auto-commit audit CI results                                              |
-| `audit-badges-autocommit.yml`     | workflow_dispatch        | Auto-commit audit badge updates                                           |
-| `audit-pr-gate.yml`               | PR                       | Audit-based PR gate checks                                                |
-| `audit-release-certification.yml` | release                  | Release certification audit                                               |
-| `environment-promotion-audit.yml` | workflow_dispatch        | Environment promotion audit                                               |
-| `executive-stakeholder-pack.yml`  | workflow_dispatch        | Generate executive/stakeholder report pack                                |
-| `feature-rollout-checkpoint.yml`  | workflow_dispatch        | Feature rollout checkpoint audit                                          |
-| `governance.yml`                  | workflow_dispatch        | Governance policy enforcement                                             |
-| `hardening-automation-runner.yml` | workflow_dispatch        | Automated hardening analysis runner                                       |
-| `hardening.yml`                   | workflow_dispatch        | Hardening analysis trigger                                                |
-| `platform.yml`                    | workflow_dispatch        | Platform-level CI/CD orchestration                                        |
+| Workflow                          | Trigger                  | Purpose                                                                     |
+| --------------------------------- | ------------------------ | --------------------------------------------------------------------------- |
+| `ci.yml`                          | push main/develop, PR    | Calls reusable validate.yml (test, lint, typecheck, build)                  |
+| `validate.yml`                    | workflow_call            | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache       |
+| `build-push.yml`                  | push develop             | Build Docker images → push to GHCR `:dev` tag (path-filtered)               |
+| `deploy-development.yml`          | push develop             | SSH to droplet, transfer files, pipe images, compose up, health check       |
+| `infra-development.yml`           | push infra/\*\* changes  | Terraform provision droplet + DNS + firewall + SSH key registration         |
+| `deploy-production.yml`           | push main, manual        | Build + push `:latest` images, deploy to production droplet, health check   |
+| `supabase-migrations.yml`         | push develop, infra/\*\* | Supabase link + db push (runs before deploy)                                |
+| `audit-ci.yml`                    | workflow_dispatch        | CI audit badge generation                                                   |
+| `audit-ci-autocommit.yml`         | workflow_dispatch        | Auto-commit audit CI results                                                |
+| `audit-badges-autocommit.yml`     | workflow_dispatch        | Auto-commit audit badge updates                                             |
+| `audit-pr-gate.yml`               | PR                       | Audit-based PR gate checks                                                  |
+| `audit-release-certification.yml` | release                  | Release certification audit                                                 |
+| `environment-promotion-audit.yml` | workflow_dispatch        | Environment promotion audit                                                 |
+| `executive-stakeholder-pack.yml`  | workflow_dispatch        | Generate executive/stakeholder report pack                                  |
+| `feature-rollout-checkpoint.yml`  | workflow_dispatch        | Feature rollout checkpoint audit                                            |
+| `governance.yml`                  | workflow_dispatch        | Governance policy enforcement                                               |
+| `hardening-automation-runner.yml` | workflow_dispatch        | Automated hardening analysis runner                                         |
+| `hardening.yml`                   | push, pull_request       | ❌ **BROKEN** — calls `run_full.ps1` which references 5 nonexistent scripts |
+| `platform.yml`                    | workflow_dispatch        | Platform-level CI/CD orchestration                                          |
 
 ## Environments
 
@@ -374,6 +398,76 @@ Full audit suite in `docs/audits/`:
 - [Testing/QA/CI-CD Audit](docs/audits/testing_qa_cicd_audit_summary.md)
 - [Docs/DevEx/Operations Audit](docs/audits/docs_devex_operations_audit_summary.md)
 - [Frontend UX Release Gate Audit](docs/audits/frontend_ux_release_gate_audit_summary.md)
+
+## Prompt Pipeline (`docs/prompts/`)
+
+The prompts directory contains ~300 files across 30+ subdirectories. Prompts are AI-consumable instructions organized by domain/phase. The Prompt → Pipeline bridge connects prompt execution results to the audit pipeline:
+
+```
+Prompt execution (AI) → JSON output → scripts/prompts/ingest_output.py
+                                      → docs/audits/runs/<run_id>/summaries/
+                                      → run_audit_cycle.py finalize
+                                      → docs/audits/latest_run.json
+                                      → evaluate_gate.py / generate_dashboard.py / etc.
+```
+
+### Prompt Architecture (after July 1 cleanup)
+
+| Layer                         | Directory                                                                                                    | Status                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| **Canonical output contract** | `_contracts/output_schema.json` + `output_contract.md`                                                       | ✅ NEW — all prompts must conform                                               |
+| **Quick entry points**        | `audit/` (5 prompts)                                                                                         | ✅ Rebuilt from stubs                                                           |
+| **Platform audits**           | `platform/audits/` (4 prompts)                                                                               | ✅ Rebuilt from stubs                                                           |
+| **Features**                  | `features/` (4 prompts)                                                                                      | ✅ 2 of 4 rebuilt from stubs                                                    |
+| **Auto-remediation**          | `ai/auto_remediation.md`                                                                                     | ✅ Rebuilt from stub                                                            |
+| **Hardening domains**         | `hardening_prompt_pack/prompts/` (10 prompts)                                                                | ✅ Functional + autonomous Python runner                                        |
+| **UX/UI**                     | `uxui/` (5 prompts)                                                                                          | ✅ Complete                                                                     |
+| **Operator guides**           | `operator/` (14 files)                                                                                       | ✅ Complete                                                                     |
+| **Reconciliation**            | `final_reconciliation_prompt_pack/` (6 files)                                                                | ✅ Canonical system (consolidated)                                              |
+| **Reconciliation exec**       | `final_reconciliation_execution_bundle/` (~30 files)                                                         | ✅ Full orchestration bundle                                                    |
+| **Reconciliation preflight**  | `reconciliation_preflight_bundle/` (18 files)                                                                | ✅ Preflight checklists                                                         |
+| **Platform build**            | `platform/bootstrap/` + `platform/phases/`                                                                   | ✅ Complete                                                                     |
+| **Domain audits**             | `api/`, `database/`, `security/`, `environment/`, `release/`, `testing/`, `frontend/`, `ops/`, `governance/` | ✅ All real content                                                             |
+| **Chat features**             | `chat_feature_prompt_pack_v1/` (19 files)                                                                    | ✅ Full feature implementation pack                                             |
+| **Ingestion script**          | `scripts/prompts/ingest_output.py`                                                                           | ✅ NEW — bridges prompts → audit pipeline, validates against output_schema.json |
+| **Deleted stubs**             | `reconciliation/`, `ux/`                                                                                     | ✅ Removed (consolidated into canonical locations)                              |
+| **Index**                     | `docs/prompts/INDEX.md`                                                                                      | ✅ NEW — master navigation                                                      |
+
+### Prompts Buildout (July 1, 2026)
+
+All stubs across `audit/` (4), `platform/audits/` (4), `features/` (2), `ai/` (1), `_contracts/` (1), `uxui/audits/` (1) have been built with real content. Additionally:
+
+- **`pre_reconciliation_super_bundle/`** — All 6 domain audit packs (38 files) built out with sequential phase prompts and master orchestration
+- **`portal-alignment/`** — CI workflow, scripts, and auto-fix PR script built out (6 stubs → functional)
+- **`hardening_prompt_pack/runbooks/`** — Both runbooks given substantive execution guides
+- **Canonical output schema** — `_contracts/output_schema.json` + `output_contract.md` define the prompt → pipeline bridge
+- **Ingestion script** — `scripts/prompts/ingest_output.py` validated end-to-end
+- **`reconciliation/` and `ux/`** stub directories deleted (consolidated into canonical locations)
+- **`docs/prompts/INDEX.md`** created as master navigation
+- **7 duplicate `(2)`/`(3)` files** removed
+
+### Pipeline Test Results (July 1, 2026)
+
+Full end-to-end test completed successfully:
+
+| Step                        | Script                                                     | Result                                                                |
+| --------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------- |
+| Create sample prompt output | Manual JSON                                                | ✅ Created with 3 findings (P1+P2)                                    |
+| Ingest into audit run       | `scripts/prompts/ingest_output.py`                         | ✅ Created stage summary + report                                     |
+| Schema validation (valid)   | `ingest_output.py --validate-schema`                       | ✅ Accepted well-formed output                                        |
+| Schema validation (invalid) | `ingest_output.py` missing decision field                  | ✅ Error: "Missing required field: decision"                          |
+| Sync hardening data store   | `scripts/hardening/sync_baseline.py`                       | ✅ Populated baselines, rules, history, exceptions, policies          |
+| Finalize run                | `scripts/audits/run_audit_cycle.py finalize`               | ✅ Aggregated into `latest_run.json`                                  |
+| Evaluate gate (PASS)        | `scripts/audits/evaluate_gate.py` dev policy               | ✅ Exit 0 (PASS)                                                      |
+| Evaluate gate (FAIL)        | `scripts/audits/evaluate_gate.py` prod policy              | ✅ Exit 1 (FAIL correctly)                                            |
+| Full pipeline E2E           | init → execute → finalize → stakeholder pack → sync → gate | ✅ All 9 phase decisions recorded, NO-GO checkpoint correctly flagged |
+
+### Remaining Prompts Issues
+
+- **`hardening.yml` CI workflow broken** — `on: [push, pull_request]` calls `run_full.ps1` → 5 nonexistent scripts (`engine/full_engine.ps1`, `ai/auto_fix.ps1`, `bot/pr_comment.ps1`, `dashboard/generate.ps1`, `compliance/export.ps1`)
+- **`hardening_prompt_pack/ci/hardening_runner.yml` lives inside `docs/prompts/`** not in `.github/workflows/` — never executed
+- **`ingest_output.py` schema validation** — Added basic type checking + required fields validation against `output_schema.json`; no `jsonschema` library dependency
+- **`setup-dev.sh` uses wrong migration paths** — `packages/db/sql/migrations/*.sql` doesn't exist (PowerShell version uses `supabase/migrations/*.sql` correctly)
 
 ## Local Development
 

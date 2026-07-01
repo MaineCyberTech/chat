@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "run_id": "security_principal_audit_20260701_053145",
+    "timestamp": "2026-07-01T05:42:59+00:00",
+    "decision": "GO WITH RISKS",
+    "severity_totals": {
+      "P0": 0,
+      "P1": 2,
+      "P2": 5,
+      "P3": 8
+    },
+    "finding_count": 3
+  },
+  {
+    "run_id": "security_principal_audit_20260701_053145",
+    "timestamp": "2026-07-01T05:43:17+00:00",
+    "decision": "GO WITH RISKS",
+    "severity_totals": {
+      "P0": 0,
+      "P1": 2,
+      "P2": 5,
+      "P3": 8
+    },
+    "finding_count": 3
+  },
+  {
+    "run_id": "security_principal_audit_20260701_053145",
+    "timestamp": "2026-07-01T05:50:20+00:00",
+    "decision": "GO WITH RISKS",
+    "severity_totals": {
+      "P0": 0,
+      "P1": 2,
+      "P2": 5,
+      "P3": 8
+    },
+    "finding_count": 3
+  }
+]

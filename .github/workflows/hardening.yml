@@ -1,9 +1,28 @@
-name: Hardening v4
-on: [push, pull_request]
+name: hardening
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Hardening run ID (auto-generated if empty)
+        required: false
+        type: string
 jobs:
   hardening:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run Hardening Engine
-        run: pwsh ./scripts/automation/run_full.ps1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run hardening pipeline
+        run: |
+          RUN_ID="${{ inputs.run_id || format('hardening_{0}', github.run_number) }}"
+          python scripts/hardening_runner/run_hardening_pipeline.py init --repo-root . --run-id "$RUN_ID"
+          python scripts/hardening_runner/run_hardening_pipeline.py execute --repo-root . --run-id "$RUN_ID"
+          python scripts/hardening_runner/run_hardening_pipeline.py finalize --repo-root . --run-id "$RUN_ID"
+          python scripts/hardening_runner/generate_executive_stakeholder_pack.py --repo-root . --run-id "$RUN_ID"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hardening-run
+          path: docs/hardening_runs/**
+          if-no-files-found: warn
