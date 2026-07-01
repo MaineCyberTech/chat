@@ -1,0 +1,25 @@
+{
+  "stage": "principal_audit",
+  "run_id": "hardening_release_20260630_050531",
+  "decision": "GO",
+  "generated_at": "2026-06-30T05:06:43+00:00",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 1,
+    "P3": 0
+  },
+  "category_scores": {
+    "principal_audit": 95
+  },
+  "findings": [
+    {
+      "id": "F-016",
+      "severity": "P2",
+      "category": "J",
+      "description": "BFF layer not implemented",
+      "status": "Pending",
+      "release_impact": "Medium"
+    }
+  ]
+}

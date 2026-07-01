@@ -1,0 +1,49 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "security_principal_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-01T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 5,
+    "P3": 8
+  },
+  "category_scores": {
+    "Auth Middleware": 85,
+    "RLS Policies": 72,
+    "Secrets Handling": 90,
+    "Rate Limiting": 65
+  },
+  "readiness": 78.0,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "auth",
+      "file": "apps/api/src/routes/users.ts",
+      "issue": "Users search endpoint missing requireOrgAccess",
+      "impact": "Authenticated users can search across all tenants",
+      "fix": "Add requireOrgAccess middleware to search route"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "headers",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "issue": "CSP missing frame-ancestors directive",
+      "impact": "Clickjacking risk on all pages",
+      "fix": "Add frame-ancestors 'self' to CSP header"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "validation",
+      "file": "apps/api/src/routes/auth.ts",
+      "issue": "Magic link email not normalized before send",
+      "impact": "user@Example.com and user@example.com treated differently",
+      "fix": "Lowercase email before sending magic link"
+    }
+  ],
+  "run_id": "security_principal_audit_20260701_054219"
+}

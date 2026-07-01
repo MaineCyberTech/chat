@@ -1,0 +1,76 @@
+{
+  "run_id": "hardening_release_20260630_050531",
+  "generated_at": "2026-06-30T05:06:47+00:00",
+  "decision": "GO WITH RISKS",
+  "severity_totals": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 7,
+    "P3": 0
+  },
+  "category_health_scores": {
+    "reconciliation": 95.0,
+    "principal_audit": 95.0,
+    "quality_confirmation": 95.0,
+    "frontend_release_gate": 80.0
+  },
+  "finding_count": 7,
+  "findings": [
+    {
+      "id": "F-008",
+      "severity": "P2",
+      "category": "N",
+      "description": "Migration rollback scripts missing",
+      "status": "Pending",
+      "release_impact": "Low"
+    },
+    {
+      "id": "F-016",
+      "severity": "P2",
+      "category": "J",
+      "description": "BFF layer not implemented",
+      "status": "Pending",
+      "release_impact": "Medium"
+    },
+    {
+      "id": "F-023",
+      "severity": "P2",
+      "category": "K",
+      "description": "Missing tablet breakpoint in UI",
+      "status": "Pending",
+      "release_impact": "Medium"
+    },
+    {
+      "id": "F-027",
+      "severity": "P2",
+      "category": "F3",
+      "description": "Typing indicator unthrottled",
+      "status": "Pending",
+      "release_impact": "Low"
+    },
+    {
+      "id": "F-028",
+      "severity": "P2",
+      "category": "F3",
+      "description": "No sending indicator on optimistic messages",
+      "status": "Pending",
+      "release_impact": "Low"
+    },
+    {
+      "id": "F-029",
+      "severity": "P2",
+      "category": "F6",
+      "description": "Missing tablet breakpoint in chat layout",
+      "status": "Pending",
+      "release_impact": "Medium"
+    },
+    {
+      "id": "F-030",
+      "severity": "P2",
+      "category": "F7",
+      "description": "Notification dropdown overflow",
+      "status": "Pending",
+      "release_impact": "Low"
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "prompt_name": "ci_cd_security_ultra",
+  "domain": "ci_cd",
+  "stage": "principal_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:41:18Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 3,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "secret_handling": 30,
+    "permissions": 40,
+    "branch_protection": 25,
+    "approval_gates": 35,
+    "path_filtering": 45
+  },
+  "readiness": 35.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "ci_cd",
+      "category": "Secret handling",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "Cloudflare origin cert and private key written to disk via echo heredoc \u2014 multi-line secrets can appear in GitHub Actions logs if shell fails",
+      "impact": "TLS private key and origin certificate could be exposed in CI logs, compromising TLS security for the production domain",
+      "fix": "Use GitHub Actions secrets directly in environment files ($GITHUB_ENV), or write secrets to files using GitHub Actions file commands"
+    },
+    {
+      "severity": "P0",
+      "domain": "ci_cd",
+      "category": "Secret handling",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "CI/CD secrets injected into .env files via inline echo commands \u2014 shell parsing errors can expose secrets in build logs",
+      "impact": "Multiple secrets (Supabase keys, VAPID keys) could appear in CI logs if shell expansion fails",
+      "fix": "Use env: block in docker compose or GitHub Actions environment files; avoid echo-based secret injection"
+    },
+    {
+      "severity": "P1",
+      "domain": "ci_cd",
+      "category": "Permissions",
+      "file": ".github/workflows/",
+      "issue": "Workflows do not declare explicit GITHUB_TOKEN permissions \u2014 defaulting to write-all broad permissions",
+      "impact": "If a workflow is compromised (e.g., via malicious PR), the GITHUB_TOKEN has write access to all repository resources",
+      "fix": "Add explicit permissions: block to every workflow: contents: read, issues: read, pull-requests: read, actions: read"
+    },
+    {
+      "severity": "P1",
+      "domain": "ci_cd",
+      "category": "Approval gates",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No production approval gate \u2014 push to main or workflow_dispatch immediately deploys to production without manual approval step",
+      "impact": "Any code merged to main or anyone with dispatch access can deploy to production with zero human review",
+      "fix": "Add environment: production with required reviewers to the deploy job; add 'prod-approval' environment protection rule in GitHub"
+    },
+    {
+      "severity": "P1",
+      "domain": "ci_cd",
+      "category": "Branch protection",
+      "file": "",
+      "issue": "GitHub branch protection rules are not actually enforced \u2014 validate.yml only read-checks but doesn't apply them; no required status checks on main",
+      "impact": "PRs can merge to main without passing lint, tests, or audit gates; no CI enforcement at all",
+      "fix": "Configure branch protection via Terraform github_branch_protection resource or GitHub API; add audit-gate as required check"
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "Secret handling",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "GITHUB_TOKEN piped to docker login via echo \u2014 full token exposed in SSH session commands",
+      "impact": "GITHUB_TOKEN with write:packages scope visible in SSH history; could be harvested from compromised droplet",
+      "fix": "Pass GITHUB_TOKEN as environment variable to SSH script instead of inlining in command"
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "Path filtering",
+      "file": ".github/workflows/",
+      "issue": "deploy-production.yml triggers on any push to main \u2014 no path filtering to ensure only relevant changes trigger a production deploy",
+      "impact": "A README change to main triggers a full production deploy with image build, SSH, and container restart",
+      "fix": "Add paths filter to deploy-production.yml trigger: paths: ['apps/', 'packages/', 'infra/', 'supabase/', 'scripts/']"
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "Artifact handling",
+      "file": "",
+      "issue": "No artifact retention policy documented \u2014 build artifacts use GitHub Actions defaults (90 days)",
+      "impact": "Build artifacts with potentially sensitive intermediate data retained unnecessarily",
+      "fix": "Set artifact retention to 7 days for CI builds, 30 days for release builds; document retention policy"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "privacy_ultra",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:41:18Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 3,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "pii_handling": 45,
+    "retention_policy": 25,
+    "access_controls": 45,
+    "compliance_basics": 35
+  },
+  "readiness": 37.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "privacy",
+      "category": "PII exposure",
+      "file": "apps/api/src/modules/workspaces/service.ts",
+      "issue": "Workspace member list returns email field in API response \u2014 all workspace members can see each other's email addresses",
+      "impact": "PII (email addresses) exposed to all workspace members unnecessarily; email enumeration across workspace membership",
+      "fix": "Remove email from getMembers() SELECT query; return only display_name and avatar_url; log access for audit"
+    },
+    {
+      "severity": "P1",
+      "domain": "privacy",
+      "category": "Compliance basics",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR delete route does not clean up audit_logs or consent_logs \u2014 user's data remains after account deletion",
+      "impact": "GDPR Right to Erasure not fully implemented; user's audit trail and consent records persist after deletion",
+      "fix": "Add explicit deletion of audit_logs and consent_logs entries for the user in the GDPR delete endpoint"
+    },
+    {
+      "severity": "P1",
+      "domain": "privacy",
+      "category": "PII in logs",
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "issue": "User email logged in workspace list operations via userEmail in authenticate middleware \u2014 PII in structured logs",
+      "impact": "Email addresses flow into production log aggregation services where retention may be long and access broad",
+      "fix": "Log only userId, not userEmail; if email is needed for debugging, mask it (e.g., j***@example.com)"
+    },
+    {
+      "severity": "P1",
+      "domain": "privacy",
+      "category": "Access controls",
+      "file": "apps/api/src/modules/auth/service.ts",
+      "issue": "User search endpoint returns email in search results \u2014 GET /v1/auth/search?q= partial email search enabled",
+      "impact": "Email enumeration via search \u2014 attacker can probe if specific email addresses have accounts on the platform",
+      "fix": "Exclude email from search results entirely; search only by display_name; rate-limit search to 10 queries/min/user"
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "Retention",
+      "file": "",
+      "issue": "No data retention policy enforced \u2014 audit_logs and notifications grow unbounded; no scheduled purge exists",
+      "impact": "User data retained indefinitely; GDPR 'right to be forgotten' lifecycle not implemented; storage grows without bound",
+      "fix": "Implement pg_cron scheduled job to purge audit_logs > 90 days, notifications > 30 days, consent_logs > 1 year; document retention periods"
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "PII handling",
+      "file": "",
+      "issue": "avatar_url stored as raw TEXT with no validation \u2014 could contain tracking pixels or external references that leak user activity",
+      "impact": "Third-party tracking via avatar URLs: when email clients load avatars, referer headers leak workspace context",
+      "fix": "Proxy avatar images through API server; add Content-Security-Policy: img-src 'self'; validate avatar URLs against allowlist"
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "Compliance basics",
+      "file": "",
+      "issue": "No data processing register or GDPR compliance documentation in repository",
+      "impact": "Cannot demonstrate GDPR compliance without documented data processing activities",
+      "fix": "Create docs/compliance/gdpr-data-processing-register.md listing all PII fields, processing purposes, retention periods, and lawful bases"
+    }
+  ],
+  "run_id": "privacy_ultra_20260701_074119"
+}

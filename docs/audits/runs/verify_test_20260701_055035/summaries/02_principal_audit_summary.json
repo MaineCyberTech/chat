@@ -1,0 +1,19 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "verify_test",
+  "decision": "GO",
+  "generated_at": "2026-07-01T00:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_scores": {
+    "auth": 90,
+    "data": 80
+  },
+  "readiness": 85,
+  "findings": [],
+  "run_id": "verify_test_20260701_055035"
+}

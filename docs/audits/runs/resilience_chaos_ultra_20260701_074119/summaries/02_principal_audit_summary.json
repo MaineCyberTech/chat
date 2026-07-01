@@ -1,0 +1,113 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "resilience_chaos_ultra",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:41:18Z",
+  "severity_counts": {
+    "P0": 3,
+    "P1": 3,
+    "P2": 3,
+    "P3": 1
+  },
+  "category_scores": {
+    "timeout_handling": 30,
+    "retry_backoff": 35,
+    "circuit_breaker": 35,
+    "idempotency": 40,
+    "ui_degraded_states": 30
+  },
+  "readiness": 34.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "resilience",
+      "category": "API outage",
+      "file": "apps/api/src/modules/messages/service.ts",
+      "issue": "No request timeout on Supabase queries \u2014 a slow DB query can block the Node event loop indefinitely",
+      "impact": "Complete API degradation if Supabase becomes slow: all request threads block, no request can complete",
+      "fix": "Add AbortSignal.timeout(10000) to all Supabase queries; return 503 on timeout with structured error",
+      "scenario": "Supabase experiences 30s query latency due to heavy load. Every API endpoint calling Supabase blocks its request thread. Node.js event loop fills with pending callbacks. All subsequent requests queue with increasing latency. API becomes completely unresponsive after 10-20 concurrent slow queries. No timeout to release resources."
+    },
+    {
+      "severity": "P0",
+      "domain": "resilience",
+      "category": "Websocket disconnect",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "No Socket.io connection state recovery \u2014 clients lose all room state on disconnect; no reconnection backoff strategy configured",
+      "impact": "On network blip, all clients must manually re-join rooms and re-fetch state; messages sent during disconnect window are lost",
+      "fix": "Enable connectionStateRecovery in Socket.io; implement client-side exponential backoff reconnection; add message queue flush on reconnect",
+      "scenario": "Network partition occurs for 5 seconds. All 100 connected WebSocket clients disconnect. On reconnect, each client must re-emit channel:join for every channel they were in (potentially 10+ events each). Server receives 1000+ join events simultaneously. During the disconnect window, any messages sent are not received by disconnected clients \u2014 no offline queue exists."
+    },
+    {
+      "severity": "P0",
+      "domain": "resilience",
+      "category": "Circuit breaker",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker implemented via opossum but only wired to webhook delivery \u2014 NOT to Supabase client, not to Redis, not to external HTTP calls",
+      "impact": "Cascading failure from slow Supabase: every request tries Supabase, all fail slowly, no circuit opens to give recovery time",
+      "fix": "Wrap Supabase client queries in circuit breaker; add circuit breaker around Redis operations; expose breaker state in /metrics and /health",
+      "scenario": "Supabase primary has a failover event taking 60 seconds. Every API request (50+ per second) sends a query to Supabase and waits. Circuit breaker on Supabase would detect >50% failure rate and open after 10 requests, returning fast 503 for subsequent requests. Without circuit breaker, all 3000 requests in that minute each wait for the 30s query timeout, completely exhausting node event loop."
+    },
+    {
+      "severity": "P1",
+      "domain": "resilience",
+      "category": "Retry logic",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit event queue is in-memory with no persistence \u2014 lost on process restart; retry delay is fixed 5s with no exponential backoff",
+      "impact": "Audit events during restart window are permanently lost; no backoff causes congestion on recovery",
+      "fix": "Replace in-memory queue with Redis-backed queue; implement exponential backoff (1s, 2s, 4s, 8s, 16s) for retries",
+      "scenario": "API process restarts during deploy. 50 pending audit events in the in-memory queue are lost. These events include workspace creation, member additions, and message deletions \u2014 audit trail has a gap. After restart, retry fires all failed writes at 5s intervals, potentially overloading Supabase."
+    },
+    {
+      "severity": "P1",
+      "domain": "resilience",
+      "category": "Partial writes",
+      "file": "apps/api/src/modules/workspaces/service.ts",
+      "issue": "Bulk workspace member operations (add/remove) return success/failure per item but don't wrap in transaction \u2014 partial success possible",
+      "impact": "Half of a bulk member operation may succeed while other half fails, leaving workspace in inconsistent state",
+      "fix": "Wrap bulk member operations in Supabase RPC with transaction; return per-item results with ok/error pattern",
+      "scenario": "Admin adds 10 members to a workspace in a single call. Member 5's user_id doesn't exist. Database rejects the INSERT. But members 1-4 were already inserted. The API returns 200 with no indication of partial failure. Workspace now has 4 members but admin thinks all 10 were added."
+    },
+    {
+      "severity": "P1",
+      "domain": "resilience",
+      "category": "Double execution",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "issue": "Webhook delivery retry generates new idempotency key per attempt \u2014 receiver cannot deduplicate across retries",
+      "impact": "Webhook receivers may process the same event multiple times (duplicate CI builds, duplicate notifications)",
+      "fix": "Use stable event-based idempotency key (e.g., hash of event type + trigger timestamp + webhook_id) across all retry attempts",
+      "scenario": "Webhook delivery times out after 10s. Retry fires with a NEW idempotency key. Both requests eventually reach the receiver. The receiver processes the same 'deploy:complete' event twice, triggering two separate CI pipeline runs and two Slack notifications."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "Incorrect UI states",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "Message send has no optimistic UI rollback on error \u2014 if message send fails, there is no user-visible error or retry mechanism",
+      "impact": "Failed sends silently disappear from UI; users must retype messages",
+      "fix": "Show inline error state on failed messages with 'Retry' button; preserve message content for retry",
+      "scenario": "User types a 500-character message and clicks Send. The API call fails due to network timeout. The message was optimistically added to the UI but disappears when the API call completes with an error. User sees no indication of failure and assumes the message was sent."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "Async breakdown",
+      "file": "apps/api/src/lib/idempotency.ts",
+      "issue": "In-memory idempotency fallback has no size limit or eviction policy \u2014 unbounded memory growth",
+      "impact": "Memory leak under high message volume; process OOM can kill the API server",
+      "fix": "Add LRU eviction with max 10000 entries to in-memory Map fallback",
+      "scenario": "A marketing campaign triggers a burst of 100,000 messages in 10 minutes. Each message carries an idempotency key. The in-memory Map grows to 100,000 entries (one per message). Each entry stores a message ID string + timestamp. At ~100 bytes per entry, this is 10MB \u2014 not huge, but without limits, sustained 1M+ requests/day leads to unbounded growth."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "Retry logic",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit service retry uses setTimeout with no max retry count cap \u2014 can retry indefinitely",
+      "impact": "Theoretically infinite retries on persistent failures, wasting resources and creating log noise",
+      "fix": "Add maxRetries (3) and dead-letter after exhaustion, similar to webhook service pattern",
+      "scenario": "Supabase connection is permanently failing (wrong credentials). The audit service queues every audit event and retries every 5 seconds, forever. Each retry attempt logs a warning. After 24 hours, there are 17,280 failed retry attempts consuming CPU and log storage."
+    }
+  ],
+  "run_id": "resilience_chaos_ultra_20260701_074119"
+}

@@ -1,0 +1,85 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "supply_chain_ultra",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-01T07:41:18Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 2,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "dependency_hygiene": 45,
+    "docker_security": 50,
+    "ci_cd_artifacts": 40,
+    "lockfile_integrity": 60
+  },
+  "readiness": 48.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "supply_chain",
+      "category": "CI/CD artifacts",
+      "file": ".github/workflows/validate.yml",
+      "issue": "Trivy vulnerability scanner uses @master mutable tag \u2014 not pinned to a specific SHA or semver",
+      "impact": "Supply chain risk: a compromised or updated @master could introduce malicious code into CI pipeline without review",
+      "fix": "Pin trivy-action to a specific SHA (e.g., aquasecurity/trivy-action@595be6a...) or semver tag (e.g., @v0.28.0)"
+    },
+    {
+      "severity": "P0",
+      "domain": "supply_chain",
+      "category": "CI/CD artifacts",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Trivy action also uses @master tag in build-push.yml \u2014 same supply chain issue",
+      "impact": "Supply chain risk across two CI workflows using unpinned mutable reference",
+      "fix": "Pin trivy-action to a specific SHA in build-push.yml as well"
+    },
+    {
+      "severity": "P1",
+      "domain": "supply_chain",
+      "category": "Dependencies",
+      "file": "",
+      "issue": "pnpm audit threshold set to --audit-level=moderate \u2014 only blocks moderate+ severity; high/critical advisories pass if below moderate threshold",
+      "impact": "High-severity dependency vulnerabilities may not block CI; false sense of security from audit check",
+      "fix": "Set --audit-level=high to at minimum block high-severity vulnerabilities; consider blocking at critical level"
+    },
+    {
+      "severity": "P1",
+      "domain": "supply_chain",
+      "category": "Docker hygiene",
+      "file": "apps/api/Dockerfile",
+      "issue": "wget installed in production Docker image \u2014 unnecessary package increases runtime attack surface",
+      "impact": "Extra package in production container provides additional attack vector for RCE exploits",
+      "fix": "Remove wget from production Dockerfile; use curl or HEALTHCHECK built-in instead"
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "Docker hygiene",
+      "file": "apps/api/Dockerfile",
+      "issue": "Docker multi-stage builds use npm ci and then discard devDependencies, but pnpm store is not cleaned \u2014 final image may contain package manager artifacts",
+      "impact": "Unnecessary layer bloat increases image size and attack surface",
+      "fix": "Add pnpm store prune and .pnpm-store directory cleanup in final stage"
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "Dependencies",
+      "file": "",
+      "issue": "No Dependabot or Renovate configuration for automated dependency updates \u2014 .github/dependabot.yml does not exist",
+      "impact": "Dependency vulnerabilities may go unnoticed until manually discovered; no automated PRs for security patches",
+      "fix": "Create .github/dependabot.yml with weekly checks for npm, GitHub Actions, and Docker dependencies"
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "Docker hygiene",
+      "file": "apps/api/Dockerfile",
+      "issue": "Dockerfile has HEALTHCHECK (good) but no USER directive \u2014 containers run as root by default",
+      "impact": "If container is compromised, attacker has root access inside the container",
+      "fix": "Add 'USER appuser' after installing dependencies; create appuser in Dockerfile"
+    }
+  ],
+  "run_id": "supply_chain_ultra_20260701_074119"
+}
