@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import Image from "next/image";
 import { Avatar } from "@chat/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
@@ -30,8 +31,7 @@ export function AvatarUpload() {
       });
       await fetch(res.uploadUrl, { method: "PUT", body: file });
       setAvatarUrl(res.publicUrl);
-    } catch (err) {
-      console.error("Avatar upload failed:", err);
+    } catch {
       setUploadError("Failed to upload. Please try again.");
     } finally {
       setUploading(false);
@@ -59,10 +59,12 @@ export function AvatarUpload() {
           {previewUrl && (
             <div className="border-b border-[var(--color-border-primary)] px-4 py-2">
               <p className="mb-1 text-xs text-[var(--color-foreground-tertiary)]">Preview</p>
-              <img
+              <Image
                 src={previewUrl}
-                alt="Avatar preview"
-                className="mx-auto h-16 w-16 rounded-full object-cover"
+                alt="Preview of uploaded avatar"
+                width={64}
+                height={64}
+                className="mx-auto rounded-full object-cover"
               />
             </div>
           )}

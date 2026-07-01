@@ -5,6 +5,21 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Skeleton } from "@chat/ui";
 
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query || query.length < 2) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return parts.map((part, i) =>
+    part.toLowerCase() === query.toLowerCase() ? (
+      <mark key={i} className="rounded-sm bg-yellow-200 px-0.5 dark:bg-yellow-800">
+        {part}
+      </mark>
+    ) : (
+      part
+    ),
+  );
+}
+
 const SEARCH_DEBOUNCE_MS = 300;
 const CHANNELS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -77,8 +92,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         setResults(res.messages.map((m) => ({ ...m, channel_slug: slugMap.get(m.channel_id) })));
         setSelectedIndex(-1);
         setOpen(true);
-      } catch (err) {
-        console.error("Search failed:", err);
+      } catch {
         setResults([]);
       } finally {
         setLoading(false);
@@ -156,7 +170,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               role="option"
               aria-selected={index === selectedIndex}
             >
-              <p className="text-sm break-words">{r.content.slice(0, 120)}</p>
+              <p className="text-sm break-words">{highlightText(r.content.slice(0, 200), query)}</p>
               <p className="mt-0.5 text-xs text-[var(--color-foreground-tertiary)]">
                 {new Date(r.created_at).toLocaleDateString()}
               </p>
