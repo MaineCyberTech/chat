@@ -38,8 +38,8 @@ export function securityHeaders(_req: Request, res: Response, next: NextFunction
   // DNS prefetch control
   res.setHeader("X-DNS-Prefetch-Control", "off");
 
-  // Cross-Origin Isolation headers
-  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  // Cross-Origin Isolation headers — credentialless for compatibility
+  res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
 
