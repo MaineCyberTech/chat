@@ -116,7 +116,9 @@ jobs:
               echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> ${{ env.REPO_DIR }}/.env
             fi
             if [ -n "${{ secrets.VAPID_PUBLIC_KEY }}" ]; then
-              echo "VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> ${{ env.REPO_DIR }}/.env
+              echo "LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}
+          LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}
+          VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> ${{ env.REPO_DIR }}/.env
             fi
             if [ -n "${{ secrets.VAPID_PRIVATE_KEY }}" ]; then
               echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> ${{ env.REPO_DIR }}/.env
@@ -143,9 +145,9 @@ jobs:
             cd ${{ env.REPO_DIR }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             docker system prune -af --volumes
-            docker pull ghcr.io/${{ env.REPO_LC }}/api:dev
-            docker pull ghcr.io/${{ env.REPO_LC }}/worker:dev
-            docker pull ghcr.io/${{ env.REPO_LC }}/web:dev
+            docker pull ghcr.io/${{ env.REPO_LC }}/api:dev || { echo "WARNING: api:dev pull failed, will use cached or retry"; sleep 3; docker pull ghcr.io/${{ env.REPO_LC }}/api:dev || true; }
+            docker pull ghcr.io/${{ env.REPO_LC }}/worker:dev || { echo "WARNING: worker:dev pull failed, will use cached or retry"; sleep 3; docker pull ghcr.io/${{ env.REPO_LC }}/worker:dev || true; }
+            docker pull ghcr.io/${{ env.REPO_LC }}/web:dev || { echo "WARNING: web:dev pull failed, will use cached or retry"; sleep 3; docker pull ghcr.io/${{ env.REPO_LC }}/web:dev || true; }
             docker compose -f infra/docker/docker-compose.devremote.yml up -d --force-recreate --remove-orphans
             docker image prune -af
 
