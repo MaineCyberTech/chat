@@ -34,7 +34,10 @@ export default function LoginPage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
-        <p className="text-gray-500">Loading...</p>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border-primary)] border-t-[var(--color-brand-primary)]" />
+          <p className="text-sm text-[var(--color-foreground-secondary)]">Loading...</p>
+        </div>
       </main>
     );
   }
@@ -43,8 +46,12 @@ export default function LoginPage() {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
         <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-gray-500">Unable to load your workspaces.</p>
-          <p className="text-sm text-gray-400">Please try refreshing the page.</p>
+          <p className="text-[var(--color-foreground-secondary)]">
+            Unable to load your workspaces.
+          </p>
+          <p className="text-sm text-[var(--color-foreground-tertiary)]">
+            Please try refreshing the page.
+          </p>
         </div>
       </main>
     );
@@ -54,10 +61,12 @@ export default function LoginPage() {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
         <div className="flex flex-col items-center gap-3">
-          <p className="text-gray-500">Redirecting to your workspace...</p>
-          <div className="h-1 w-32 overflow-hidden rounded-full bg-gray-200">
+          <p className="text-[var(--color-foreground-secondary)]">
+            Redirecting to your workspace...
+          </p>
+          <div className="h-1 w-32 overflow-hidden rounded-full bg-[var(--color-background-tertiary)]">
             <div
-              className="h-full animate-pulse rounded-full bg-blue-600"
+              className="h-full animate-pulse rounded-full bg-[var(--color-brand-primary)]"
               style={{ width: "60%" }}
             />
           </div>
@@ -70,7 +79,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-3xl font-bold">Sign In</h1>
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-[var(--color-foreground-secondary)]">
           Sign in with email and password, or use a magic link.
         </p>
       </div>

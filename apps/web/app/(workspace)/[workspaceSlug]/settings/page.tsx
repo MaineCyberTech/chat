@@ -84,8 +84,9 @@ export default function SettingsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex h-full items-center justify-center text-[var(--color-foreground-tertiary)]">
-        Loading...
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-[var(--color-foreground-tertiary)]">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-border-primary)] border-t-[var(--color-brand-primary)]" />
+        <span className="text-sm">Loading preferences...</span>
       </div>
     );
   }

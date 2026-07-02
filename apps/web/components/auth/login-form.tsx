@@ -130,13 +130,20 @@ export function LoginForm() {
           </p>
         )}
         <Button type="submit" disabled={status === "loading"}>
-          {status === "loading"
-            ? "Loading..."
-            : mode === "signin"
-              ? password
-                ? "Sign In"
-                : "Send Magic Link"
-              : "Create Account"}
+          {status === "loading" ? (
+            <span className="flex items-center gap-2">
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />{" "}
+              Signing in...
+            </span>
+          ) : mode === "signin" ? (
+            password ? (
+              "Sign In"
+            ) : (
+              "Send Magic Link"
+            )
+          ) : (
+            "Create Account"
+          )}
         </Button>
       </form>
 

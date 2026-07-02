@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChatView } from "@/components/chat/chat-view";
 import { api } from "@/lib/api";
+import { Skeleton } from "@chat/ui";
 import type { Channel, Workspace } from "@chat/db";
 
 export default function ChannelPageClient() {
@@ -37,14 +38,20 @@ export default function ChannelPageClient() {
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center text-gray-400">
+      <div className="flex h-full items-center justify-center text-[var(--color-foreground-tertiary)]">
         <p>Channel not found</p>
       </div>
     );
   }
 
   if (!channel) {
-    return <div className="flex h-full items-center justify-center text-gray-400">Loading...</div>;
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 p-8">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-16 w-3/4" />
+        <Skeleton className="h-16 w-2/3" />
+      </div>
+    );
   }
 
   return (

@@ -98,7 +98,12 @@ export default function AuthCallbackPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center p-8">
-          <p className="text-[var(--color-foreground-secondary)]">Loading...</p>
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border-primary)] border-t-[var(--color-brand-primary)]" />
+            <p className="text-sm text-[var(--color-foreground-secondary)]">
+              Completing sign in...
+            </p>
+          </div>
         </div>
       }
     >

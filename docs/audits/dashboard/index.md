@@ -8,27 +8,20 @@
 
 ## Risk Trend Callouts
 
-- No previous run is available yet for trend deltas.
+- P0 delta vs previous run: +1
+- P1 delta vs previous run: +4
 
 ## Last 5 Audit Runs
 
-| Run ID      | Decision |  P0 |  P1 |  P2 |  P3 |
-| ----------- | -------- | --: | --: | --: | --: |
-| testrun_001 | NO-GO    |   1 |   4 |   2 |   1 |
+| Run ID                            | Decision      |  P0 |  P1 |  P2 |  P3 |
+| --------------------------------- | ------------- | --: | --: | --: | --: |
+| hardening_release_20260630_050531 | GO WITH RISKS |   0 |   0 |   7 |   0 |
+| testrun_001                       | NO-GO         |   1 |   4 |   2 |   1 |
 
 ## Top Recurring Categories
 
+- **F3** — 2 finding(s)
 - **Category A** — 1 finding(s)
 - **Category C** — 1 finding(s)
 - **Category H** — 1 finding(s)
 - **Category J** — 1 finding(s)
-- **Category O** — 1 finding(s)
-
-## Dashboard Assets
-
-- `p0_p1_trends.png`
-- `decision_history.png`
-- `severity_stacked_bars.png`
-- `category_health_trends.png`
-- `release_readiness_scorecard.png`
-- `category_health_scores.png`

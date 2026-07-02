@@ -417,27 +417,27 @@ The Hardening Findings Tracker covers audits 3-6 (Security, API, Database, Infra
 
 ## GitHub Actions Workflows
 
-| Workflow                          | Trigger                  | Purpose                                                                     |
-| --------------------------------- | ------------------------ | --------------------------------------------------------------------------- |
-| `ci.yml`                          | push main/develop, PR    | Calls reusable validate.yml (test, lint, typecheck, build)                  |
-| `validate.yml`                    | workflow_call            | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache       |
-| `build-push.yml`                  | push develop             | Build Docker images → push to GHCR `:dev` tag (path-filtered)               |
-| `deploy-development.yml`          | push develop             | SSH to droplet, transfer files, pipe images, compose up, health check       |
-| `infra-development.yml`           | push infra/\*\* changes  | Terraform provision droplet + DNS + firewall + SSH key registration         |
-| `deploy-production.yml`           | push main, manual        | Build + push `:latest` images, deploy to production droplet, health check   |
-| `supabase-migrations.yml`         | push develop, infra/\*\* | Supabase link + db push (runs before deploy)                                |
-| `audit-ci.yml`                    | workflow_dispatch        | CI audit badge generation                                                   |
-| `audit-ci-autocommit.yml`         | workflow_dispatch        | Auto-commit audit CI results                                                |
-| `audit-badges-autocommit.yml`     | workflow_dispatch        | Auto-commit audit badge updates                                             |
-| `audit-pr-gate.yml`               | PR                       | Audit-based PR gate checks                                                  |
-| `audit-release-certification.yml` | release                  | Release certification audit                                                 |
-| `environment-promotion-audit.yml` | workflow_dispatch        | Environment promotion audit                                                 |
-| `executive-stakeholder-pack.yml`  | workflow_dispatch        | Generate executive/stakeholder report pack                                  |
-| `feature-rollout-checkpoint.yml`  | workflow_dispatch        | Feature rollout checkpoint audit                                            |
-| `governance.yml`                  | workflow_dispatch        | Governance policy enforcement                                               |
-| `hardening-automation-runner.yml` | workflow_dispatch        | Automated hardening analysis runner                                         |
-| `hardening.yml`                   | push, pull_request       | ❌ **BROKEN** — calls `run_full.ps1` which references 5 nonexistent scripts |
-| `platform.yml`                    | workflow_dispatch        | Platform-level CI/CD orchestration                                          |
+| Workflow                          | Trigger                  | Purpose                                                                   |
+| --------------------------------- | ------------------------ | ------------------------------------------------------------------------- |
+| `ci.yml`                          | push main/develop, PR    | Calls reusable validate.yml (test, lint, typecheck, build)                |
+| `validate.yml`                    | workflow_call            | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache     |
+| `build-push.yml`                  | push develop             | Build Docker images → push to GHCR `:dev` tag (path-filtered)             |
+| `deploy-development.yml`          | push develop             | SSH to droplet, transfer files, pipe images, compose up, health check     |
+| `infra-development.yml`           | push infra/\*\* changes  | Terraform provision droplet + DNS + firewall + SSH key registration       |
+| `deploy-production.yml`           | push main, manual        | Build + push `:latest` images, deploy to production droplet, health check |
+| `supabase-migrations.yml`         | push develop, infra/\*\* | Supabase link + db push (runs before deploy)                              |
+| `audit-ci.yml`                    | workflow_dispatch        | CI audit badge generation                                                 |
+| `audit-ci-autocommit.yml`         | workflow_dispatch        | Auto-commit audit CI results                                              |
+| `audit-badges-autocommit.yml`     | workflow_dispatch        | Auto-commit audit badge updates                                           |
+| `audit-pr-gate.yml`               | PR                       | Audit-based PR gate checks                                                |
+| `audit-release-certification.yml` | release                  | Release certification audit                                               |
+| `environment-promotion-audit.yml` | workflow_dispatch        | Environment promotion audit                                               |
+| `executive-stakeholder-pack.yml`  | workflow_dispatch        | Generate executive/stakeholder report pack                                |
+| `feature-rollout-checkpoint.yml`  | workflow_dispatch        | Feature rollout checkpoint audit                                          |
+| `governance.yml`                  | workflow_dispatch        | Governance policy enforcement                                             |
+| `hardening-automation-runner.yml` | workflow_dispatch        | Automated hardening analysis runner                                       |
+| `hardening.yml`                   | workflow_dispatch        | ✅ **FIXED** — runs hardening pipeline via `run_hardening_pipeline.py`    |
+| `platform.yml`                    | workflow_dispatch        | Platform-level CI/CD orchestration                                        |
 
 ## Environments
 
@@ -568,20 +568,30 @@ pnpm dev
 
 ## Secrets Required
 
-| Secret                      | Used By       |
-| --------------------------- | ------------- |
-| `DO_API_TOKEN`              | infra, deploy |
-| `CI_SSH_PUBLIC_KEY`         | infra, deploy |
-| `CI_SSH_PRIVATE_KEY`        | deploy        |
-| `DO_SSH_PRIVATE_KEY`        | deploy        |
-| `DO_SSH_PASSPHRASE`         | deploy        |
-| `CF_API_TOKEN`              | infra         |
-| `CF_ZONE_ID`                | infra         |
-| `SUPABASE_URL`              | deploy, build |
-| `SUPABASE_ANON_KEY`         | deploy, build |
-| `SUPABASE_SERVICE_ROLE_KEY` | deploy        |
-| `CF_ORIGIN_CERT`            | deploy        |
-| `CF_ORIGIN_KEY`             | deploy        |
-| `AWS_ACCESS_KEY_ID`         | infra         |
-| `AWS_SECRET_ACCESS_KEY`     | infra         |
-| `GITHUB_TOKEN`              | auto-provided |
+| Secret                      | Used By                       |
+| --------------------------- | ----------------------------- |
+| `DO_API_TOKEN`              | infra, deploy                 |
+| `CI_SSH_PUBLIC_KEY`         | infra, deploy                 |
+| `CI_SSH_PRIVATE_KEY`        | deploy                        |
+| `DO_SSH_PRIVATE_KEY`        | deploy                        |
+| `DO_SSH_PASSPHRASE`         | deploy                        |
+| `CF_API_TOKEN`              | infra                         |
+| `CF_ZONE_ID`                | infra                         |
+| `SUPABASE_URL`              | deploy, build                 |
+| `SUPABASE_ANON_KEY`         | deploy, build                 |
+| `SUPABASE_SERVICE_ROLE_KEY` | deploy                        |
+| `CF_ORIGIN_CERT`            | deploy                        |
+| `CF_ORIGIN_KEY`             | deploy                        |
+| `AWS_ACCESS_KEY_ID`         | infra                         |
+| `AWS_SECRET_ACCESS_KEY`     | infra                         |
+| `CI_SSH_FINGERPRINT`        | infra                         |
+| `ALERT_EMAIL`               | infra                         |
+| `SSH_ALLOWED_IPS`           | infra, deploy                 |
+| `LIVEKIT_API_KEY`           | deploy                        |
+| `LIVEKIT_API_SECRET`        | deploy                        |
+| `VAPID_PUBLIC_KEY`          | deploy                        |
+| `VAPID_PRIVATE_KEY`         | deploy                        |
+| `SUPABASE_PROJECT_REF`      | supabase-migrations           |
+| `SUPABASE_ACCESS_TOKEN`     | supabase-migrations, validate |
+| `SUPABASE_DB_PASSWORD`      | supabase-migrations, validate |
+| `GITHUB_TOKEN`              | auto-provided                 |

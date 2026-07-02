@@ -99,40 +99,40 @@ resource "digitalocean_firewall" "chat" {
 }
 
 # Monitoring alerts
-resource "digitalocean_monitoring_alert" "cpu_high" {
-  alerts {
-    email = [var.alert_email]
-  }
-  window  = "5m"
+resource "digitalocean_monitor_alert" "cpu_high" {
   type    = "v1/insights/droplet/cpu"
   value   = "80"
   compare = "GreaterThan"
+  window  = "5m"
+  alerts {
+    email = [var.alert_email]
+  }
   entities = [digitalocean_droplet.chat.id]
   description = "CPU usage > 80% on chat-${var.environment}"
   enabled = true
 }
 
-resource "digitalocean_monitoring_alert" "memory_high" {
-  alerts {
-    email = [var.alert_email]
-  }
-  window  = "5m"
+resource "digitalocean_monitor_alert" "memory_high" {
   type    = "v1/insights/droplet/memory_utilization_percent"
   value   = "80"
   compare = "GreaterThan"
+  window  = "5m"
+  alerts {
+    email = [var.alert_email]
+  }
   entities = [digitalocean_droplet.chat.id]
   description = "Memory usage > 80% on chat-${var.environment}"
   enabled = true
 }
 
-resource "digitalocean_monitoring_alert" "disk_full" {
-  alerts {
-    email = [var.alert_email]
-  }
-  window  = "5m"
+resource "digitalocean_monitor_alert" "disk_full" {
   type    = "v1/insights/droplet/disk_utilization_percent"
   value   = "90"
   compare = "GreaterThan"
+  window  = "5m"
+  alerts {
+    email = [var.alert_email]
+  }
   entities = [digitalocean_droplet.chat.id]
   description = "Disk usage > 90% on chat-${var.environment}"
   enabled = true

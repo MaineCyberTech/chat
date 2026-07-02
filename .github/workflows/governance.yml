@@ -1,5 +1,6 @@
 name: Governance v5
-on: [push, pull_request]
+on:
+  workflow_dispatch:
 jobs:
   governance:
     runs-on: ubuntu-latest

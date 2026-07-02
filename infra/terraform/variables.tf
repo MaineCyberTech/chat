@@ -42,6 +42,12 @@ variable "cloudflare_api_token" {
   sensitive   = true
 }
 
+variable "alert_email" {
+  description = "Email address for DigitalOcean monitoring alerts"
+  type        = string
+  default     = ""
+}
+
 variable "ci_public_key" {
   description = "CI SSH public key to add to droplet authorized_keys"
   type        = string

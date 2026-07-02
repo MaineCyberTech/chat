@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { CreateChannelDialog } from "@/components/channel/create-channel-dialog";
+import { Skeleton } from "@chat/ui";
 import type { Workspace } from "@chat/db";
 
 export default function WorkspacePageClient() {
@@ -25,8 +26,10 @@ export default function WorkspacePageClient() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-[var(--color-foreground-tertiary)]">
-        Loading...
+      <div className="flex h-full flex-col items-center justify-center gap-3 p-8">
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-4 w-64" />
+        <Skeleton className="h-10 w-36" />
       </div>
     );
   }

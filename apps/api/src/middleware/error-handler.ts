@@ -1,16 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { logger } from "../lib/logger.js";
+import { AppError } from "../lib/app-error.js";
+import { failure } from "../lib/response.js";
 
-export class AppError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number = 500,
-    public code: string = "INTERNAL_ERROR",
-  ) {
-    super(message);
-    this.name = "AppError";
-  }
-}
+export { AppError };
 
 export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof AppError) {
@@ -20,17 +13,27 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
       statusCode: err.statusCode,
       message: err.message,
     });
-    res.status(err.statusCode).json({
-      error: { code: err.code, message: err.message },
-    });
+    const useEnvelope = req.query?.envelope === "true";
+    if (useEnvelope) {
+      res.status(err.statusCode).json(failure(err.code, err.message, err.statusCode));
+    } else {
+      res.status(err.statusCode).json({
+        error: { code: err.code, message: err.message },
+      });
+    }
   } else {
     logger.error("Unhandled error", {
       requestId: req.requestId,
       message: err.message,
       stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
     });
-    res.status(500).json({
-      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
-    });
+    const useEnvelope = req.query?.envelope === "true";
+    if (useEnvelope) {
+      res.status(500).json(failure("INTERNAL_ERROR", "An unexpected error occurred", 500));
+    } else {
+      res.status(500).json({
+        error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
+      });
+    }
   }
 }

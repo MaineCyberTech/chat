@@ -17,6 +17,7 @@ import { doubleSubmitCookieCsrf } from "./middleware/csrf.js";
 import { register, httpRequestsTotal, httpRequestDuration } from "./lib/metrics.js";
 import { sentryErrorMiddleware } from "./lib/sentry.js";
 import { authenticate } from "./middleware/authenticate.js";
+import { inputSanitizer } from "./middleware/input-sanitizer.js";
 import healthRoutes from "./modules/health/routes.js";
 import authRoutes from "./modules/auth/routes.js";
 import workspaceRoutes from "./modules/workspaces/routes.js";
@@ -69,6 +70,7 @@ export function createApp(frontendUrl: string): Express {
   app.use(securityHeaders);
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: true }));
+  app.use(inputSanitizer);
   app.use(cookieParser());
   app.use(doubleSubmitCookieCsrf);
   app.use(requestId);

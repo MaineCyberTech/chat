@@ -117,7 +117,10 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   if (authLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-[var(--color-background-primary)]">
-        <p className="text-[var(--color-foreground-secondary)]">Loading...</p>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border-primary)] border-t-[var(--color-brand-primary)]" />
+          <p className="text-sm text-[var(--color-foreground-secondary)]">Loading workspace...</p>
+        </div>
       </div>
     );
   }

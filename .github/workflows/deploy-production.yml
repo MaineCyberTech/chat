@@ -209,18 +209,20 @@ jobs:
             git fetch origin main
             git checkout main
             git reset --hard origin/main
-            cat > infra/docker/.env.prod << 'EOF'
+            cat > infra/docker/.env << 'EOF'
             SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
             SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-            NEXT_PUBLIC_API_URL=https://chat.mainecybertech.com
+            NEXT_PUBLIC_API_URL=https://chat.${{ env.DOMAIN }}
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-            NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.com
+            NEXT_PUBLIC_APP_URL=https://chat.${{ env.DOMAIN }}
             PORT=4000
             NODE_ENV=production
-            API_BASE_URL=https://chat.mainecybertech.com
-            FRONTEND_URL=https://chat.mainecybertech.com
+            API_BASE_URL=https://chat-api.${{ env.DOMAIN }}
+            FRONTEND_URL=https://chat.${{ env.DOMAIN }}
+            DOMAIN=${{ env.DOMAIN }}
+            ENVIRONMENT=${{ env.ENVIRONMENT }}
             LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}
             LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}
             VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
@@ -267,7 +269,7 @@ jobs:
   rollback:
     name: Rollback to Previous Version
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback_sha != ''
-    needs: build-images
+    needs: [provision, build-images]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
