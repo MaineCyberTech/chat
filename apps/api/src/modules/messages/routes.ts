@@ -39,10 +39,17 @@ router.get("/messages/search", async (req, res) => {
     res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
     return;
   }
+  const channelIds = parsed.data.channel_ids
+    ? parsed.data.channel_ids.split(",").filter(Boolean)
+    : null;
   const { data, error } = await req.supabase.rpc("search_messages", {
     workspace_id: parsed.data.workspace_id,
     query_text: parsed.data.q,
     result_limit: 20,
+    date_from: parsed.data.date_from ?? null,
+    date_to: parsed.data.date_to ?? null,
+    author_id: parsed.data.author_id ?? null,
+    channel_ids: channelIds,
   });
 
   if (error) {

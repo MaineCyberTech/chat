@@ -89,6 +89,10 @@ export const updateProfileSchema = z.object({
 export const searchQuerySchema = z.object({
   q: z.string().min(2).max(200),
   workspace_id: z.string().uuid(),
+  date_from: z.string().datetime().optional(),
+  date_to: z.string().datetime().optional(),
+  author_id: z.string().uuid().optional(),
+  channel_ids: z.string().optional(),
 });
 
 export const batchProfilesSchema = z.object({

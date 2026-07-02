@@ -61,6 +61,10 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [authorFilter, setAuthorFilter] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -69,11 +73,18 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   }, []);
 
   useEffect(() => {
-    // Only auto-focus on desktop to avoid pulling up keyboard on mobile
     if (inputRef.current && window.innerWidth >= 768) {
       inputRef.current.focus();
     }
   }, []);
+
+  function buildSearchUrl(q: string): string {
+    let url = `/messages/search?q=${encodeURIComponent(q)}&workspace_id=${workspaceId}`;
+    if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
+    if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
+    if (authorFilter) url += `&author_id=${encodeURIComponent(authorFilter)}`;
+    return url;
+  }
 
   const search = useCallback(
     async (q: string) => {
@@ -84,9 +95,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       }
       setLoading(true);
       try {
-        const res = await api.get<{ messages: SearchResult[] }>(
-          `/messages/search?q=${encodeURIComponent(q)}&workspace_id=${workspaceId}`,
-        );
+        const res = await api.get<{ messages: SearchResult[] }>(buildSearchUrl(q));
         const channels = await getChannelsWithCache(workspaceId);
         const slugMap = new Map(channels.map((c) => [c.id, c.slug]));
         setResults(res.messages.map((m) => ({ ...m, channel_slug: slugMap.get(m.channel_id) })));
@@ -98,7 +107,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         setLoading(false);
       }
     },
-    [workspaceId],
+    [workspaceId, dateFrom, dateTo, authorFilter],
   );
 
   const handleKeyDown = useCallback(
@@ -133,25 +142,77 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
 
   return (
     <div className="relative">
-      <input
-        ref={inputRef}
-        type="text"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          clearTimeout(debounceRef.current);
-          debounceRef.current = setTimeout(() => search(e.target.value), SEARCH_DEBOUNCE_MS);
-        }}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        placeholder="Search messages..."
-        aria-label="Search messages"
-        aria-autocomplete="list"
-        aria-controls="search-results"
-        aria-expanded={open && results.length > 0}
-        className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-1.5 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
-      />
+      <div className="flex gap-1">
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(() => search(e.target.value), SEARCH_DEBOUNCE_MS);
+          }}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          placeholder="Search messages..."
+          aria-label="Search messages"
+          aria-autocomplete="list"
+          aria-controls="search-results"
+          aria-expanded={open && results.length > 0}
+          className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-1.5 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
+        />
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`shrink-0 rounded-lg px-2 text-xs font-medium transition-colors ${
+            showFilters
+              ? "bg-[var(--color-brand-primary)] text-white"
+              : "bg-[var(--color-background-tertiary)] text-[var(--color-foreground-secondary)]"
+          }`}
+          aria-label="Toggle search filters"
+          title="Search filters"
+        >
+          ⚙
+        </button>
+      </div>
+      {showFilters && (
+        <div className="mt-1 flex flex-wrap gap-2">
+          <div className="min-w-[120px] flex-1">
+            <label className="mb-0.5 block text-xs text-[var(--color-foreground-tertiary)]">
+              From
+            </label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full rounded border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-2 py-1 text-xs text-[var(--color-input-fg)]"
+            />
+          </div>
+          <div className="min-w-[120px] flex-1">
+            <label className="mb-0.5 block text-xs text-[var(--color-foreground-tertiary)]">
+              To
+            </label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full rounded border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-2 py-1 text-xs text-[var(--color-input-fg)]"
+            />
+          </div>
+          <div className="min-w-[120px] flex-1">
+            <label className="mb-0.5 block text-xs text-[var(--color-foreground-tertiary)]">
+              Author ID
+            </label>
+            <input
+              type="text"
+              value={authorFilter}
+              onChange={(e) => setAuthorFilter(e.target.value)}
+              placeholder="User ID (UUID)"
+              className="w-full rounded border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-2 py-1 text-xs text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)]"
+            />
+          </div>
+        </div>
+      )}
       {open && results.length > 0 && (
         <div
           id="search-results"
