@@ -63,7 +63,7 @@ CREATE INDEX IF NOT EXISTS idx_thread_participants_user
 CREATE OR REPLACE FUNCTION public.handle_thread_reply()
 RETURNS TRIGGER AS $$
 DECLARE
-  thread_id UUID;
+  v_thread_id UUID;
 BEGIN
   -- Upsert thread_metadata for the parent message
   INSERT INTO public.thread_metadata (message_id, reply_count, participant_count, last_activity_at)
@@ -71,17 +71,17 @@ BEGIN
   ON CONFLICT (message_id) DO UPDATE SET
     reply_count = thread_metadata.reply_count + 1,
     last_activity_at = GREATEST(thread_metadata.last_activity_at, NEW.created_at)
-  RETURNING id INTO thread_id;
+  RETURNING id INTO v_thread_id;
 
   -- Add replier as thread participant
   INSERT INTO public.thread_participants (thread_id, user_id)
-  VALUES (thread_id, NEW.user_id)
+  VALUES (v_thread_id, NEW.user_id)
   ON CONFLICT (thread_id, user_id) DO UPDATE SET
     last_read_at = NEW.created_at;
 
   -- Also add parent message author as participant
   INSERT INTO public.thread_participants (thread_id, user_id)
-  SELECT thread_id, m.user_id FROM public.messages m WHERE m.id = NEW.parent_id
+  SELECT v_thread_id, m.user_id FROM public.messages m WHERE m.id = NEW.parent_id
   ON CONFLICT (thread_id, user_id) DO NOTHING;
 
   RETURN NEW;

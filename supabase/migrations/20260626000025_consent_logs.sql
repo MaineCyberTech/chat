@@ -12,10 +12,10 @@ create index if not exists idx_consent_logs_user_id on public.consent_logs(user_
 
 alter table public.consent_logs enable row level security;
 
-create policy "Users can view own consent"
+create policy if not exists "Users can view own consent"
   on public.consent_logs for select
   using (auth.uid() = user_id);
 
-create policy "Users can insert own consent"
+create policy if not exists "Users can insert own consent"
   on public.consent_logs for insert
   with check (auth.uid() = user_id);
