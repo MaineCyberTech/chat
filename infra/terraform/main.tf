@@ -64,6 +64,27 @@ resource "digitalocean_firewall" "chat" {
     source_addresses = data.cloudflare_ip_ranges.ipv6.ipv6_cidrs
   }
 
+  # LiveKit WebRTC media ports (UDP)
+  inbound_rule {
+    protocol         = "udp"
+    port_range       = "7882-7892"
+    source_addresses = ["0.0.0.0/0"]
+  }
+
+  # LiveKit TURN server port (UDP)
+  inbound_rule {
+    protocol         = "udp"
+    port_range       = "3478"
+    source_addresses = ["0.0.0.0/0"]
+  }
+
+  # LiveKit TURN TLS port (TCP)
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "5349"
+    source_addresses = ["0.0.0.0/0"]
+  }
+
   outbound_rule {
     protocol              = "tcp"
     port_range            = "1-65535"
@@ -75,6 +96,46 @@ resource "digitalocean_firewall" "chat" {
     port_range            = "1-65535"
     destination_addresses = ["0.0.0.0/0"]
   }
+}
+
+# Monitoring alerts
+resource "digitalocean_monitoring_alert" "cpu_high" {
+  alerts {
+    email = [var.alert_email]
+  }
+  window  = "5m"
+  type    = "v1/insights/droplet/cpu"
+  value   = "80"
+  compare = "GreaterThan"
+  entities = [digitalocean_droplet.chat.id]
+  description = "CPU usage > 80% on chat-${var.environment}"
+  enabled = true
+}
+
+resource "digitalocean_monitoring_alert" "memory_high" {
+  alerts {
+    email = [var.alert_email]
+  }
+  window  = "5m"
+  type    = "v1/insights/droplet/memory_utilization_percent"
+  value   = "80"
+  compare = "GreaterThan"
+  entities = [digitalocean_droplet.chat.id]
+  description = "Memory usage > 80% on chat-${var.environment}"
+  enabled = true
+}
+
+resource "digitalocean_monitoring_alert" "disk_full" {
+  alerts {
+    email = [var.alert_email]
+  }
+  window  = "5m"
+  type    = "v1/insights/droplet/disk_utilization_percent"
+  value   = "90"
+  compare = "GreaterThan"
+  entities = [digitalocean_droplet.chat.id]
+  description = "Disk usage > 90% on chat-${var.environment}"
+  enabled = true
 }
 
 # DNS records via Cloudflare
