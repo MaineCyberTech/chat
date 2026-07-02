@@ -6,6 +6,9 @@ chat.mainecybertech.us {
     handle /healthz* {
         reverse_proxy api:4000
     }
+    handle /v1/livekit* {
+        reverse_proxy livekit:7880
+    }
     handle /v1* {
         reverse_proxy api:4000
     }

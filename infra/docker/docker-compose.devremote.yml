@@ -37,6 +37,31 @@ services:
       api:
         condition: service_healthy
 
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: chat-livekit-dev
+    restart: unless-stopped
+    mem_limit: 256m
+    ports:
+      - "7880:7880"
+      - "7882-7892:7882-7892/udp"
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
+    command: >
+      --config-body="
+        port: 7880
+        rtc:
+          port_range_start: 7882
+          port_range_end: 7892
+          use_external_ip: true
+        turn:
+          enabled: true
+          domain: localhost
+          udp_port: 3478
+      "
+    networks:
+      - chat-dev
+
   worker:
     image: ${WORKER_IMAGE:-ghcr.io/mainecybertech/chat/worker:dev}
     container_name: chat-worker-dev
