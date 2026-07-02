@@ -70,11 +70,7 @@ export class ChannelService {
       if (!error) {
         const channel = data as Channel;
 
-        // Auto-add creator as channel member
-        await client.from("channel_members").insert({
-          channel_id: channel.id,
-          user_id: input.created_by,
-        });
+        // Creator is auto-added as channel member via the on_channel_created trigger
 
         webhookService
           .triggerEvent("channel.created", input.workspace_id, {
