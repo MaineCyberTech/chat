@@ -28,6 +28,7 @@ import preferencesRoutes from "./modules/preferences/routes.js";
 import reactionRoutes from "./modules/reactions/routes.js";
 import featureFlagRoutes from "./modules/feature-flags/routes.js";
 import consentRoutes from "./modules/consent/routes.js";
+import threadRoutes from "./modules/threads/routes.js";
 
 function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = process.hrtime.bigint();
@@ -85,6 +86,7 @@ export function createApp(frontendUrl: string): Express {
   app.use("/v1", reactionRoutes);
   app.use("/v1", featureFlagRoutes);
   app.use("/v1", consentRoutes);
+  app.use("/v1", threadRoutes);
 
   app.get("/", (_req, res) => {
     res.json({ name: "chat-api", status: "running" });

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Avatar, Button } from "@chat/ui";
+import { api } from "@/lib/api";
 import type { Message, UserProfile } from "@chat/db";
 
 interface Props {
@@ -12,6 +13,12 @@ interface Props {
   onClose: () => void;
   onSendReply: (content: string) => Promise<void>;
   isLoading?: boolean;
+}
+
+interface ParticipantInfo {
+  user_id: string;
+  last_read_at: string | null;
+  joined_at: string;
 }
 
 function authorName(userId: string, profiles: Map<string, UserProfile>): string {
@@ -41,6 +48,7 @@ export function ThreadPanel({
 }: Props) {
   const [replyContent, setReplyContent] = useState("");
   const [sending, setSending] = useState(false);
+  const [participants, setParticipants] = useState<ParticipantInfo[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const replyRef = useRef<HTMLTextAreaElement>(null);
 
@@ -48,6 +56,23 @@ export function ThreadPanel({
     () => allMessages.filter((m) => m.parent_id === parentMessage.id),
     [allMessages, parentMessage.id],
   );
+
+  // Fetch thread metadata and participants
+  useEffect(() => {
+    api
+      .get<{
+        thread: {
+          metadata: { reply_count: number; participant_count: number };
+          participants: ParticipantInfo[];
+        };
+      }>(`/messages/${parentMessage.id}/thread`)
+      .then((res) => {
+        setParticipants(res.thread.participants);
+      })
+      .catch(() => {
+        // Thread may not exist yet if no replies
+      });
+  }, [parentMessage.id, replies.length]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -85,13 +110,20 @@ export function ThreadPanel({
     <div className="flex h-full w-80 flex-col border-l border-[var(--color-border-primary)] bg-[var(--color-background-primary)]">
       <div className="flex items-center justify-between border-b border-[var(--color-border-primary)] px-4 py-3">
         <h2 className="text-sm font-semibold text-[var(--color-foreground-primary)]">Thread</h2>
-        <button
-          onClick={onClose}
-          className="rounded p-1 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-          aria-label="Close thread"
-        >
-          ✕
-        </button>
+        <div className="flex items-center gap-2">
+          {participants.length > 0 && (
+            <span className="text-xs text-[var(--color-foreground-tertiary)]">
+              {participants.length} participant{participants.length !== 1 ? "s" : ""}
+            </span>
+          )}
+          <button
+            onClick={onClose}
+            className="rounded p-1 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+            aria-label="Close thread"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-3">
