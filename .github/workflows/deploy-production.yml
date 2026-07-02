@@ -222,8 +222,8 @@ jobs:
             API_BASE_URL=https://chat.mainecybertech.com
             FRONTEND_URL=https://chat.mainecybertech.com
             LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}
-          LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}
-          VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
+            LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}
+            VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
             VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}
             EOF
             CERT_DIR=/opt/chat/infra/docker/certs
