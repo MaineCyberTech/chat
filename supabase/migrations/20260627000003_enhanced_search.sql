@@ -1,6 +1,10 @@
 -- Enhanced search with date range, author, and channel filters
 -- Replaces the original search_messages function
 
+-- Drop old overloads (signature differs from original 3-param version)
+DROP FUNCTION IF EXISTS public.search_messages(UUID, TEXT, INT);
+DROP FUNCTION IF EXISTS public.search_messages(UUID, TEXT, INT, TIMESTAMPTZ, TIMESTAMPTZ, UUID, UUID[]);
+
 CREATE OR REPLACE FUNCTION public.search_messages(
   workspace_id UUID,
   query_text TEXT,

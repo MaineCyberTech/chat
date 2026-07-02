@@ -98,8 +98,9 @@ resource "digitalocean_firewall" "chat" {
   }
 }
 
-# Monitoring alerts
+# Monitoring alerts (only create when alert_email is configured)
 resource "digitalocean_monitor_alert" "cpu_high" {
+  count = var.alert_email != "" ? 1 : 0
   type    = "v1/insights/droplet/cpu"
   value   = "80"
   compare = "GreaterThan"
@@ -113,6 +114,7 @@ resource "digitalocean_monitor_alert" "cpu_high" {
 }
 
 resource "digitalocean_monitor_alert" "memory_high" {
+  count = var.alert_email != "" ? 1 : 0
   type    = "v1/insights/droplet/memory_utilization_percent"
   value   = "80"
   compare = "GreaterThan"
@@ -126,6 +128,7 @@ resource "digitalocean_monitor_alert" "memory_high" {
 }
 
 resource "digitalocean_monitor_alert" "disk_full" {
+  count = var.alert_email != "" ? 1 : 0
   type    = "v1/insights/droplet/disk_utilization_percent"
   value   = "90"
   compare = "GreaterThan"
