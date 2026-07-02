@@ -29,15 +29,5 @@ CREATE POLICY "notification_preferences_update_own"
 CREATE INDEX IF NOT EXISTS idx_notification_preferences_user
   ON public.notification_preferences(user_id);
 
--- Default preferences trigger: auto-create prefs for new users
-CREATE OR REPLACE FUNCTION public.handle_new_user_preferences()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.notification_preferences (user_id, notification_type, enabled)
-  VALUES
-    (NEW.id, 'all', true),
-    (NEW.id, 'mention', true),
-    (NEW.id, 'thread_reply', true);
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
+-- Note: Default notification preferences are now created by handle_new_user()
+-- in 20260625000020_auto_create_user_profile.sql to avoid dead code.
