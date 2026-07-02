@@ -2,6 +2,8 @@ import { getSupabase } from "../../lib/supabase.js";
 import { getIO } from "../../lib/socket.js";
 import { webhookService } from "../webhooks/service.js";
 import { notificationService } from "../notifications/service.js";
+import { resolveMentions } from "../../lib/mentions/parser.js";
+import { logger } from "../../lib/logger.js";
 import type { Message } from "@chat/db";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -115,6 +117,30 @@ export class MessageService {
         })
         .catch(() => {});
     }
+
+    // Parse and process @mentions (fire-and-forget)
+    webhookService
+      .getChannelWorkspaceId(input.channel_id)
+      .then(async (workspaceId) => {
+        if (!workspaceId || !input.content.includes("@")) return;
+        const result = await resolveMentions(input.content, workspaceId, client);
+        if (result.userIds.length === 0) return;
+        const mentionType = result.hasEveryone ? "everyone" : result.hasHere ? "here" : "mention";
+        for (const mentionedUserId of result.userIds) {
+          if (mentionedUserId === input.user_id) continue; // Don't notify self
+          notificationService.create({
+            user_id: mentionedUserId,
+            workspace_id: workspaceId,
+            type: mentionType,
+            title: result.hasEveryone
+              ? `${input.user_id.slice(0, 8)} mentioned @everyone`
+              : `${input.user_id.slice(0, 8)} mentioned you`,
+            body: input.content.slice(0, 200),
+            link: `/channels/${input.channel_id}`,
+          });
+        }
+      })
+      .catch((err) => logger.error("Mention processing failed", { error: String(err) }));
 
     return message;
   }
