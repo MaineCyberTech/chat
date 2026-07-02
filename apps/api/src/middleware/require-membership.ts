@@ -73,6 +73,23 @@ export function requireChannelAccess(paramName = "channelId") {
       return;
     }
 
+    // Check for explicit deny override on this channel
+    const { data: denyOverride } = await supabase
+      .from("channel_role_overrides")
+      .select("id")
+      .eq("channel_id", channelId)
+      .eq("user_id", req.userId)
+      .eq("permission", "deny")
+      .eq("scope", "read")
+      .maybeSingle();
+
+    if (denyOverride) {
+      res
+        .status(403)
+        .json({ error: { code: "FORBIDDEN", message: "Access denied to this channel" } });
+      return;
+    }
+
     if (channel.is_private) {
       const { data: channelMember } = await supabase
         .from("channel_members")
