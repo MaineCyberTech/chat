@@ -5,6 +5,7 @@ import { getSocket, onReconnect, offReconnect } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
 import { useOptimistic } from "@/lib/optimistic/use-optimistic";
+import { MediaRoom, useMediaRoom } from "@/components/media/media-room";
 import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { ThreadPanel } from "./thread-panel";
@@ -85,6 +86,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
   const { addToast } = useToast();
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { activeRoom, startCall, endCall } = useMediaRoom();
 
   const replyCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -395,6 +397,14 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-3 md:gap-3 md:px-6">
           <h1 className="min-w-0 truncate text-base font-semibold md:text-lg"># {channelName}</h1>
           <Badge variant="success">{onlineCount} online</Badge>
+          <button
+            onClick={() => startCall(channelId)}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-xs text-white hover:opacity-90"
+            aria-label="Start audio/video call"
+            title="Start call"
+          >
+            📞
+          </button>
           <div className="mt-2 w-full md:mt-0 md:ml-auto md:w-64">
             {workspaceId && workspaceSlug && (
               <SearchBar workspaceId={workspaceId} workspaceSlug={workspaceSlug} />
@@ -493,6 +503,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           </div>
         </>
       )}
+
+      {activeRoom && <MediaRoom roomName={activeRoom} onLeave={endCall} />}
     </div>
   );
 }

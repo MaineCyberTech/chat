@@ -48,6 +48,35 @@ services:
     networks:
       - chat-prod
 
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: chat-livekit-prod
+    restart: unless-stopped
+    mem_limit: 256m
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882-7892:7882-7892/udp"
+    environment:
+      LIVEKIT_KEYS: ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
+      LIVEKIT_RTC_CONFIG: '{"port_range_start": 7882, "port_range_end": 7892}'
+      LIVEKIT_LOG_LEVEL: info
+    command: >
+      --config-body="
+        port: 7880
+        rtc:
+          port_range_start: 7882
+          port_range_end: 7892
+          use_external_ip: true
+        turn:
+          enabled: true
+          domain: ${DOMAIN:-chat.mainecybertech.com}
+          tls_port: 5349
+          udp_port: 3478
+      "
+    networks:
+      - chat-prod
+
   api:
     image: ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:latest}
     container_name: chat-api-prod
@@ -56,6 +85,9 @@ services:
     environment:
       <<: *common-env
       PORT: 4000
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      LIVEKIT_HOST: http://livekit:7880
     networks:
       - chat-prod
     healthcheck:

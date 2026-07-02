@@ -48,6 +48,23 @@
             reverse_proxy api:4000
         }
 
+        # LiveKit WebSocket signaling
+        @livekit_ws {
+            path /v1/livekit/*
+            header Connection *Upgrade*
+        }
+        handle @livekit_ws {
+            reverse_proxy livekit:7880
+        }
+
+        # LiveKit HTTP signaling
+        @livekit {
+            path /v1/livekit/*
+        }
+        handle @livekit {
+            reverse_proxy livekit:7880
+        }
+
         # Next.js app
         handle {
             reverse_proxy web:3000
