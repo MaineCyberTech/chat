@@ -26,6 +26,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [wsLoading, setWsLoading] = useState(false);
   const [sidebarRef, setSidebarRef] = useState<HTMLElement | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleCreated = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -104,7 +105,9 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       <aside
         ref={setSidebarRef}
         id="sidebar"
-        className={`flex h-full w-60 flex-col border-r border-[var(--color-border-primary)] bg-[var(--color-background-secondary)] ${
+        className={`flex h-full flex-col border-r border-[var(--color-border-primary)] bg-[var(--color-background-secondary)] transition-all duration-200 ${
+          collapsed ? "w-14" : "w-60"
+        } ${
           mobileOpen === undefined
             ? ""
             : mobileOpen
@@ -114,16 +117,38 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       >
         {/* User area */}
         <div className="flex items-center gap-2 border-b border-[var(--color-border-primary)] px-3 py-3">
-          <Avatar fallback={user?.email ?? "?"} size="sm" />
-          <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-foreground-primary)]">
-            {user?.email ?? "Chat"}
-          </span>
-          <button
-            onClick={signOut}
-            className="shrink-0 rounded px-2 py-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
-          >
-            Logout
-          </button>
+          {!collapsed && <Avatar fallback={user?.email ?? "?"} size="sm" />}
+          {!collapsed && (
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-foreground-primary)]">
+              {user?.email ?? "Chat"}
+            </span>
+          )}
+          {collapsed && (
+            <button
+              onClick={() => setCollapsed(false)}
+              className="mx-auto rounded p-1 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+              aria-label="Expand sidebar"
+            >
+              ☰
+            </button>
+          )}
+          {!collapsed && (
+            <>
+              <button
+                onClick={() => setCollapsed(true)}
+                className="hidden shrink-0 rounded px-1 py-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] md:flex"
+                aria-label="Collapse sidebar"
+              >
+                ◀
+              </button>
+              <button
+                onClick={signOut}
+                className="shrink-0 rounded px-2 py-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+              >
+                Logout
+              </button>
+            </>
+          )}
         </div>
 
         {/* Workspace section */}

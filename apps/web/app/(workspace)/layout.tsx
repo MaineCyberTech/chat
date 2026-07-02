@@ -134,12 +134,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         mobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
       />
-      <main className="flex flex-1 flex-col overflow-y-auto">
-        <WorkspaceBreadcrumbsWrapper
-          workspaceSlug={params.workspaceSlug}
-          channelId={params.channelId}
-        />
-        <div className="flex items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:hidden">
+      <main className="flex flex-1 flex-col overflow-y-auto pb-14 md:pb-0">
+        <div className="flex items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 lg:hidden">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="rounded p-1 text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
@@ -147,11 +143,41 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             aria-expanded={sidebarOpen}
             aria-controls="sidebar"
           >
-            â˜°
+            ☰
           </button>
         </div>
+        <WorkspaceBreadcrumbsWrapper
+          workspaceSlug={params.workspaceSlug}
+          channelId={params.channelId}
+        />
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>
+
+      {/* Mobile bottom navigation */}
+      <nav className="fixed right-0 bottom-0 left-0 z-30 flex items-center justify-around border-t border-[var(--color-border-primary)] bg-[var(--color-background-primary)] py-2 md:hidden">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-[var(--color-foreground-secondary)]"
+          aria-label="Open sidebar"
+        >
+          <span className="text-lg">☰</span>
+          <span>Menu</span>
+        </button>
+        <Link
+          href={params.workspaceSlug ? `/${params.workspaceSlug}` : "/"}
+          className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-[var(--color-foreground-secondary)]"
+        >
+          <span className="text-lg">#</span>
+          <span>Channels</span>
+        </Link>
+        <Link
+          href={params.workspaceSlug ? `/${params.workspaceSlug}/settings` : "/"}
+          className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-[var(--color-foreground-secondary)]"
+        >
+          <span className="text-lg">⚙</span>
+          <span>Settings</span>
+        </Link>
+      </nav>
     </div>
   );
 }
