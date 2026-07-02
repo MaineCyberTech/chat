@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { getSocket, onReconnect, offReconnect } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
+import { useOptimistic } from "@/lib/optimistic/use-optimistic";
 import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { ThreadPanel } from "./thread-panel";
@@ -62,7 +63,16 @@ interface Props {
 
 export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }: Props) {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const {
+    items: messages,
+    setItems: setMessages,
+    applyOptimistic,
+    confirmOptimistic,
+    rollbackOptimistic,
+    deduplicateEcho,
+    updateItem,
+    removeItem,
+  } = useOptimistic<Message>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMoreOlder, setHasMoreOlder] = useState(true);
@@ -73,7 +83,6 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const [profiles, setProfiles] = useState<Map<string, UserProfile>>(new Map());
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
-  const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
   const { addToast } = useToast();
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -159,16 +168,18 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       });
 
       socket.on("message:new", ({ message }: { message: Message }) => {
+        // Deduplicate: if this message was already added optimistically, skip
+        if (deduplicateEcho(message.id)) return;
         setMessages((prev) => [...prev, message]);
         loadProfiles([message]);
       });
 
       socket.on("message:updated", ({ message }: { message: Message }) => {
-        setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)));
+        updateItem(message.id, message);
       });
 
       socket.on("message:deleted", ({ id }: { id: string }) => {
-        setMessages((prev) => prev.filter((m) => m.id !== id));
+        removeItem(id);
       });
 
       socket.on("presence:update", ({ total }: { total: number }) => {
@@ -218,23 +229,23 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         archived_at: null,
         created_at: new Date().toISOString(),
       };
-      setMessages((prev) => [...prev, optimistic]);
-      setSendingIds((prev) => new Set(prev).add(tempId));
+      applyOptimistic(tempId, optimistic, () => {
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      });
 
       try {
-        await api.post(`/channels/${channelId}/messages`, { content, parent_id: replyTo?.id });
+        const res = await api.post<{ message: { id: string } }>(`/channels/${channelId}/messages`, {
+          content,
+          parent_id: replyTo?.id,
+        });
+        confirmOptimistic(tempId, res.message.id, optimistic);
+      } catch {
+        rollbackOptimistic(tempId, "Failed to send. Tap to retry.");
       } finally {
         setReplyTo(null);
-        setSendingIds((prev) => {
-          const next = new Set(prev);
-          next.delete(tempId);
-          return next;
-        });
-        // Remove temp message if real one hasn't arrived via socket yet
-        setMessages((prev) => prev.filter((m) => m.id !== tempId));
       }
     },
-    [channelId, replyTo, user?.id],
+    [channelId, replyTo, user?.id, applyOptimistic, confirmOptimistic, rollbackOptimistic],
   );
 
   const handleThreadReply = useCallback(
@@ -410,7 +421,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             hasMoreOlder={hasMoreOlder}
             loadingOlder={loadingOlder}
             replyCounts={replyCounts}
-            sendingIds={sendingIds}
+            sendingIds={new Set(messages.filter((m) => m.id.startsWith("temp_")).map((m) => m.id))}
           />
         </div>
         {replyTo && (
