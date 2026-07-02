@@ -17,6 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  ENVIRONMENT: development
+  DOMAIN: mainecybertech.us
   REPO_DIR: /opt/chat
 
 jobs:
