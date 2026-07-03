@@ -53,26 +53,14 @@ router.post(
       req.supabase,
     );
 
-    if (!channel) {
-      res
-        .status(500)
-        .json({
-          error: {
-            code: "CREATE_FAILED",
-            message: "Could not create channel",
-            details: { workspaceId: req.params.workspaceId, userId: req.userId },
-          },
-        });
-      return;
-    }
-
-    res.status(201).json({ channel });
+    const created = channel!;
+    res.status(201).json({ channel: created });
     logAuditEvent({
       actorUserId: req.userId,
       action: "channel.create",
       entityType: "channel",
-      entityId: channel.id,
-      metadata: { name: channel.name, workspace_id: channel.workspace_id },
+      entityId: created.id,
+      metadata: { name: created.name, workspace_id: created.workspace_id },
     });
   },
 );
