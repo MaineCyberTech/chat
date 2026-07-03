@@ -3,7 +3,8 @@
 import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { Button } from "@chat/ui";
 import { api } from "@/lib/api";
-import DOMPurify from "dompurify";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Paperclip, Smile, Eye, Send, Image, File, X } from "lucide-react";
 
 interface Props {
@@ -55,16 +56,31 @@ const COMMON_EMOJIS = [
   "❌",
 ];
 
-function renderPreview(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, "<code>$1</code>")
-    .replace(/~~(.+?)~~/g, "<del>$1</del>")
-    .replace(/\n/g, "<br>");
+function MarkdownPreview({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--color-brand-primary)] underline"
+          >
+            {children}
+          </a>
+        ),
+        code: ({ children }) => (
+          <code className="rounded bg-[var(--color-background-tertiary)] px-1 py-0.5 font-mono text-sm">
+            {children}
+          </code>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
 }
 
 export function MessageInput({
@@ -374,14 +390,9 @@ export function MessageInput({
 
       {/* Markdown preview */}
       {showPreview && content.trim() && (
-        <div
-          className="mb-2 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-background-secondary)] p-3 text-sm text-[var(--color-foreground-primary)]"
-          dangerouslySetInnerHTML={{
-            __html: DOMPurify.sanitize(renderPreview(content), {
-              ALLOWED_TAGS: ["strong", "em", "code", "del", "br"],
-            }),
-          }}
-        />
+        <div className="mb-2 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-background-secondary)] p-3 text-sm text-[var(--color-foreground-primary)]">
+          <MarkdownPreview content={content} />
+        </div>
       )}
 
       <div className="flex items-end gap-2">
