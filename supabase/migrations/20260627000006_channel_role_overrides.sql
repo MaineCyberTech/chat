@@ -36,14 +36,19 @@ CREATE POLICY "channel_role_overrides_manage_admin"
     )
   );
 
+-- Helper: get workspace_id for a channel (SECURITY DEFINER to bypass RLS circular deps)
+CREATE OR REPLACE FUNCTION public.channel_workspace(channel_id UUID)
+RETURNS UUID LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  SELECT workspace_id FROM public.channels WHERE id = channel_id;
+$$;
+
 -- Everyone else can read overrides
 CREATE POLICY "channel_role_overrides_select_member"
   ON public.channel_role_overrides FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM public.channels ch
-      JOIN public.workspace_members wm ON wm.workspace_id = ch.workspace_id
-      WHERE ch.id = channel_role_overrides.channel_id
+      SELECT 1 FROM public.workspace_members wm
+      WHERE wm.workspace_id = public.channel_workspace(channel_role_overrides.channel_id)
         AND wm.user_id = auth.uid()
     )
   );
