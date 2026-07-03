@@ -17,6 +17,11 @@ interface UpdateChannelInput {
   topic?: string;
 }
 
+export interface CreateResult {
+  channel?: Channel;
+  error?: string;
+}
+
 export class ChannelService {
   private getClient(supabase?: SupabaseClient): SupabaseClient {
     return supabase ?? getSupabase();
@@ -90,6 +95,7 @@ export class ChannelService {
         continue;
       }
 
+      const errMsg = `code=${error.code} message=${error.message} details=${error.details} hint=${error.hint}`;
       logger.error("Channel insert error", {
         error: error.message,
         code: error.code,
@@ -98,10 +104,11 @@ export class ChannelService {
         name: input.name,
         workspace_id: input.workspace_id,
       });
-      return null;
+      throw new Error(errMsg);
     }
-    logger.error("Channel slug dedup exhausted", { slug: baseSlug, attempts: MAX_ATTEMPTS });
-    return null;
+    throw new Error(
+      `Channel slug dedup exhausted for "${baseSlug}" after ${MAX_ATTEMPTS} attempts`,
+    );
   }
 
   async update(channelId: string, input: UpdateChannelInput): Promise<Channel | null> {

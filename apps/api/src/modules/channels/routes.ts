@@ -12,6 +12,7 @@ import {
   addChannelMemberSchema,
 } from "../../config/validators.js";
 import { logAuditEvent } from "../../services/audit.js";
+import { logger } from "../../lib/logger.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -41,39 +42,36 @@ router.post(
         .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
       return;
     }
-
-    const channel = await channelService.create(
-      {
-        name: parsed.data.name,
-        workspace_id: req.params.workspaceId as string,
-        created_by: req.userId!,
-        topic: parsed.data.topic,
-        is_private: parsed.data.is_private,
-      },
-      req.supabase,
-    );
-
-    if (!channel) {
-      res
-        .status(500)
-        .json({
-          error: {
-            code: "CREATE_FAILED",
-            message: "Could not create channel",
-            details: { workspaceId: req.params.workspaceId, userId: req.userId },
-          },
+    try {
+      const channel = await channelService.create(
+        {
+          name: parsed.data.name,
+          workspace_id: req.params.workspaceId as string,
+          created_by: req.userId!,
+          topic: parsed.data.topic,
+          is_private: parsed.data.is_private,
+        },
+        req.supabase,
+      );
+      if (!channel) {
+        res.status(500).json({
+          error: { code: "CREATE_FAILED", message: "Could not create channel" },
         });
-      return;
+        return;
+      }
+      res.status(201).json({ channel });
+      logAuditEvent({
+        actorUserId: req.userId,
+        action: "channel.create",
+        entityType: "channel",
+        entityId: channel.id,
+        metadata: { name: channel.name, workspace_id: channel.workspace_id },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      logger.error("Channel creation error", { error: message, userId: req.userId });
+      res.status(500).json({ error: { code: "CREATE_FAILED", message } });
     }
-
-    res.status(201).json({ channel });
-    logAuditEvent({
-      actorUserId: req.userId,
-      action: "channel.create",
-      entityType: "channel",
-      entityId: channel.id,
-      metadata: { name: channel.name, workspace_id: channel.workspace_id },
-    });
   },
 );
 
