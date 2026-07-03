@@ -56,7 +56,13 @@ router.post(
     if (!channel) {
       res
         .status(500)
-        .json({ error: { code: "CREATE_FAILED", message: "Could not create channel" } });
+        .json({
+          error: {
+            code: "CREATE_FAILED",
+            message: "Could not create channel",
+            details: { workspaceId: req.params.workspaceId, userId: req.userId },
+          },
+        });
       return;
     }
 
