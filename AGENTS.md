@@ -231,7 +231,7 @@ Re-executed `docs/prompts/uxui/` pack with fresh frontend inspection, fixes, and
 | P3: Ctrl+B/I shortcuts removed                 | `keyboard-shortcuts.tsx`                                                                   |
 | P3: Workspace/channel caching                  | `[channelId]/page.tsx`                                                                     |
 
-**Updated audit**: 90.3% readiness, 0 P0, 2 P1, 0 P2, 1 P3 remaining. Dev gate PASS, prod gate FAIL (2 P1).
+**Updated audit**: 90.3% readiness, 0 P0, 0 P1, 0 P2, 1 P3 remaining. Both dev and prod gates PASS.
 
 **Round 3 — Mobile UX fixes:**
 

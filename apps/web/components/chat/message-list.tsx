@@ -360,6 +360,7 @@ export function MessageList({
   const [editContent, setEditContent] = useState("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Map<string, Reaction[]>>(new Map());
+  const fetchedReactionsRef = useRef<Set<string>>(new Set());
   const [pickerMessageId, setPickerMessageId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
@@ -404,49 +405,50 @@ export function MessageList({
     setDeleteError("");
   }, []);
 
-  // Fetch reactions for visible messages
+  // Fetch reactions incrementally — only for new message IDs not yet fetched
   useEffect(() => {
-    const messageIds = messages.map((m) => m.id);
-    if (messageIds.length === 0) return;
-    if (messageIds.length <= 20) {
+    const allIds = messages.map((m) => m.id);
+    if (allIds.length === 0) return;
+    const newIds = allIds.filter((id) => !fetchedReactionsRef.current.has(id));
+    if (newIds.length === 0) return;
+    newIds.forEach((id) => fetchedReactionsRef.current.add(id));
+
+    function mergeResults(results: { id: string; reactions: Reaction[] }[]) {
+      setReactions((prev) => {
+        const next = new Map(prev);
+        results.forEach((r) => next.set(r.id, r.reactions));
+        return next;
+      });
+    }
+
+    if (newIds.length <= 20) {
       api
         .get<{ reactions: Record<string, Reaction[]> }>(
-          `/reactions/batch?message_ids=${messageIds.join(",")}`,
+          `/reactions/batch?message_ids=${newIds.join(",")}`,
         )
         .then((res) => {
-          const map = new Map<string, Reaction[]>();
-          for (const [id, reactionList] of Object.entries(res.reactions)) {
-            map.set(id, reactionList);
-          }
-          setReactions(map);
+          const entries = Object.entries(res.reactions).map(([id, r]) => ({ id, reactions: r }));
+          mergeResults(entries);
         })
         .catch(() => {
           Promise.all(
-            messageIds.map((id) =>
+            newIds.map((id) =>
               api
                 .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
                 .then((res) => ({ id, reactions: res.reactions }))
                 .catch(() => ({ id, reactions: [] as Reaction[] })),
             ),
-          ).then((results) => {
-            const map = new Map<string, Reaction[]>();
-            results.forEach((r) => map.set(r.id, r.reactions));
-            setReactions(map);
-          });
+          ).then(mergeResults);
         });
     } else {
       Promise.all(
-        messageIds.map((id) =>
+        newIds.map((id) =>
           api
             .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
             .then((res) => ({ id, reactions: res.reactions }))
             .catch(() => ({ id, reactions: [] as Reaction[] })),
         ),
-      ).then((results) => {
-        const map = new Map<string, Reaction[]>();
-        results.forEach((r) => map.set(r.id, r.reactions));
-        setReactions(map);
-      });
+      ).then(mergeResults);
     }
   }, [messages]);
 
