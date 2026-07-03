@@ -8,6 +8,7 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { AvatarUpload } from "@/components/auth/avatar-upload";
 import { Button, ThemeToggle } from "@chat/ui";
 import { usePWA } from "@/components/pwa/pwa-provider";
+import { Smartphone, Bell } from "lucide-react";
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
@@ -32,7 +33,7 @@ export function AppHeader() {
         <AvatarUpload />
         <span className="text-xs text-[var(--color-foreground-tertiary)]">{user.email}</span>
         <Button variant="ghost" size="sm" onClick={showInstallPrompt} aria-label="Install app">
-          📱
+          <Smartphone size={18} />
         </Button>
         <Button
           variant="ghost"
@@ -40,7 +41,7 @@ export function AppHeader() {
           onClick={showNotificationPrompt}
           aria-label="Notification settings"
         >
-          🔔
+          <Bell size={18} />
         </Button>
         <Button variant="ghost" size="sm" onClick={handleSignOut}>
           Logout

@@ -206,6 +206,54 @@ All scripts connected: `run_hardening_pipeline.py` → `evaluate_gate.py` → `s
 
 All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
 
+### UX/UI Pack Re-execution (July 3, 2026)
+
+Re-executed `docs/prompts/uxui/` pack with fresh frontend inspection, fixes, and audit. **Readiness: 83.7% (GO WITH RISKS)**.
+
+| Area                 | Fix/Change                                                                                     | Files                                                                                     |
+| -------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| CSS var consistency  | Migrated workspace/auth error/loading pages from raw Tailwind classes to CSS custom properties | `app/(workspace)/loading.tsx`, `app/(workspace)/error.tsx`, `app/(auth)/error.tsx`        |
+| Silent catch blocks  | Added `console.warn()` to 7 silent `.catch( () => {} )` sites                                  | `chat-view.tsx`, `message-input.tsx`, `layout.tsx`, `search-bar.tsx`                      |
+| Markdown preview XSS | Added DOMPurify sanitization to `renderPreview`                                                | `message-input.tsx`                                                                       |
+| Keyboard shortcuts   | Implemented Ctrl+K (search open), Ctrl+Shift+Up/Down (channel nav) via callback registry       | `keyboard-shortcuts.tsx`, `keyboard-shortcut-registry.ts`, `layout.tsx`, `search-bar.tsx` |
+| React.memo           | Extracted `MessageItem` as memoized component for virtual list                                 | `message-list.tsx`                                                                        |
+| Tablet breakpoint    | Auto-collapse sidebar at `md` (768-1024px), expand at `lg` (1024px+), hamburger at `md:hidden` | `app-sidebar.tsx`, `layout.tsx`                                                           |
+| Audit pipeline       | Ingested output, finalized run `uxui_pack_20260703`, dev gate PASS, prod gate FAIL (2 P1)      | `tmp/uxui_output.json`, `docs/audits/runs/uxui_pack_20260703/`                            |
+
+**Round 2 (same session) — All remaining P2s fixed:**
+
+| Finding                                        | Files Changed                                                                              |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Unicode→SVG icon migration (5 components)      | `message-list.tsx`, `message-input.tsx`, `app-sidebar.tsx`, `search-bar.tsx`, `layout.tsx` |
+| MessageItem memo refinement (stable callbacks) | `message-list.tsx`                                                                         |
+| loadOlder edge case (loadingOlder reset)       | `chat-view.tsx`                                                                            |
+| Search filter aria-pressed                     | `search-bar.tsx`                                                                           |
+| P3: Ctrl+B/I shortcuts removed                 | `keyboard-shortcuts.tsx`                                                                   |
+| P3: Workspace/channel caching                  | `[channelId]/page.tsx`                                                                     |
+
+**Updated audit**: 90.3% readiness, 0 P0, 2 P1, 0 P2, 1 P3 remaining. Dev gate PASS, prod gate FAIL (2 P1).
+
+**Round 3 — Mobile UX fixes:**
+
+| Fix                                                                                                                             | Files Changed                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Edge mobile bottom address bar — `100vh` → `100dvh` via CSS override                                                            | `globals.css`, `layout.tsx` (root `min-h-[calc(var(--vh)-4rem)]`)                             |
+| Double-scroll fix — removed `overflow-y-auto` from workspace layout main                                                        | `app/(workspace)/layout.tsx`                                                                  |
+| Added `min-h-0` to MessageList wrapper to prevent flex overflow                                                                 | `chat-view.tsx`                                                                               |
+| Added `overscroll-contain` to message list for mobile                                                                           | `message-list.tsx`                                                                            |
+| Added `pb-14` to message list for mobile bottom nav clearance                                                                   | `message-list.tsx`                                                                            |
+| Remaining Unicode icons migrated: thread-panel (✕), app-header (📱, 🔔), chat-view (📞)                                         | `thread-panel.tsx`, `app-header.tsx`, `chat-view.tsx`                                         |
+| Larger action buttons (24px→36px)                                                                                               | `message-list.tsx`                                                                            |
+| Reaction picker off-screen fix (right-aligned, overflow-x-auto, responsive emoji buttons)                                       | `message-list.tsx`                                                                            |
+| Notification bell fixed (corrupted icon→Bell, toggle + click-outside close)                                                     | `notification-bell.tsx`                                                                       |
+| Message actions always visible on mobile (not just hover)                                                                       | `message-list.tsx`                                                                            |
+| Touch target sizing: sidebar buttons, thread close, hamburger, cancel reply, call button, notification bell, mobile Back button | `app-sidebar.tsx`, `thread-panel.tsx`, `layout.tsx`, `chat-view.tsx`, `notification-bell.tsx` |
+| Avatar dropdown: click-outside close, Escape handler, max-width overflow                                                        | `avatar-upload.tsx`                                                                           |
+| Emoji picker: click-outside close, Escape handler, max-width overflow                                                           | `message-input.tsx`                                                                           |
+| Focus traps: keyboard shortcuts dialog, delete confirmation dialog                                                              | `keyboard-shortcuts.tsx`, `message-list.tsx`                                                  |
+| Remaining Unicode icons: ← Back→ArrowLeft, ↳→Reply icon                                                                         | `chat-view.tsx`, `message-list.tsx`                                                           |
+| Search blur timeout 200→300ms for mobile keyboard safety                                                                        | `search-bar.tsx`                                                                              |
+
 **Hardening Analysis Findings** (from `docs/prompts/hardening_prompt_pack/` — Global Risk Score: 0/100 CRITICAL):
 
 | Priority | Count | Key Items                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |

@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { AppSidebar } from "@/components/workspace/app-sidebar";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { Skeleton } from "@chat/ui";
 import { api } from "@/lib/api";
+import { register } from "@/lib/keyboard-shortcut-registry";
+import { Menu, Hash, Settings as SettingsIcon } from "lucide-react";
 import type { Workspace, Channel } from "@chat/db";
 
 function WorkspaceBreadcrumbs({
@@ -29,7 +31,7 @@ function WorkspaceBreadcrumbs({
       const ws = res.workspaces.find((w) => w.slug === slug);
       setWorkspace(ws ?? null);
     } catch {
-      /* ignore */
+      console.warn("Failed to fetch workspace for breadcrumbs");
     } finally {
       setLoading(false);
     }
@@ -42,7 +44,7 @@ function WorkspaceBreadcrumbs({
       const ch = res.channels.find((c) => c.id === chId);
       setChannel(ch ?? null);
     } catch {
-      /* ignore */
+      console.warn("Failed to fetch channel for breadcrumbs");
     }
   }, []);
 
@@ -112,7 +114,55 @@ function WorkspaceBreadcrumbsWrapper({
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const params = useParams<{ workspaceSlug?: string; channelId?: string }>();
   const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [channels, setChannels] = useState<string[]>([]);
+
+  // Fetch channels for keyboard navigation
+  useEffect(() => {
+    if (!user || !params.workspaceSlug) return;
+    api
+      .get<{ workspaces: Workspace[] }>("/workspaces")
+      .then((res) => {
+        const ws = res.workspaces.find((w) => w.slug === params.workspaceSlug);
+        if (!ws) return;
+        api
+          .get<{ channels: Channel[] }>(`/workspaces/${ws.id}/channels`)
+          .then((res) => setChannels(res.channels.map((c) => c.slug)))
+          .catch(() => console.warn("Failed to fetch channels for keyboard nav"));
+      })
+      .catch(() => console.warn("Failed to fetch workspace for keyboard nav"));
+  }, [user, params.workspaceSlug]);
+
+  // Register keyboard shortcut callbacks
+  useEffect(() => {
+    if (!params.workspaceSlug) return;
+    register("channelUp", () => {
+      const current = params.channelId;
+      if (!current || channels.length === 0) return;
+      const idx = channels.indexOf(current);
+      if (idx > 0) {
+        router.push(`/${params.workspaceSlug}/${channels[idx - 1]}`);
+      }
+    });
+    register("channelDown", () => {
+      const current = params.channelId;
+      if (!current || channels.length === 0) return;
+      const idx = channels.indexOf(current);
+      if (idx < channels.length - 1) {
+        router.push(`/${params.workspaceSlug}/${channels[idx + 1]}`);
+      }
+    });
+    register("searchOpen", () => {
+      const event = new CustomEvent("chat:search-open");
+      document.dispatchEvent(event);
+    });
+    return () => {
+      register("channelUp", null);
+      register("channelDown", null);
+      register("searchOpen", null);
+    };
+  }, [params.workspaceSlug, params.channelId, channels, router]);
 
   if (authLoading) {
     return (
@@ -137,16 +187,16 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         mobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
       />
-      <main className="flex flex-1 flex-col overflow-y-auto pb-14 md:pb-0">
-        <div className="flex items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 lg:hidden">
+      <main className="flex min-h-0 flex-1 flex-col">
+        <div className="flex items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:hidden">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="rounded p-1 text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
+            className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
             aria-label="Toggle sidebar"
             aria-expanded={sidebarOpen}
             aria-controls="sidebar"
           >
-            ☰
+            <Menu size={18} />
           </button>
         </div>
         <WorkspaceBreadcrumbsWrapper
@@ -163,21 +213,21 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-[var(--color-foreground-secondary)]"
           aria-label="Open sidebar"
         >
-          <span className="text-lg">☰</span>
+          <Menu size={20} />
           <span>Menu</span>
         </button>
         <Link
           href={params.workspaceSlug ? `/${params.workspaceSlug}` : "/"}
           className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-[var(--color-foreground-secondary)]"
         >
-          <span className="text-lg">#</span>
+          <Hash size={20} />
           <span>Channels</span>
         </Link>
         <Link
           href={params.workspaceSlug ? `/${params.workspaceSlug}/settings` : "/"}
           className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-[var(--color-foreground-secondary)]"
         >
-          <span className="text-lg">⚙</span>
+          <SettingsIcon size={20} />
           <span>Settings</span>
         </Link>
       </nav>

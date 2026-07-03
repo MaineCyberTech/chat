@@ -30,6 +30,25 @@ body {
   font-family: var(--font-sans);
   background: var(--color-background-primary, #ffffff);
   color: var(--color-foreground-primary, #0a0a0a);
+  overscroll-behavior: none;
+}
+
+/* Use dvh (dynamic viewport height) for mobile browsers with dynamic toolbars */
+@supports (height: 100dvh) {
+  :root {
+    --vh: 100dvh;
+  }
+  .h-screen {
+    height: 100dvh;
+  }
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+@supports not (height: 100dvh) {
+  :root {
+    --vh: 100vh;
+  }
 }
 
 * {

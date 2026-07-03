@@ -2,8 +2,10 @@
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Skeleton } from "@chat/ui";
+import { Settings } from "lucide-react";
 
 function highlightText(text: string, query: string): React.ReactNode {
   if (!query || query.length < 2) return text;
@@ -56,6 +58,7 @@ async function getChannelsWithCache(workspaceId: string): Promise<ChannelInfo[]>
 }
 
 export function SearchBar({ workspaceId, workspaceSlug }: Props) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<(SearchResult & { channel_slug?: string })[]>([]);
   const [open, setOpen] = useState(false);
@@ -76,6 +79,16 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
     if (inputRef.current && window.innerWidth >= 768) {
       inputRef.current.focus();
     }
+  }, []);
+
+  // Listen for chat:search-open custom event (from keyboard shortcut)
+  useEffect(() => {
+    function handleSearchOpen() {
+      setOpen(true);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+    document.addEventListener("chat:search-open", handleSearchOpen);
+    return () => document.removeEventListener("chat:search-open", handleSearchOpen);
   }, []);
 
   function buildSearchUrl(q: string): string {
@@ -103,6 +116,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         setOpen(true);
       } catch {
         setResults([]);
+        console.warn("Search failed");
       } finally {
         setLoading(false);
       }
@@ -122,7 +136,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         e.preventDefault();
         const result = results[selectedIndex];
         if (result?.channel_slug) {
-          window.location.href = `/${workspaceSlug}/${result.channel_slug}`;
+          router.push(`/${workspaceSlug}/${result.channel_slug}`);
         }
       } else if (e.key === "Escape") {
         setOpen(false);
@@ -137,7 +151,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   }, [results.length]);
 
   const handleBlur = useCallback(() => {
-    setTimeout(() => setOpen(false), 200);
+    setTimeout(() => setOpen(false), 300);
   }, []);
 
   return (
@@ -170,9 +184,10 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               : "bg-[var(--color-background-tertiary)] text-[var(--color-foreground-secondary)]"
           }`}
           aria-label="Toggle search filters"
+          aria-pressed={showFilters}
           title="Search filters"
         >
-          ⚙
+          <Settings size={16} />
         </button>
       </div>
       {showFilters && (

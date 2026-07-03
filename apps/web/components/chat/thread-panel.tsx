@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Avatar, Button } from "@chat/ui";
 import { api } from "@/lib/api";
+import { X } from "lucide-react";
 import type { Message, UserProfile } from "@chat/db";
 
 interface Props {
@@ -118,10 +119,10 @@ export function ThreadPanel({
           )}
           <button
             onClick={onClose}
-            className="rounded p-1 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+            className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
             aria-label="Close thread"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       </div>

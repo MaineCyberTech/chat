@@ -3,6 +3,8 @@
 import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { Button } from "@chat/ui";
 import { api } from "@/lib/api";
+import DOMPurify from "dompurify";
+import { Paperclip, Smile, Eye, Send, Image, File, X } from "lucide-react";
 
 interface Props {
   channelId: string;
@@ -88,6 +90,28 @@ export function MessageInput({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [dragging, setDragging] = useState(false);
   const lastTypingEmitRef = useRef(0);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close emoji picker on click outside and Escape
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+    function handleClick(e: MouseEvent | TouchEvent) {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowEmojiPicker(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("touchstart", handleClick, { passive: true });
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("touchstart", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [showEmojiPicker]);
 
   // Load draft on mount
   useEffect(() => {
@@ -118,7 +142,7 @@ export function MessageInput({
     api
       .get<{ members: Member[] }>(`/v1/workspaces/${workspaceId}/members`)
       .then((res) => setMembers(res.members))
-      .catch(() => {});
+      .catch(() => console.warn("Failed to fetch workspace members for mentions"));
   }, [workspaceId]);
 
   const filteredMembers = useMemo(() => {
@@ -329,7 +353,11 @@ export function MessageInput({
               key={`${file.name}-${index}`}
               className="flex items-center gap-1 rounded bg-[var(--color-background-tertiary)] px-2 py-0.5 text-xs text-[var(--color-foreground-secondary)]"
             >
-              {file.type.startsWith("image/") ? "🖼" : "📎"}
+              {file.type.startsWith("image/") ? (
+                <Image size={14} className="inline" />
+              ) : (
+                <File size={14} className="inline" />
+              )}
               {file.name}
               <button
                 type="button"
@@ -337,7 +365,7 @@ export function MessageInput({
                 className="ml-1 p-0.5 text-[var(--color-foreground-tertiary)] hover:text-[var(--color-status-danger-fg)]"
                 aria-label={`Remove ${file.name}`}
               >
-                ✕
+                <X size={12} />
               </button>
             </span>
           ))}
@@ -348,7 +376,11 @@ export function MessageInput({
       {showPreview && content.trim() && (
         <div
           className="mb-2 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-background-secondary)] p-3 text-sm text-[var(--color-foreground-primary)]"
-          dangerouslySetInnerHTML={{ __html: renderPreview(content) }}
+          dangerouslySetInnerHTML={{
+            __html: DOMPurify.sanitize(renderPreview(content), {
+              ALLOWED_TAGS: ["strong", "em", "code", "del", "br"],
+            }),
+          }}
         />
       )}
 
@@ -365,14 +397,14 @@ export function MessageInput({
           className="flex min-h-[44px] min-w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
           aria-label="Attach file"
         >
-          📎
+          <Paperclip size={18} />
         </label>
         <button
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
           aria-label="Emoji picker"
         >
-          😊
+          <Smile size={18} />
         </button>
         <button
           onClick={() => setShowPreview(!showPreview)}
@@ -383,7 +415,7 @@ export function MessageInput({
           }`}
           aria-label={showPreview ? "Hide preview" : "Show preview"}
         >
-          ¶
+          <Eye size={18} />
         </button>
         <div className="relative min-w-0 flex-1">
           <textarea
@@ -400,7 +432,10 @@ export function MessageInput({
 
           {/* Emoji picker popover */}
           {showEmojiPicker && (
-            <div className="absolute bottom-full left-0 z-10 mb-1 w-64 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-2 shadow-[var(--shadow-xl)]">
+            <div
+              ref={emojiPickerRef}
+              className="absolute bottom-full left-0 z-10 mb-1 w-64 max-w-[calc(100vw-1rem)] rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-2 shadow-[var(--shadow-xl)]"
+            >
               <p className="mb-1 text-xs font-medium text-[var(--color-foreground-tertiary)]">
                 Quick emojis
               </p>
@@ -468,7 +503,7 @@ export function MessageInput({
             onClick={handleSubmit}
             disabled={sending || (!content.trim() && files.length === 0)}
           >
-            ➤
+            <Send size={18} />
           </Button>
         </div>
       </div>

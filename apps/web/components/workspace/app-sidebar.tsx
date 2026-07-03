@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-context";
 import { WorkspaceList } from "./workspace-list";
@@ -9,6 +9,7 @@ import { ChannelList } from "@/components/channel/channel-list";
 import { CreateChannelDialog } from "@/components/channel/create-channel-dialog";
 import { Avatar } from "@chat/ui";
 import { SidebarGroup } from "@chat/ui";
+import { PanelLeftClose, PanelLeft } from "lucide-react";
 import type { Workspace } from "@chat/db";
 import { api } from "@/lib/api";
 
@@ -27,6 +28,28 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [wsLoading, setWsLoading] = useState(false);
   const [sidebarRef, setSidebarRef] = useState<HTMLElement | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const collapsedRef = useRef(false);
+
+  // Auto-collapse sidebar at md breakpoint (768px) for tablet layout
+  useEffect(() => {
+    function handleResize() {
+      const width = window.innerWidth;
+      if (width >= 768 && width < 1024) {
+        if (!collapsedRef.current) {
+          setCollapsed(true);
+          collapsedRef.current = true;
+        }
+      } else if (width >= 1024) {
+        if (collapsedRef.current) {
+          setCollapsed(false);
+          collapsedRef.current = false;
+        }
+      }
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleCreated = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -126,20 +149,20 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           {collapsed && (
             <button
               onClick={() => setCollapsed(false)}
-              className="mx-auto rounded p-1 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+              className="mx-auto flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
               aria-label="Expand sidebar"
             >
-              ☰
+              <PanelLeft size={18} />
             </button>
           )}
           {!collapsed && (
             <>
               <button
                 onClick={() => setCollapsed(true)}
-                className="hidden shrink-0 rounded px-1 py-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] md:flex"
+                className="hidden min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg p-2 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] md:flex"
                 aria-label="Collapse sidebar"
               >
-                ◀
+                <PanelLeftClose size={14} />
               </button>
               <button
                 onClick={signOut}

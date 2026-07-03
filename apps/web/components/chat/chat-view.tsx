@@ -11,6 +11,7 @@ import { MessageInput } from "./message-input";
 import { ThreadPanel } from "./thread-panel";
 import { SearchBar } from "./search-bar";
 import { Badge, Skeleton, useToast } from "@chat/ui";
+import { X, Phone, ArrowLeft } from "lucide-react";
 import type { Message, UserProfile } from "@chat/db";
 import type { Socket } from "socket.io-client";
 
@@ -25,7 +26,7 @@ function ConnectionBanner() {
         s.on("reconnect_attempt", () => setStatus("reconnecting"));
         s.io.on("reconnect_error", () => setStatus("disconnected"));
       })
-      .catch(() => {});
+      .catch(() => console.warn("Failed to get socket for connection status"));
 
     return () => {
       getSocket()
@@ -35,7 +36,7 @@ function ConnectionBanner() {
           s.off("reconnect_attempt");
           s.io.off("reconnect_error");
         })
-        .catch(() => {});
+        .catch(() => console.warn("Failed to cleanup socket connection listeners"));
     };
   }, []);
 
@@ -127,10 +128,9 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       if (!res.nextCursor) setHasMoreOlder(false);
       loadProfiles(res.messages);
     } catch {
-      // Silently fail — user can try again by scrolling up
-    } finally {
-      setLoadingOlder(false);
+      console.warn("Failed to load older messages, user can scroll up to retry");
     }
+    setLoadingOlder(false);
   }, [channelId, nextCursor, loadingOlder, hasMoreOlder, loadProfiles]);
 
   useEffect(() => {
@@ -201,7 +201,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
     getSocket()
       .then(setup)
-      .catch(() => {});
+      .catch(() => console.warn("Failed to get socket for chat channel setup"));
 
     return () => {
       offReconnect(() => {});
@@ -299,7 +299,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     }
     getSocket()
       .then((s) => s.emit("typing:start", channelId))
-      .catch(() => {});
+      .catch(() => console.warn("Failed to emit typing:start"));
 
     typingTimeoutRef.current = setTimeout(() => {
       handleTypingStop();
@@ -313,7 +313,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     }
     getSocket()
       .then((s) => s.emit("typing:stop", channelId))
-      .catch(() => {});
+      .catch(() => console.warn("Failed to emit typing:stop"));
   }, [channelId]);
 
   // Cleanup typing timeout on unmount
@@ -399,11 +399,11 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           <Badge variant="success">{onlineCount} online</Badge>
           <button
             onClick={() => startCall(channelId)}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-xs text-white hover:opacity-90"
+            className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-xs text-white hover:opacity-90"
             aria-label="Start audio/video call"
             title="Start call"
           >
-            📞
+            <Phone size={14} />
           </button>
           <div className="mt-2 w-full md:mt-0 md:ml-auto md:w-64">
             {workspaceId && workspaceSlug && (
@@ -417,7 +417,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           aria-live="polite"
           aria-atomic="false"
           aria-label="Messages"
-          className="flex-1"
+          className="min-h-0 flex-1"
         >
           <MessageList
             messages={messages}
@@ -442,10 +442,10 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             </span>
             <button
               onClick={() => setReplyTo(null)}
-              className="shrink-0 rounded p-1 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+              className="flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
               aria-label="Cancel reply"
             >
-              âœ•
+              <X size={16} />
             </button>
           </div>
         )}
@@ -482,7 +482,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
                   className="rounded p-1 text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)]"
                   aria-label="Close thread"
                 >
-                  â† Back
+                  <ArrowLeft size={18} />
                 </button>
                 <h2 className="text-sm font-semibold text-[var(--color-foreground-primary)]">
                   Thread

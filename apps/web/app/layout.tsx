@@ -60,7 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AuthProvider>
               <ToastProvider>
                 <AppHeader />
-                <main id="main-content" className="min-h-[calc(100vh-4rem)]">
+                <main id="main-content" className="min-h-[calc(var(--vh)-4rem)]">
                   {children}
                 </main>
                 <VersionBadge />

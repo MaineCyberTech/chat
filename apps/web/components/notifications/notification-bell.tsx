@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
+import { Bell } from "lucide-react";
 
 interface Notification {
   id: string;
@@ -20,6 +21,10 @@ export function NotificationBell() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }, []);
   const fetchUnread = useCallback(async () => {
     try {
       const res = await api.get<{ unread: number }>("/notifications/unread");
@@ -47,15 +52,29 @@ export function NotificationBell() {
     return () => clearInterval(interval);
   }, [fetchUnread]);
 
-  const handleOpen = useCallback(() => {
-    setOpen(true);
-    fetchAll();
-  }, [fetchAll]);
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node)
+      ) {
+        handleClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open, handleClose]);
 
-  const handleClose = useCallback(() => {
-    setOpen(false);
-    triggerRef.current?.focus();
-  }, []);
+  const handleToggle = useCallback(() => {
+    setOpen((prev) => {
+      if (!prev) fetchAll();
+      return !prev;
+    });
+  }, [fetchAll]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -95,20 +114,21 @@ export function NotificationBell() {
     <div className="relative">
       <button
         ref={triggerRef}
-        onClick={handleOpen}
+        onClick={handleToggle}
         onKeyDown={(e) => {
           if (e.key === "Escape") handleClose();
           if (e.key === "ArrowDown" && !open) {
             e.preventDefault();
-            handleOpen();
+            fetchAll();
+            setOpen(true);
           }
         }}
-        className="relative rounded p-1.5 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
+        className="relative flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        ðŸ””
+        <Bell size={18} />
         {unread > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-status-danger-bg)] px-1 text-[10px] font-bold text-[var(--color-status-danger-fg)]">
             {unread > 99 ? "99+" : unread}
