@@ -1,6 +1,6 @@
 import { getSupabase } from "../../lib/supabase.js";
 import { webhookService } from "../webhooks/service.js";
-import { AppError } from "../../middleware/error-handler.js";
+import { logger } from "../../lib/logger.js";
 import type { Channel } from "@chat/db";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -84,23 +84,24 @@ export class ChannelService {
         return channel;
       }
 
-      if (error.code === "23505" && error.message?.includes("channels_workspace_id_slug_key")) {
+      if (error.code === "23505" && error.message.includes("channels_workspace_id_slug_key")) {
         attempt++;
         slug = `${baseSlug}-${attempt}`;
         continue;
       }
 
-      throw new AppError(
-        `Channel insert failed: code=${error.code} message=${error.message} details=${error.details} hint=${error.hint}`,
-        500,
-        "CREATE_FAILED",
-      );
+      logger.error("Channel insert error", {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        name: input.name,
+        workspace_id: input.workspace_id,
+      });
+      return null;
     }
-    throw new AppError(
-      `Channel slug dedup exhausted for "${baseSlug}" after ${MAX_ATTEMPTS} attempts`,
-      500,
-      "CREATE_FAILED",
-    );
+    logger.error("Channel slug dedup exhausted", { slug: baseSlug, attempts: MAX_ATTEMPTS });
+    return null;
   }
 
   async update(channelId: string, input: UpdateChannelInput): Promise<Channel | null> {
