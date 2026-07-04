@@ -681,38 +681,9 @@ Full end-to-end test completed successfully:
 
 ## Remaining Feature Work
 
-### Tier 1 — API/DB Ready, Need UI (Highest Priority)
+### Complete (All Features Implemented)
 
-| Feature | Status | Backend | Frontend |
-|---------|--------|---------|----------|
-| **Saved/Flagged Messages View** | ✅ API+DB+SDK done | `message_flags` table, SDK methods, API routes | Sidebar section + flagged page |
-| **@everyone/@here Confirmation** | ✅ Mention parser done | `mentions/parser.ts` supports @everyone/@here | Confirmation dialog before send |
-| **Quick Channel Switcher (Ctrl+K)** | 🟡 Partial | Channel list API exists | Modal with fuzzy-search |
-| **Drag-and-Drop File Upload** | ✅ Upload API done | `/messages/upload` endpoint | Visual drop zone overlay |
-| **Invite System UX** | ✅ Member APIs done | Member CRUD endpoints, RLS policies | Modal with search + multi-select |
-
-### Tier 2 — Medium Impact Features
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **Channel Intro Message** | 🔴 Not started | Show channel purpose + member count at top of empty channels |
-| **GIF Picker** | 🔴 Not started | `/gif` slash command exists but no UI — searchable picker modal |
-| **Notification Sounds** | 🟡 DB column exists | `channel_notification_preferences.notify_sound` — needs audio assets + playback |
-| **Message Priority Badges** | 🔴 Not started | Add urgent/important badges with colored indicators |
-| **Expanded Keyboard Shortcuts** | 🟡 8 done (of ~40) | Add Ctrl+Shift+U (upload), Ctrl+Shift+M (DM), Ctrl+Shift+] (next channel), etc. |
-| **Drafts Persistence + Sidebar** | 🟡 localStorage only | Server-side drafts table, drafts section in sidebar |
-
-### Tier 3 — Larger Efforts
-
-| Feature | Notes |
-|---------|-------|
-| **Message Reminders** | New DB table + worker processor + UI modal with preset times |
-| **Custom Emoji** | Upload API, emoji management UI, picker integration |
-| **User Groups** | @groupname mentions with CRUD UI |
-| **WYSIWYG Rich Text Editor** | Toggle between markdown and rich text modes |
-| **Notification Preferences Page** | Per-channel notification settings UI |
-| **Channel Export (CSV/JSON)** | Export job in worker with download UI |
-| **Mobile-Specific Views** | Dedicated mobile channel header, sidebar, and views |
+All features from Tiers 1, 2, and 3 are now implemented (July 4, 2026):
 
 ### Infrastructure & CI Remaining
 
