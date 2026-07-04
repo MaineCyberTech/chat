@@ -128,7 +128,7 @@ export function initSocket(
         socket.to(`channel:${channelId}`).emit("presence:update", {
           userId,
           status: "online",
-          total: io.sockets.adapter.rooms.get(`channel:${channelId}`)?.size ?? 0,
+          total: io!.sockets.adapter.rooms.get(`channel:${channelId}`)?.size ?? 0,
         });
 
         logger.debug("Socket joined channel", { userId, channelId });
@@ -143,7 +143,7 @@ export function initSocket(
       socket.to(`channel:${channelId}`).emit("presence:update", {
         userId,
         status: "offline",
-        total: io.sockets.adapter.rooms.get(`channel:${channelId}`)?.size ?? 0,
+        total: io!.sockets.adapter.rooms.get(`channel:${channelId}`)?.size ?? 0,
       });
     });
 

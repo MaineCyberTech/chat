@@ -197,6 +197,38 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       socket.on("typing:stop", ({ userId }: { userId: string }) => {
         setTypingUsers((prev) => prev.filter((id) => id !== userId));
       });
+
+      socket.on("channel:user_joined", ({ userId }: { userId: string }) => {
+        const systemMsg: Message = {
+          id: `sys_${Date.now()}_join`,
+          channel_id: channelId,
+          user_id: userId,
+          content: "Joined the channel",
+          parent_id: null,
+          is_pinned: false,
+          edited_at: null,
+          deleted_at: null,
+          archived_at: null,
+          created_at: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, systemMsg]);
+      });
+
+      socket.on("channel:user_left", ({ userId }: { userId: string }) => {
+        const systemMsg: Message = {
+          id: `sys_${Date.now()}_leave`,
+          channel_id: channelId,
+          user_id: userId,
+          content: "Left the channel",
+          parent_id: null,
+          is_pinned: false,
+          edited_at: null,
+          deleted_at: null,
+          archived_at: null,
+          created_at: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, systemMsg]);
+      });
     }
 
     getSocket()
@@ -213,6 +245,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         socket.off("presence:update");
         socket.off("typing:start");
         socket.off("typing:stop");
+        socket.off("channel:user_joined");
+        socket.off("channel:user_left");
       }
     };
   }, [channelId, user?.id, loadProfiles]);
