@@ -253,7 +253,11 @@ router.delete(
   validateUuidParam("id"),
   requireMessageAccess("id"),
   async (req, res) => {
-    const success = await messageService.unflag(req.params.id as string, req.userId!, req.supabase!);
+    const success = await messageService.unflag(
+      req.params.id as string,
+      req.userId!,
+      req.supabase!,
+    );
     res.json({ success });
   },
 );
@@ -263,6 +267,56 @@ router.get("/messages/flagged", async (req, res) => {
   const messages = await messageService.getFlagged(req.userId!, req.supabase!);
   res.json({ messages });
 });
+
+// Forward message to another channel
+router.post(
+  "/messages/:id/forward",
+  validateUuidParam("id"),
+  requireMessageAccess("id"),
+  async (req, res) => {
+    const { targetChannelId } = req.body;
+    if (!targetChannelId) {
+      res
+        .status(400)
+        .json({ error: { code: "INVALID_INPUT", message: "targetChannelId required" } });
+      return;
+    }
+
+    const original = await messageService.getById(req.params.id as string, req.supabase!);
+    if (!original) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
+      return;
+    }
+
+    const forwardContent = `> ${original.content.replace(/\n/g, "\n> ")}\n\n*Forwarded from ${req.params.id.slice(0, 8)}*`;
+
+    const message = await messageService.create(
+      {
+        channel_id: targetChannelId,
+        user_id: req.userId!,
+        content: forwardContent,
+      },
+      req.supabase,
+    );
+
+    if (!message) {
+      res
+        .status(500)
+        .json({ error: { code: "CREATE_FAILED", message: "Could not forward message" } });
+      return;
+    }
+
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "message.forward",
+      entityType: "message",
+      entityId: message.id,
+      metadata: { original_message_id: req.params.id, target_channel_id: targetChannelId },
+    });
+
+    res.status(201).json({ message });
+  },
+);
 
 // Get message edit history
 router.get(

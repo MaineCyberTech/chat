@@ -82,6 +82,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const [error, setError] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [memberCount, setMemberCount] = useState(0);
   const [profiles, setProfiles] = useState<Map<string, UserProfile>>(new Map());
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
@@ -152,6 +153,12 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         setMessages([]);
       })
       .finally(() => setLoading(false));
+
+    // Fetch member count
+    api
+      .get<{ members: { user_id: string }[] }>(`/channels/${channelId}/members`)
+      .then((res) => setMemberCount(res.members.length))
+      .catch(() => {});
   }, [channelId, loadProfiles]);
 
   useEffect(() => {
@@ -432,6 +439,9 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-3 md:gap-3 md:px-6">
           <h1 className="min-w-0 truncate text-base font-semibold md:text-lg"># {channelName}</h1>
           <Badge variant="success">{onlineCount} online</Badge>
+          <span className="hidden text-xs text-[var(--color-foreground-tertiary)] md:inline">
+            {memberCount} members
+          </span>
           <button
             onClick={() => startCall(channelId)}
             className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-xs text-white hover:opacity-90"

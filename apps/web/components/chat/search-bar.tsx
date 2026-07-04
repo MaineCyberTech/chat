@@ -41,6 +41,7 @@ interface SearchResponse {
 
 interface ChannelInfo {
   id: string;
+  name: string;
   slug: string;
 }
 
@@ -76,8 +77,16 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   const [dateTo, setDateTo] = useState("");
   const [authorFilter, setAuthorFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [autocompleteUsers, setAutocompleteUsers] = useState<
+    { id: string; display_name: string }[]
+  >([]);
+  const [autocompleteChannels, setAutocompleteChannels] = useState<
+    { id: string; name: string; slug: string }[]
+  >([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const autocompleteRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     return () => clearTimeout(debounceRef.current);
@@ -111,9 +120,37 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
     async (q: string, append = false) => {
       if (q.length < 2) {
         setResults([]);
+        setAutocompleteUsers([]);
+        setAutocompleteChannels([]);
+        setShowAutocomplete(false);
         setSelectedIndex(-1);
         return;
       }
+
+      // Fetch autocomplete suggestions for users and channels
+      clearTimeout(autocompleteRef.current);
+      autocompleteRef.current = setTimeout(async () => {
+        try {
+          const [userRes, channelData] = await Promise.all([
+            api
+              .get<{
+                profiles: { id: string; display_name: string }[];
+              }>(`/auth/search?q=${encodeURIComponent(q)}`)
+              .catch(() => ({ profiles: [] })),
+            getChannelsWithCache(workspaceId),
+          ]);
+          setAutocompleteUsers(userRes.profiles.slice(0, 5));
+          setAutocompleteChannels(
+            channelData
+              .filter((c) => c.slug.includes(q.toLowerCase()) || c.id.includes(q))
+              .slice(0, 5),
+          );
+          setShowAutocomplete(true);
+        } catch (err) {
+          console.warn("Autocomplete fetch failed", String(err));
+        }
+      }, 150);
+
       const offset = append ? currentOffset : 0;
       if (append) {
         setLoadingMore(true);
@@ -249,6 +286,53 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           </div>
         </div>
       )}
+      {/* Autocomplete dropdown for users/channels */}
+      {showAutocomplete && query.length >= 2 && !open && (
+        <div className="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-2 shadow-[var(--shadow-xl)]">
+          {autocompleteUsers.length > 0 && (
+            <div className="mb-1">
+              <p className="mb-0.5 px-2 text-xs font-medium text-[var(--color-foreground-tertiary)]">
+                Users
+              </p>
+              {autocompleteUsers.map((u) => (
+                <button
+                  key={u.id}
+                  onClick={() => {
+                    setAuthorFilter(u.id);
+                    setShowAutocomplete(false);
+                  }}
+                  className="w-full rounded-md px-2 py-1 text-left text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+                >
+                  {u.display_name ?? u.id.slice(0, 8)}
+                </button>
+              ))}
+            </div>
+          )}
+          {autocompleteChannels.length > 0 && (
+            <div>
+              <p className="mb-0.5 px-2 text-xs font-medium text-[var(--color-foreground-tertiary)]">
+                Channels
+              </p>
+              {autocompleteChannels.map((ch) => (
+                <button
+                  key={ch.id}
+                  onClick={() => {
+                    setQuery(`#${ch.name}`);
+                    setShowAutocomplete(false);
+                  }}
+                  className="w-full rounded-md px-2 py-1 text-left text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+                >
+                  # {ch.name}
+                </button>
+              ))}
+            </div>
+          )}
+          {autocompleteUsers.length === 0 && autocompleteChannels.length === 0 && (
+            <p className="px-2 text-sm text-[var(--color-foreground-tertiary)]">No suggestions</p>
+          )}
+        </div>
+      )}
+
       {open && results.length > 0 && (
         <div
           id="search-results"
