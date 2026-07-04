@@ -471,6 +471,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               profiles={profiles}
               onClose={() => setThreadMessage(null)}
               onSendReply={handleThreadReply}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           </div>
           {/* Mobile: full-screen overlay */}
@@ -497,6 +499,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
                   profiles={profiles}
                   onClose={() => setThreadMessage(null)}
                   onSendReply={handleThreadReply}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
                 />
               </div>
             </div>

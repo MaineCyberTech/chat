@@ -41,14 +41,16 @@ router.get("/messages/search", async (req, res) => {
   const channelIds = parsed.data.channel_ids
     ? parsed.data.channel_ids.split(",").filter(Boolean)
     : null;
+  const resultLimit = 20;
   const { data, error } = await req.supabase.rpc("search_messages", {
     workspace_id: parsed.data.workspace_id,
     query_text: parsed.data.q,
-    result_limit: 20,
+    result_limit: resultLimit,
     date_from: parsed.data.date_from ?? null,
     date_to: parsed.data.date_to ?? null,
     author_id: parsed.data.author_id ?? null,
     channel_ids: channelIds,
+    result_offset: parsed.data.offset,
   });
 
   if (error) {
@@ -56,7 +58,9 @@ router.get("/messages/search", async (req, res) => {
     return;
   }
 
-  res.json({ messages: data ?? [] });
+  const messages = data ?? [];
+  const hasMore = messages.length === resultLimit;
+  res.json({ messages, hasMore, offset: parsed.data.offset });
 });
 
 router.get(

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Skeleton } from "@chat/ui";
-import { Settings } from "lucide-react";
+import { Settings, ChevronDown } from "lucide-react";
 
 function highlightText(text: string, query: string): React.ReactNode {
   if (!query || query.length < 2) return text;
@@ -23,8 +23,7 @@ function highlightText(text: string, query: string): React.ReactNode {
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
-const CHANNELS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
+const CHANNELS_CACHE_TTL = 5 * 60 * 1000;
 interface SearchResult {
   id: string;
   channel_id: string;
@@ -32,6 +31,12 @@ interface SearchResult {
   content: string;
   created_at: string;
   rank: number;
+}
+
+interface SearchResponse {
+  messages: SearchResult[];
+  hasMore: boolean;
+  offset: number;
 }
 
 interface ChannelInfo {
@@ -63,6 +68,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   const [results, setResults] = useState<(SearchResult & { channel_slug?: string })[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [currentOffset, setCurrentOffset] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -91,8 +99,8 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
     return () => document.removeEventListener("chat:search-open", handleSearchOpen);
   }, []);
 
-  function buildSearchUrl(q: string): string {
-    let url = `/messages/search?q=${encodeURIComponent(q)}&workspace_id=${workspaceId}`;
+  function buildSearchUrl(q: string, offset = 0): string {
+    let url = `/messages/search?q=${encodeURIComponent(q)}&workspace_id=${workspaceId}&offset=${offset}`;
     if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
     if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
     if (authorFilter) url += `&author_id=${encodeURIComponent(authorFilter)}`;
@@ -100,28 +108,41 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   }
 
   const search = useCallback(
-    async (q: string) => {
+    async (q: string, append = false) => {
       if (q.length < 2) {
         setResults([]);
         setSelectedIndex(-1);
         return;
       }
-      setLoading(true);
+      const offset = append ? currentOffset : 0;
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       try {
-        const res = await api.get<{ messages: SearchResult[] }>(buildSearchUrl(q));
+        const res = await api.get<SearchResponse>(buildSearchUrl(q, offset));
         const channels = await getChannelsWithCache(workspaceId);
         const slugMap = new Map(channels.map((c) => [c.id, c.slug]));
-        setResults(res.messages.map((m) => ({ ...m, channel_slug: slugMap.get(m.channel_id) })));
+        const mapped = res.messages.map((m) => ({ ...m, channel_slug: slugMap.get(m.channel_id) }));
+        if (append) {
+          setResults((prev) => [...prev, ...mapped]);
+        } else {
+          setResults(mapped);
+        }
+        setHasMore(res.hasMore);
+        setCurrentOffset(offset + res.messages.length);
         setSelectedIndex(-1);
         setOpen(true);
       } catch {
-        setResults([]);
+        if (!append) setResults([]);
         console.warn("Search failed");
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
     },
-    [workspaceId, dateFrom, dateTo, authorFilter],
+    [workspaceId, dateFrom, dateTo, authorFilter, currentOffset],
   );
 
   const handleKeyDown = useCallback(
@@ -231,7 +252,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       {open && results.length > 0 && (
         <div
           id="search-results"
-          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] shadow-[var(--shadow-xl)]"
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] shadow-[var(--shadow-xl)]"
           role="listbox"
         >
           {results.map((r, index) => (
@@ -252,6 +273,17 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               </p>
             </Link>
           ))}
+          {hasMore && (
+            <button
+              onClick={() => search(query, true)}
+              disabled={loadingMore}
+              className="flex w-full items-center justify-center gap-1 px-4 py-2 text-xs font-medium text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)] disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Load more search results"
+            >
+              <ChevronDown size={14} />
+              {loadingMore ? "Loading..." : "Show more"}
+            </button>
+          )}
         </div>
       )}
       {loading && (
@@ -266,7 +298,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       {open && results.length === 0 && !loading && query.length >= 2 && (
         <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]">
           <p className="text-center text-sm text-[var(--color-foreground-tertiary)]">
-            No results for "{query}"
+            No results for &ldquo;{query}&rdquo;
           </p>
         </div>
       )}

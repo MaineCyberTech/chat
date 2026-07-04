@@ -13,6 +13,8 @@ interface Props {
   profiles: Map<string, UserProfile>;
   onClose: () => void;
   onSendReply: (content: string) => Promise<void>;
+  onEdit?: (messageId: string, content: string) => Promise<void>;
+  onDelete?: (messageId: string) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -45,11 +47,17 @@ export function ThreadPanel({
   profiles,
   onClose,
   onSendReply,
+  onEdit,
+  onDelete,
   isLoading = false,
 }: Props) {
   const [replyContent, setReplyContent] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
   const [participants, setParticipants] = useState<ParticipantInfo[]>([]);
   const { addToast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -87,6 +95,31 @@ export function ThreadPanel({
       replyRef.current.style.height = `${Math.min(replyRef.current.scrollHeight, 120)}px`;
     }
   }, [replyContent]);
+
+  async function handleEditSubmit(replyId: string) {
+    const trimmed = editContent.trim();
+    if (!trimmed || !onEdit) return;
+    try {
+      await onEdit(replyId, trimmed);
+      setEditingId(null);
+      setEditContent("");
+      addToast({ title: "Reply edited", variant: "success", duration: 3000 });
+    } catch {
+      addToast({ title: "Error", description: "Failed to edit reply.", variant: "error" });
+    }
+  }
+
+  async function handleDeleteConfirm(replyId: string) {
+    if (!onDelete) return;
+    try {
+      await onDelete(replyId);
+      setDeleteConfirmId(null);
+      addToast({ title: "Reply deleted", variant: "success", duration: 3000 });
+    } catch {
+      setDeleteError("Failed to delete reply.");
+      addToast({ title: "Error", description: "Failed to delete reply.", variant: "error" });
+    }
+  }
 
   async function handleSubmit() {
     const trimmed = replyContent.trim();
@@ -183,33 +216,90 @@ export function ThreadPanel({
             {replies.map((reply) => {
               const isOwn = reply.user_id === currentUserId;
               const name = authorName(reply.user_id, profiles);
+              const isEditing = editingId === reply.id;
               return (
-                <div key={reply.id} className="flex gap-2">
+                <div key={reply.id} className="group flex gap-2">
                   <Avatar
                     src={avatarUrl(reply.user_id, profiles)}
                     fallback={name.charAt(0).toUpperCase()}
                     size="sm"
                   />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-[var(--color-foreground-primary)]">
                       {name}
                       <span className="ml-2 text-[var(--color-foreground-tertiary)]">
                         {formatTime(reply.created_at)}
                       </span>
                     </p>
-                    <p
-                      className={`mt-0.5 text-sm break-words whitespace-pre-wrap ${
-                        isOwn
-                          ? "text-[var(--color-brand-primary)]"
-                          : "text-[var(--color-foreground-primary)]"
-                      }`}
-                    >
-                      {reply.content}
-                    </p>
+                    {isEditing ? (
+                      <div className="mt-1 space-y-1">
+                        <textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleEditSubmit(reply.id);
+                            }
+                            if (e.key === "Escape") {
+                              setEditingId(null);
+                            }
+                          }}
+                          className="w-full rounded border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-2 py-1 text-sm text-[var(--color-input-fg)]"
+                          rows={2}
+                          aria-label="Edit reply"
+                        />
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleEditSubmit(reply.id)}
+                            className="text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="text-xs text-[var(--color-foreground-tertiary)] hover:underline"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p
+                        className={`mt-0.5 text-sm break-words whitespace-pre-wrap ${
+                          isOwn
+                            ? "text-[var(--color-brand-primary)]"
+                            : "text-[var(--color-foreground-primary)]"
+                        }`}
+                      >
+                        {reply.content}
+                      </p>
+                    )}
                     {reply.edited_at && (
                       <p className="mt-0.5 text-xs text-[var(--color-foreground-tertiary)]">
                         edited
                       </p>
+                    )}
+                    {isOwn && !isEditing && (
+                      <div className="mt-0.5 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button
+                          onClick={() => {
+                            setEditingId(reply.id);
+                            setEditContent(reply.content);
+                          }}
+                          className="text-xs text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground-primary)]"
+                          aria-label="Edit reply"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirmId(reply.id)}
+                          className="text-xs text-[var(--color-status-danger-fg)] hover:underline"
+                          aria-label="Delete reply"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -220,6 +310,46 @@ export function ThreadPanel({
 
         <div ref={bottomRef} />
       </div>
+
+      {/* Delete confirmation dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div
+            className="w-full max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]"
+            role="alertdialog"
+            aria-label="Delete reply"
+          >
+            <h3 className="text-sm font-semibold text-[var(--color-foreground-primary)]">
+              Delete reply?
+            </h3>
+            <p className="mt-1 text-xs text-[var(--color-foreground-secondary)]">
+              This cannot be undone.
+            </p>
+            {deleteError && (
+              <p className="mt-2 text-xs text-[var(--color-status-danger-fg)]" role="alert">
+                {deleteError}
+              </p>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setDeleteConfirmId(null);
+                  setDeleteError("");
+                }}
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteConfirm(deleteConfirmId)}
+                className="rounded-md bg-[var(--color-status-danger-fg)] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reply input */}
       <div className="border-t border-[var(--color-border-primary)] p-3">
