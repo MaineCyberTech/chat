@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
-import { Button, SidebarGroup } from "@chat/ui";
+import { Button, SidebarGroup, useToast } from "@chat/ui";
+import { Bell, BellOff } from "lucide-react";
 import type { UserPreferences, ThemePreference } from "@chat/db";
 
 interface NotificationPrefs {
@@ -21,11 +22,51 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   const [saveMessage, setSaveMessage] = useState("");
+  const { addToast } = useToast();
+  const [channelPrefs, setChannelPrefs] = useState<Map<string, boolean>>(new Map());
+  const [channels, setChannels] = useState<{ id: string; workspace_id: string; name: string; slug: string }[]>([]);
+  const [notifSaving, setNotifSaving] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
     fetchPreferences();
+    fetchChannels();
   }, [authLoading]);
+
+  async function fetchChannels() {
+    try {
+      const wsRes = await api.get<{ workspaces: { id: string }[] }>("/workspaces");
+      const ws = wsRes.workspaces[0];
+      if (!ws) return;
+      const chRes = await api.get<{ channels: { id: string; workspace_id: string; name: string; slug: string }[] }>(
+        `/workspaces/${ws.id}/channels`,
+      );
+      setChannels(chRes.channels);
+
+      const prefsRes = await api.get<{ preferences: Array<{ channel_id: string; notify: boolean }> }>(
+        "/notifications/preferences",
+      );
+      const prefMap = new Map<string, boolean>();
+      prefsRes.preferences.forEach((p) => prefMap.set(p.channel_id, p.notify));
+      setChannelPrefs(prefMap);
+    } catch { console.warn("Failed to fetch channels"); }
+  }
+
+  async function toggleChannelNotif(channelId: string, current: boolean) {
+    setNotifSaving(channelId);
+    try {
+      await api.put(`/notifications/channels/${channelId}`, { notify: !current });
+      setChannelPrefs((prev) => {
+        const next = new Map(prev);
+        next.set(channelId, !current);
+        return next;
+      });
+    } catch {
+      addToast({ title: "Failed to update notification preference", variant: "error" });
+    } finally {
+      setNotifSaving(null);
+    }
+  }
 
   async function fetchPreferences() {
     setLoading(true);
@@ -189,6 +230,37 @@ export default function SettingsPage() {
       <Button variant="primary" onClick={handleSaveAll} disabled={saving}>
         {saving ? "Saving..." : "Save Preferences"}
       </Button>
+
+      <SidebarGroup title="Per-Channel Notifications" defaultOpen={false}>
+        <p className="mb-2 text-xs text-[var(--color-foreground-tertiary)]">
+          Configure notification preferences for individual channels.
+        </p>
+        <div className="space-y-1">
+          {channels.length === 0 && (
+            <p className="text-xs text-[var(--color-foreground-tertiary)]">No channels found</p>
+          )}
+          {channels.map((ch) => {
+            const notify = channelPrefs.get(ch.id) ?? true;
+            return (
+              <div key={ch.id} className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-[var(--color-background-tertiary)]">
+                <span className="text-sm text-[var(--color-foreground-primary)]"># {ch.name}</span>
+                <button
+                  onClick={() => toggleChannelNotif(ch.id, notify)}
+                  disabled={notifSaving === ch.id}
+                  className={`flex h-7 w-7 items-center justify-center rounded-md ${
+                    notify
+                      ? "text-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-light)]"
+                      : "text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+                  }`}
+                  aria-label={notify ? `Mute ${ch.name}` : `Unmute ${ch.name}`}
+                >
+                  {notify ? <Bell size={14} /> : <BellOff size={14} />}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </SidebarGroup>
     </div>
   );
 }

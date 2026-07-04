@@ -11,7 +11,7 @@ import { MessageInput } from "./message-input";
 import { ThreadPanel } from "./thread-panel";
 import { SearchBar } from "./search-bar";
 import { Skeleton, useToast } from "@chat/ui";
-import { X, Phone, ArrowLeft, ExternalLink, Bell, BellOff, Info } from "lucide-react";
+import { X, Phone, ArrowLeft, ExternalLink, Bell, BellOff, Info, Download } from "lucide-react";
 import { ChannelInfo } from "./channel-info";
 import type { Message, UserProfile } from "@chat/db";
 import type { Socket } from "socket.io-client";
@@ -493,6 +493,14 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             >
               <ExternalLink size={14} />
             </button>
+            <a
+              href={`/v1/channels/${channelId}/export?format=csv`}
+              download
+              className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+              aria-label="Export channel as CSV"
+            >
+              <Download size={14} />
+            </a>
           </div>
         </div>
         <div className="hidden md:flex shrink-0 items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:px-6">
