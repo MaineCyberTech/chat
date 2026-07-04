@@ -17,7 +17,7 @@ export function FilePreview({ url, type, name }: Props) {
       <div className="my-1">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="block max-w-xs rounded-lg overflow-hidden border border-[var(--color-border-primary)] hover:opacity-90 transition-opacity"
+          className="block max-w-xs overflow-hidden rounded-lg border border-[var(--color-border-primary)] transition-opacity hover:opacity-90"
         >
           <img src={url} alt={name} className="max-h-48 w-auto object-cover" loading="lazy" />
         </button>
@@ -33,7 +33,12 @@ export function FilePreview({ url, type, name }: Props) {
             >
               <X size={18} />
             </button>
-            <img src={url} alt={name} className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
+            <img
+              src={url}
+              alt={name}
+              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         )}
       </div>
@@ -43,7 +48,11 @@ export function FilePreview({ url, type, name }: Props) {
   if (type === "video") {
     return (
       <div className="my-1 max-w-md">
-        <video controls className="w-full rounded-lg border border-[var(--color-border-primary)]" preload="metadata">
+        <video
+          controls
+          className="w-full rounded-lg border border-[var(--color-border-primary)]"
+          preload="metadata"
+        >
           <source src={url} />
         </video>
       </div>

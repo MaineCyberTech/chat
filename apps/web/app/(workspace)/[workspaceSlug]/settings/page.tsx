@@ -24,7 +24,9 @@ export default function SettingsPage() {
   const [saveMessage, setSaveMessage] = useState("");
   const { addToast } = useToast();
   const [channelPrefs, setChannelPrefs] = useState<Map<string, boolean>>(new Map());
-  const [channels, setChannels] = useState<{ id: string; workspace_id: string; name: string; slug: string }[]>([]);
+  const [channels, setChannels] = useState<
+    { id: string; workspace_id: string; name: string; slug: string }[]
+  >([]);
   const [notifSaving, setNotifSaving] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,18 +40,20 @@ export default function SettingsPage() {
       const wsRes = await api.get<{ workspaces: { id: string }[] }>("/workspaces");
       const ws = wsRes.workspaces[0];
       if (!ws) return;
-      const chRes = await api.get<{ channels: { id: string; workspace_id: string; name: string; slug: string }[] }>(
-        `/workspaces/${ws.id}/channels`,
-      );
+      const chRes = await api.get<{
+        channels: { id: string; workspace_id: string; name: string; slug: string }[];
+      }>(`/workspaces/${ws.id}/channels`);
       setChannels(chRes.channels);
 
-      const prefsRes = await api.get<{ preferences: Array<{ channel_id: string; notify: boolean }> }>(
-        "/notifications/preferences",
-      );
+      const prefsRes = await api.get<{
+        preferences: Array<{ channel_id: string; notify: boolean }>;
+      }>("/notifications/preferences");
       const prefMap = new Map<string, boolean>();
       prefsRes.preferences.forEach((p) => prefMap.set(p.channel_id, p.notify));
       setChannelPrefs(prefMap);
-    } catch { console.warn("Failed to fetch channels"); }
+    } catch {
+      console.warn("Failed to fetch channels");
+    }
   }
 
   async function toggleChannelNotif(channelId: string, current: boolean) {
@@ -242,7 +246,10 @@ export default function SettingsPage() {
           {channels.map((ch) => {
             const notify = channelPrefs.get(ch.id) ?? true;
             return (
-              <div key={ch.id} className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-[var(--color-background-tertiary)]">
+              <div
+                key={ch.id}
+                className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-[var(--color-background-tertiary)]"
+              >
                 <span className="text-sm text-[var(--color-foreground-primary)]"># {ch.name}</span>
                 <button
                   onClick={() => toggleChannelNotif(ch.id, notify)}

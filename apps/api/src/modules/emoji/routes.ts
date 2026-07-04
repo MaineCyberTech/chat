@@ -5,8 +5,8 @@ const router = Router();
 router.use(authenticate);
 
 router.get("/workspaces/:workspaceId/emoji", async (req, res) => {
-  const { data } = await req.supabase!
-    .from("custom_emoji")
+  const { data } = await req
+    .supabase!.from("custom_emoji")
     .select("*")
     .eq("workspace_id", req.params.workspaceId as string)
     .order("name", { ascending: true });
@@ -16,11 +16,13 @@ router.get("/workspaces/:workspaceId/emoji", async (req, res) => {
 router.post("/workspaces/:workspaceId/emoji", async (req, res) => {
   const { name, imageUrl } = req.body;
   if (!name || !imageUrl) {
-    res.status(400).json({ error: { code: "INVALID_INPUT", message: "name and imageUrl required" } });
+    res
+      .status(400)
+      .json({ error: { code: "INVALID_INPUT", message: "name and imageUrl required" } });
     return;
   }
-  const { data, error } = await req.supabase!
-    .from("custom_emoji")
+  const { data, error } = await req
+    .supabase!.from("custom_emoji")
     .insert({
       workspace_id: req.params.workspaceId as string,
       name: name.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
@@ -37,8 +39,8 @@ router.post("/workspaces/:workspaceId/emoji", async (req, res) => {
 });
 
 router.delete("/emoji/:id", async (req, res) => {
-  const { error } = await req.supabase!
-    .from("custom_emoji")
+  const { error } = await req
+    .supabase!.from("custom_emoji")
     .delete()
     .eq("id", req.params.id as string);
   if (error) {

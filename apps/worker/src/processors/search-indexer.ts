@@ -47,7 +47,9 @@ async function updateMessageIndex(
       const { error: updateError } = await supabase
         .from("messages")
         .update({
-          search_vector: supabase.rpc("to_tsvector", { "english": contentToIndex }) as unknown as undefined,
+          search_vector: supabase.rpc("to_tsvector", {
+            english: contentToIndex,
+          }) as unknown as undefined,
         })
         .eq("id", messageId);
 

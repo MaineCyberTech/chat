@@ -26,7 +26,9 @@ export default function PermalinkPage() {
   if (error) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--color-background-primary)] p-8 text-center">
-        <h1 className="text-xl font-semibold text-[var(--color-foreground-primary)]">Message not found</h1>
+        <h1 className="text-xl font-semibold text-[var(--color-foreground-primary)]">
+          Message not found
+        </h1>
         <p className="text-sm text-[var(--color-foreground-secondary)]">{error}</p>
       </div>
     );

@@ -871,12 +871,16 @@ export function MessageInput({
       {/* @everyone/@here confirmation dialog */}
       {showMentionWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)] p-4">
-          <div className="max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]" role="alertdialog">
+          <div
+            className="max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]"
+            role="alertdialog"
+          >
             <h2 className="text-sm font-semibold text-[var(--color-foreground-primary)]">
               Notify all channel members?
             </h2>
             <p className="mt-2 text-xs text-[var(--color-foreground-secondary)]">
-              Your message contains <strong>@everyone</strong> or <strong>@here</strong>, which will notify all members of this channel. Are you sure you want to send it?
+              Your message contains <strong>@everyone</strong> or <strong>@here</strong>, which will
+              notify all members of this channel. Are you sure you want to send it?
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button

@@ -266,16 +266,32 @@ const MessageItem = React.memo(function MessageItem({
                         if (isImage) return <FilePreview url={href} type="image" name={fileName} />;
                         if (isVideo) return <FilePreview url={href} type="video" name={fileName} />;
                         if (isAudio) return <FilePreview url={href} type="audio" name={fileName} />;
-                        return <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand-primary)] underline">{children}</a>;
+                        return (
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[var(--color-brand-primary)] underline"
+                          >
+                            {children}
+                          </a>
+                        );
                       },
                       code: ({ className, children }) => {
                         const match = /language-(\w+)/.exec(className ?? "");
                         const code = String(children).replace(/\n$/, "");
                         if (match) return <CodeBlock code={code} language={match[1]} />;
-                        return <code className="rounded bg-[var(--color-background-tertiary)] px-1 py-0.5 font-mono text-xs">{children}</code>;
+                        return (
+                          <code className="rounded bg-[var(--color-background-tertiary)] px-1 py-0.5 font-mono text-xs">
+                            {children}
+                          </code>
+                        );
                       },
                       pre: ({ children }) => <>{children}</>,
-                      img: ({ src, alt }) => src ? <FilePreview url={String(src)} type="image" name={alt ?? "image"} /> : null,
+                      img: ({ src, alt }) =>
+                        src ? (
+                          <FilePreview url={String(src)} type="image" name={alt ?? "image"} />
+                        ) : null,
                     }}
                   >
                     {msg.content}
@@ -754,10 +770,10 @@ export function MessageList({
             onDelete={onDelete}
             onThreadOpen={onThreadOpen}
             onStartEdit={(m) => startEdit(m)}
-                  onMessageContextMenu={handleContextMenu}
-                  onMessageTouchStart={handleTouchStart}
-                  onMessageTouchEnd={handleTouchEnd}
-                  onMessageTouchMove={handleTouchMove}
+            onMessageContextMenu={handleContextMenu}
+            onMessageTouchStart={handleTouchStart}
+            onMessageTouchEnd={handleTouchEnd}
+            onMessageTouchMove={handleTouchMove}
             onSubmitEdit={submitEdit}
             onCancelEdit={handleCancelEdit}
             onSetEditContent={setEditContent}
@@ -928,10 +944,7 @@ export function MessageList({
       )}
 
       {remindMessageId && (
-        <RemindModal
-          messageId={remindMessageId}
-          onClose={() => setRemindMessageId(null)}
-        />
+        <RemindModal messageId={remindMessageId} onClose={() => setRemindMessageId(null)} />
       )}
     </div>
   );

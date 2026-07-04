@@ -48,11 +48,25 @@ export function RemindModal({ messageId, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)]" onClick={onClose}>
-      <div className="w-64 rounded-lg bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Set reminder">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)]"
+      onClick={onClose}
+    >
+      <div
+        className="w-64 rounded-lg bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="Set reminder"
+      >
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[var(--color-foreground-primary)]">Remind me</h3>
-          <button onClick={onClose} className="flex h-6 w-6 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]" aria-label="Close">
+          <h3 className="text-sm font-semibold text-[var(--color-foreground-primary)]">
+            Remind me
+          </h3>
+          <button
+            onClick={onClose}
+            className="flex h-6 w-6 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+            aria-label="Close"
+          >
             <X size={14} />
           </button>
         </div>

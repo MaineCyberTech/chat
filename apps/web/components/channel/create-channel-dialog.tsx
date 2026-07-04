@@ -69,7 +69,12 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
             placeholder="What's this channel about?"
           />
           <label className="flex items-center gap-2 text-xs text-[var(--color-foreground-secondary)]">
-            <input type="checkbox" checked={isReadOnly} onChange={(e) => setIsReadOnly(e.target.checked)} className="rounded border-[var(--color-input-border)]" />
+            <input
+              type="checkbox"
+              checked={isReadOnly}
+              onChange={(e) => setIsReadOnly(e.target.checked)}
+              className="rounded border-[var(--color-input-border)]"
+            />
             Read-only channel (only admins can post)
           </label>
           <div className="flex gap-2">

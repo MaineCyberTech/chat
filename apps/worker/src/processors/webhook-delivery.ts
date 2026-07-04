@@ -219,7 +219,10 @@ export function registerWebhookProcessor() {
   );
 
   worker.on("completed", (job) => {
-    logger.debug({ jobId: job.id, webhookId: job.data.webhookId }, "Webhook delivery job completed");
+    logger.debug(
+      { jobId: job.id, webhookId: job.data.webhookId },
+      "Webhook delivery job completed",
+    );
   });
 
   worker.on("failed", (job, err) => {

@@ -19,7 +19,9 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
   useEffect(() => {
     Promise.all([
       api.post<{ profiles: UserProfile[] }>("/auth/profiles", { userIds: [userId] }),
-      api.get<{ status: { emoji: string; text: string } | null }>("/status").catch(() => ({ status: null })),
+      api
+        .get<{ status: { emoji: string; text: string } | null }>("/status")
+        .catch(() => ({ status: null })),
     ])
       .then(([profileRes]) => {
         setProfile(profileRes.profiles[0] ?? null);
@@ -40,7 +42,11 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
   // Close on click outside and Escape
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node) && e.target !== anchorEl) {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node) &&
+        e.target !== anchorEl
+      ) {
         onClose();
       }
     }
@@ -57,7 +63,10 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
 
   if (loading) {
     return (
-      <div ref={popoverRef} className="fixed z-50 w-64 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]">
+      <div
+        ref={popoverRef}
+        className="fixed z-50 w-64 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]"
+      >
         <div className="animate-pulse space-y-2">
           <div className="h-10 w-10 rounded-full bg-[var(--color-skeleton-bg)]" />
           <div className="h-4 w-32 rounded bg-[var(--color-skeleton-bg)]" />

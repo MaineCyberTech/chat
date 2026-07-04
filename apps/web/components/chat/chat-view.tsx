@@ -442,7 +442,9 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex shrink-0 items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:gap-3 md:px-6">
           <h1 className="min-w-0 truncate text-base font-semibold md:text-lg"># {channelName}</h1>
-          <span className="hidden md:inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200">{onlineCount} online</span>
+          <span className="hidden items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 md:inline-flex dark:bg-green-900 dark:text-green-200">
+            {onlineCount} online
+          </span>
           <span className="hidden text-xs text-[var(--color-foreground-tertiary)] md:inline">
             {memberCount} members
           </span>
@@ -453,12 +455,22 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
                   if (channelMuted) {
                     await api.delete(`/channels/${channelId}/notification-preference`);
                   } else {
-                    await api.put(`/channels/${channelId}/notification-preference`, { notify: false });
+                    await api.put(`/channels/${channelId}/notification-preference`, {
+                      notify: false,
+                    });
                   }
                   setChannelMuted(!channelMuted);
-                  addToast({ title: channelMuted ? "Unmuted channel" : "Muted channel", variant: "success", duration: 2000 });
+                  addToast({
+                    title: channelMuted ? "Unmuted channel" : "Muted channel",
+                    variant: "success",
+                    duration: 2000,
+                  });
                 } catch {
-                  addToast({ title: "Error", description: "Failed to update notification preference", variant: "error" });
+                  addToast({
+                    title: "Error",
+                    description: "Failed to update notification preference",
+                    variant: "error",
+                  });
                 }
               }}
               className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${channelMuted ? "text-[var(--color-status-danger-fg)]" : "text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"}`}
@@ -486,9 +498,13 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             <button
               onClick={() => {
                 const url = `${window.location.origin}/${workspaceSlug}/${channelId}`;
-                window.open(url, `chat-${channelId}`, "width=1200,height=800,menubar=no,toolbar=no,location=no,status=no");
+                window.open(
+                  url,
+                  `chat-${channelId}`,
+                  "width=1200,height=800,menubar=no,toolbar=no,location=no,status=no",
+                );
               }}
-              className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+              className="hidden h-8 w-8 items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] md:flex"
               aria-label="Open channel in new window"
             >
               <ExternalLink size={14} />
@@ -496,14 +512,14 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             <a
               href={`/v1/channels/${channelId}/export?format=csv`}
               download
-              className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+              className="hidden h-8 w-8 items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] md:flex"
               aria-label="Export channel as CSV"
             >
               <Download size={14} />
             </a>
           </div>
         </div>
-        <div className="hidden md:flex shrink-0 items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:px-6">
+        <div className="hidden shrink-0 items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:flex md:px-6">
           {workspaceId && workspaceSlug && (
             <SearchBar workspaceId={workspaceId} workspaceSlug={workspaceSlug} />
           )}

@@ -35,14 +35,18 @@ export default function SavedMessagesPage() {
         res.profiles.forEach((p) => next.set(p.id, p));
         return next;
       });
-    } catch { console.warn("Failed to load profiles"); }
+    } catch {
+      console.warn("Failed to load profiles");
+    }
   }
 
   async function unflag(messageId: string) {
     try {
       await api.delete(`/messages/${messageId}/flag`);
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
-    } catch { console.warn("Failed to unflag message"); }
+    } catch {
+      console.warn("Failed to unflag message");
+    }
   }
 
   function name(userId: string) {
@@ -66,7 +70,8 @@ export default function SavedMessagesPage() {
       </div>
       {messages.length === 0 && (
         <p className="text-sm text-[var(--color-foreground-tertiary)]">
-          No saved messages yet. Right-click or long-press a message and select &ldquo;Copy link&rdquo; or use reactions to keep track.
+          No saved messages yet. Right-click or long-press a message and select &ldquo;Copy
+          link&rdquo; or use reactions to keep track.
         </p>
       )}
       <div className="space-y-2">
@@ -75,12 +80,15 @@ export default function SavedMessagesPage() {
             key={msg.id}
             className="flex items-start gap-3 rounded-lg border border-[var(--color-border-primary)] p-3"
           >
-            <MessageSquare size={16} className="mt-0.5 shrink-0 text-[var(--color-foreground-tertiary)]" />
+            <MessageSquare
+              size={16}
+              className="mt-0.5 shrink-0 text-[var(--color-foreground-tertiary)]"
+            />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-[var(--color-foreground-primary)]">
                 {name(msg.user_id)}
               </p>
-              <p className="mt-0.5 text-sm text-[var(--color-foreground-secondary)] line-clamp-2">
+              <p className="mt-0.5 line-clamp-2 text-sm text-[var(--color-foreground-secondary)]">
                 {msg.content}
               </p>
               <p className="mt-0.5 text-xs text-[var(--color-foreground-tertiary)]">

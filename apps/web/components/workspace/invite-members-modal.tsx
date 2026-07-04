@@ -33,11 +33,13 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
       )
       .then((res) => {
         setAllMembers(
-          res.members.filter((m) => m.user_id !== user?.id).map((m) => ({
-            user_id: m.user_id,
-            display_name: m.display_name,
-            email: m.email,
-          })),
+          res.members
+            .filter((m) => m.user_id !== user?.id)
+            .map((m) => ({
+              user_id: m.user_id,
+              display_name: m.display_name,
+              email: m.email,
+            })),
         );
       })
       .catch(() => {});
@@ -50,11 +52,11 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
     }
     const q = query.toLowerCase();
     setResults(
-      allMembers.filter(
-        (m) =>
-          m.display_name?.toLowerCase().includes(q) ||
-          m.email?.toLowerCase().includes(q),
-      ).slice(0, 20),
+      allMembers
+        .filter(
+          (m) => m.display_name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q),
+        )
+        .slice(0, 20),
     );
   }, [query, allMembers]);
 
@@ -114,13 +116,16 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
           </button>
         </div>
         <div className="relative border-b border-[var(--color-border-primary)] px-3 py-2">
-          <Search size={14} className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--color-foreground-tertiary)]" />
+          <Search
+            size={14}
+            className="absolute top-1/2 left-5 -translate-y-1/2 text-[var(--color-foreground-tertiary)]"
+          />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search members..."
-            className="w-full rounded-md border border-[var(--color-input-border)] bg-[var(--color-input-bg)] py-1.5 pl-7 pr-2 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
+            className="w-full rounded-md border border-[var(--color-input-border)] bg-[var(--color-input-bg)] py-1.5 pr-2 pl-7 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
             aria-label="Search members"
           />
         </div>

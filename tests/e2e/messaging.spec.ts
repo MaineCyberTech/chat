@@ -79,7 +79,10 @@ test.describe("Messaging Flow", () => {
     // Check if typing indicator appears on page 1
     // Note: this is best-effort; typing indicator depends on throttle timing
     await page.waitForTimeout(500);
-    const typingVisible = await page.locator("text=typing").isVisible().catch(() => false);
+    const typingVisible = await page
+      .locator("text=typing")
+      .isVisible()
+      .catch(() => false);
 
     await page2.close();
   });

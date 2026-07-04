@@ -17,14 +17,14 @@ Each row has a `version` column (timestamp like `20260625000001`) and `name`.
 
 Review the migration file at `supabase/migrations/<version>_<name>.sql` and write the inverse statements. Common patterns:
 
-| Migration Action | Rollback |
-|-----------------|----------|
-| `CREATE TABLE` | `DROP TABLE IF EXISTS public.<table> CASCADE;` |
-| `ALTER TABLE ADD COLUMN` | `ALTER TABLE public.<table> DROP COLUMN IF EXISTS <column>;` |
-| `CREATE INDEX` | `DROP INDEX IF EXISTS <index>;` |
-| `ALTER TABLE ENABLE ROW LEVEL SECURITY` | `ALTER TABLE public.<table> DISABLE ROW LEVEL SECURITY;` |
-| `CREATE POLICY` | `DROP POLICY IF EXISTS <policy> ON public.<table>;` |
-| `ALTER TYPE ... ADD VALUE` | Cannot be reverted; requires database-level cleanup |
+| Migration Action                        | Rollback                                                     |
+| --------------------------------------- | ------------------------------------------------------------ |
+| `CREATE TABLE`                          | `DROP TABLE IF EXISTS public.<table> CASCADE;`               |
+| `ALTER TABLE ADD COLUMN`                | `ALTER TABLE public.<table> DROP COLUMN IF EXISTS <column>;` |
+| `CREATE INDEX`                          | `DROP INDEX IF EXISTS <index>;`                              |
+| `ALTER TABLE ENABLE ROW LEVEL SECURITY` | `ALTER TABLE public.<table> DISABLE ROW LEVEL SECURITY;`     |
+| `CREATE POLICY`                         | `DROP POLICY IF EXISTS <policy> ON public.<table>;`          |
+| `ALTER TYPE ... ADD VALUE`              | Cannot be reverted; requires database-level cleanup          |
 
 ### 3. Execute Rollback Locally
 

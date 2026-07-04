@@ -45,9 +45,7 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
     }
     const q = query.toLowerCase();
     const results = channels.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        (c.topic && c.topic.toLowerCase().includes(q)),
+      (c) => c.name.toLowerCase().includes(q) || (c.topic && c.topic.toLowerCase().includes(q)),
     );
     setFiltered(results.slice(0, 20));
     setSelectedIndex(0);
@@ -76,7 +74,7 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-[var(--color-dialog-overlay)]"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-[var(--color-dialog-overlay)] pt-[15vh]"
       onClick={onClose}
     >
       <div

@@ -202,8 +202,9 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="grid h-full grid-cols-[min-content_1fr] overflow-hidden bg-[var(--color-background-primary)] md:pb-0"
-      style={{ paddingBottom: 'var(--bottom-nav-height)' }}
+    <div
+      className="grid h-full grid-cols-[min-content_1fr] overflow-hidden bg-[var(--color-background-primary)] md:pb-0"
+      style={{ paddingBottom: "var(--bottom-nav-height)" }}
     >
       {/* Sidebar — first grid column, full height */}
       <AppSidebar
@@ -233,14 +234,15 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             channelId={params.channelId}
           />
         </div>
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-hidden">
           <ErrorBoundary>{children}</ErrorBoundary>
         </div>
       </div>
 
       {/* Mobile bottom navigation — fixed but height-aware */}
-      <nav className="fixed right-0 bottom-0 left-0 z-30 flex shrink-0 items-center justify-around border-t border-[var(--color-border-primary)] bg-[var(--color-background-primary)] md:hidden"
-        style={{ height: 'var(--bottom-nav-height)', paddingBottom: 'var(--safe-area-bottom)' }}
+      <nav
+        className="fixed right-0 bottom-0 left-0 z-30 flex shrink-0 items-center justify-around border-t border-[var(--color-border-primary)] bg-[var(--color-background-primary)] md:hidden"
+        style={{ height: "var(--bottom-nav-height)", paddingBottom: "var(--safe-area-bottom)" }}
       >
         {params.channelId && params.workspaceSlug && (
           <button

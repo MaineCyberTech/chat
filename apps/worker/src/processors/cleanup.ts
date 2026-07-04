@@ -23,7 +23,10 @@ export const cleanupQueue = new Queue<CleanupJobData>("cleanup", {
   },
 });
 
-async function cleanupOldDeliveries(supabase: ReturnType<typeof createSupabaseClient>, olderThanDays: number) {
+async function cleanupOldDeliveries(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  olderThanDays: number,
+) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
 
@@ -42,10 +45,7 @@ async function cleanupOldDeliveries(supabase: ReturnType<typeof createSupabaseCl
   if (!deliveries || deliveries.length === 0) return 0;
 
   const ids = deliveries.map((d: { id: string }) => d.id);
-  const { error: deleteError } = await supabase
-    .from("webhook_deliveries")
-    .delete()
-    .in("id", ids);
+  const { error: deleteError } = await supabase.from("webhook_deliveries").delete().in("id", ids);
 
   if (deleteError) {
     logger.error({ error: deleteError }, "Failed to delete old deliveries");
@@ -56,7 +56,10 @@ async function cleanupOldDeliveries(supabase: ReturnType<typeof createSupabaseCl
   return ids.length;
 }
 
-async function cleanupDeadLetters(supabase: ReturnType<typeof createSupabaseClient>, olderThanDays: number) {
+async function cleanupDeadLetters(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  olderThanDays: number,
+) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
 
@@ -74,10 +77,7 @@ async function cleanupDeadLetters(supabase: ReturnType<typeof createSupabaseClie
   if (!letters || letters.length === 0) return 0;
 
   const ids = letters.map((d: { id: string }) => d.id);
-  const { error: deleteError } = await supabase
-    .from("webhook_dead_letters")
-    .delete()
-    .in("id", ids);
+  const { error: deleteError } = await supabase.from("webhook_dead_letters").delete().in("id", ids);
 
   if (deleteError) {
     logger.error({ error: deleteError }, "Failed to delete dead letters");
@@ -88,7 +88,10 @@ async function cleanupDeadLetters(supabase: ReturnType<typeof createSupabaseClie
   return ids.length;
 }
 
-async function cleanupConsentLogs(supabase: ReturnType<typeof createSupabaseClient>, olderThanDays: number) {
+async function cleanupConsentLogs(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  olderThanDays: number,
+) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
 
@@ -106,10 +109,7 @@ async function cleanupConsentLogs(supabase: ReturnType<typeof createSupabaseClie
   if (!logs || logs.length === 0) return 0;
 
   const ids = logs.map((l: { id: string }) => l.id);
-  const { error: deleteError } = await supabase
-    .from("consent_logs")
-    .delete()
-    .in("id", ids);
+  const { error: deleteError } = await supabase.from("consent_logs").delete().in("id", ids);
 
   if (deleteError) {
     logger.error({ error: deleteError }, "Failed to delete consent logs");
