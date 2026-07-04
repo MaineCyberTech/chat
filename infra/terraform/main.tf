@@ -151,49 +151,6 @@ resource "cloudflare_dns_record" "frontend" {
   proxied = true
 }
 
-# Monitoring alerts
-resource "digitalocean_monitor_alert" "cpu_high" {
-  count      = var.alert_email != "" ? 1 : 0
-  alerts {
-    email = [var.alert_email]
-  }
-  window     = "5m"
-  type       = "v1/insights/droplet/cpu"
-  value      = "80"
-  compare    = "GreaterThan"
-  entities   = [digitalocean_droplet.chat.id]
-  enabled    = true
-  description = "CPU > 80% for 5 minutes on ${digitalocean_droplet.chat.name}"
-}
-
-resource "digitalocean_monitor_alert" "memory_high" {
-  count      = var.alert_email != "" ? 1 : 0
-  alerts {
-    email = [var.alert_email]
-  }
-  window     = "5m"
-  type       = "v1/insights/droplet/memory_utilization_percent"
-  value      = "80"
-  compare    = "GreaterThan"
-  entities   = [digitalocean_droplet.chat.id]
-  enabled    = true
-  description = "Memory > 80% for 5 minutes on ${digitalocean_droplet.chat.name}"
-}
-
-resource "digitalocean_monitor_alert" "disk_full" {
-  count      = var.alert_email != "" ? 1 : 0
-  alerts {
-    email = [var.alert_email]
-  }
-  window     = "5m"
-  type       = "v1/insights/droplet/disk_utilization_percent"
-  value      = "90"
-  compare    = "GreaterThan"
-  entities   = [digitalocean_droplet.chat.id]
-  enabled    = true
-  description = "Disk > 90% for 5 minutes on ${digitalocean_droplet.chat.name}"
-}
-
 resource "cloudflare_dns_record" "api" {
   zone_id = var.cloudflare_zone_id
   name    = split(".", local.domain_names.api)[0]
