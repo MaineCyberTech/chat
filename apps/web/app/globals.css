@@ -72,13 +72,10 @@ body {
     overflow: hidden;
   }
 
-  /* Disable hover effects on touch devices — use tap instead */
-  .group:hover .group-hover\\:flex {
-    display: none;
-  }
-  .group:active .group-hover\\:flex,
-  .group:focus-within .group-hover\\:flex {
-    display: flex;
+  /* Touch devices: show action overlay on tap/focus */
+  .group:active .action-overlay,
+  .group:focus-within .action-overlay {
+    display: flex !important;
   }
 }
 
