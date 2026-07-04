@@ -181,7 +181,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [lint, typecheck, test, security-audit, branch-protection, migration-test]
+    needs: [lint, typecheck, test, security-audit, migration-test]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

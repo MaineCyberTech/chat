@@ -185,7 +185,7 @@ jobs:
 
   deploy:
     name: Deploy to Droplet
-    needs: build-images
+    needs: [build-images, provision]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
@@ -269,7 +269,7 @@ jobs:
   rollback:
     name: Rollback to Previous Version
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback_sha != ''
-    needs: [provision, build-images]
+    needs: [provision]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
