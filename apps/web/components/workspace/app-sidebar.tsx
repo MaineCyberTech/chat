@@ -7,6 +7,7 @@ import { WorkspaceList } from "./workspace-list";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { ChannelList } from "@/components/channel/channel-list";
 import { CreateChannelDialog } from "@/components/channel/create-channel-dialog";
+import { InviteMembersModal } from "./invite-members-modal";
 import { Avatar } from "@chat/ui";
 import { SidebarGroup } from "@chat/ui";
 import { Bookmark, PanelLeftClose, PanelLeft, Settings } from "lucide-react";
@@ -32,6 +33,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const userToggledRef = useRef(false);
   const [dmChannels, setDmChannels] = useState<Channel[]>([]);
   const [showUserPicker, setShowUserPicker] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [chatUsers, setChatUsers] = useState<{ id: string; display_name: string }[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [userStatus, setUserStatus] = useState<{ status: string; custom_status?: string }>({
@@ -397,14 +399,28 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                 </div>
               )}
               {workspace && (
-                <div className="mt-1">
+                <div className="mt-1 flex gap-1">
                   <CreateChannelDialog
                     workspaceId={workspace.id}
                     onCreated={handleChannelCreated}
                   />
+                  {!collapsed && (
+                    <button
+                      onClick={() => setShowInviteModal(true)}
+                      className="flex-1 rounded-md px-2 py-1 text-left text-xs text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+                    >
+                      + Invite
+                    </button>
+                  )}
                 </div>
               )}
             </SidebarGroup>
+          )}
+          {workspace && showInviteModal && (
+            <InviteMembersModal
+              workspaceId={workspace.id}
+              onClose={() => setShowInviteModal(false)}
+            />
           )}
 
           {/* Saved Messages section */}

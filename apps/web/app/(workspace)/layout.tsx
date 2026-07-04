@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { AppSidebar } from "@/components/workspace/app-sidebar";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
+import { QuickSwitcher } from "@/components/chat/quick-switcher";
 import { Skeleton } from "@chat/ui";
 import { api } from "@/lib/api";
 import { register } from "@/lib/keyboard-shortcut-registry";
@@ -117,6 +118,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [channels, setChannels] = useState<string[]>([]);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   // Fetch channels for keyboard navigation
   useEffect(() => {
@@ -133,6 +135,18 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       })
       .catch(() => console.warn("Failed to fetch workspace for keyboard nav"));
   }, [user, params.workspaceSlug]);
+
+  // Global Ctrl+K for quick switcher
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setSwitcherOpen(true);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Register keyboard shortcut callbacks
   useEffect(() => {
@@ -243,6 +257,14 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           <span>Settings</span>
         </Link>
       </nav>
+
+      {params.workspaceSlug && (
+        <QuickSwitcher
+          workspaceSlug={params.workspaceSlug}
+          open={switcherOpen}
+          onClose={() => setSwitcherOpen(false)}
+        />
+      )}
     </div>
   );
 }
