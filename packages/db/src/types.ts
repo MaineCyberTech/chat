@@ -58,10 +58,26 @@ export interface Message {
   user_id: string;
   content: string;
   parent_id: string | null;
+  is_pinned: boolean;
   edited_at: string | null;
   deleted_at: string | null;
   archived_at: string | null;
   created_at: string;
+}
+
+export interface MessageFlag {
+  id: string;
+  user_id: string;
+  message_id: string;
+  created_at: string;
+}
+
+export interface MessageEditHistory {
+  id: string;
+  message_id: string;
+  previous_content: string;
+  edited_by: string;
+  edited_at: string;
 }
 
 export type ThemePreference = "system" | "light" | "dark";

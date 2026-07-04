@@ -1,0 +1,29 @@
+# Default owners for everything
+* @mainecybertech/engineering
+
+# API server
+/apps/api/ @mainecybertech/backend
+
+# Web frontend
+/apps/web/ @mainecybertech/frontend
+
+# Worker service
+/apps/worker/ @mainecybertech/backend
+
+# Shared packages
+/packages/ @mainecybertech/engineering
+
+# Infrastructure
+/infra/ @mainecybertech/devops
+
+# Database migrations
+/supabase/migrations/ @mainecybertech/backend
+
+# CI/CD
+/.github/workflows/ @mainecybertech/devops
+
+# Documentation
+/docs/ @mainecybertech/engineering
+
+# Scripts
+/scripts/ @mainecybertech/engineering

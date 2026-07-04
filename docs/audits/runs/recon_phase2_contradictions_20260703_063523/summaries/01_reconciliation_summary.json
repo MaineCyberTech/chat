@@ -1,0 +1,107 @@
+{
+  "stage": "reconciliation",
+  "prompt_name": "recon_phase2_contradictions",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T08:00:00Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 3,
+    "P2": 4,
+    "P3": 2
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "reconciliation",
+      "category": "direct_contradiction",
+      "file": "",
+      "issue": "Security audit says 'reaction routes use anon client \u2014 P0 cross-tenant access'. Full RBAC feature prompt says 'implement channel-level role overrides'. These contradict: reaction routes just need middleware membership check (fix exists: requireChannelAccess), not full RBAC redesign (multi-sprint effort). Cross-referencing could lead to over-engineering.",
+      "impact": "Implementing full RBAC to fix reaction routes wastes ~3 sprints for a 1-hour fix.",
+      "fix": "Fix reaction routes independently with requireChannelAccess middleware. Channel-level RBAC overrides are a separate effort with different scope and justification."
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "direct_contradiction",
+      "file": "",
+      "issue": "Environment audit says 'API subdomain DNS unused, remove'. Infra audit says 'API subdomain DNS reserved for future split-domain architecture'. Direct contradiction on whether to keep or delete the DNS record.",
+      "impact": "Deleting DNS record could block future architecture evolution. Keeping it maintains unused infra indefinitely.",
+      "fix": "Keep DNS record but add comment: 'Reserved for future split-domain (API <-> web) architecture. Do not delete without architect approval.' Defer removal decision."
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "severity_inconsistency",
+      "file": "",
+      "issue": "'Message search uses anon client' rated P0 in security audit (cross-tenant leak) but P1 in API contract audit (incorrect client type). Same code, same impact \u2014 different severity.",
+      "impact": "Severity inconsistency undermines prioritization. P0 items get immediate attention, P1 items get deferred.",
+      "fix": "Normalize to P0: anon client means auth.uid() is NULL, SECURITY INVOKER function has no user context \u2014 cross-tenant data leak is possible. All instances of anon client usage in data-access code are P0."
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "severity_inconsistency",
+      "file": "",
+      "issue": "'No git tags or semver releases' rated P2 in rollback audit but P3 in platform audit. Both agree it's missing but disagree on severity by one level.",
+      "impact": "Minor but affects whether item gets prioritized in current sprint vs backlog.",
+      "fix": "Normalize to P3: git tags are best practice but SHA-based Docker image tags provide production traceability. Git tags are nice-to-have, not blocking."
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "soft_drift",
+      "file": "",
+      "issue": "UX audit says 'theme toggle has no transition animation = P2'. Performance audit says 'client-side theme flash (FOUT) = P1'. Both about theme but different aspects: SSR hydration fix (P1) vs CSS animation (P2). Risk of conflating them into one ticket.",
+      "impact": "SSR theme flash is a user-facing defect. CSS transition is a nice-to-have. Conflating them would block the quick fix with the aesthetic item.",
+      "fix": "Keep separate: (P1) SSR-safe theme hydration via cookie-based initial theme, (P2) CSS transition on theme switch color properties. Different scopes, different fixes."
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "sequencing_conflict",
+      "file": "",
+      "issue": "Feature prompts sequence: Phase 1 = core features (threads, mentions, RBAC, webhooks, search, editor). Platform readiness says 'regenerate types and add worker first'. Infrastructure audit says 'deploy Redis first'. Three different sequences for the same work.",
+      "impact": "Feature implementation without infrastructure prerequisites will hit Redis/worker gaps. Types won't match schema after migrations.",
+      "fix": "Resequence to reconciled order: Phase 0 = infra hardening (Redis, worker, types regeneration), Phase 1 = security fixes, Phase 2 = core features, Phase 3 = frontend depth, Phase 4 = media/UX."
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "telemetry_contradiction",
+      "file": "",
+      "issue": "One audit says 'add OpenTelemetry for distributed tracing'. Observability audit says 'request IDs sufficient at current scale, OTEL overengineering'. Direct contradiction on telemetry strategy.",
+      "impact": "Contradictory recommendations waste effort on wrong solution.",
+      "fix": "Defer OTEL. Implement structured request IDs with log shipping (Papertrail/Loki). Re-evaluate OTEL when scaling beyond 5 API instances. Document decision."
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "duplicate_consolidation",
+      "file": "",
+      "issue": "'TypeScript types out of sync with schema' appears in database audit, platform readiness, and evolution ultra \u2014 three identical findings with same fix (regenerate supabase types).",
+      "impact": "Counted 3x overstating effort. Real fix is one command: npx supabase gen types typescript --local > packages/db/src/types.ts",
+      "fix": "Consolidate to one finding with CI drift check: add supabase gen types to validate.yml and fail if types are out of sync."
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "unsupported_assumption",
+      "file": "",
+      "issue": "'No i18n support' flagged P3 in accessibility audit but codebase has no internationalization requirements documented. Assumption may not be valid if i18n is intentionally out of scope.",
+      "impact": "Finding may not be actionable. Effort spent on i18n infrastructure may be wasted.",
+      "fix": "Document scope decision: 'i18n not planned for MVP. All UI text in English. Re-evaluate if non-English users exceed 20%.' Remove i18n findings if out of scope."
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "unsupported_assumption",
+      "file": "",
+      "issue": "'Add k6 load testing to CI' recommended by test expansion prompt but Redis not deployed yet \u2014 k6 tests against single-instance API won't represent production behavior with multiple instances and Redis.",
+      "impact": "Load test results from single-instance setup are not representative of production behavior.",
+      "fix": "Defer full load tests until multi-instance deployment with Redis is possible. Add unit-level performance benchmarks in the meantime."
+    }
+  ],
+  "run_id": "recon_phase2_contradictions_20260703_063523"
+}

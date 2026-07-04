@@ -1,0 +1,67 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "environment_drift_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 3,
+    "P3": 0
+  },
+  "category_scores": {
+    "domain_consistency": 30,
+    "env_var_alignment": 50,
+    "cookie_cors_wiring": 35,
+    "deploy_config_parity": 45
+  },
+  "readiness": 40,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "domain_wiring",
+      "file": "infra/docker/Caddyfile:23-31",
+      "issue": "Dev Caddyfile defines a separate chat-api.mainecybertech.us subdomain virtual host; prod Caddyfile.prod has no API subdomain",
+      "impact": "The separate API subdomain bypasses the same-origin architecture for cookie visibility. SameSite=Strict cookies won't be sent to the API subdomain, breaking auth.",
+      "fix": "Remove chat-api.mainecybertech.us virtual host from dev Caddyfile. Route API traffic through chat.mainecybertech.us/v1/* matching prod topology. Update API_BASE_URL in deploy-development.yml."
+    },
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "env_var_alignment",
+      "file": "infra/docker/docker-compose.devremote.yml:84-89",
+      "issue": "Dev compose missing LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_HOST env vars on api service; prod compose includes all three",
+      "impact": "Dev environment will either crash or silently disable WebRTC features. Developers testing on dev may get different behavior than production.",
+      "fix": "Add LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_HOST=http://livekit:7880 to dev compose api service environment mirroring prod configuration."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "cookie_domain_drift",
+      "file": ".github/workflows/deploy-development.yml:100-107",
+      "issue": "Dev deployment writes NEXT_PUBLIC_API_URL and API_BASE_URL pointing to different subdomains; prod follows same pattern with .com TLD",
+      "impact": "Mixed API URL configuration creates two divergent code paths for API access. Cookies set by main domain won't be sent to API subdomain.",
+      "fix": "Use a single canonical API URL. Set both NEXT_PUBLIC_API_URL and API_BASE_URL to https://chat.mainecybertech.us. Remove API subdomain routing entirely."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "domain_topology",
+      "file": "infra/docker/docker-compose.devremote.yml:59",
+      "issue": "Dev livekit turn domain hardcoded to 'localhost'; prod livekit uses DOMAIN env var (chat.mainecybertech.com)",
+      "impact": "Mobile or remote clients connecting to dev environment will fail TURN connectivity. WebRTC/media features cannot be validated on dev before prod deployment.",
+      "fix": "Parametrize livekit turn domain in dev compose using ${DOMAIN:-localhost} to match prod pattern."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "ssl_tls_config",
+      "file": "infra/docker/Caddyfile:2",
+      "issue": "Dev Caddyfile uses local filesystem TLS certs; prod uses Cloudflare origin certificates at different paths",
+      "impact": "Dev and prod have different cert paths (/etc/caddy/certs/ vs /certs/), creating confusion for debugging certificate issues.",
+      "fix": "Align cert mount points and naming between dev and prod compose files using consistent paths."
+    }
+  ],
+  "run_id": "environment_drift_audit_20260703_054833"
+}

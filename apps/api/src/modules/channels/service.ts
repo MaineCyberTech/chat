@@ -10,6 +10,7 @@ interface CreateChannelInput {
   created_by: string;
   topic?: string;
   is_private?: boolean;
+  channel_type?: "public" | "private" | "dm" | "group";
 }
 
 interface UpdateChannelInput {
@@ -69,6 +70,7 @@ export class ChannelService {
           created_by: input.created_by,
           topic: input.topic ?? null,
           is_private: input.is_private ?? false,
+          channel_type: input.channel_type ?? (input.is_private ? "private" : "public"),
         })
         .select("*")
         .single();
@@ -166,6 +168,94 @@ export class ChannelService {
       .eq("channel_id", channelId);
 
     return (data ?? []) as { user_id: string }[];
+  }
+
+  async createDmChannel(
+    workspaceId: string,
+    currentUserId: string,
+    targetUserId: string,
+    supabase?: SupabaseClient,
+  ): Promise<Channel | null> {
+    const client = this.getClient(supabase);
+
+    // Check if DM channel already exists
+    const { data: existingDm } = await client
+      .from("dm_channels")
+      .select("channel_id")
+      .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${currentUserId})`)
+      .maybeSingle();
+
+    if (existingDm) {
+      const { data: existingChannel } = await client
+        .from("channels")
+        .select("*")
+        .eq("id", existingDm.channel_id)
+        .single();
+      if (existingChannel) return existingChannel as Channel;
+    }
+
+    // Create the channel
+    const channel = await this.create(
+      {
+        name: `dm-${currentUserId.slice(0, 8)}-${targetUserId.slice(0, 8)}`,
+        workspace_id: workspaceId,
+        created_by: currentUserId,
+        is_private: true,
+        channel_type: "dm",
+      },
+      client,
+    );
+
+    if (!channel) return null;
+
+    // Add both users as members
+    await this.addMember(channel.id, currentUserId);
+    await this.addMember(channel.id, targetUserId);
+
+    // Create dm_channels record
+    const { error: dmError } = await client.from("dm_channels").insert({
+      channel_id: channel.id,
+      user1_id: currentUserId,
+      user2_id: targetUserId,
+    });
+
+    if (dmError) {
+      logger.error("Failed to create dm_channels record", { error: dmError });
+    }
+
+    return channel;
+  }
+
+  async listDmChannels(userId: string, supabase?: SupabaseClient): Promise<Channel[]> {
+    const client = this.getClient(supabase);
+
+    const { data: dmRecords } = await client
+      .from("dm_channels")
+      .select("channel_id")
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+
+    if (!dmRecords || dmRecords.length === 0) return [];
+
+    const channelIds = dmRecords.map((r: { channel_id: string }) => r.channel_id);
+    const { data: channels } = await client
+      .from("channels")
+      .select("*")
+      .in("id", channelIds)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false });
+
+    return (channels ?? []) as Channel[];
+  }
+
+  async listWorkspaceChannelIds(workspaceId: string): Promise<string[]> {
+    const supabase = getSupabase();
+    const { data } = await supabase
+      .from("channels")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .is("deleted_at", null)
+      .in("channel_type", ["public", "private"]);
+    return (data ?? []).map((d: { id: string }) => d.id);
   }
 
   async addMember(channelId: string, userId: string): Promise<boolean> {

@@ -73,6 +73,44 @@ export class MessagesClient {
     await this.client.delete(`/messages/${id}`);
   }
 
+  // Pin/unpin
+  async pin(id: string): Promise<void> {
+    await this.client.post(`/messages/${id}/pin`, {});
+  }
+
+  async unpin(id: string): Promise<void> {
+    await this.client.delete(`/messages/${id}/pin`);
+  }
+
+  async listPinned(channelId: string): Promise<Message[]> {
+    const response = await this.client.get<{ messages: Message[] }>(
+      `/channels/${channelId}/pinned`,
+    );
+    return response.messages;
+  }
+
+  // Flag/unflag
+  async flag(id: string): Promise<void> {
+    await this.client.post(`/messages/${id}/flag`, {});
+  }
+
+  async unflag(id: string): Promise<void> {
+    await this.client.delete(`/messages/${id}/flag`);
+  }
+
+  async listFlagged(): Promise<Message[]> {
+    const response = await this.client.get<{ messages: Message[] }>("/messages/flagged");
+    return response.messages;
+  }
+
+  // Edit history
+  async getEditHistory(id: string): Promise<Array<{ previous_content: string; edited_at: string }>> {
+    const response = await this.client.get<{ history: Array<{ previous_content: string; edited_at: string }> }>(
+      `/messages/${id}/history`,
+    );
+    return response.history;
+  }
+
   // File uploads
   async createUploadUrl(
     fileName: string,

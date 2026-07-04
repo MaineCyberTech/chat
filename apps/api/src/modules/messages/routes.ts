@@ -161,6 +161,7 @@ router.patch(
       sanitizedContent,
       req.supabase,
       version,
+      req.userId,
     );
     if (!message) {
       if (version !== undefined) {
@@ -181,6 +182,96 @@ router.patch(
       entityId: message.id,
       metadata: { channel_id: message.channel_id },
     });
+  },
+);
+
+// Pin/unpin messages
+router.post(
+  "/messages/:id/pin",
+  validateUuidParam("id"),
+  requireMessageAccess("id"),
+  async (req, res) => {
+    const success = await messageService.pin(req.params.id as string, req.supabase!);
+    if (!success) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
+      return;
+    }
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "message.pin",
+      entityType: "message",
+      entityId: req.params.id as string,
+    });
+    res.json({ success: true });
+  },
+);
+
+router.delete(
+  "/messages/:id/pin",
+  validateUuidParam("id"),
+  requireMessageAccess("id"),
+  async (req, res) => {
+    const success = await messageService.unpin(req.params.id as string, req.supabase!);
+    if (!success) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
+      return;
+    }
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "message.unpin",
+      entityType: "message",
+      entityId: req.params.id as string,
+    });
+    res.json({ success: true });
+  },
+);
+
+// Get pinned messages for a channel
+router.get(
+  "/channels/:channelId/pinned",
+  validateUuidParam("channelId"),
+  requireChannelAccess("channelId"),
+  async (req, res) => {
+    const messages = await messageService.getPinned(req.params.channelId as string, req.supabase!);
+    res.json({ messages });
+  },
+);
+
+// Flag/unflag messages
+router.post(
+  "/messages/:id/flag",
+  validateUuidParam("id"),
+  requireMessageAccess("id"),
+  async (req, res) => {
+    const success = await messageService.flag(req.params.id as string, req.userId!, req.supabase!);
+    res.json({ success });
+  },
+);
+
+router.delete(
+  "/messages/:id/flag",
+  validateUuidParam("id"),
+  requireMessageAccess("id"),
+  async (req, res) => {
+    const success = await messageService.unflag(req.params.id as string, req.userId!, req.supabase!);
+    res.json({ success });
+  },
+);
+
+// Get flagged messages
+router.get("/messages/flagged", async (req, res) => {
+  const messages = await messageService.getFlagged(req.userId!, req.supabase!);
+  res.json({ messages });
+});
+
+// Get message edit history
+router.get(
+  "/messages/:id/history",
+  validateUuidParam("id"),
+  requireMessageAccess("id"),
+  async (req, res) => {
+    const history = await messageService.getEditHistory(req.params.id as string, req.supabase!);
+    res.json({ history });
   },
 );
 

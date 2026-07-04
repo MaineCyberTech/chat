@@ -1,0 +1,73 @@
+{
+  "stage": "frontend_release_gate",
+  "prompt_name": "frontend_audit_deep_dive",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T01:44:57Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "F1_design_system_integrity": 85,
+    "F2_layout_navigation": 80,
+    "F3_chat_ux": 85,
+    "F4_state_management": 75,
+    "F5_accessibility": 78,
+    "F6_responsive_design": 82,
+    "F7_performance": 70,
+    "F8_interaction_quality": 80,
+    "F9_visual_consistency": 82,
+    "F10_component_architecture": 65
+  },
+  "readiness": 78.2,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "F4_state_management",
+      "file": "apps/web/components/workspace/create-workspace-dialog.tsx",
+      "issue": "CreateWorkspaceDialog swallows API errors in catch block without setting error state or user feedback",
+      "impact": "When workspace creation fails, the dialog simply resets the loading spinner with no error message.",
+      "fix": "Set error state in catch block (e.g. setError('Failed to create workspace')) and ensure Input displays the error prop."
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "F10_component_architecture",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "MessageItem component receives 17+ props via manual drilling from MessageList, creating tight coupling",
+      "impact": "Adding features requires threading new props through all intermediate components. Component is impossible to reuse outside MessageList.",
+      "fix": "Consolidate callbacks into action handler objects (messageActions: { onReply, onEdit, onDelete, onThreadOpen }) and group display data into a dedicated interface."
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "F4_state_management",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Settings page notification changes are applied locally immediately but only persisted on manual Save, with no dirty-state indicator or unsaved changes warning",
+      "impact": "Users can change toggles, see visual feedback, and navigate away losing all changes without warning.",
+      "fix": "Add dirty-state flag showing 'Unsaved changes', implement beforeunload/navigation guard when dirty, or auto-save each toggle with debounce."
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "F9_visual_consistency",
+      "file": "apps/web/app/(auth)/loading.tsx",
+      "issue": "Auth loading state uses inline Tailwind class 'border-foreground' rather than a CSS custom property",
+      "impact": "Border color may not respond correctly to theme changes or dark mode, creating visual inconsistency.",
+      "fix": "Replace border-foreground with border-[var(--color-border-primary)] consistent with workspace loading.tsx skeletons."
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "F3_chat_ux",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "Search author filter accepts raw UUID strings instead of offering member name autocomplete",
+      "impact": "Users must know exact user UUIDs to filter by author, making the feature effectively unusable.",
+      "fix": "Replace plain text input with member typeahead that searches workspace members by display name, resolving to UUID internally."
+    }
+  ],
+  "run_id": "frontend_audit_deep_dive_20260703_054841"
+}

@@ -184,6 +184,115 @@ router.post(
   },
 );
 
+// DM channel endpoints
+router.post(
+  "/workspaces/:workspaceId/dm",
+  validateUuidParam("workspaceId"),
+  requireWorkspaceMembership("workspaceId"),
+  async (req, res) => {
+    const { targetUserId } = req.body;
+    if (!targetUserId) {
+      res.status(400).json({ error: { code: "INVALID_INPUT", message: "targetUserId required" } });
+      return;
+    }
+    const channel = await channelService.createDmChannel(
+      req.params.workspaceId as string,
+      req.userId!,
+      targetUserId,
+      req.supabase,
+    );
+    if (!channel) {
+      res.status(500).json({ error: { code: "CREATE_FAILED", message: "Could not create DM channel" } });
+      return;
+    }
+    res.status(201).json({ channel });
+  },
+);
+
+// Get DM channels for current user
+router.get(
+  "/dm-channels",
+  async (req, res) => {
+    const channels = await channelService.listDmChannels(req.userId!, req.supabase);
+    res.json({ channels });
+  },
+);
+
+// Get workspace channel IDs (for sidebar categorization)
+router.get(
+  "/workspaces/:workspaceId/channel-ids",
+  validateUuidParam("workspaceId"),
+  requireWorkspaceMembership("workspaceId"),
+  async (req, res) => {
+    const ids = await channelService.listWorkspaceChannelIds(req.params.workspaceId as string);
+    res.json({ channelIds: ids });
+  },
+);
+
+// Channel bookmarks
+router.get(
+  "/channels/:id/bookmarks",
+  validateUuidParam("id"),
+  requireChannelAccess("id"),
+  async (req, res) => {
+    const { data: bookmarks } = await req.supabase!
+      .from("channel_bookmarks")
+      .select("*")
+      .eq("channel_id", req.params.id as string)
+      .order("sort_order", { ascending: true });
+    res.json({ bookmarks: bookmarks ?? [] });
+  },
+);
+
+router.post(
+  "/channels/:id/bookmarks",
+  validateUuidParam("id"),
+  requireChannelAccess("id"),
+  async (req, res) => {
+    const { title, messageId, url, emoji } = req.body;
+    if (!title) {
+      res.status(400).json({ error: { code: "INVALID_INPUT", message: "title required" } });
+      return;
+    }
+    const { data: bookmark, error } = await req.supabase!
+      .from("channel_bookmarks")
+      .insert({
+        channel_id: req.params.id as string,
+        message_id: messageId ?? null,
+        title,
+        url: url ?? null,
+        emoji: emoji ?? null,
+        created_by: req.userId,
+      })
+      .select("*")
+      .single();
+
+    if (error || !bookmark) {
+      res.status(500).json({ error: { code: "CREATE_FAILED", message: "Could not create bookmark" } });
+      return;
+    }
+    res.status(201).json({ bookmark });
+  },
+);
+
+router.delete(
+  "/channels/:id/bookmarks/:bookmarkId",
+  validateUuidParam("id"),
+  validateUuidParam("bookmarkId"),
+  requireChannelAccess("id"),
+  async (req, res) => {
+    const { error } = await req.supabase!
+      .from("channel_bookmarks")
+      .delete()
+      .eq("id", req.params.bookmarkId as string);
+    if (error) {
+      res.status(404).json({ error: { code: "NOT_FOUND", message: "Bookmark not found" } });
+      return;
+    }
+    res.status(204).send();
+  },
+);
+
 router.delete(
   "/channels/:id/members/:userId",
   validateUuidParam("id"),

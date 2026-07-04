@@ -1,0 +1,57 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "master_feature_orchestrator",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "feature_completeness": 72,
+    "feature_quality": 65,
+    "feature_coverage_gaps": 50
+  },
+  "readiness": 62.3,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "theme_appearance",
+      "file": "AGENTS.md",
+      "issue": "Theme/appearance system exists only as CSS custom properties with no user-facing theme switcher, dark mode toggle, or theme persistence",
+      "impact": "Users cannot customize visual appearance; no dark mode support limits accessibility and user preference satisfaction.",
+      "fix": "Implement a theme context provider that hot-swaps CSS custom property values. Create a theme switcher component in user preferences. Persist choice to user_preferences table."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "platform_bff",
+      "file": "AGENTS.md",
+      "issue": "BFF (Backend-for-Frontend) layer listed as PENDING \u2014 no middleware layer exists between Next.js frontend and Express API for request aggregation or transformation",
+      "impact": "Frontend makes direct API calls to /v1/* endpoints with no opportunity for request aggregation, response shaping, or auth token refresh at the edge.",
+      "fix": "Implement Next.js API routes (./app/api/) as a BFF proxy layer that aggregates requests, handles token refresh, shapes responses for frontend consumption."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "media_e2e",
+      "file": "apps/web/e2e/auth-workspace-chat.spec.ts",
+      "issue": "File upload flow has no E2E test coverage despite UI implementation in MessageInput with drag-drop and file selection",
+      "impact": "File upload regressions (S3 presigned URL failures, content-type issues, upload progress bugs) would not be caught by CI.",
+      "fix": "Add Playwright E2E test for file upload flow: select file \u2192 upload \u2192 verify message appears with file attachment. Add test for drag-drop and upload failure."
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "feature_inventory",
+      "file": "AGENTS.md",
+      "issue": "Feature inventory documents 15 features but no formal feature registry or capability matrix exists \u2014 feature overlap rate is 45% across 624 audit findings",
+      "impact": "Without a canonical feature registry, teams cannot determine which features are complete, partially implemented, or planned.",
+      "fix": "Create a FEATURES.md at root with a capability matrix listing each feature, its status (complete/partial/missing), owning module(s), and verification test."
+    }
+  ],
+  "run_id": "master_feature_orchestrator_20260703_055337"
+}

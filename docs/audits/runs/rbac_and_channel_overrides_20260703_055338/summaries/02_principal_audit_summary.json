@@ -1,0 +1,58 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "rbac_and_channel_overrides",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 1,
+    "P3": 1
+  },
+  "category_scores": {
+    "rbac_completeness": 75,
+    "channel_overrides": 70,
+    "rls_enforcement": 55,
+    "admin_ux": 30
+  },
+  "readiness": 57.5,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "rls_deny_enforcement",
+      "file": "supabase/migrations/20260627000008_simplify_rls_policies.sql:12",
+      "issue": "Migration 08 removes channel_role_overrides checks from channels_select_member and messages_select_member RLS policies, moving deny-enforcement entirely to the application middleware",
+      "impact": "If any code path queries channels or messages without going through requireChannelAccess middleware, the deny overrides are not enforced.",
+      "fix": "Restore the NOT EXISTS deny-override check using the SECURITY DEFINER channel_workspace() helper to avoid circular dependency."
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "channel_service_authz",
+      "file": "apps/api/src/modules/channels/service.ts:169",
+      "issue": "channelService.getMembers()/addMember()/removeMember() use getSupabase() (anon client) without accepting a per-user authenticated client",
+      "impact": "Channel member operations bypass any per-user RLS context. The getMembers() call returns all members regardless of calling user's membership.",
+      "fix": "Refactor channelService methods to accept an optional SupabaseClient parameter. Use req.supabase from route handlers."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "override_admin_ui",
+      "file": "apps/web/components/workspace/app-sidebar.tsx",
+      "issue": "No frontend admin UI exists for managing channel role overrides despite the full table schema and API support",
+      "impact": "Workspace admins cannot manage channel-level access controls through the UI. Admins must use raw SQL or API calls.",
+      "fix": "Add a 'Channel Settings' dialog with 'Access Overrides' tab. Show current overrides with add/remove controls."
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "role_enum_consistency",
+      "file": "supabase/migrations/20260627000006_channel_role_overrides.sql:7",
+      "issue": "Role enumeration is inconsistent: CHECK uses 'admin','moderator','member','guest', workspace service uses 'owner'|'admin'|'member'",
+      "impact": "Role definitions drift between layers. 'owner' is valid but not in override CHECK. 'guest' and 'moderator' have no code paths.",
+      "fix": "Unify role definitions in packages/db/. Align CHECK constraint with workspace role definitions. Remove unused roles."
+    }
+  ],
+  "run_id": "rbac_and_channel_overrides_20260703_055338"
+}

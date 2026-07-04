@@ -1,0 +1,190 @@
+{
+  "prompt1": {
+    "prompt_name": "e2e_scenario_suite",
+    "domain": "testing",
+    "stage": "principal_audit",
+    "decision": "NO-GO",
+    "generated_at": "2026-07-03T12:00:00Z",
+    "severity_counts": { "P0": 1, "P1": 2, "P2": 1, "P3": 0 },
+    "readiness": 15,
+    "findings": [
+      {
+        "severity": "P0",
+        "domain": "testing",
+        "category": "e2e_coverage",
+        "file": "apps/web/e2e/comprehensive.spec.ts",
+        "issue": "100% of E2E tests are skipped with test.skip — zero executable assertions in CI",
+        "impact": "No E2E tests actually run in CI pipeline. validate.yml runs pnpm test:e2e but every spec immediately skips with 'Requires Supabase test project setup'. Auth flow, message CRUD, WebSocket delivery, file upload, permission boundaries, and all negative path scenarios are untested. Release confidence cannot be assessed through automation.",
+        "fix": "Implement a mock Supabase layer or Supabase local project with seed data. Unskip the auth flow smoke test (signIn → workspace creation → message send) with proper test user seeding. Add a CI-only Supabase project for E2E or use @supabase/supabase-js mock adapter."
+      },
+      {
+        "severity": "P1",
+        "domain": "testing",
+        "category": "negative_paths",
+        "file": "apps/web/e2e/auth-workspace-chat.spec.ts",
+        "issue": "No negative path tests exist even as skeletons — invalid login, expired token, rate limit, forbidden workspace access are absent",
+        "impact": "Graceful error handling for auth failures, token expiry, rate limiting, and unauthorized access is never validated. The frontend's error paths (ConnectionBanner, sendError, error states) are exercised only by developer manual testing.",
+        "fix": "Add E2E scenarios for: magic link with wrong email, expired/invalid session token reload, rate-limited API response rendering, navigating to workspace without membership, navigating to private channel without access. Use API mocking via Playwright route interception for deterministic failure injection."
+      },
+      {
+        "severity": "P1",
+        "domain": "testing",
+        "category": "auth_permissions",
+        "file": ".github/workflows/validate.yml",
+        "issue": "E2E CI job lacks mock Supabase setup and test user provisioning — runs against undefined database state",
+        "impact": "Even if tests were unskipped, CI E2E step has no seeded test user, no workspace data, and no email delivery mock. Tests would fail immediately with no auth session available. Full test inability prevents gate from measuring E2E health.",
+        "fix": "Add a step before 'Run E2E tests' that provisions test data via supabase-js admin client: create test user, workspace, channel, and messages. Use supabase local start in CI or a dedicated test Supabase project with seed SQL."
+      },
+      {
+        "severity": "P2",
+        "domain": "testing",
+        "category": "long_session",
+        "file": "apps/web/e2e/comprehensive.spec.ts",
+        "issue": "No long-session or multi-tab socket behavior tests — reconnection, stale token recovery, presence broadcast are skipped",
+        "impact": "Core realtime features (socket reconnection on network loss, token refresh mid-session, presence updates across browser tabs) are never verified. These are the most fragile paths in a chat application.",
+        "fix": "Add Playwright multi-browser-context tests: open two tabs as different users, verify message delivery between them. Add offline/online simulation (page.context().setOffline(true)) with socket reconnection assertions. Add token expiry scenario by manipulating localStorage session."
+      }
+    ]
+  },
+  "prompt2": {
+    "prompt_name": "failure_injection_chaos_pack",
+    "domain": "testing",
+    "stage": "principal_audit",
+    "decision": "NO-GO",
+    "generated_at": "2026-07-03T12:05:00Z",
+    "severity_counts": { "P0": 1, "P1": 2, "P2": 1, "P3": 0 },
+    "readiness": 20,
+    "findings": [
+      {
+        "severity": "P0",
+        "domain": "testing",
+        "category": "catastrophic_failure_undefined",
+        "file": "apps/api/src/lib/socket.ts",
+        "issue": "No stale-token rejection after socket authentication — token can expire mid-session with no invalidation",
+        "impact": "A user's JWT can expire while their socket connection remains active. The socket middleware only checks auth at connection time (line 56-83). There is no periodic token re-validation or forced disconnect on expiry. A deactivated user could continue sending/receiving messages indefinitely on an existing socket. Additionally, no server-enforced socket-level rate limiting exists — typing:start/stop events are unbounded.",
+        "fix": "Add periodic token refresh check (every 5 minutes via setInterval) that calls supabase.auth.getUser() and disconnects if invalid. Add socket event rate limiting (max 10 typing events per 10s per user). Implement `connection:expired` event that the client handles by re-authenticating."
+      },
+      {
+        "severity": "P1",
+        "domain": "testing",
+        "category": "degraded_ux_undefined",
+        "file": "apps/web/components/chat/chat-view.tsx",
+        "issue": "Message send failure during socket disconnect has undefined retry UX — optimistic rollback with 'tap to retry' string but no actual retry mechanism beyond manual re-type",
+        "impact": "When a message send fails (handleSend line 244-245), the optimistic message is rolled back with a 'tap to retry' message string, but the user must manually re-type the message content. There is no 'retry' button that re-sends the failed message. The typed content is lost from the textarea and localStorage draft is already cleared on send (message-input.tsx line 289).",
+        "fix": "Implement a proper retry queue: on send failure, keep the optimistic message with a 'retry' state that shows a Retry button. On tap, re-send the original content without losing it. Clear draft from localStorage only after server confirms, not on send attempt."
+      },
+      {
+        "severity": "P1",
+        "domain": "testing",
+        "category": "db_timeout",
+        "file": "apps/api/src/lib/db-timeout.ts",
+        "issue": "Query timeout utility exists but is not applied to any real query — zero callers in the codebase",
+        "impact": "The queryWithTimeout wrapper (db-timeout.ts) provides a 10s timeout via Promise.race but is never imported or used by any service. All Supabase queries in messages/service.ts, workspaces/service.ts, and notifications/service.ts can hang indefinitely if the database is unresponsive, causing connection pool exhaustion and cascading failures.",
+        "fix": "Apply queryWithTimeout to all external-facing Supabase queries in message listing (listByChannel), search RPC calls, notification queries, and user profile fetches. Add a configurable global default timeout. Add query timeout metrics tracking to Sentry."
+      },
+      {
+        "severity": "P2",
+        "domain": "testing",
+        "category": "kill_switch",
+        "file": "apps/api/src/lib/circuit-breaker.ts",
+        "issue": "Circuit breaker state is not exposed via any HTTP endpoint — operations team cannot monitor or manually reset",
+        "impact": "While getCircuitBreakerStats() and resetCircuitBreaker() exist, they are not exposed via any API route. If the circuit breaker for webhook delivery or HTTP client opens, there is no visibility from dashboards or monitoring. Operators must SSH into the container to diagnose. Manual reset requires a full API restart.",
+        "fix": "Expose GET /v1/admin/circuit-breakers returning getCircuitBreakerStats(). Expose POST /v1/admin/circuit-breakers/:name/reset calling resetCircuitBreaker(). Protect behind admin-only middleware. Add circuit breaker state as a Prometheus gauge metric."
+      }
+    ]
+  },
+  "prompt3": {
+    "prompt_name": "load_concurrency_test_pack",
+    "domain": "testing",
+    "stage": "principal_audit",
+    "decision": "NO-GO",
+    "generated_at": "2026-07-03T12:10:00Z",
+    "severity_counts": { "P0": 1, "P1": 2, "P2": 1, "P3": 0 },
+    "readiness": 10,
+    "findings": [
+      {
+        "severity": "P0",
+        "domain": "testing",
+        "category": "realtime_bottleneck",
+        "file": "tests/k6/load-test.js",
+        "issue": "K6 load tests only hit /healthz endpoint — zero coverage of message send, socket fanout, search, or notification endpoints",
+        "impact": "The existing k6 smoke-test.js and load-test.js both only test a simple HTTP health check endpoint. There are no load tests for the chat send path (POST /channels/:id/messages), socket connection storms, search RPC, or notification listing. The realtime backend has never been load-tested. Socket.io's in-memory adapter (without Redis) cannot scale beyond one process — reconnection storms of 50+ simultaneous sockets would overload auth middleware and Supabase rate limits.",
+        "fix": "Build k6 test scenarios for: (1) message send — 10 VUs ramp to 100 sending messages concurrently, measure p95 latency and duplicate detection via idempotency keys; (2) socket connection storm — 200 rapid socket.io connections with WebSocket transport, measure auth middleware throughput; (3) search — concurrent search queries with varying term lengths; (4) notification poll — 50 users polling /notifications/unread simultaneously. Add custom k6 metrics for message delivery latency, socket auth time, and idempotency hit rate."
+      },
+      {
+        "severity": "P1",
+        "domain": "testing",
+        "category": "idempotency_fallthrough",
+        "file": "apps/api/src/lib/idempotency.ts",
+        "issue": "In-memory idempotency fallback is unbounded — no cap on Map size, no TTL cleanup guarantee",
+        "impact": "When Redis is unavailable, idempotency keys fall back to IN_MEMORY_FALLBACK Map. This map has no maximum size, meaning a Redis outage during high message throughput would cause unbounded memory growth. The TTL cleanup only happens on read (checkIdempotencyKey), so stale keys accumulate if never checked again. Under load, this could exhaust heap memory.",
+        "fix": "Add LRU eviction to in-memory fallback (e.g., capped at 10,000 entries). Implement periodic cleanup interval that purges expired entries every 5 minutes regardless of reads. Add a gauge metric tracking in-memory idempotency store size."
+      },
+      {
+        "severity": "P1",
+        "domain": "testing",
+        "category": "notification_backpressure",
+        "file": "apps/api/src/modules/notifications/service.ts",
+        "issue": "Notifications are created sequentially within the message send hot path — no batching or queue for push delivery",
+        "impact": "Each message with @mentions triggers N individual notificationService.create() calls sequentially (messages/service.ts line 129-141). Each notification does a DB insert + a push subscription send. Under load (e.g., a message that @mentions @everyone in a 200-member workspace), the message send handler blocks until all 200 notifications and pushes resolve. No batching, queue, or backpressure mechanism exists. This creates a cascading latency spike on every broad mention.",
+        "fix": "Add a notification queue (in-memory or Redis list) with batched DB inserts and batched push sends. Decouple notification creation from the message send HTTP handler — fire notification processing as a background job. Cap per-message mention processing at 50 recipients with a warning log for larger sets."
+      },
+      {
+        "severity": "P2",
+        "domain": "testing",
+        "category": "metrics_gaps",
+        "file": "tests/k6/README.md",
+        "issue": "No documented pass/fail metrics for load test results — no p99 latency targets, no error rate budgets",
+        "impact": "The k6 test thresholds only check p(95) < 3000ms and error rate < 2% for a health endpoint. There are no defined SLOs for message send p99 latency, socket connect time, search response time, or notification delivery latency. Teams cannot determine whether a performance regression has occurred because there are no numeric targets.",
+        "fix": "Define SLO targets and add k6 thresholds: message send p(95) < 2000ms and p(99) < 5000ms; socket connect p(95) < 1000ms; search p(95) < 1500ms. Add throughput targets (minimum 100 messages/second sustained). Document these in tests/k6/README.md as release criteria."
+      }
+    ]
+  },
+  "prompt4": {
+    "prompt_name": "visual_regression_test_pack",
+    "domain": "testing",
+    "stage": "principal_audit",
+    "decision": "GO WITH RISKS",
+    "generated_at": "2026-07-03T12:15:00Z",
+    "severity_counts": { "P0": 0, "P1": 1, "P2": 2, "P3": 1 },
+    "readiness": 65,
+    "findings": [
+      {
+        "severity": "P1",
+        "domain": "testing",
+        "category": "visual_regression_coverage",
+        "file": "apps/web/components/chat/message-list.tsx",
+        "issue": "No visual regression baseline or tool configured — all UI changes are visually untested",
+        "impact": "With 12+ component directories and complex conditional rendering (loading skeletons, empty states, error states, dark mode, mobile overlays, modals, drag-drop overlays), there is zero automated visual verification. CSS variable-based theming works at runtime but theme-switching (dark/light mode) has no snapshot coverage. A regression in message bubble alignment, reaction button sizing, or thread panel layout would go undetected until manual QA.",
+        "fix": "Integrate Playwright Visual Comparisons or Chromatic for Storybook. Capture screenshots of the 10 critical states: login form (idle, error, loading), chat header with online badge, message list (10+ messages, empty, loading), thread panel (no replies, with replies, loading), search results (with results, empty, loading), delete confirmation dialog, notification dropdown (empty, with notifications), file upload drag-drop overlay, mobile sidebar open, error boundary page. Run on every PR."
+      },
+      {
+        "severity": "P2",
+        "domain": "testing",
+        "category": "dark_mode",
+        "file": "apps/web/app/(workspace)/layout.tsx",
+        "issue": "Dark mode toggle exists in settings but no visual regression snapshot captures dark theme rendering",
+        "impact": "The app uses CSS custom properties (var(--color-*)) consistently, but dark mode is only testable by manually navigating to settings and toggling. A regression where a component reads a light-mode-only variable (e.g., brand-primary vs brand-primary-light contrast) would show as unreadable text in dark mode with no automated detection. The theme switch path itself (change theme → verify all components re-render) has zero test coverage.",
+        "fix": "Add Chromatic or Playwright snapshot pairs for each critical component in both light and dark mode. Use a data-theme attribute on <html> to set the theme before capturing. Automate theme switching via localStorage.setItem('theme', 'dark') before page load. Include all dialog/overlay components since z-index stacking differs per theme."
+      },
+      {
+        "severity": "P2",
+        "domain": "testing",
+        "category": "responsive_layout",
+        "file": "apps/web/components/chat/chat-view.tsx",
+        "issue": "Responsive breakpoints (mobile bottom nav, tablet sidebar collapse, desktop thread panel) have no visual snapshot coverage across viewports",
+        "impact": "The chat-view has three distinct layout tiers: mobile (fixed bottom nav, full-screen thread overlay, 768px breakpoint sidebar auto-collapse), tablet (collapsed sidebar at 768-1024px), and desktop (expanded sidebar at 1024px+, side-by-side thread panel). Layout shifts, overflow bugs, or position:fixed stacking issues at breakpoints are only caught by manual device testing. The MessageList's overscroll-contain + pb-14 mobile padding could break on viewport height changes.",
+        "fix": "Set up Playwright viewport snapshots at 375px (mobile), 820px (tablet), and 1440px (desktop) for the workspace layout, chat view, thread panel, and search dropdown. Assert that mobile bottom nav is visible at 375px, thread panel is inline at 1440px, and sidebar collapse is active at 820px."
+      },
+      {
+        "severity": "P3",
+        "domain": "testing",
+        "category": "empty_loading_error_states",
+        "file": "apps/web/components/shared/error-boundary.tsx",
+        "issue": "ErrorBoundary fallback, empty message list, and thread no-replies states are visually defined but not captured in any screenshot suite",
+        "impact": "These error/empty states are the user's last resort when things go wrong. A regression that removes the retry button from ErrorBoundary, changes empty state text from 'No messages yet' to empty white space, or breaks the thread panel skeleton shimmer would erode user trust. These are high-visibility, low-effort screenshots that should be in any smoke suite.",
+        "fix": "Add Playwright screenshot captures (smoke tier) for: (1) chat-view error state by intercepting API to return 500, (2) empty message list by serving no messages, (3) thread panel loading state, (4) thread panel empty reply state, (5) notification dropdown empty state, (6) search empty results, (7) ErrorBoundary fallback, (8) login page after rate limit response."
+      }
+    ]
+  }
+}

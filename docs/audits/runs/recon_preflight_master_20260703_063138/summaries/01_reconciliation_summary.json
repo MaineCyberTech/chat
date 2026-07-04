@@ -1,0 +1,107 @@
+{
+  "stage": "reconciliation",
+  "prompt_name": "recon_preflight_master",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T07:05:00Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 3,
+    "P2": 4,
+    "P3": 1
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "audit",
+      "category": "Structural Drift",
+      "file": "apps/api/src/modules/",
+      "line": 1,
+      "issue": "Reconciliation inventory shows API has 10 modules (auth, channels, consent, feature-flags, messages, notifications, push, reactions, webhooks, workspaces) but worker has 4 stub processors (webhook-delivery, notification, search-indexer, cleanup) that return mock responses \u2014 the worker service exists but does nothing",
+      "impact": "Worker deployment is cosmetic. Webhook delivery, notification processing, search indexing, cleanup are all no-ops. Any reconciliation that assumes background processing is based on a non-functional premise.",
+      "fix": "Either implement actual worker processor logic or remove the worker and handle background tasks in-process"
+    },
+    {
+      "severity": "P1",
+      "domain": "audit",
+      "category": "CI/CD",
+      "file": ".github/workflows/",
+      "line": 1,
+      "issue": "19 workflows exist but only 8 use Corepack-based pnpm setup \u2014 the remaining 11 workflows use stale patterns (pnpm/action-setup@v4) or are on workflow_dispatch-only with no branch triggers",
+      "impact": "Inconsistent CI/CD patterns across workflows. Some workflows may silently use wrong Node/pnpm versions.",
+      "fix": "Standardize all 19 workflows to use Corepack-based pnpm enablement pattern (enable-corepack \u2192 setup-node --corepack-enabled \u2192 pnpm install)"
+    },
+    {
+      "severity": "P1",
+      "domain": "audit",
+      "category": "Infra",
+      "file": "infra/docker/",
+      "line": 1,
+      "issue": "Dev compose uses Caddyfile (no env vars), prod compose uses Caddyfile.prod (domains from .env) \u2014 but devremote also uses Caddyfile with no domain override path for local development",
+      "impact": "Local dev on devremote compose uses production domains from Caddyfile. Developers testing on localhost will hit production DNS or get TLS errors.",
+      "fix": "Add Caddyfile.dev for local development with localhost domains, or add conditional domain logic in Caddyfile"
+    },
+    {
+      "severity": "P1",
+      "domain": "audit",
+      "category": "Docs",
+      "file": "docs/",
+      "line": 1,
+      "issue": "6 docs/architecture/*.md files reference old Traefik-based routing or Debian-based setup \u2014 current infra uses Caddy + Ubuntu. Docs lag actual infra by 1-2 iterations.",
+      "impact": "Anyone reading docs to understand architecture gets a misleading mental model. Reconciliation that trusts docs over code will propagate errors.",
+      "fix": "Update all architecture docs to reflect current Caddy + Ubuntu stack before running reconciliation"
+    },
+    {
+      "severity": "P2",
+      "domain": "audit",
+      "category": "Supabase",
+      "file": "supabase/migrations/",
+      "line": 1,
+      "issue": "24 migrations exist but 2 are duplicate pairs (add_missing_indexes \u00d72, enforce_data_retention \u00d72) \u2014 unclear which is canonical",
+      "impact": "New DB setups applying all 24 migrations will create duplicate indexes and policies. Schema drift between environments.",
+      "fix": "Remove superseded migration files. Document which migrations are canonical."
+    },
+    {
+      "severity": "P2",
+      "domain": "audit",
+      "category": "Scripts",
+      "file": "scripts/",
+      "line": 1,
+      "issue": "scripts/ contains both setup-dev.ps1 and setup-dev.sh but only setup-dev.ps1 is correct (uses supabase/migrations/*.sql). setup-dev.sh references nonexistent packages/db/sql/migrations/*.sql path.",
+      "impact": "macOS/Linux developers hitting setup-dev.sh will get broken migrations on first run.",
+      "fix": "Fix setup-dev.sh migration path to match setup-dev.ps1, or deprecate it with a shim that calls the PowerShell version"
+    },
+    {
+      "severity": "P2",
+      "domain": "audit",
+      "category": "Shared Packages",
+      "file": "packages/",
+      "line": 1,
+      "issue": "packages/db/src/types.ts has 7 types (WebhookEndpoint, PushSubscription, UserPreference, ConsentLog, AuditLog, ThreadParticipant, ChannelRoleOverride) that were added recently but packages/ui/ has no corresponding type exports \u2014 UI components that reference these types must import from db directly",
+      "impact": "Coupling between packages is undocumented. UI team must know to import types from db package. No barrel export in ui package re-exports these.",
+      "fix": "Add re-exports in packages/ui/src/index.ts for all shared types from packages/db"
+    },
+    {
+      "severity": "P2",
+      "domain": "audit",
+      "category": "Testing",
+      "file": "tests/",
+      "line": 1,
+      "issue": "Only 1 service test exists (workspace.service.test.ts) across all 10 API modules. E2E test file (auth-workspace-chat.spec.ts) exists but may not run in CI without playwright browsers installed.",
+      "impact": "Test coverage is ~5% of the API surface. Reconciliation changes cannot be validated by automated tests.",
+      "fix": "Add at minimum smoke tests for each module before reconciliation. Cache playwright browsers in CI."
+    },
+    {
+      "severity": "P3",
+      "domain": "audit",
+      "category": "Tooling",
+      "file": ".husky/pre-commit",
+      "line": 1,
+      "issue": "Husky pre-commit exists but runs only prettier \u2014 no eslint, no typecheck, no test run. Lint-staged config references only prettier.",
+      "impact": "Formatting errors caught before commit, but type errors and lint violations pass through to CI, wasting pipeline time.",
+      "fix": "Add eslint --fix and tsc --noEmit to the lint-staged pipeline in pre-commit hook"
+    }
+  ],
+  "run_id": "recon_preflight_master_20260703_063138"
+}

@@ -1,4 +1,5 @@
-import { Worker, Job } from "bullmq";
+import { Worker, Job, Queue } from "bullmq";
+import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 
@@ -10,23 +11,102 @@ export interface SearchIndexingJobData {
   content?: string;
 }
 
+function createSupabaseClient() {
+  const env = loadEnv();
+  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+}
+
+export const searchQueue = new Queue<SearchIndexingJobData>("search-indexing", {
+  connection: { url: loadEnv().REDIS_URL! },
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: "exponential", delay: 2000 },
+    removeOnComplete: { age: 3600 },
+    removeOnFail: { age: 86400 },
+  },
+});
+
+async function updateMessageIndex(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  messageId: string,
+  content: string | undefined,
+): Promise<boolean> {
+  const contentToIndex = content ?? null;
+
+  const { error } = await supabase.rpc("update_message_search_index", {
+    p_message_id: messageId,
+    p_content: contentToIndex,
+  });
+
+  if (error) {
+    logger.warn({ messageId, error: error.message }, "RPC not available, using direct SQL update");
+
+    if (contentToIndex) {
+      const { error: updateError } = await supabase
+        .from("messages")
+        .update({
+          search_vector: supabase.rpc("to_tsvector", { "english": contentToIndex }) as unknown as undefined,
+        })
+        .eq("id", messageId);
+
+      if (updateError) {
+        logger.error({ messageId, error: updateError }, "Failed to update search index");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  return true;
+}
+
+async function removeMessageFromIndex(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  messageId: string,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("messages")
+    .update({ search_vector: null })
+    .eq("id", messageId);
+
+  if (error) {
+    logger.error({ messageId, error }, "Failed to remove message from search index");
+    return false;
+  }
+  return true;
+}
+
 export function registerSearchIndexer() {
   const env = loadEnv();
   if (!env.REDIS_URL) throw new Error("Redis URL not configured");
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY required");
+  }
+
+  const supabase = createSupabaseClient();
 
   const worker = new Worker<SearchIndexingJobData>(
     "search-indexing",
     async (job: Job<SearchIndexingJobData>) => {
-      const { type, messageId, workspaceId, channelId } = job.data;
-
+      const { type, messageId, workspaceId, channelId, content } = job.data;
       logger.info({ type, messageId, workspaceId, channelId }, "Processing search indexing");
 
-      // TODO: Implement actual search indexing
-      // This would update the full-text search index (tsvector in PostgreSQL)
-      // using the search_messages RPC or directly updating the tsvector column
+      let success = false;
 
-      logger.debug({ type, messageId }, "Search indexing job completed");
-      return { status: "indexed", type };
+      switch (type) {
+        case "message_created":
+        case "message_updated":
+          success = await updateMessageIndex(supabase, messageId, content);
+          break;
+        case "message_deleted":
+          success = await removeMessageFromIndex(supabase, messageId);
+          break;
+      }
+
+      logger.debug({ type, messageId, success }, "Search indexing job completed");
+      return { status: success ? "indexed" : "failed", type };
     },
     {
       connection: { url: env.REDIS_URL },

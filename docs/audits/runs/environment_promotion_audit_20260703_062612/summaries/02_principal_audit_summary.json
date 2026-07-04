@@ -1,0 +1,97 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "environment_promotion_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T06:35:00Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 3,
+    "P2": 3,
+    "P3": 1
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "Env Misalignment",
+      "file": ".github/workflows/deploy-production.yml",
+      "line": 23,
+      "issue": "Production deploy workflow has no staging environment or canary step \u2014 deploys directly to production droplet with zero traffic splitting or rollback capability",
+      "impact": "Any bad deploy immediately affects all production users. No gradual rollout, no health check before full traffic cutover. Rollback requires a second deploy.",
+      "fix": "Add a blue/green deployment strategy or at minimum: (1) deploy to staging compose, (2) health check, (3) swap Caddy upstream to new containers, (4) hold old containers for rollback window"
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "Env Misalignment",
+      "file": ".github/workflows/deploy-production.yml",
+      "line": 89,
+      "issue": "Production deploy uses ssh-keyscan with no strict host key checking \u2014 `StrictHostKeyChecking=no` accepts any host key",
+      "impact": "Man-in-the-middle attack on SSH deploy connections. The deploy script connects to the production droplet without verifying its host key.",
+      "fix": "Add known_hosts entry for the production droplet IP/hostname. Use StrictHostKeyChecking=accept-new as minimum."
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "Env Misalignment",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "line": 14,
+      "issue": "Production compose uses `image: ghcr.io/${{ github.repository }}/api:latest` tag \u2014 ':latest' is mutable and can be overwritten by a failed build",
+      "impact": "A partially built or broken image can replace the ':latest' tag, breaking future rollouts. No way to know which exact SHA is running in production.",
+      "fix": "Use immutable tags: SHA-based (api:sha-abc123) or build-number-based. Update deploy workflow to reference the specific tag."
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "Env Misalignment",
+      "file": ".github/workflows/deploy-production.yml",
+      "line": 156,
+      "issue": "Production deploy workflow uses `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` secrets for Terraform remote state \u2014 these are also used in infra-development.yml which provisions the infrastructure",
+      "impact": "Secrets are shared across workflows with no scoping. The production deploy workflow doesn't need Terraform state access \u2014 it deploys code, not infra.",
+      "fix": "Remove Terraform state secrets from deploy-production.yml. Use separate read-only deploy tokens if infra state lookup is needed."
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "Env Misalignment",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "line": 22,
+      "issue": "Production web service has no CPU/memory resource limits set \u2014 a memory leak in Next.js can OOM the entire droplet",
+      "impact": "No resource isolation between services. A single runaway container can crash all services on the droplet.",
+      "fix": "Add deploy.resources.limits block to each service in docker-compose.prod.yml (api: 512MB RAM, web: 512MB RAM, worker: 256MB RAM)"
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "Env Misalignment",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "line": 41,
+      "issue": "Production compose mounts /var/run/docker.sock for the caddy service with read-write access \u2014 Caddy can manage Docker containers",
+      "impact": "If Caddy is compromised, the attacker has full Docker control. Caddy only needs TLS cert persistence, not Docker socket access.",
+      "fix": "Remove docker socket mount. Caddy TLS certs should be stored in a named volume instead."
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "Env Misalignment",
+      "file": ".github/workflows/deploy-development.yml",
+      "line": 201,
+      "issue": "Dev deploy workflow has `--force-recreate` flag but no `--pull always` \u2014 containers use the local cached image even if a newer version exists in GHCR",
+      "impact": "Deploy may use stale images if the build step was skipped or failed. Not pulling means the running image can diverge from the registry.",
+      "fix": "Add `--pull always` to docker compose up in deploy-development.yml"
+    },
+    {
+      "severity": "P3",
+      "domain": "ops",
+      "category": "Documentation",
+      "file": "docs/runbooks/production_deploy.md",
+      "line": 45,
+      "issue": "Production deploy runbook is incomplete \u2014 it documents steps 1-3 (build, transfer, compose up) but has no section for rollback, no section for monitoring the deploy, no section for verifying the deploy succeeded",
+      "impact": "Operators following the runbook during an incident will have incomplete guidance. Missing critical out-of-band steps.",
+      "fix": "Add rollback procedure, post-deploy verification checklist, and monitoring dashboard links to the runbook."
+    }
+  ],
+  "run_id": "environment_promotion_audit_20260703_062612"
+}

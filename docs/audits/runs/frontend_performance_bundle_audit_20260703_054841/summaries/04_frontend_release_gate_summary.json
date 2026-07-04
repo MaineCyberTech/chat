@@ -1,0 +1,68 @@
+{
+  "stage": "frontend_release_gate",
+  "prompt_name": "frontend_performance_bundle_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T01:44:57Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {
+    "bundle_size": 65,
+    "route_chunking": 60,
+    "hydration": 75,
+    "virtualization": 85,
+    "mobile_performance": 70
+  },
+  "readiness": 71,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "bundle_size",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "react-markdown + remark-gfm bundled into the critical chat input chunk (~50KB gzipped) for a preview feature",
+      "impact": "Users who never open markdown preview still download the markdown parser. On mobile connections this adds significant latency.",
+      "fix": "Lazy-load the MarkdownPreview component via next/dynamic with ssr:false, only importing react-markdown when the preview toggle is activated."
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "route_chunking",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/[channelId]/page.tsx",
+      "issue": "Channel page is a client component with no route-level code splitting for sub-features (thread panel, media room, search)",
+      "impact": "All sub-feature bundles are loaded upfront even when never used (e.g. MediaRoom LiveKit imports on channels without calls).",
+      "fix": "Wrap ThreadPanel, MediaRoom, and SearchBar in next/dynamic() lazy imports with appropriate loading states."
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "mobile_performance",
+      "file": "apps/web/components/notifications/notification-bell.tsx",
+      "issue": "NotificationBell fetches /notifications/unread every 30 seconds via setInterval even when the menu is closed",
+      "impact": "Persistent polling on mobile drains battery and consumes data. Multiple open tabs each poll independently.",
+      "fix": "Clear the interval when document.hidden or when the window loses focus; re-establish when visible again."
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "hydration",
+      "file": "apps/web/components/chat/thread-panel.tsx",
+      "issue": "ThreadPanel fires an API call to fetch thread metadata on every mount but also on every replies.length change",
+      "impact": "Each thread open and each new reply triggers a redundant API call even when data was available in parent props.",
+      "fix": "Derive participant info from existing allMessages/reactions data when possible; only fetch thread metadata once per session."
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "route_chunking",
+      "file": "apps/web/app/layout.tsx",
+      "issue": "Sentry.init() is called at module level in layout.tsx, not guarded by env check",
+      "impact": "Sentry JS bundle is always downloaded and initialized on every page load regardless of environment, adding ~30KB to initial bundle.",
+      "fix": "Guard Sentry import/init behind a dynamic import that only loads when NEXT_PUBLIC_SENTRY_DSN is set."
+    }
+  ],
+  "run_id": "frontend_performance_bundle_audit_20260703_054841"
+}

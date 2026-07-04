@@ -226,10 +226,10 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         user_id: user?.id ?? "",
         content,
         parent_id: replyTo?.id ?? null,
+        is_pinned: false,
         edited_at: null,
         deleted_at: null,
         archived_at: null,
-        is_pinned: false,
         created_at: new Date().toISOString(),
       };
       applyOptimistic(tempId, optimistic, () => {

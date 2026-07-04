@@ -1,0 +1,49 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "infinite_scrolling_virtualization",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 3,
+    "P3": 0
+  },
+  "category_scores": {
+    "virtualization_quality": 70,
+    "scroll_anchoring": 50,
+    "unread_tracking": 40,
+    "performance": 80
+  },
+  "readiness": 60,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "virtualization_quality",
+      "file": "apps/web/components/chat/message-list.tsx:542",
+      "issue": "Fixed row height estimate of 64px causes scroll jank with variable-height messages (long content, reactions, thread reply links)",
+      "impact": "React Virtualizer recalculates item positions on each render pass, causing the scroll bar to jump and the user to lose visual context.",
+      "fix": "Use virtualizer.measureElement with data-index attributes on each row for dynamic measurement."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "unread_tracking",
+      "file": "apps/web/components/chat/message-list.tsx:560",
+      "issue": "Unread count is calculated as Math.floor(messages.length * visibleRatio) \u2014 approximate ratio instead of tracking actual unseen message boundaries",
+      "impact": "Miscounts unread messages when messages have varying heights; cannot show precise new-message markers.",
+      "fix": "Store ID of last visible message on scroll, compute unread count as messages.indexOf(lastSeenId); render visual 'new messages' divider."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "scroll_anchoring",
+      "file": "apps/web/components/chat/chat-view.tsx:126",
+      "issue": "Prepending older messages during cursor pagination shifts visible content downward with no scroll anchoring compensation",
+      "impact": "When loadOlder appends messages to the beginning of the array, currently viewed messages are pushed down, causing visual jump.",
+      "fix": "After prepending older items, adjust scrollTop by total height of newly inserted items."
+    }
+  ],
+  "run_id": "infinite_scrolling_virtualization_20260703_055339"
+}

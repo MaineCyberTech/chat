@@ -180,15 +180,21 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen bg-[var(--color-background-primary)]">
+    <div className="grid h-full grid-cols-[min-content_1fr] overflow-hidden bg-[var(--color-background-primary)] md:pb-0"
+      style={{ paddingBottom: 'var(--bottom-nav-height)' }}
+    >
+      {/* Sidebar — first grid column, full height */}
       <AppSidebar
         workspaceSlug={params.workspaceSlug}
         channelId={params.channelId}
         mobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
       />
-      <main className="flex min-h-0 flex-1 flex-col">
-        <div className="flex items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:hidden">
+
+      {/* Main content — second grid column, flex column */}
+      <div className="flex min-h-0 flex-col overflow-hidden">
+        {/* Mobile header row */}
+        <div className="flex shrink-0 items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:hidden">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
@@ -204,13 +210,15 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           channelId={params.channelId}
         />
         <ErrorBoundary>{children}</ErrorBoundary>
-      </main>
+      </div>
 
-      {/* Mobile bottom navigation */}
-      <nav className="fixed right-0 bottom-0 left-0 z-30 flex items-center justify-around border-t border-[var(--color-border-primary)] bg-[var(--color-background-primary)] py-2 md:hidden">
+      {/* Mobile bottom navigation — fixed but height-aware */}
+      <nav className="fixed right-0 bottom-0 left-0 z-30 flex shrink-0 items-center justify-around border-t border-[var(--color-border-primary)] bg-[var(--color-background-primary)] md:hidden"
+        style={{ height: 'var(--bottom-nav-height)', paddingBottom: 'var(--safe-area-bottom)' }}
+      >
         <button
           onClick={() => setSidebarOpen(true)}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-[var(--color-foreground-secondary)]"
+          className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs text-[var(--color-foreground-secondary)]"
           aria-label="Open sidebar"
         >
           <Menu size={20} />
@@ -218,14 +226,14 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         </button>
         <Link
           href={params.workspaceSlug ? `/${params.workspaceSlug}` : "/"}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-[var(--color-foreground-secondary)]"
+          className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs text-[var(--color-foreground-secondary)]"
         >
           <Hash size={20} />
           <span>Channels</span>
         </Link>
         <Link
           href={params.workspaceSlug ? `/${params.workspaceSlug}/settings` : "/"}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs text-[var(--color-foreground-secondary)]"
+          className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs text-[var(--color-foreground-secondary)]"
         >
           <SettingsIcon size={20} />
           <span>Settings</span>

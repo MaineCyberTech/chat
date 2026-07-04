@@ -1,0 +1,62 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "observability_incident_readiness",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 2,
+    "P3": 0
+  },
+  "category_scores": {
+    "structured_logging": 90,
+    "error_taxonomy": 85,
+    "trace_correlation": 50,
+    "health_endpoints": 90,
+    "audit_logging": 65,
+    "metrics": 85,
+    "incident_runbook": 60,
+    "sentry_integration": 80
+  },
+  "readiness": 76,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "trace_correlation",
+      "file": "apps/api/src/middleware/request-id.ts",
+      "issue": "Request ID is generated but not propagated to downstream services \u2014 no distributed tracing context",
+      "impact": "Cross-service debugging (API -> Supabase -> webhook -> worker) requires manual log correlation. Operators cannot trace a user-facing failure end-to-end.",
+      "fix": "Add x-request-id propagation to all outgoing HTTP requests, worker task payloads as trace_id, and Supabase queries via pg settings."
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "audit_logging",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit log retry queue is in-memory and non-durable \u2014 events lost on process restart",
+      "impact": "If the API process restarts (deploy, crash, OOM), all queued audit events are permanently lost including compliance-relevant actions.",
+      "fix": "Replace in-memory array with Redis-backed queue or persistent audit_queue table. Implement background worker with exponential backoff."
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "structured_logging",
+      "file": "apps/api/src/middleware/error-handler.ts",
+      "issue": "Error handler metadata omits HTTP method and route path from log context",
+      "impact": "When debugging error spikes, operators cannot quickly identify which endpoint is failing without cross-referencing request IDs.",
+      "fix": "Add method: req.method, path: req.path, and route: req.route?.path to log metadata in both AppError and unhandled error branches."
+    },
+    {
+      "severity": "P2",
+      "domain": "ops",
+      "category": "incident_runbook",
+      "file": "docs/runbooks/incident-response.md",
+      "issue": "Incident runbook diagnosis steps don't reference Sentry error traces or Prometheus metrics dashboards",
+      "impact": "During incidents, operators follow runbook diagnosis steps but are not directed to Sentry for error clustering or /metrics for performance baselines.",
+      "fix": "Add diagnosis steps: 'Check Sentry for error traces and regression', 'Check Prometheus metrics at /metrics for anomaly spikes'."
+    }
+  ],
+  "run_id": "observability_incident_readiness_20260703_054839"
+}

@@ -150,8 +150,21 @@ export class MessageService {
     content: string,
     supabase?: SupabaseClient,
     version?: number,
+    userId?: string,
   ): Promise<Message | null> {
     const client = supabase ?? getSupabase();
+
+    // Save previous content to edit history
+    const existing = await this.getById(messageId, client);
+    if (existing && existing.content !== content) {
+      await client.from("message_edit_history").insert({
+        message_id: messageId,
+        previous_content: existing.content,
+        edited_by: userId ?? existing.user_id,
+        edited_at: new Date().toISOString(),
+      });
+    }
+
     let query = client
       .from("messages")
       .update({ content, edited_at: new Date().toISOString() })
@@ -190,6 +203,101 @@ export class MessageService {
       .catch(() => {});
 
     return message;
+  }
+
+  async pin(messageId: string, supabase: SupabaseClient): Promise<boolean> {
+    const { error } = await supabase
+      .from("messages")
+      .update({ is_pinned: true })
+      .eq("id", messageId);
+
+    if (error) return false;
+
+    const message = await this.getById(messageId, supabase);
+    if (message) {
+      try {
+        const io = getIO();
+        io.to(`channel:${message.channel_id}`).emit("message:updated", { message: { ...message, is_pinned: true } });
+      } catch {}
+    }
+    return true;
+  }
+
+  async unpin(messageId: string, supabase: SupabaseClient): Promise<boolean> {
+    const { error } = await supabase
+      .from("messages")
+      .update({ is_pinned: false })
+      .eq("id", messageId);
+
+    if (error) return false;
+
+    const message = await this.getById(messageId, supabase);
+    if (message) {
+      try {
+        const io = getIO();
+        io.to(`channel:${message.channel_id}`).emit("message:updated", { message: { ...message, is_pinned: false } });
+      } catch {}
+    }
+    return true;
+  }
+
+  async getPinned(channelId: string, supabase: SupabaseClient): Promise<Message[]> {
+    const { data } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("channel_id", channelId)
+      .eq("is_pinned", true)
+      .order("created_at", { ascending: false });
+
+    return (data ?? []) as Message[];
+  }
+
+  async flag(messageId: string, userId: string, supabase: SupabaseClient): Promise<boolean> {
+    const { error } = await supabase
+      .from("message_flags")
+      .upsert(
+        { user_id: userId, message_id: messageId },
+        { onConflict: "user_id,message_id" },
+      );
+    return !error;
+  }
+
+  async unflag(messageId: string, userId: string, supabase: SupabaseClient): Promise<boolean> {
+    const { error } = await supabase
+      .from("message_flags")
+      .delete()
+      .eq("user_id", userId)
+      .eq("message_id", messageId);
+    return !error;
+  }
+
+  async getFlagged(userId: string, supabase: SupabaseClient): Promise<Message[]> {
+    const { data } = await supabase
+      .from("message_flags")
+      .select("message_id")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (!data || data.length === 0) return [];
+
+    const messageIds = data.map((f: { message_id: string }) => f.message_id);
+    const { data: messages } = await supabase
+      .from("messages")
+      .select("*")
+      .in("id", messageIds)
+      .order("created_at", { ascending: false });
+
+    return (messages ?? []) as Message[];
+  }
+
+  async getEditHistory(messageId: string, supabase: SupabaseClient) {
+    const { data } = await supabase
+      .from("message_edit_history")
+      .select("*")
+      .eq("message_id", messageId)
+      .order("edited_at", { ascending: true });
+
+    return data ?? [];
   }
 
   async remove(

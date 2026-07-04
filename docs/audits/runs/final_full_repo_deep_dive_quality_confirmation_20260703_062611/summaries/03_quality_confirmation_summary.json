@@ -1,0 +1,117 @@
+{
+  "stage": "quality_confirmation",
+  "prompt_name": "final_full_repo_deep_dive_quality_confirmation",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T06:30:00Z",
+  "severity_counts": {
+    "P0": 3,
+    "P1": 2,
+    "P2": 4,
+    "P3": 1
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "Input Validation",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "line": 89,
+      "issue": "Webhook payload processing has no size validation before parsing \u2014 an attacker can send a multi-GB JSON payload that exhausts API server memory",
+      "impact": "Unbounded webhook payload parsing is a trivial denial-of-service vector. API can be OOM-killed by any authenticated user with webhook access.",
+      "fix": "Add payload size check before JSON.parse (max 1MB). Return 413 Payload Too Large if exceeded."
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "Data Integrity",
+      "file": "apps/api/src/modules/messages/service.ts",
+      "line": 42,
+      "issue": "Message editing has no optimistic locking \u2014 two concurrent PATCH requests can overwrite each other without detecting the conflict. The `updated_at` timestamp is the only version field but it's never checked in the WHERE clause.",
+      "impact": "Lost update problem: if Alice edits a message while Bob also edits the same message, one edit silently overwrites the other. No version/etag checking.",
+      "fix": "Add a `version` column (integer) to messages table. PATCH must include version, WHERE clause checks it, increment on success. Return 409 Conflict if stale."
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "Data Integrity",
+      "file": "apps/api/src/modules/channels/service.ts",
+      "line": 67,
+      "issue": "Same optimistic locking gap exists for channel PATCH \u2014 no version check, concurrent updates can silently overwrite",
+      "impact": "Same lost update vulnerability as messages.",
+      "fix": "Add version column to channels table with same conflict detection pattern."
+    },
+    {
+      "severity": "P1",
+      "domain": "resilience",
+      "category": "Error Handling",
+      "file": "apps/api/src/lib/supabase.ts",
+      "line": 12,
+      "issue": "getSupabase() creates a new Supabase client on every call with no connection pooling or reuse \u2014 the client object is stateless but instantiation overhead and configuration is repeated",
+      "impact": "Each call to getSupabase() creates a fresh client. While the underlying Supabase client uses HTTP keep-alive, the wrapping and retry configuration is duplicated. Minor performance concern that becomes significant under load.",
+      "fix": "Create supabase client once at module level (singleton pattern). getSupabase() just returns the singleton."
+    },
+    {
+      "severity": "P1",
+      "domain": "resilience",
+      "category": "Concurrency",
+      "file": "apps/api/src/lib/socket.ts",
+      "line": 103,
+      "issue": "Socket.io rate limiting is per-server in-memory (Map) \u2014 does not work across multiple API instances behind a load balancer",
+      "impact": "With horizontal scaling, rate limits reset per instance. A client can make 10x the intended connections by distributing across instances.",
+      "fix": "Move Socket.io rate limiting to Redis or use the same Redis adapter for rate limit state."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "Error Handling",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "line": 122,
+      "issue": "Webhook delivery (POST /webhooks/:id/deliver) has no timeout \u2014 if the target server hangs, the API handler hangs indefinitely holding a connection",
+      "impact": "A single hanging webhook delivery can exhaust the API's connection pool, cascading to all other requests.",
+      "fix": "Add fetch timeout (e.g. 10s via AbortController) to webhook delivery HTTP requests."
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "Metrics",
+      "file": "apps/api/src/modules/",
+      "line": 1,
+      "issue": "Auth, channels, webhooks, notifications, consent modules emit zero business metrics (counters, histograms, gauges). Only the general middleware (rate-limit, request-id) has been instrumented with Prometheus via the metrics lib.",
+      "impact": "No visibility into auth success/failure rates, channel creation rates, webhook delivery latency, notification delivery rates. Business observability is blind.",
+      "fix": "Add Prometheus counters/histograms to each module's key operations following the pattern in lib/metrics.ts"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "Authorization",
+      "file": "apps/api/src/modules/notifications/",
+      "line": 1,
+      "issue": "All notification endpoints (GET /notifications, PATCH /notifications/:id/read, POST /notifications/read-all) lack explicit authorization middleware \u2014 they rely on req.supabase RLS but have no route-level access control",
+      "impact": "While RLS provides database-level protection, the lack of route-level middleware is inconsistent with other modules and may mask auth gaps if RLS policies are incorrect.",
+      "fix": "Add requireAuth middleware to all notification routes for defense-in-depth consistency."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "Authorization",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "line": 4,
+      "issue": "Consent routes (POST /consent, GET /consent, GET /consent/preferences) have no authorization middleware \u2014 they assume req.userId is always set",
+      "impact": "If the authenticate middleware fails silently (no session), req.userId is undefined. Consent operations would fail with opaque errors.",
+      "fix": "Add requireAuth middleware to consent routes for consistency with other modules."
+    },
+    {
+      "severity": "P3",
+      "domain": "ops",
+      "category": "Documentation",
+      "file": "docs/architecture/",
+      "line": 1,
+      "issue": "Architecture docs reference the old cloud-init context (port 3000 vs 80 with Caddy) but are not fully updated to reflect the current reverse-proxy topology documented in AGENTS.md",
+      "impact": "Architecture documentation lags behind actual infrastructure by 1-2 iterations. New team members get slightly incorrect mental model.",
+      "fix": "Audit and update all 3 architecture docs files to match current Caddy-based routing topology."
+    }
+  ],
+  "run_id": "final_full_repo_deep_dive_quality_confirmation_20260703_062611"
+}

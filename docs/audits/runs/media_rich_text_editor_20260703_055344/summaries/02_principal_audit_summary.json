@@ -1,0 +1,59 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "media_rich_text_editor",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 3,
+    "P3": 0
+  },
+  "category_scores": {
+    "markdown_preview": 85,
+    "file_upload_ux": 60,
+    "emoji_picker": 55,
+    "autocomplete": 70,
+    "clipboard_integration": 30
+  },
+  "readiness": 60.0,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "file_upload_ux",
+      "file": "apps/web/components/chat/chat-view.tsx:272-293",
+      "issue": "File upload via fetch() PUT has no progress tracking or upload speed indicator",
+      "impact": "Large file uploads appear unresponsive; users receive no feedback on progress, leading to confusion and potential premature navigation.",
+      "fix": "Replace fetch with XMLHttpRequest upload progress events or use fetch + ReadableStream tracking to report percentage completion."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "clipboard_integration",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "No clipboard paste handler for images \u2014 users cannot paste screenshots directly",
+      "impact": "Power users expecting paste-as-upload (common in Slack/Discord) must use file selector or drag-drop.",
+      "fix": "Add onPaste handler to textarea that detects ClipboardEvent.files containing image/* entries."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "emoji_picker",
+      "file": "apps/web/components/chat/message-input.tsx:31-57",
+      "issue": "Emoji picker limited to 24 hardcoded common emojis with no search, skin-tone variants, or category filtering",
+      "impact": "Users cannot find most emojis without memorizing positions; no search means tedious scrolling.",
+      "fix": "Integrate a full emoji picker library with search, categories, skin-tone selector, and recent emojis."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "autocomplete",
+      "file": "apps/web/components/chat/message-input.tsx:173-205",
+      "issue": "Autocomplete only supports @mentions of users; no #channel autocomplete",
+      "impact": "Users cannot autocomplete channel names in composition, limiting discoverability of workspace channels.",
+      "fix": "Extend autocomplete to detect # prefix and fetch channel list, rendering channel suggestions alongside member suggestions."
+    }
+  ],
+  "run_id": "media_rich_text_editor_20260703_055344"
+}

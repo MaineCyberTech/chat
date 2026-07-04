@@ -1,0 +1,77 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "ux_ui_master",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T06:00:00Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 2,
+    "P2": 3,
+    "P3": 0
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "uxui",
+      "category": "Design System",
+      "file": "packages/ui/src/styles.css",
+      "line": 184,
+      "issue": "Dark mode CSS only uses @media (prefers-color-scheme: dark) but no .dark class selector",
+      "impact": "ThemeProvider applies .dark class on manual toggle, but CSS never matches it. Manual light/dark selection is completely broken - app always follows OS preference.",
+      "fix": "Add .dark and :root:not(.light) selectors alongside the media query to support class-based theme switching"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "Chat UX",
+      "file": "apps/web/components/chat/thread-panel.tsx",
+      "line": 1,
+      "issue": "Thread replies lack edit, delete, and reaction support",
+      "impact": "Users cannot edit or delete their thread replies, and cannot react to thread replies. Major UX gap compared to primary message thread.",
+      "fix": "Add edit/delete actions (same pattern as message-list.tsx) and reaction support to thread panel"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "Presence",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "line": 1,
+      "issue": "No per-user online/offline presence indicators",
+      "impact": "Users cannot see who is currently online. Only an aggregate 'N online' count is shown in the channel header.",
+      "fix": "Implement per-user green dot indicators next to user names in message list and member panels"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Social",
+      "file": "apps/web/app/(workspace)/",
+      "line": 1,
+      "issue": "No member list or member management UI in frontend",
+      "impact": "Users cannot view workspace/channel members, see roles, or invite/remove members from the UI.",
+      "fix": "Create a members page and member management components"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Profile",
+      "file": "apps/web/components/auth/avatar-upload.tsx",
+      "line": 1,
+      "issue": "No profile editing beyond avatar upload",
+      "impact": "Users cannot change display name, status, or bio. Display name is auto-generated from email prefix.",
+      "fix": "Add profile editing modal/page with display name, status message, and bio fields"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Visual Consistency",
+      "file": "packages/ui/src/components/dialog.tsx",
+      "line": 109,
+      "issue": "Dialog and sidebar-group use raw Unicode icons instead of lucide-react icons",
+      "impact": "Inconsistent visual style - most of the app uses lucide-react icons, but dialog close is '\u2715' and sidebar-group chevron is '\u25b8'.",
+      "fix": "Replace Unicode icons with lucide-react X and ChevronRight components"
+    }
+  ],
+  "run_id": "ux_ui_master_20260703_055959"
+}

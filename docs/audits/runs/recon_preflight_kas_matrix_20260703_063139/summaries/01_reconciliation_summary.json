@@ -1,0 +1,87 @@
+{
+  "stage": "reconciliation",
+  "prompt_name": "recon_preflight_kas_matrix",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T07:15:00Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 2,
+    "P2": 3,
+    "P3": 1
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "audit",
+      "category": "Frontend Shell",
+      "file": "apps/web/app/(workspace)/layout.tsx",
+      "line": 1,
+      "issue": "Keep/Adapt/Skip: Frontend shell layout \u2014 KEEP current. The workspace layout with sidebar+header+main area is functional, responsive (md breakpoint auto-collapse), and includes error/loading boundaries. Any rewrite risks losing the responsive sidebar behavior that was hard-won in Round 3 UX fixes.",
+      "impact": "Significant regression risk with low upside. Layout is in good state after UX rounds.",
+      "fix": "No changes to frontend layout shell during reconciliation. Mark as KEEP."
+    },
+    {
+      "severity": "P1",
+      "domain": "audit",
+      "category": "CI/CD",
+      "file": ".github/workflows/",
+      "line": 1,
+      "issue": "Keep/Adapt/Skip: CI/CD workflows \u2014 ADAPT with standardization. 19 workflows exist with 3 different pnpm setup patterns. Corepack pattern is the target but only 8 workflows use it.",
+      "impact": "Inconsistent CI patterns cause silent failures (wrong pnpm version, stale cache). Standardization reduces CI flake.",
+      "fix": "Standardize all 19 workflows to Corepack-based pnpm setup. Keep workflow triggers/destinations unchanged."
+    },
+    {
+      "severity": "P1",
+      "domain": "audit",
+      "category": "Testing",
+      "file": "apps/api/src/modules/",
+      "line": 1,
+      "issue": "Keep/Adapt/Skip: Testing strategy \u2014 ADAPT. Current state has 1 service test for 10 modules. Minimal target is smoke tests for each module before reconciliation.",
+      "impact": "Cannot validate reconciliation changes without test coverage. Regressions will go undetected.",
+      "fix": "Add smoke tests for auth, channels, messages, reactions, webhooks, notifications, consent modules. Keep existing workspace test structure."
+    },
+    {
+      "severity": "P2",
+      "domain": "audit",
+      "category": "Supabase",
+      "file": "supabase/migrations/",
+      "line": 1,
+      "issue": "Keep/Adapt/Skip: Database migrations \u2014 SKIP structural changes. Duplicate migration files exist but reconciliation must NOT modify, rename, or remove existing migrations.",
+      "impact": "Changes to applied migrations break Supabase CLI migration tracking. Production database integrity at risk.",
+      "fix": "Mark migration deduplication as 'defer - separate infra task'. Only ADD new migrations during reconciliation."
+    },
+    {
+      "severity": "P2",
+      "domain": "audit",
+      "category": "Shared Packages",
+      "file": "packages/",
+      "line": 1,
+      "issue": "Keep/Adapt/Skip: Shared packages structure \u2014 ADAPT. packages/db/types.ts has 7 new types not re-exported through packages/ui. Clean up barrel exports.",
+      "impact": "UI components import from db package directly, creating undocumented cross-package coupling.",
+      "fix": "Add re-exports for all shared types to packages/ui/src/index.ts. Keep package directory structure unchanged."
+    },
+    {
+      "severity": "P2",
+      "domain": "audit",
+      "category": "Docs",
+      "file": "docs/",
+      "line": 1,
+      "issue": "Keep/Adapt/Skip: Documentation \u2014 SKIP structural changes. Architecture docs lag behind current infra but reconciliation should not attempt a full doc rewrite.",
+      "impact": "Doc updates are high-effort and low-risk to defer. Reconciliation should focus on code/infra changes.",
+      "fix": "Add a single note to AGENTS.md documenting known doc drift. Defer full doc refresh to a separate docs-only pass."
+    },
+    {
+      "severity": "P3",
+      "domain": "audit",
+      "category": "Auth",
+      "file": "apps/api/src/modules/auth/",
+      "line": 1,
+      "issue": "Keep/Adapt/Skip: Auth flows \u2014 KEEP current with tiny additions. Auth module works (magic link, session, RLS). Only missing: rate limiting on auth routes.",
+      "impact": "Auth is critical path. Minimal changes only.",
+      "fix": "Apply rate-limit middleware to auth routes. No structural or contract changes to auth flow."
+    }
+  ],
+  "run_id": "recon_preflight_kas_matrix_20260703_063139"
+}

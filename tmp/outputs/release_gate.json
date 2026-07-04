@@ -1,0 +1,63 @@
+{
+  "prompt_name": "release_gate",
+  "domain": "release_gate",
+  "stage": "quality_confirmation",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T08:20:00Z",
+  "severity_counts": { "P0": 0, "P1": 0, "P2": 3, "P3": 2 },
+  "readiness": 48.55,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "release_gate",
+      "category": "p0_check",
+      "file": "docs/audits/latest_run.json",
+      "issue": "P0 count is 151, exceeds max 0. 151 findings mean 151 individual issues blocking production release.",
+      "impact": "Gate blocked: production release requires 0 P0 findings. Current count is 151.",
+      "fix": "Resolve all P0 findings. Priority order: SECURITY DEFINER search_path, message search anon client, reaction middleware, optimistic locking, webhook size limit."
+    },
+    {
+      "severity": "P2",
+      "domain": "release_gate",
+      "category": "p1_check",
+      "file": "docs/audits/latest_run.json",
+      "issue": "P1 count is 322, exceeds max 0. Production gate requires zero P1 findings for release.",
+      "impact": "Gate blocked: 322 P1 findings must be resolved before first production release.",
+      "fix": "Resolve all P1 findings. Focus on auth gaps, API validation, test coverage, deployment safety."
+    },
+    {
+      "severity": "P2",
+      "domain": "release_gate",
+      "category": "readiness_check",
+      "file": "docs/audits/latest_run.json",
+      "issue": "Readiness is 48.55%, below minimum 85%. Readiness metric represents frontend UX only (only 1 of 131 runs contributed category_scores).",
+      "impact": "Gate blocked: True platform readiness is likely even lower than 48.55% since infra, security, and data domains contributed no scores.",
+      "fix": "Add category_scores to all future runs. Improve actual readiness across all domains."
+    },
+    {
+      "severity": "P3",
+      "domain": "release_gate",
+      "category": "decision_check",
+      "file": "docs/audits/latest_run.json",
+      "issue": "Aggregate decision is NO-GO. Production gate requires GO.",
+      "impact": "Gate blocked: overall decision must be GO before release.",
+      "fix": "Resolve blocking findings to achieve GO decision across all domains."
+    },
+    {
+      "severity": "P3",
+      "domain": "release_gate",
+      "category": "branch_check",
+      "file": "",
+      "issue": "Current branch is 'develop'. Production gate requires branch to be 'main', 'master', 'release', or 'release/*'.",
+      "impact": "Gate blocked: releases must come from an allowed branch. Current branch is develop.",
+      "fix": "Merge develop → main via PR when all other gate criteria are met."
+    }
+  ],
+  "gate_results": {
+    "p0_check": "fail (151 exceeds max 0)",
+    "p1_check": "fail (322 exceeds max 0)",
+    "readiness_check": "fail (48.55 < 85)",
+    "decision_check": "fail (NO-GO != GO)",
+    "branch_check": "fail (develop not in [main, master, release, release/*])"
+  }
+}

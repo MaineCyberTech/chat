@@ -1,0 +1,57 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "ci_cd_security_ultra",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T06:10:00Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 1,
+    "P2": 1,
+    "P3": 1
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "ci_cd",
+      "category": "Secrets Exposure",
+      "file": ".github/workflows/deploy-development.yml",
+      "line": 50,
+      "issue": "81 secrets interpolated inline in run: script blocks across 3 deploy workflows (deploy-development.yml, deploy-production.yml, infra-development.yml) - secrets visible in process listings and logs",
+      "impact": "CI secrets (DO_API_TOKEN, CI_SSH_PRIVATE_KEY, CF_ORIGIN_CERT, etc.) exposed via shell command argument interpolation. Any process on the runner can read them via /proc. GitHub may redact but cannot prevent runtime exposure.",
+      "fix": "Move all secrets to env: blocks and reference via environment variables in shell scripts. Never use ${{ secrets.X }} inside run: strings."
+    },
+    {
+      "severity": "P1",
+      "domain": "ci_cd",
+      "category": "Permissions",
+      "file": ".github/workflows/",
+      "line": 1,
+      "issue": "16 of 19 workflows lack explicit permissions: blocks - GITHUB_TOKEN defaults to write-all scope",
+      "impact": "If any workflow is compromised (e.g. via dependency confusion, malicious PR), the GITHUB_TOKEN has write access to contents, issues, pull_requests, actions, and more. Unnecessary blast radius.",
+      "fix": "Add explicit permissions: blocks to all 16 workflows, scoped to minimum required (e.g. contents: read, packages: write for build workflows)"
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "Path Filtering",
+      "file": ".github/workflows/deploy-production.yml",
+      "line": 11,
+      "issue": "deploy-production.yml triggers on ANY push to main branch - no path filters to limit production deploys to relevant changes",
+      "impact": "Documentation-only changes, README edits, or other non-code pushes trigger a full production build + deploy cycle. Wasteful and increases deployment risk window.",
+      "fix": "Add paths: filters to deploy-production.yml triggers (apps/api/**, apps/web/**, packages/**, infra/docker/**, .github/workflows/deploy-production.yml)"
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "Hardcoded Values",
+      "file": ".github/workflows/validate.yml",
+      "line": 197,
+      "issue": "validate.yml has a fallback hardcoded anon key string that resembles a real Supabase anon key",
+      "impact": "If the SUPABASE_ANON_KEY secret is empty, the workflow falls back to a potentially real-looking key in plaintext. Minor but unnecessary risk.",
+      "fix": "Remove the hardcoded fallback string, use a clearly fake placeholder (e.g. 'placeholder-key') or fail the workflow if the secret is missing"
+    }
+  ],
+  "run_id": "ci_cd_security_ultra_20260703_061030"
+}

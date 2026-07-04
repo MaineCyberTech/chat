@@ -1,0 +1,82 @@
+{
+  "stage": "reconciliation",
+  "prompt_name": "recon_phase0_operator",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T07:50:00Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 2,
+    "P2": 3,
+    "P3": 2
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "reconciliation",
+      "category": "overlapping_findings",
+      "file": "docs/audits/latest_run.json",
+      "issue": "956 total findings include ~45% overlap \u2014 568 raw findings deduplicate to ~310 unique items. Finding 'message virtualization missing' appears in 7 prompts (API contract, frontend, UX, accessibility, performance, chat UX, release gate) at varying severities P0-P2.",
+      "impact": "Effort estimation based on raw count is overestimated by ~55%. Missing virtualization could be over-valued or under-valued depending on which severity is adopted.",
+      "fix": "Deduplicate before prioritization: adopt the highest severity across duplicates. Track virtualization once as consolidated finding: 'Message list needs virtualization for channels with >500 messages'. Fix scope: message-list.tsx with @tanstack/react-virtual."
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "severity_normalization",
+      "file": "docs/audits/policies/gate-policy.dev.json",
+      "issue": "Gate policy dev.json sets max_p0=0 but 145 P0 findings exist. The policy threshold is unrealistic \u2014 145 P0 items cannot be resolved in one sprint. A more graduated gate is needed.",
+      "impact": "Gate always fails across all environments. Gate becomes noise \u2014 operators learn to ignore FAIL status.",
+      "fix": "Adopt graduated gate thresholds: max_p0=10 (must be security/auth only), max_p1=50, min_readiness=50%. Re-evaluate thresholds quarterly as backlog shrinks."
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "evidence_skepticism",
+      "file": "docs/prompts/reconciliation_preflight_bundle/00_EVIDENCE_SUMMARY.md",
+      "issue": "Evidence summary references Repomix snapshots of 'main' and 'develop' codebases. Current repo is a unified monorepo that has diverged from both reference snapshots. Reconciliation against stale snapshots produces irrelevant comparisons.",
+      "impact": "All reconciliation recommendations based on snapshot comparison are suspect. Only findings grounded in actual codebase inspection should be trusted.",
+      "fix": "Flag all snapshot-derived findings as low-confidence. Use only codebase-grounded findings (the 956 pipeline findings) for prioritization."
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "infrastructure_prerequisites",
+      "file": "apps/",
+      "line": 1,
+      "issue": "Multiple prompts recommend 11 new features (threads, mentions, RBAC, webhooks, search, editor, themes, virtual list, optimistic UI, responsive, media). But infra audit shows no Redis, no worker, no rollback scripts, no E2E baseline. Feature expansion on fragile infrastructure risks destabilizing existing working features.",
+      "impact": "Infrastructure hardening must precede feature expansion, but no single artifact enforces this ordering.",
+      "fix": "Declare Phase 0 (infra hardening: Redis, worker, rollback, E2E baseline) as prerequisite gate before any Phase 1 feature work. Document in reconciled roadmap."
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "readiness_metric",
+      "file": "docs/audits/latest_run.json",
+      "line": 1,
+      "issue": "Global readiness of 48.55% is computed from only 1 of 126 runs (the frontend_ux_release_gate run) that provided category_scores. All 125 other runs contributed zero category data. The readiness metric represents frontend UX only, not overall platform readiness.",
+      "impact": "48.55% is misleading \u2014 it's frontend UX readiness, not system readiness. The true platform readiness is unknown.",
+      "fix": "Normalize readiness computation: use severity-weighted formula across all findings (P0*0 + P1*25 + P2*50 + P3*75 + clean*100) / total. Add category_scores to all future prompt outputs."
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "terminology_normalization",
+      "file": "",
+      "issue": "Terms 'NO-GO', 'GO WITH RISKS', 'GO' used inconsistently. Some prompts default to NO-GO as safe behavior (pessimistic), others use NO-GO as blocker judgment. Pipeline treats all NO-GO decisions equally.",
+      "impact": "Pipeline gate evaluation conflates 'safe NO-GO because not enough data' with 'active blocker NO-GO because findings unacceptable'.",
+      "fix": "Add sub-status to decisions: NO-GO-INSUFFICIENT-DATA vs NO-GO-BLOCKED. Only NO-GO-BLOCKED should trigger gate failure."
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "duplicate_consolidation",
+      "file": "",
+      "issue": "'Feature flags not wired to code' flagged in 3 prompts \u2014 correct but redundant. Same issue tracked in security audit, platform audit, and hardening ultra.",
+      "impact": "Counting same gap 3x inflates finding count.",
+      "fix": "Consolidate into single finding: 'Feature flag service exists but no application code checks featureFlagService.evaluateFlag()'. Track remediation progress once."
+    }
+  ],
+  "run_id": "recon_phase0_operator_20260703_063522"
+}

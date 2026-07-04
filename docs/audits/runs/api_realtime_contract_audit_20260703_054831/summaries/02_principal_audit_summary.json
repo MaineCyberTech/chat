@@ -1,0 +1,67 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "api_realtime_contract_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T18:00:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 3,
+    "P2": 2,
+    "P3": 0
+  },
+  "category_scores": {
+    "realtime_events": 55,
+    "auth_scoping": 70,
+    "pagination": 80,
+    "state_reconciliation": 40
+  },
+  "readiness": 61.25,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime_events",
+      "file": "apps/api/src/modules/reactions/service.ts",
+      "issue": "Reaction add/remove operations emit zero Socket.io events, while every other message mutation broadcasts realtime updates",
+      "impact": "Users in a channel never see reactions appear or disappear in realtime. Frontend relies on REST polling (GET /reactions/batch) which only fires on new message batches, leaving reaction state stale for up to seconds/minutes.",
+      "fix": "Add io.to(`channel:${channelId}`).emit('reaction:added', { messageId, reaction }) in reactionService.add() and io.to(`channel:${channelId}`).emit('reaction:removed', { messageId, userId, emoji }) in remove()."
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime_events",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "presence:update event is never emitted to connected clients despite frontend listening for it",
+      "impact": "chat-view.tsx registers a listener for presence:update on line 187 but the backend never emits this event. The online count badge remains stuck at 0.",
+      "fix": "Emit io.emit('presence:update', { total: getOnlineUsers().length }) in socket 'connection' and 'disconnect' handlers. Consider periodic broadcasts every 30s."
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "state_reconciliation",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "Socket reconnect only re-joins channel rooms with no message catch-up mechanism, causing permanent message loss",
+      "impact": "When a client disconnects (e.g., network blip), on reconnect it emits channel:join but sends no cursor or timestamp for missed messages. Messages sent during the disconnect window are permanently lost.",
+      "fix": "Track lastKnownMessageId in chat-view state. On reconnect, emit channel:join with a last_seen_message_id parameter. Add server endpoint GET /channels/:id/messages/since?after=<id> to return missed messages."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "auth_scoping",
+      "file": "apps/api/src/modules/channels/service.ts",
+      "issue": "Channel membership removal has no realtime enforcement \u2014 removed users remain in Socket.io rooms until reconnect",
+      "impact": "When an admin removes a user from a channel, the removed user's active socket connections remain in the channel room, continuing to receive realtime messages for up to 5 minutes.",
+      "fix": "After removing a member, emit io.to('channel:' + channelId).emit('channel:kick', { userId }) and disconnect that specific user's sockets from the room."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "observability",
+      "file": "apps/api/src/modules/messages/service.ts",
+      "issue": "Six instances of .catch(() => {}) silently swallow errors from async side-effects (webhooks, mentions, notifications)",
+      "impact": "Failures in webhook delivery, @mention resolution, thread reply notifications produce zero log output. Operators cannot detect silent failures.",
+      "fix": "Replace every .catch(() => {}) with .catch((err) => logger.error('{context} failed', { error: String(err), ...metadata }))."
+    }
+  ],
+  "run_id": "api_realtime_contract_audit_20260703_054831"
+}

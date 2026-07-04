@@ -10,7 +10,7 @@ import { CreateChannelDialog } from "@/components/channel/create-channel-dialog"
 import { Avatar } from "@chat/ui";
 import { SidebarGroup } from "@chat/ui";
 import { PanelLeftClose, PanelLeft } from "lucide-react";
-import type { Workspace } from "@chat/db";
+import type { Channel, Workspace } from "@chat/db";
 import { api } from "@/lib/api";
 
 interface Props {
@@ -29,6 +29,9 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [sidebarRef, setSidebarRef] = useState<HTMLElement | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const collapsedRef = useRef(false);
+  const [dmChannels, setDmChannels] = useState<Channel[]>([]);
+  const [showUserPicker, setShowUserPicker] = useState(false);
+  const [chatUsers, setChatUsers] = useState<{ id: string; display_name: string }[]>([]);
 
   // Auto-collapse sidebar at md breakpoint (768px) for tablet layout
   useEffect(() => {
@@ -72,6 +75,50 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       .catch(() => setWorkspace(null))
       .finally(() => setWsLoading(false));
   }, [workspaceSlug]);
+
+  // Fetch DM channels
+  React.useEffect(() => {
+    if (!user) return;
+    api
+      .get<{ channels: Channel[] }>("/dm-channels")
+      .then((res) => setDmChannels(res.channels))
+      .catch(() => setDmChannels([]));
+  }, [workspaceSlug, user]);
+
+  // Fetch workspace members for DM creation
+  React.useEffect(() => {
+    if (!workspace) return;
+    api
+      .get<{ members: { user_id: string; display_name: string }[] }>(
+        `/workspaces/${workspace.id}/members`,
+      )
+      .then((res) => {
+        setChatUsers(
+          res.members
+            .filter((m) => m.user_id !== user?.id)
+            .map((m) => ({ id: m.user_id, display_name: m.display_name })),
+        );
+      })
+      .catch(() => setChatUsers([]));
+  }, [workspace, user]);
+
+  async function startDm(targetUserId: string) {
+    if (!workspace) return;
+    try {
+      const res = await api.post<{ channel: Channel }>(
+        `/workspaces/${workspace.id}/dm`,
+        { targetUserId },
+      );
+      setDmChannels((prev) => {
+        if (prev.find((c) => c.id === res.channel.id)) return prev;
+        return [res.channel, ...prev];
+      });
+      setShowUserPicker(false);
+      window.location.href = `/${workspaceSlug}/${res.channel.slug}`;
+    } catch {
+      console.warn("Failed to create DM channel");
+    }
+  }
 
   // Focus trap for mobile sidebar
   useEffect(() => {
@@ -215,6 +262,73 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                 </div>
               )}
             </SidebarGroup>
+          )}
+
+          {/* Direct Messages section */}
+          {workspaceSlug && (
+            <SidebarGroup title="Direct Messages" defaultOpen>
+              {dmChannels.length > 0 ? (
+                <ul className="space-y-0.5" role="listbox" aria-label="Direct messages">
+                  {dmChannels.map((ch) => (
+                    <li key={ch.id} role="option" aria-selected={channelId === ch.id}>
+                      <Link
+                        href={`/${workspaceSlug}/${ch.slug}`}
+                        className={`block rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-[var(--color-background-tertiary)] ${
+                          channelId === ch.id
+                            ? "bg-[var(--color-background-tertiary)] font-medium"
+                            : "text-[var(--color-foreground-secondary)]"
+                        }`}
+                      >
+                        <span className="mr-1">💬</span> {ch.name.replace(/^dm-/, "")}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="px-2 text-xs text-[var(--color-foreground-tertiary)]">
+                  No direct messages yet
+                </p>
+              )}
+              {!collapsed && (
+                <button
+                  onClick={() => setShowUserPicker(true)}
+                  className="mt-1 w-full rounded-md px-3 py-1 text-left text-xs text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+                >
+                  + New DM
+                </button>
+              )}
+            </SidebarGroup>
+          )}
+
+          {/* User picker for starting DM */}
+          {showUserPicker && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)] p-4">
+              <div className="w-full max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]">
+                <h3 className="mb-2 text-sm font-semibold text-[var(--color-foreground-primary)]">
+                  Start a conversation
+                </h3>
+                <div className="max-h-48 space-y-0.5 overflow-y-auto">
+                  {chatUsers.length === 0 && (
+                    <p className="text-xs text-[var(--color-foreground-tertiary)]">No other members found</p>
+                  )}
+                  {chatUsers.map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => startDm(u.id)}
+                      className="w-full rounded-md px-3 py-1.5 text-left text-sm text-[var(--color-foreground-primary)] transition-colors hover:bg-[var(--color-background-tertiary)]"
+                    >
+                      {u.display_name ?? u.id.slice(0, 8)}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setShowUserPicker(false)}
+                  className="mt-2 w-full rounded-md bg-[var(--color-background-tertiary)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           )}
         </div>
 

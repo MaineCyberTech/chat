@@ -1,0 +1,59 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "backup_restore_verification_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T12:00:00Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 2,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_scores": {
+    "backup_existence": 10,
+    "restore_procedure": 15,
+    "storage_protection": 0,
+    "integrity_verification": 0,
+    "dr_coverage": 30
+  },
+  "readiness": 11,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "backup_existence",
+      "file": "scripts/",
+      "issue": "No backup scripts exist in the repository \u2014 zero pg_dump, Supabase export, or storage backup scripts",
+      "impact": "Production data relies entirely on Supabase managed backups with no verification or export mechanism. No offline backup to restore from.",
+      "fix": "Create scripts/pg_dump.sh for on-demand PostgreSQL dumps; create scripts/export-supabase-storage.sh for storage bucket mirroring; add scheduled GitHub workflow for daily exports."
+    },
+    {
+      "severity": "P0",
+      "domain": "ops",
+      "category": "restore_procedure",
+      "file": "docs/runbooks/",
+      "issue": "No dedicated backup/restore runbook \u2014 restore procedures are scattered across migration and incident runbooks",
+      "impact": "Operators have no single authoritative document for full disaster recovery, database PITR, storage bucket restore, or tenant-scoped recovery.",
+      "fix": "Create docs/runbooks/backup-restore.md covering: daily backup verification, PITR procedure, storage bucket export/import, full DR scenario, RTO/RPO commitments."
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "storage_protection",
+      "file": "infra/terraform/main.tf",
+      "issue": "Supabase Storage files (avatars, file uploads) have no backup coverage",
+      "impact": "All user-uploaded content exists only in Supabase Storage with no export or backup. Storage bucket corruption or compromise results in permanent data loss.",
+      "fix": "Add scheduled export script copying Supabase Storage bucket to DO Spaces using Supabase Management API or S3-compatible copy."
+    },
+    {
+      "severity": "P1",
+      "domain": "ops",
+      "category": "integrity_verification",
+      "file": ".github/workflows/",
+      "issue": "No automated backup integrity verification \u2014 Supabase managed backup status is never checked",
+      "impact": "Backup failures go undetected until a restore is attempted, potentially during a real disaster with no valid backup.",
+      "fix": "Add scheduled GitHub workflow (daily) checking Supabase backup status via Management API. Include row count parity check against key tables."
+    }
+  ],
+  "run_id": "backup_restore_verification_audit_20260703_054839"
+}

@@ -1,0 +1,59 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "rollback_readiness_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 2,
+    "P3": 0
+  },
+  "category_scores": {
+    "artifact_versioning": 70,
+    "deploy_rollback": 30,
+    "db_rollback": 10,
+    "feature_flags": 85,
+    "operator_runbooks": 50
+  },
+  "readiness": 49,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "deploy_rollback",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "Development deploy workflow has no rollback capability",
+      "impact": "A bad development deploy can only be fixed by pushing a new commit. Images use mutable :dev tag, no SHA-pinned rollback job exists.",
+      "fix": "Add a rollback job mirroring the production rollback pattern: accept rollback_sha input, pull SHA-tagged images, re-tag as :dev, and redeploy."
+    },
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "db_rollback",
+      "file": "supabase/migrations/",
+      "issue": "Zero database rollback scripts exist across 34 migrations",
+      "impact": "Any schema migration causing data loss or performance regression requires destructive PITR instead of a simple rollback.",
+      "fix": "Generate down-migration stubs for each existing migration; add rollback plan to migration workflow; document forward-fix patterns."
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "deploy_rollback",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "Production rollback job omits --force-recreate from docker compose up",
+      "impact": "After re-tagging SHA images as :latest, docker compose may not detect the image change and leave old containers running.",
+      "fix": "Add --force-recreate to the rollback compose up command."
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "operator_runbooks",
+      "file": "docs/runbooks/incident-response.md",
+      "issue": "Incident response runbook does not document rollback trigger or procedure",
+      "impact": "On-call operators may not know how to initiate the production rollback workflow, delaying recovery during an outage.",
+      "fix": "Add a 'Rollback' subsection documenting how to find previous known-good SHA, trigger rollback from Actions UI, and verify success."
+    }
+  ],
+  "run_id": "rollback_readiness_audit_20260703_054838"
+}

@@ -87,6 +87,19 @@ export function initSocket(
     logger.info("Socket connected", { userId });
     incrementWebsocketConnections(1);
 
+    // Update user presence to online
+    (async () => {
+      try {
+        const { getSupabase } = await import("./supabase.js");
+        const supabase = getSupabase();
+        await supabase.from("user_presence").upsert(
+          { user_id: userId, status: "online", last_seen_at: new Date().toISOString() },
+          { onConflict: "user_id" },
+        );
+        io!.emit("presence:update", { userId, status: "online" });
+      } catch {}
+    })();
+
     socket.on("channel:join", async (channelId: string) => {
       try {
         const { getSupabase } = await import("./supabase.js");
@@ -107,6 +120,17 @@ export function initSocket(
         if (!member) return;
 
         socket.join(`channel:${channelId}`);
+
+        // Notify channel of user joining
+        socket.to(`channel:${channelId}`).emit("channel:user_joined", { userId });
+
+        // Broadcast presence to workspace members in the channel
+        socket.to(`channel:${channelId}`).emit("presence:update", {
+          userId,
+          status: "online",
+          total: io.sockets.adapter.rooms.get(`channel:${channelId}`)?.size ?? 0,
+        });
+
         logger.debug("Socket joined channel", { userId, channelId });
       } catch {
         logger.warn("Socket channel:join failed", { userId, channelId });
@@ -115,6 +139,34 @@ export function initSocket(
 
     socket.on("channel:leave", (channelId: string) => {
       socket.leave(`channel:${channelId}`);
+      socket.to(`channel:${channelId}`).emit("channel:user_left", { userId });
+      socket.to(`channel:${channelId}`).emit("presence:update", {
+        userId,
+        status: "offline",
+        total: io.sockets.adapter.rooms.get(`channel:${channelId}`)?.size ?? 0,
+      });
+    });
+
+    socket.on("presence:set", async (status: "online" | "away" | "dnd") => {
+      try {
+        const { getSupabase } = await import("./supabase.js");
+        const supabase = getSupabase();
+        await supabase.from("user_presence").upsert(
+          {
+            user_id: userId,
+            status,
+            last_seen_at: status === "online" ? new Date().toISOString() : undefined,
+          },
+          { onConflict: "user_id" },
+        );
+
+        // Broadcast status to all channels this user is in
+        for (const room of socket.rooms) {
+          if (room.startsWith("channel:")) {
+            socket.to(room).emit("presence:update", { userId, status });
+          }
+        }
+      } catch {}
     });
 
     socket.on("typing:start", (channelId: string) => {
@@ -125,9 +177,26 @@ export function initSocket(
       socket.to(`channel:${channelId}`).emit("typing:stop", { userId, channelId });
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       logger.debug("Socket disconnected", { userId });
       incrementWebsocketConnections(-1);
+
+      // Update presence to offline
+      try {
+        const { getSupabase } = await import("./supabase.js");
+        const supabase = getSupabase();
+        await supabase.from("user_presence").upsert(
+          { user_id: userId, status: "offline", last_seen_at: new Date().toISOString() },
+          { onConflict: "user_id" },
+        );
+
+        // Broadcast offline to all rooms
+        for (const room of socket.rooms) {
+          if (room.startsWith("channel:")) {
+            socket.to(room).emit("presence:update", { userId, status: "offline" });
+          }
+        }
+      } catch {}
     });
   });
 

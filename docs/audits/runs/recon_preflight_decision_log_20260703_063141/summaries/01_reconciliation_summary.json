@@ -1,0 +1,87 @@
+{
+  "stage": "reconciliation",
+  "prompt_name": "recon_preflight_decision_log",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T07:30:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 3,
+    "P2": 3,
+    "P3": 1
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "audit",
+      "category": "D-001: Terraform workflow style",
+      "file": ".github/workflows/infra-development.yml",
+      "line": 1,
+      "issue": "Decision: ADAPT with stale-lock cleanup. Current TF workflow is functional but missing stale-lock handling. Add cleanup step without changing the overall workflow structure.",
+      "impact": "Prevents TF apply failures from stale locks. Low-risk additive change.",
+      "fix": "Add `Remove-Item -LiteralPath '.terraform/terraform.lock.info' -ErrorAction SilentlyContinue` or equivalent before terraform apply."
+    },
+    {
+      "severity": "P1",
+      "domain": "audit",
+      "category": "D-002: Corepack CI standardization",
+      "file": ".github/workflows/",
+      "line": 1,
+      "issue": "Decision: ADAPT 11 remaining workflows to Corepack pattern. Current 8 Corepack workflows serve as the reference template.",
+      "impact": "Consistent pnpm setup across all CI pipelines. Reduces version-dependent failures.",
+      "fix": "For each of 11 workflows: replace pnpm/action-setup@v4 with enable-corepack \u2192 setup-node --corepack-enabled \u2192 pnpm install. Change one workflow at a time via separate PRs."
+    },
+    {
+      "severity": "P1",
+      "domain": "audit",
+      "category": "D-003: Migration deduplication",
+      "file": "supabase/migrations/",
+      "line": 1,
+      "issue": "Decision: DEFER. Duplicate migration files exist but removing or renaming them risks breaking production migration tracking. Do not touch existing migration files during this reconciliation.",
+      "impact": "Duplicate migrations persist but cause no functional issues. New DB setups get duplicate indexes which is wasteful but not breaking.",
+      "fix": "Create a single new migration file that documents the dedup status: '-- Note: 20260625000007 and 20260625000015 are superseded by 20260627000001 and 20260627000002'. No structural changes."
+    },
+    {
+      "severity": "P2",
+      "domain": "audit",
+      "category": "D-004: Auth rate limiting",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "line": 28,
+      "issue": "Decision: APPLY NOW with generous limits. Add rate-limit middleware to auth routes (login, register, verify) with 10 req/min per IP. Start with warn-only mode for monitoring.",
+      "impact": "Prevents brute-force attacks on auth endpoints. Low risk with generous limits and warn-only initial mode.",
+      "fix": "Add rateLimit({ windowMs: 60000, max: 10 }) middleware to auth POST routes. Add logger.warn on limit hit."
+    },
+    {
+      "severity": "P2",
+      "domain": "audit",
+      "category": "D-005: Message optimistic locking",
+      "file": "apps/api/src/modules/messages/service.ts",
+      "line": 42,
+      "issue": "Decision: APPLY AFTER VERIFICATION. Add version column to messages and channels with backward-compatible PATCH (optional version field). Requires frontend update before enforcement.",
+      "impact": "Prevents lost update problem. Must be rolled out in phases: (1) add column, (2) deploy server with backward compat, (3) update frontend to send version, (4) enforce version check.",
+      "fix": "Phase 1: migration adding version column. Phase 2: server PATCH accepts optional version. Phase 3 (deferred): enforce 409 on version mismatch."
+    },
+    {
+      "severity": "P2",
+      "domain": "audit",
+      "category": "D-006: Worker processor implementation",
+      "file": "apps/worker/src/processors/",
+      "line": 1,
+      "issue": "Decision: DEFER. Worker processors are stubs. Implementing them now during reconciliation risks introducing background processing bugs without monitoring infrastructure.",
+      "impact": "Worker remains cosmetic but no new bugs introduced. Background processing stays no-op, as it is currently.",
+      "fix": "Defer to post-reconciliation phase. Prerequisites: (1) monitoring/alerting for worker, (2) DLQ/retry infrastructure, (3) per-processor deploy cycle."
+    },
+    {
+      "severity": "P3",
+      "domain": "audit",
+      "category": "D-007: Config file .mjs naming",
+      "file": "packages/",
+      "line": 1,
+      "issue": "Decision: SKIP. .mjs vs .js config naming is cosmetic and creates unnecessary git churn. No functional difference with modern Node.",
+      "impact": "Cosmetic only. No action needed.",
+      "fix": "No changes. Mark as intentionally skipped in reconciliation output."
+    }
+  ],
+  "run_id": "recon_preflight_decision_log_20260703_063141"
+}

@@ -34,5 +34,77 @@
       "P3": 8
     },
     "finding_count": 3
+  },
+  {
+    "run_id": "combined_audits_20260703_055424",
+    "timestamp": "2026-07-03T05:55:03+00:00",
+    "decision": "NO-GO",
+    "severity_totals": {
+      "P0": 116,
+      "P1": 243,
+      "P2": 259,
+      "P3": 136
+    },
+    "finding_count": 754
+  },
+  {
+    "run_id": "combined_audits_20260703_060014",
+    "timestamp": "2026-07-03T06:00:22+00:00",
+    "decision": "NO-GO",
+    "severity_totals": {
+      "P0": 121,
+      "P1": 253,
+      "P2": 279,
+      "P3": 142
+    },
+    "finding_count": 795
+  },
+  {
+    "run_id": "combined_audits_20260703_061035",
+    "timestamp": "2026-07-03T06:10:36+00:00",
+    "decision": "NO-GO",
+    "severity_totals": {
+      "P0": 131,
+      "P1": 273,
+      "P2": 299,
+      "P3": 146
+    },
+    "finding_count": 849
+  },
+  {
+    "run_id": "combined_audits_20260703_062618",
+    "timestamp": "2026-07-03T06:26:23+00:00",
+    "decision": "NO-GO",
+    "severity_totals": {
+      "P0": 139,
+      "P1": 284,
+      "P2": 313,
+      "P3": 152
+    },
+    "finding_count": 888
+  },
+  {
+    "run_id": "combined_audits_20260703_063153",
+    "timestamp": "2026-07-03T06:31:59+00:00",
+    "decision": "NO-GO",
+    "severity_totals": {
+      "P0": 145,
+      "P1": 308,
+      "P2": 340,
+      "P3": 163
+    },
+    "finding_count": 956
+  },
+  {
+    "run_id": "combined_audits_20260703_063529",
+    "timestamp": "2026-07-03T06:35:35+00:00",
+    "decision": "NO-GO",
+    "severity_totals": {
+      "P0": 151,
+      "P1": 322,
+      "P2": 356,
+      "P3": 175
+    },
+    "finding_count": 1004
   }
 ]

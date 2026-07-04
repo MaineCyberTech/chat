@@ -1,0 +1,97 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "observability_ultra",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T06:10:00Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 3,
+    "P2": 3,
+    "P3": 0
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "observability",
+      "category": "Metrics",
+      "file": "apps/api/src/lib/metrics.ts",
+      "line": 1,
+      "issue": "14 of 17 Prometheus metrics defined but never emitted - only HTTP request count/duration, WebSocket connections gauge, and webhook delivery counter are actually populated",
+      "impact": "Business metrics for messages, auth attempts, workspaces, channels, reactions, notifications, files, search, circuit breaker status, and idempotency are all dead code. Production monitoring is blind to all business activity.",
+      "fix": "Call recordWebsocketMessage, recordDbQuery, recordAuthAttempt, recordMessageCreated, etc. at the appropriate points in services and middleware"
+    },
+    {
+      "severity": "P0",
+      "domain": "observability",
+      "category": "Error Tracking",
+      "file": "apps/worker/src/main.ts",
+      "line": 1,
+      "issue": "Worker has no Sentry integration - no initSentry(), no captureException(), no error tracking at all",
+      "impact": "Worker crashes and job processing errors are completely invisible. Sentry has zero visibility into worker failures.",
+      "fix": "Add Sentry.init() to worker bootstrap and wrap job handlers with Sentry.captureException"
+    },
+    {
+      "severity": "P1",
+      "domain": "observability",
+      "category": "Logging",
+      "file": "apps/api/src/lib/logger.ts",
+      "line": 1,
+      "issue": "Correlation IDs are not automatically injected into log lines - no pino child loggers are created. requestId is manually included in only 4 log calls across the entire codebase.",
+      "impact": "Cannot trace a single request across multiple log lines. Debugging production issues requires correlating log timestamps manually.",
+      "fix": "Create a pino child logger per request with requestId, replace the root logger with the child logger in middleware"
+    },
+    {
+      "severity": "P1",
+      "domain": "observability",
+      "category": "Error Tracking",
+      "file": "apps/api/src/",
+      "line": 1,
+      "issue": "No manual Sentry.captureException() calls anywhere in the API codebase - only auto-capture from Express error middleware",
+      "impact": "Critical errors caught in catch blocks (e.g. webhook delivery failure, GDPR delete failure) are logged but never sent to Sentry. Silent data integrity issues.",
+      "fix": "Add Sentry.captureException(err) to all catch blocks in critical paths (webhooks, GDPR, auth, messages, payment flows)"
+    },
+    {
+      "severity": "P1",
+      "domain": "observability",
+      "category": "Health Checks",
+      "file": "apps/api/src/modules/health/service.ts",
+      "line": 44,
+      "issue": "API /healthz endpoint checks DB but does not check Redis connectivity",
+      "impact": "If Redis is down (cache, idempotency, Socket.io adapter all affected), the health endpoint reports 'healthy' despite critical dependency being unavailable.",
+      "fix": "Add Redis PING check to the health service, report 'degraded' if Redis is unreachable"
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "Tracing",
+      "file": "apps/api/src/middleware/request-id.ts",
+      "line": 17,
+      "issue": "x-request-id is not returned in response headers - clients cannot correlate requests to server-side traces",
+      "impact": "Client-side debugging cannot connect HTTP responses to server log entries. Support teams cannot correlate user reports to specific requests.",
+      "fix": "Add res.setHeader('x-request-id', req.requestId) in the request-id middleware"
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "Tracing",
+      "file": "apps/api/src/lib/socket.ts",
+      "line": 1,
+      "issue": "Socket.io events have no correlation IDs - cannot trace WebSocket message flows across services",
+      "impact": "When a message send event fails, there is no correlation ID to link the Socket.io event to the server-side processing. Debugging real-time issues is manual.",
+      "fix": "Generate correlation IDs on Socket.io connection/auth, propagate to all event handlers"
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "Metrics",
+      "file": "apps/api/src/lib/metrics.ts",
+      "line": 183,
+      "issue": "setCircuitBreakerStatus() metric function exists but is never called from circuit-breaker.ts events",
+      "impact": "Circuit breaker state changes (open/closed/half-open) are invisible in Prometheus. Cannot detect when external services are failing via circuit breaker metrics.",
+      "fix": "Wire circuit-breaker.ts 'open'/'close'/'halfOpen' events to call setCircuitBreakerStatus()"
+    }
+  ],
+  "run_id": "observability_ultra_20260703_061029"
+}

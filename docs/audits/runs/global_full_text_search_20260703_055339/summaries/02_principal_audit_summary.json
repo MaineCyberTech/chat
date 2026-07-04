@@ -1,0 +1,49 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "global_full_text_search",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 2,
+    "P3": 0
+  },
+  "category_scores": {
+    "permission_filtering": 100,
+    "search_coverage": 60,
+    "pagination": 40,
+    "frontend_ux": 70
+  },
+  "readiness": 67.5,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "frontend_ux",
+      "file": "apps/web/components/chat/search-bar.tsx:221",
+      "issue": "Author filter requires raw UUID input with no user autocomplete or display-name mapping",
+      "impact": "Users must know or look up workspace member UUIDs to filter by author; severely impacts usability.",
+      "fix": "Replace UUID text input with a user-picker dropdown showing workspace member names/avatars; send selected UUID to API."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "search_coverage",
+      "file": "supabase/migrations/20260627000003_enhanced_search.sql",
+      "issue": "No file or attachment metadata search \u2014 search_messages RPC indexes only the content column of messages",
+      "impact": "Users cannot search for messages by attached file name, description, or upload metadata.",
+      "fix": "Add a separate file_search RPC that searches file_attachments.name and file_attachments.description."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "pagination",
+      "file": "apps/api/src/modules/messages/routes.ts:45",
+      "issue": "Search results use a hard result_limit=20 with no cursor or offset-based pagination",
+      "impact": "Only the top 20 results are returned; results beyond the first page are inaccessible.",
+      "fix": "Add cursor-based pagination (created_at + id) to the search_messages RPC parameters and API endpoint."
+    }
+  ],
+  "run_id": "global_full_text_search_20260703_055339"
+}

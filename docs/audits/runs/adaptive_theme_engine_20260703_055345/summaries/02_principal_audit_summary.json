@@ -1,0 +1,59 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "adaptive_theme_engine",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 3,
+    "P3": 1
+  },
+  "category_scores": {
+    "theme_palette": 65,
+    "ssr_hydration": 90,
+    "css_variable_coverage": 85,
+    "contrast_accessibility": 50,
+    "theme_toggle_ux": 70
+  },
+  "readiness": 72.0,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "theme_palette",
+      "file": "packages/ui/src/hooks/use-theme.tsx:5-6",
+      "issue": "Theme engine supports only light/dark/system; no OLED black or high-contrast accessibility mode",
+      "impact": "OLED screen users miss battery-saving true-black mode; users with visual impairments lack high-contrast variant.",
+      "fix": "Add 'oled' and 'high-contrast' resolved theme options with corresponding CSS variable overrides."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "contrast_accessibility",
+      "file": "packages/ui/src/hooks/use-theme.tsx",
+      "issue": "No automated WCAG contrast validation or tooling for CSS custom property pairs across themes",
+      "impact": "Theme token pairs may fail WCAG AA/AAA ratios without detection.",
+      "fix": "Add CI script to read CSS variable definitions for each theme and validate foreground/background pairs meet WCAG AA thresholds."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "theme_toggle_ux",
+      "file": "packages/ui/src/hooks/use-theme.tsx:33-40",
+      "issue": "Theme switch via classList.add/remove is instant with no CSS transition on custom properties",
+      "impact": "Users experience an abrupt flash/tear when toggling themes.",
+      "fix": "Add transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease to :root."
+    },
+    {
+      "severity": "P3",
+      "domain": "features",
+      "category": "theme_palette",
+      "file": "apps/web/app/layout.tsx:25-26",
+      "issue": "No exposed API for workspace-specific theme overrides (e.g. custom brand colors per workspace)",
+      "impact": "Workspace admins cannot customize their workspace's color scheme to match company branding.",
+      "fix": "Add workspace-level CSS variable overrides via a customProperties field on the workspace model."
+    }
+  ],
+  "run_id": "adaptive_theme_engine_20260703_055345"
+}

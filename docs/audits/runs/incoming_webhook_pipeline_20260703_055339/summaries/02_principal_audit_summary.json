@@ -1,0 +1,58 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "incoming_webhook_pipeline",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 2,
+    "P2": 1,
+    "P3": 0
+  },
+  "category_scores": {
+    "secret_storage": 0,
+    "ssrf_protection": 50,
+    "payload_formatting": 30,
+    "frontend_ui": 20
+  },
+  "readiness": 25,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "features",
+      "category": "secret_storage",
+      "file": "supabase/migrations/20260625000012_create_webhooks.sql",
+      "issue": "Webhook secrets stored as plaintext in the `secret` column with no encryption at rest",
+      "impact": "A database dump or SQL injection exposes all webhook secrets, allowing attackers to forge valid HMAC signatures.",
+      "fix": "Encrypt secrets at rest using pgcrypto (pgp_sym_encrypt) or application-level AES-GCM; decrypt only in memory at delivery time."
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "ssrf_protection",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "issue": "DNS rebinding bypass possible: resolveHostname only resolves IPv4 (A records), has no TTL caching, and does not pin resolved IPs",
+      "impact": "An attacker controlling DNS for their webhook URL can initially resolve to a public IP, pass validation, then switch to 10.0.0.1.",
+      "fix": "Add AAAA (IPv6) resolution, enforce minimum TTL caching, and validate IP at the connection level."
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "payload_formatting",
+      "file": "apps/api/src/modules/webhooks/service.ts:232",
+      "issue": "No webhook payload formatter or templating \u2014 payload is always { event, ...payload } with raw internal schema",
+      "impact": "Consumers receive internal domain schema with no ability to transform fields, rename keys, or inject computed values.",
+      "fix": "Add per-webhook format config (JSON template, Liquid/Handlebars) and a transforms pipeline for key mapping."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "frontend_ui",
+      "file": "apps/web/components/",
+      "issue": "No webhook management frontend UI \u2014 no settings page or dialog to create, test, or monitor webhooks",
+      "impact": "Users must interact with the API directly; no visibility into delivery logs, retry status, or dead-letter queue.",
+      "fix": "Build a webhook management section in workspace settings with CRUD forms, delivery log viewer, manual retry button, and test-ping endpoint."
+    }
+  ],
+  "run_id": "incoming_webhook_pipeline_20260703_055339"
+}

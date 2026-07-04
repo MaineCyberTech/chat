@@ -1,0 +1,97 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "security_ultra",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T06:10:00Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 3,
+    "P2": 3,
+    "P3": 1
+  },
+  "category_scores": {},
+  "readiness": 0.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "Secrets at Rest",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "line": 136,
+      "issue": "Webhook secrets stored in plaintext in webhook_endpoints table - no encryption at rest",
+      "impact": "DB compromise leaks all webhook secrets. Any actor with DB read access (e.g. via SQL injection, backup exposure) obtains secrets for outgoing webhooks.",
+      "fix": "Encrypt secrets using pgcrypto at insert time, decrypt only at delivery time"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "IDOR",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "line": 7,
+      "issue": "GET /consent returns ALL consent records across all users - no user_id filter",
+      "impact": "Any authenticated user can read other users' cookie/analytics/marketing consent choices. Direct PII exposure of consent preferences.",
+      "fix": "Add .eq('user_id', req.userId) filter to the query"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "IDOR",
+      "file": "apps/api/src/modules/threads/routes.ts",
+      "line": 27,
+      "issue": "Thread participants, join, and leave endpoints have no channel membership check. Thread data accessible to any authenticated user.",
+      "impact": "Any authenticated user can enumerate thread participants, join threads in any channel, and view thread membership without being a workspace member.",
+      "fix": "Add requireChannelAccess middleware to thread routes"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "Privilege Escalation",
+      "file": "apps/api/src/modules/feature-flags/routes.ts",
+      "line": 38,
+      "issue": "Feature flag CRUD endpoints have no admin role check - any authenticated user can create/update/delete feature flags",
+      "impact": "Any user can modify feature flags affecting all workspaces. Can enable/disable features globally without authorization.",
+      "fix": "Add requireAdmin or requireWorkspaceOwner middleware to feature-flag mutation endpoints"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "Rate Limiting",
+      "file": "apps/api/src/middleware/rate-limit.ts",
+      "line": 4,
+      "issue": "General API rate limiter uses IP-only key, not composite user+IP key like auth and search limiters",
+      "impact": "Attacker can rotate IP addresses to bypass the 100 req/min limit. IP-only keys are trivial to circumvent with botnets.",
+      "fix": "Change keyGenerator from default to compositeKey (same as authLimiter)"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "Auth Bypass",
+      "file": "apps/api/src/middleware/require-membership.ts",
+      "line": 126,
+      "issue": "requireMessageAccess middleware uses getSupabase() (anon client) for message lookup instead of req.supabase (user JWT client)",
+      "impact": "Initial message lookup bypasses RLS policies. Though later checks add membership validation, the first query runs without user context.",
+      "fix": "Replace getSupabase() with req.supabase for the initial message lookup"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "SSRF Prevention",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "line": 7,
+      "issue": "SSRF IP-blocking does not filter 0.0.0.0 or IPv6 [::] addresses",
+      "impact": "Attacker pointing webhook URL to 0.0.0.0:PORT may bypass SSRF protection on some systems. IPv6 localhost not filtered.",
+      "fix": "Add '0.' and '[::]' to blocked IP prefixes list, and resolve IPv6 addresses"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "CSP",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "line": 6,
+      "issue": "CSP style-src uses 'unsafe-inline' instead of nonce-based approach",
+      "impact": "Inline styles permitted broadly. Nonce-based CSP would provide stronger protection against CSS injection attacks.",
+      "fix": "Replace 'unsafe-inline' with nonce-based style loading where feasible"
+    }
+  ],
+  "run_id": "security_ultra_20260703_061027"
+}

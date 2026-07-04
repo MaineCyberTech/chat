@@ -1,0 +1,58 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "notification_engine_and_mentions",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-03T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 2,
+    "P3": 0
+  },
+  "category_scores": {
+    "mention_parsing": 85,
+    "notification_delivery": 65,
+    "notification_ux": 55,
+    "preferences_muting": 40
+  },
+  "readiness": 61.3,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "notification_security",
+      "file": "apps/api/src/modules/notifications/service.ts:19",
+      "issue": "notificationService.list() and unreadCount() use getSupabase() (anon client) instead of per-user authenticated Supabase client",
+      "impact": "All notification read operations use the anonymous client with RLS enforcing user_id filter \u2014 defense-in-depth weakness if RLS is misconfigured.",
+      "fix": "Refactor list() and unreadCount() to accept an optional SupabaseClient parameter. Pass req.supabase from the route handlers."
+    },
+    {
+      "severity": "P1",
+      "domain": "features",
+      "category": "mention_here_filtering",
+      "file": "apps/api/src/lib/mentions/parser.ts:81",
+      "issue": "@here mention resolves identically to @everyone by selecting all workspace members without filtering for currently online/active users",
+      "impact": "@here is intended to notify only currently online workspace members, but the implementation notifies all members regardless of presence status.",
+      "fix": "Integrate with Socket.io presence tracking: query currently active user IDs from the Redis presence store or socket rooms when resolving @here."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "notification_ux",
+      "file": "apps/api/src/modules/messages/service.ts:136",
+      "issue": "Mention notification titles use truncated UUID (input.user_id.slice(0,8)) instead of resolved display name",
+      "impact": "Notification reads like 'a1b2c3d4 mentioned you' instead of 'Alice mentioned you'. Raw UUIDs are user-hostile.",
+      "fix": "Look up the sender's display_name from the users/profiles table before constructing the notification title."
+    },
+    {
+      "severity": "P2",
+      "domain": "features",
+      "category": "notification_delivery",
+      "file": "apps/web/components/notifications/notification-bell.tsx:51",
+      "issue": "Notification unread count polls every 30 seconds instead of using real-time WebSocket push",
+      "impact": "Users experience up to 30 seconds of delay between a mention being created and the notification bell badge updating.",
+      "fix": "Emit a 'notification:new' or 'notifications:unread_update' Socket.io event when notificationService.create() succeeds."
+    }
+  ],
+  "run_id": "notification_engine_and_mentions_20260703_055338"
+}

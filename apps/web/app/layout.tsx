@@ -26,6 +26,8 @@ export const metadata: Metadata = {
 const themeScript = `
 (function(){var t=localStorage.getItem("chat-theme")||"system";if(t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme:dark)").matches))document.documentElement.classList.add("dark")})()`;
 
+const viewportScript = "!function(){function u(){var h=window.innerHeight;document.documentElement.style.setProperty('--vh',(h/100)+'px')}u();window.addEventListener('resize',u);window.addEventListener('orientationchange',function(){setTimeout(u,100)})}()";
+
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -48,8 +50,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Chat Platform" />
       </head>
-      <body className="min-h-screen antialiased">
+      <body className="flex min-h-screen flex-col antialiased">
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: viewportScript }} />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-[var(--color-background-primary)] focus:p-4 focus:text-[var(--color-foreground-primary)]"
@@ -62,7 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <ToastProvider>
                 <AppHeader />
                 <ErrorBoundary>
-                  <main id="main-content" className="min-h-[calc(var(--vh)-4rem)]">
+                  <main id="main-content" className="flex min-h-0 flex-1 flex-col">
                     {children}
                   </main>
                 </ErrorBoundary>

@@ -1,0 +1,221 @@
+{
+  "prompt1": {
+    "prompt_name": "rollback_readiness_audit",
+    "domain": "release",
+    "stage": "principal_audit",
+    "decision": "NO-GO",
+    "generated_at": "2026-07-03T12:00:00Z",
+    "severity_counts": { "P0": 0, "P1": 2, "P2": 2, "P3": 0 },
+    "category_scores": {
+      "artifact_versioning": 70,
+      "deploy_rollback": 30,
+      "db_rollback": 10,
+      "feature_flags": 85,
+      "operator_runbooks": 50
+    },
+    "readiness": 49,
+    "findings": [
+      {
+        "severity": "P1",
+        "domain": "release",
+        "category": "deploy_rollback",
+        "file": ".github/workflows/deploy-development.yml",
+        "issue": "Development deploy workflow has no rollback capability",
+        "impact": "A bad development deploy can only be fixed by pushing a new commit — images use mutable :dev tag, no SHA-pinned rollback job exists. Any broken deployment blocks the entire dev environment until a fix commit propagates through CI (~10 min).",
+        "fix": "Add a rollback job to deploy-development.yml mirroring the production rollback pattern: accept a rollback_sha input, pull SHA-tagged images, re-tag as :dev, and redeploy."
+      },
+      {
+        "severity": "P1",
+        "domain": "release",
+        "category": "db_rollback",
+        "file": "supabase/migrations/",
+        "issue": "Zero database rollback scripts exist across 34 migrations",
+        "impact": "Any schema migration that causes data loss or performance regression requires destructive Point-in-Time Recovery instead of a simple rollback. PITR loses all data changes made after the migration timestamp. No forward-fix migration pattern is documented or enforced.",
+        "fix": "Generate down-migration stubs for each existing migration; add rollback script generation to the migration workflow; document forward-fix patterns as the preferred rollback strategy; add a CI check that new migrations include a rollback plan in comments."
+      },
+      {
+        "severity": "P2",
+        "domain": "release",
+        "category": "deploy_rollback",
+        "file": ".github/workflows/deploy-production.yml",
+        "issue": "Production rollback job omits --force-recreate from docker compose up",
+        "impact": "After re-tagging SHA images as :latest, `docker compose up -d --remove-orphans` may not detect the image change and could leave old containers running, silently failing the rollback. Health check might pass if old containers are still healthy, masking the failed rollback.",
+        "fix": "Add `--force-recreate` to the rollback compose up command to ensure containers restart with the re-tagged images."
+      },
+      {
+        "severity": "P2",
+        "domain": "release",
+        "category": "operator_runbooks",
+        "file": "docs/runbooks/incident-response.md",
+        "issue": "Incident response runbook does not document rollback trigger or procedure",
+        "impact": "On-call operators may not know how to initiate the production rollback workflow (workflow_dispatch with rollback_sha input), delaying recovery during an outage. The recovery section only suggests 'restart services' or 'trigger deploy' — neither mentions rollback.",
+        "fix": "Add a 'Rollback' subsection to the Recovery Procedure section: document how to find the previous known-good SHA (e.g. via GitHub releases or recent successful deploy), how to trigger the rollback job from the Actions UI, and how to verify rollback success."
+      }
+    ]
+  },
+  "prompt2": {
+    "prompt_name": "backup_restore_verification_audit",
+    "domain": "ops",
+    "stage": "principal_audit",
+    "decision": "NO-GO",
+    "generated_at": "2026-07-03T12:00:00Z",
+    "severity_counts": { "P0": 2, "P1": 2, "P2": 0, "P3": 0 },
+    "category_scores": {
+      "backup_existence": 10,
+      "restore_procedure": 15,
+      "storage_protection": 0,
+      "integrity_verification": 0,
+      "dr_coverage": 30
+    },
+    "readiness": 11,
+    "findings": [
+      {
+        "severity": "P0",
+        "domain": "ops",
+        "category": "backup_existence",
+        "file": "scripts/",
+        "issue": "No backup scripts exist in the repository — zero pg_dump, Supabase export, or storage backup scripts",
+        "impact": "Production data relies entirely on Supabase managed backups with no verification or export mechanism. If Supabase experiences an outage or the project is compromised, there is no offline backup to restore from. No on-demand backup capability exists for pre-migration snapshots.",
+        "fix": "Create scripts/pg_dump.sh for on-demand PostgreSQL dumps via Supabase connection string; create scripts/export-supabase-storage.sh to mirror the storage bucket to DO Spaces or S3; add a scheduled GitHub workflow to run daily exports; verify Supabase backup API reports success in CI."
+      },
+      {
+        "severity": "P0",
+        "domain": "ops",
+        "category": "restore_procedure",
+        "file": "docs/runbooks/",
+        "issue": "No dedicated backup/restore runbook exists — restore procedures are scattered across migration and incident runbooks",
+        "impact": "Operators have no single authoritative document for: full disaster recovery (droplet loss), database PITR procedure, storage bucket restore, or tenant-scoped recovery. During an incident, critical steps will be missed, extending downtime.",
+        "fix": "Create docs/runbooks/backup-restore.md covering: (1) Daily Supabase backup verification, (2) PITR procedure with step-by-step screenshots, (3) Storage bucket export/import, (4) Full DR scenario: Terraform apply -> restore DB -> restore storage -> smoke test, (5) RTO/RPO commitments."
+      },
+      {
+        "severity": "P1",
+        "domain": "ops",
+        "category": "storage_protection",
+        "file": "infra/terraform/main.tf",
+        "issue": "Supabase Storage files (avatars, file uploads) have no backup coverage",
+        "impact": "All user-uploaded content — avatars, file attachments, shared media — exists only in Supabase Storage with no export or backup mechanism. A storage bucket corruption, accidental delete, or project compromise results in permanent data loss.",
+        "fix": "Add a scheduled export script that copies the Supabase Storage bucket to DO Spaces using the Supabase Management API or direct S3-compatible copy. Document the restore procedure in the backup/restore runbook."
+      },
+      {
+        "severity": "P1",
+        "domain": "ops",
+        "category": "integrity_verification",
+        "file": ".github/workflows/",
+        "issue": "No automated backup integrity verification exists — Supabase managed backup status is never checked",
+        "impact": "Backup failures (disk full, service disruption, configuration change) go undetected until a restore is attempted. The first indication of a failed backup may be during a real disaster when no valid backup exists to restore from.",
+        "fix": "Add a scheduled GitHub workflow (daily) that checks Supabase backup status via the Management API and alerts on failure. Include a row count parity check against key tables (users, workspaces, messages) to detect silent backup corruption."
+      }
+    ]
+  },
+  "prompt3": {
+    "prompt_name": "observability_incident_readiness",
+    "domain": "ops",
+    "stage": "principal_audit",
+    "decision": "GO WITH RISKS",
+    "generated_at": "2026-07-03T12:00:00Z",
+    "severity_counts": { "P0": 0, "P1": 2, "P2": 2, "P3": 0 },
+    "category_scores": {
+      "structured_logging": 90,
+      "error_taxonomy": 85,
+      "trace_correlation": 50,
+      "health_endpoints": 90,
+      "audit_logging": 65,
+      "metrics": 85,
+      "incident_runbook": 60,
+      "sentry_integration": 80
+    },
+    "readiness": 76,
+    "findings": [
+      {
+        "severity": "P1",
+        "domain": "ops",
+        "category": "trace_correlation",
+        "file": "apps/api/src/middleware/request-id.ts",
+        "issue": "Request ID is generated but not propagated to downstream services — no distributed tracing context",
+        "impact": "Cross-service debugging (e.g., tracing a message send: API -> Supabase -> webhook -> worker) requires manual log correlation. The request ID generated in Express middleware is not forwarded to Supabase queries, webhook HTTP calls, or worker task payloads. Operators cannot trace a user-facing failure end-to-end across services.",
+        "fix": "Add `x-request-id` propagation to: (1) All outgoing HTTP requests (axios/fetch wrapper with automatic header injection), (2) Worker task payloads as trace_id, (3) Supabase queries via pg settings or session variable. Configure Sentry distributed tracing to use requestId as the trace ID."
+      },
+      {
+        "severity": "P1",
+        "domain": "ops",
+        "category": "audit_logging",
+        "file": "apps/api/src/services/audit.ts",
+        "issue": "Audit log retry queue is in-memory and non-durable — events lost on process restart",
+        "impact": "When the audit log insert fails (network blip, Supabase timeout), the event is queued in memory. If the API process restarts (deploy, crash, OOM kill), all queued audit events are permanently lost. Critical compliance-relevant events like workspace deletion, member role changes, or consent changes may go unrecorded.",
+        "fix": "Replace in-memory array with a Redis-backed queue or a persistent `audit_queue` table in PostgreSQL. Implement a background worker or cron that drains the queue with exponential backoff. Add a startup consistency check to flush any stale queued events."
+      },
+      {
+        "severity": "P2",
+        "domain": "ops",
+        "category": "structured_logging",
+        "file": "apps/api/src/middleware/error-handler.ts",
+        "issue": "Error handler metadata omits HTTP method and route path from log context",
+        "impact": "When debugging error spikes, operators cannot quickly identify which endpoint is failing. The error handler logs `requestId`, `code`, `statusCode`, and `message`, but not `req.method` or `req.path`. Engineers must cross-reference request IDs with access logs to identify the failing route.",
+        "fix": "Add `method: req.method`, `path: req.path`, and `route: req.route?.path` to the log metadata in both AppError and unhandled error branches."
+      },
+      {
+        "severity": "P2",
+        "domain": "ops",
+        "category": "incident_runbook",
+        "file": "docs/runbooks/incident-response.md",
+        "issue": "Incident runbook diagnosis steps don't reference Sentry error traces or Prometheus metrics dashboards",
+        "impact": "During a P0/P1 incident, operators follow the runbook diagnosis steps (docker logs, system resources, Supabase health) but are not directed to Sentry for error clustering or the /metrics endpoint for performance baselines. This prolongs time-to-diagnosis for issues visible in telemetry but not in logs.",
+        "fix": "Add diagnosis steps to each severity level: 'Check Sentry (sentry.io) for error traces and regression', 'Check Prometheus metrics at /metrics for anomaly spikes (error rate, latency, active connections)', 'Compare current metrics against baselines from last known-good deploy.'"
+      }
+    ]
+  },
+  "prompt4": {
+    "prompt_name": "governance_policy_tiers_upgrade",
+    "domain": "governance",
+    "stage": "principal_audit",
+    "decision": "NO-GO",
+    "generated_at": "2026-07-03T12:00:00Z",
+    "severity_counts": { "P0": 1, "P1": 1, "P2": 2, "P3": 0 },
+    "category_scores": {
+      "policy_structure": 15,
+      "workflow_mapping": 50,
+      "hotfix_procedure": 0,
+      "policy_change_governance": 30,
+      "branch_env_alignment": 70
+    },
+    "readiness": 33,
+    "findings": [
+      {
+        "severity": "P0",
+        "domain": "governance",
+        "category": "workflow_mapping",
+        "file": ".github/workflows/governance.yml",
+        "issue": "Governance workflow references nonexistent script — always fails at runtime",
+        "impact": "The sole governance CI workflow runs `pwsh ./scripts/automation/run_full.ps1` which does not exist in the repository. Any governance enforcement (policy checks, compliance exports, audit gates) is effectively disabled. Security policies defined in governance.json have no automated enforcement mechanism.",
+        "fix": "Either create `scripts/automation/run_full.ps1` with the intended governance checks, or rewire governance.yml to use existing scripts: `scripts/audits/evaluate_gate.py`, `scripts/hardening/sync_baseline.py`, and the hardening pipeline runner."
+      },
+      {
+        "severity": "P1",
+        "domain": "governance",
+        "category": "policy_structure",
+        "file": "hardening/policies/governance.json",
+        "issue": "governance.json is a 6-line stub with no tier definitions, inheritance, or environment mapping",
+        "impact": "The governance policy file contains only 4 boolean fields (block_on, auto_fix, pr_comments, compliance_export). There are no tier definitions for development vs. staging vs. production, no P0/P1/P2 threshold differences per environment, no policy versioning, and no inheritance model. The system cannot support governed release tiers or progressive policy enforcement.",
+        "fix": "Restructure governance.json as a multi-tier policy document: add `tiers` object with `development`, `staging`, `production` keys, each containing `block_on` thresholds, `required_checks`, `approval_gates`, and `auto_remediation` settings. Add policy version field and change history. Reference a documented governance maturity model (e.g., Stage 1-4)."
+      },
+      {
+        "severity": "P2",
+        "domain": "governance",
+        "category": "hotfix_procedure",
+        "file": "AGENTS.md",
+        "issue": "No hotfix bypass procedure or compensating controls documented for emergency deployments",
+        "impact": "During a critical security incident or production outage, the normal CI/CD pipeline may produce a NO-GO gate result (see AGENTS.md NO-GO for production). Without a documented hotfix bypass procedure, engineers either delay the fix (extending outage) or bypass controls unsafely (risking regression). There are no compensating controls defined for expedited releases.",
+        "fix": "Document a hotfix procedure in AGENTS.md and a HOTFIX_PROCESS.md: (1) Criteria for hotfix (P0 outage, active exploit), (2) Approval flow (two-person review + on-call lead sign-off), (3) Compensating controls required (post-deploy monitoring, 24h reversion plan, retrospective), (4) Policy that hotfixes must be followed by a permanent fix within 7 days."
+      },
+      {
+        "severity": "P2",
+        "domain": "governance",
+        "category": "policy_change_governance",
+        "file": "hardening/policies/",
+        "issue": "Policy changes are not reviewable or auditable — no policy-as-code review process",
+        "impact": "Changes to governance.json, core.rules.json, and other policy files in hardening/policies/ have no required review process, no versioning, and no audit trail. A developer could silently weaken security thresholds (e.g., changing block_on from P0 to P3) without any oversight.",
+        "fix": "Add a CODEOWNERS entry requiring review from a security/governance team for changes under `hardening/policies/`. Add a PR template checkbox for 'Policy changes reviewed by <team>'. Implement a CI check that validates policy file structure against a JSON schema. Add policy version tracking with changelog."
+      }
+    ]
+  }
+}

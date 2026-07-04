@@ -1,0 +1,58 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "e2e_scenario_suite",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-03T14:00:00Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 2,
+    "P2": 1,
+    "P3": 0
+  },
+  "category_scores": {
+    "auth_flows": 10,
+    "messaging_flows": 5,
+    "smoke_coverage": 25,
+    "ci_integration": 30
+  },
+  "readiness": 15,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "test_execution",
+      "file": "apps/web/e2e/auth-workspace-chat.spec.ts",
+      "issue": "All 20+ Playwright test scenarios are prefixed with test.skip \u2014 zero executable E2E coverage",
+      "impact": "The entire E2E suite is disabled. No auth flow, workspace creation, messaging, or any user journey is tested in CI or locally. Regressions in critical paths (login callback, workspace redirect, message send/receive) go completely undetected.",
+      "fix": "Remove test.skip prefixes. Implement proper test user provisioning (Supabase MFA bypass or test credentials). Add CI E2E job with Supabase local or Docker-based test environment."
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "test_data",
+      "file": "apps/web/e2e/auth-workspace-chat.spec.ts",
+      "issue": "E2E tests depend on hardcoded test user UUIDs and workspace slugs that may not exist in test environments",
+      "impact": "Tests assume specific user IDs (e.g., '00000000-0000-0000-0000-000000000001') and workspace slugs that must be pre-seeded. Without a test data setup script or fixture, tests will fail in any fresh environment including CI.",
+      "fix": "Add a test data seeding script (e.g., scripts/e2e-seed.ts) that creates users, workspaces, and channels before test execution. Reference dynamically-created IDs rather than hardcoded values."
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "coverage",
+      "file": "apps/web/e2e/auth-workspace-chat.spec.ts",
+      "issue": "No E2E tests for message sending, editing, deletion, reactions, threads, or file uploads",
+      "impact": "The core product feature \u2014 messaging \u2014 has zero E2E coverage. Critical user flows like send message, edit message, delete message, add reaction, create thread reply, and upload file are never tested end-to-end.",
+      "fix": "Add E2E scenarios for: (1) send message and verify it appears in channel, (2) edit message and verify updated text, (3) delete message and verify removal, (4) add reaction and verify emoji appears, (5) create thread reply and verify it appears in thread panel, (6) upload file and verify attachment renders."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "ci_integration",
+      "file": ".github/workflows/ci.yml",
+      "issue": "E2E test execution is not wired into any CI workflow",
+      "impact": "Even when tests become executable, they only run locally. PRs and pushes to develop/main do not execute any E2E tests. Regressions in critical user flows can be merged and deployed without detection.",
+      "fix": "Add E2E job to validate.yml (called by ci.yml). Use a Docker-based Supabase test environment or Supabase local CLI. Run smoke tier tests on every push and full suite nightly or pre-release."
+    }
+  ],
+  "run_id": "e2e_scenario_suite_20260703_054833"
+}

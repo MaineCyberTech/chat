@@ -33,22 +33,27 @@ body {
   overscroll-behavior: none;
 }
 
-/* Use dvh (dynamic viewport height) for mobile browsers with dynamic toolbars */
+/* Viewport height: prefer dvh (dynamic), fallback to 100vh, updated on resize/orientation */
+:root {
+  --header-height: 3rem;
+  --bottom-nav-height: 3.5rem;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --vh: 100vh;
+}
+/* Smaller bottom nav in landscape on small screens */
+@media (max-height: 480px) {
+  :root {
+    --bottom-nav-height: 2.5rem;
+  }
+}
 @supports (height: 100dvh) {
   :root {
     --vh: 100dvh;
   }
-  .h-screen {
-    height: 100dvh;
-  }
-  .min-h-screen {
-    min-height: 100dvh;
-  }
 }
-@supports not (height: 100dvh) {
-  :root {
-    --vh: 100vh;
-  }
+/* JS-driven viewport height for browsers that don't fully support dvh */
+.vh-fix {
+  --vh: 100vh;
 }
 
 * {

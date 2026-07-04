@@ -605,11 +605,7 @@ export function MessageList({
     return result;
   }, [messages]);
 
-  // Maintain scroll position when older messages are prepended
-  const scrollRestoreRef = useRef<{
-    prevScrollHeight: number;
-    prevScrollTop: number;
-  } | null>(null);
+  const scrollRestoreRef = useRef<{ prevScrollHeight: number; prevScrollTop: number } | null>(null);
 
   // Detect scroll-to-top for loading older messages
   const handleScroll = useCallback(() => {
@@ -645,11 +641,10 @@ export function MessageList({
     const el = listRef.current;
     const restore = scrollRestoreRef.current;
     if (!restore || !el) return;
-    const { prevScrollHeight, prevScrollTop } = restore;
     requestAnimationFrame(() => {
       if (!listRef.current) return;
       const newScrollHeight = listRef.current.scrollHeight;
-      listRef.current.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+      listRef.current.scrollTop = restore.prevScrollTop + (newScrollHeight - restore.prevScrollHeight);
     });
     scrollRestoreRef.current = null;
   }, [messagesWithMeta.length]);
@@ -680,7 +675,8 @@ export function MessageList({
 
   return (
     <div className="relative flex-1">
-      <div ref={listRef} className="h-full overflow-y-auto overscroll-contain pb-14 md:pb-0">
+      <div ref={listRef} className="h-full overflow-y-auto overscroll-contain md:pb-0"
+        style={{ paddingBottom: 'var(--bottom-nav-height)' }}>
         {loadingOlder && (
           <div className="flex justify-center py-3">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-foreground-tertiary)] border-t-transparent" />
@@ -698,13 +694,17 @@ export function MessageList({
             reactions={reactions}
             pickerMessageId={pickerMessageId}
             editError={editError}
-            replyCounts={replyCounts}
+            replyCounts={replyCounts ?? new Map()}
             sendingIds={sendingIds}
             onReply={onReply}
             onEdit={onEdit}
             onDelete={onDelete}
             onThreadOpen={onThreadOpen}
-            onStartEdit={startEdit}
+            onStartEdit={(m) => startEdit(m)}
+            onMessageContextMenu={handleContextMenu}
+            onMessageTouchStart={handleTouchStart}
+            onMessageTouchEnd={handleTouchEnd}
+            onMessageTouchMove={handleTouchMove}
             onSubmitEdit={submitEdit}
             onCancelEdit={handleCancelEdit}
             onSetEditContent={setEditContent}
@@ -712,10 +712,6 @@ export function MessageList({
             onToggleReaction={toggleReaction}
             onSetPickerMessageId={setPickerMessageId}
             onSetDeleteConfirmId={handleSetDeleteConfirmId}
-            onMessageContextMenu={handleContextMenu}
-            onMessageTouchStart={handleTouchStart}
-            onMessageTouchEnd={handleTouchEnd}
-            onMessageTouchMove={handleTouchMove}
           />
         ))}
         <div ref={bottomRef} />
