@@ -393,4 +393,50 @@ router.post("/messages/upload", async (req, res) => {
   }
 });
 
+// Reminder endpoints
+router.post("/messages/:id/remind", authenticate, validateUuidParam("id"), async (req, res) => {
+  const { remindAt } = req.body;
+  if (!remindAt) {
+    res.status(400).json({ error: { code: "INVALID_INPUT", message: "remindAt required" } });
+    return;
+  }
+  const { data, error } = await req.supabase!
+    .from("message_reminders")
+    .insert({
+      user_id: req.userId,
+      message_id: req.params.id as string,
+      remind_at: remindAt,
+    })
+    .select("*")
+    .single();
+  if (error) {
+    res.status(500).json({ error: { code: "CREATE_FAILED", message: error.message } });
+    return;
+  }
+  res.status(201).json({ reminder: data });
+});
+
+router.get("/reminders", authenticate, async (req, res) => {
+  const { data } = await req.supabase!
+    .from("message_reminders")
+    .select("*, messages!inner(content, channel_id)")
+    .eq("user_id", req.userId)
+    .eq("notified", false)
+    .order("remind_at", { ascending: true });
+  res.json({ reminders: data ?? [] });
+});
+
+router.delete("/reminders/:id", authenticate, async (req, res) => {
+  const { error } = await req.supabase!
+    .from("message_reminders")
+    .delete()
+    .eq("id", req.params.id as string)
+    .eq("user_id", req.userId);
+  if (error) {
+    res.status(500).json({ error: { code: "DELETE_FAILED", message: error.message } });
+    return;
+  }
+  res.status(204).send();
+});
+
 export default router;

@@ -52,6 +52,17 @@ async function main() {
   registerSearchIndexer();
   registerCleanupProcessor();
 
+  // Poll for due reminders every 30 seconds
+  const { processReminders } = await import("./processors/reminder.js");
+  setInterval(() => {
+    processReminders().catch((err: unknown) =>
+      logger.error({ error: String(err) }, "Reminder poll failed"),
+    );
+  }, 30_000);
+  processReminders().catch((err: unknown) =>
+    logger.error({ error: String(err) }, "Initial reminder poll failed"),
+  );
+
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "Shutting down worker");

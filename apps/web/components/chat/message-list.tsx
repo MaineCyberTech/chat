@@ -3,11 +3,12 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Avatar, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
-import { Reply, Pencil, X, Smile, Copy, Trash2 } from "lucide-react";
+import { Reply, Pencil, X, Smile, Copy, Trash2, Clock } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CodeBlock } from "./code-block";
 import { FilePreview } from "./file-preview";
+import { RemindModal } from "./remind-modal";
 import type { Message, UserProfile } from "@chat/db";
 
 const GROUP_GAP_MS = 5 * 60 * 1000;
@@ -418,6 +419,7 @@ export function MessageList({
   const [pickerMessageId, setPickerMessageId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
+  const [remindMessageId, setRemindMessageId] = useState<string | null>(null);
   const [editError, setEditError] = useState("");
   const [showJumpButton, setShowJumpButton] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -843,6 +845,16 @@ export function MessageList({
           >
             <Copy size={14} /> Copy link
           </button>
+          <button
+            onClick={() => {
+              setRemindMessageId(contextMenu.message.id);
+              setContextMenu(null);
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+            role="menuitem"
+          >
+            <Clock size={14} /> Remind me
+          </button>
           {contextMenu.message.user_id === currentUserId && onEdit && (
             <button
               onClick={() => {
@@ -913,6 +925,13 @@ export function MessageList({
             </div>
           </div>
         </div>
+      )}
+
+      {remindMessageId && (
+        <RemindModal
+          messageId={remindMessageId}
+          onClose={() => setRemindMessageId(null)}
+        />
       )}
     </div>
   );

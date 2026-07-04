@@ -33,6 +33,8 @@ import threadRoutes from "./modules/threads/routes.js";
 import liveKitRoutes from "./modules/livekit/routes.js";
 import auditRoutes from "./modules/audit/routes.js";
 import statusRoutes from "./modules/status/routes.js";
+import emojiRoutes from "./modules/emoji/routes.js";
+import groupRoutes from "./modules/groups/routes.js";
 
 function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = process.hrtime.bigint();
@@ -95,6 +97,8 @@ export function createApp(frontendUrl: string): Express {
   app.use("/v1", liveKitRoutes);
   app.use("/v1", auditRoutes);
   app.use("/v1", statusRoutes);
+  app.use("/v1", emojiRoutes);
+  app.use("/v1", groupRoutes);
 
   app.get("/", (_req, res) => {
     res.json({ name: "chat-api", status: "running" });
