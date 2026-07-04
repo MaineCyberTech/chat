@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Avatar, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
-import { Reply, Pencil, X, Smile } from "lucide-react";
+import { Reply, Pencil, X, Smile, Copy, Trash2 } from "lucide-react";
 import type { Message, UserProfile } from "@chat/db";
 
 const GROUP_GAP_MS = 5 * 60 * 1000;
@@ -33,6 +33,12 @@ interface Props {
   loadingOlder?: boolean;
   replyCounts?: Map<string, number>;
   sendingIds?: Set<string>;
+}
+
+interface ContextMenuState {
+  x: number;
+  y: number;
+  message: Message;
 }
 
 function authorName(userId: string, profiles: Map<string, UserProfile>): string {
@@ -90,6 +96,10 @@ const MessageItem = React.memo(function MessageItem({
   onToggleReaction,
   onSetPickerMessageId,
   onSetDeleteConfirmId,
+  onMessageContextMenu,
+  onMessageTouchStart,
+  onMessageTouchEnd,
+  onMessageTouchMove,
 }: {
   msg: MessageMeta;
   currentUserId?: string;
@@ -114,6 +124,10 @@ const MessageItem = React.memo(function MessageItem({
   onToggleReaction: (messageId: string, emoji: string) => Promise<void>;
   onSetPickerMessageId: (id: string | null) => void;
   onSetDeleteConfirmId: (id: string | null) => void;
+  onMessageContextMenu: (e: React.MouseEvent, msg: Message) => void;
+  onMessageTouchStart: (e: React.TouchEvent, msg: Message) => void;
+  onMessageTouchEnd: () => void;
+  onMessageTouchMove: () => void;
 }) {
   const isOwn = msg.user_id === currentUserId;
   const showDate = msg.showDate ?? false;
@@ -218,6 +232,10 @@ const MessageItem = React.memo(function MessageItem({
               </div>
             ) : (
               <div
+                onContextMenu={(e) => onMessageContextMenu(e, msg)}
+                onTouchStart={(e) => onMessageTouchStart(e, msg)}
+                onTouchEnd={onMessageTouchEnd}
+                onTouchMove={onMessageTouchMove}
                 className={`flex flex-col rounded-lg px-3 py-1.5 ${
                   isOwn
                     ? "bg-[var(--color-brand-primary)] text-[var(--color-brand-primary-foreground)]"
@@ -256,32 +274,32 @@ const MessageItem = React.memo(function MessageItem({
               className={`flex shrink-0 flex-col gap-0.5 transition-opacity ${
                 isHovered || editingId === msg.id
                   ? "opacity-100"
-                  : "opacity-100 group-active:opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
+                  : "opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
               }`}
             >
               {onReply && (
                 <button
                   onClick={() => onReply(msg)}
-                  className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none md:min-h-[36px] md:min-w-[36px]"
                   aria-label="Reply to message"
                 >
-                  <Reply size={16} />
+                  <Reply size={20} />
                 </button>
               )}
               <button
                 onClick={() => onSetPickerMessageId(pickerMessageId === msg.id ? null : msg.id)}
-                className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none md:min-h-[36px] md:min-w-[36px]"
                 aria-label="Add reaction"
               >
-                <Smile size={16} />
+                <Smile size={20} />
               </button>
               {isOwn && onEdit && (
                 <button
                   onClick={() => onStartEdit(msg)}
-                  className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none md:min-h-[36px] md:min-w-[36px]"
                   aria-label="Edit message"
                 >
-                  <Pencil size={16} />
+                  <Pencil size={20} />
                 </button>
               )}
               {isOwn && onDelete && (
@@ -289,10 +307,10 @@ const MessageItem = React.memo(function MessageItem({
                   onClick={() => {
                     onSetDeleteConfirmId(msg.id);
                   }}
-                  className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-status-danger-fg)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-status-danger-fg)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none md:min-h-[36px] md:min-w-[36px]"
                   aria-label="Delete message"
                 >
-                  <X size={16} />
+                  <X size={20} />
                 </button>
               )}
             </div>
@@ -356,6 +374,9 @@ export function MessageList({
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -394,6 +415,34 @@ export function MessageList({
     container.querySelector<HTMLElement>("button")?.focus();
     return () => document.removeEventListener("keydown", handleTab);
   }, [deleteConfirmId]);
+
+  // Context menu close on click outside and Escape
+  useEffect(() => {
+    if (!contextMenu) return;
+    function handleClick(e: MouseEvent | TouchEvent) {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setContextMenu(null);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("touchstart", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("touchstart", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [contextMenu]);
+
+  // Cleanup long press timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    };
+  }, []);
 
   const handleCancelEdit = useCallback(() => {
     setEditingId(null);
@@ -483,6 +532,28 @@ export function MessageList({
     }
   }
 
+  const handleContextMenu = useCallback((e: React.MouseEvent, msg: Message) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, message: msg });
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent, msg: Message) => {
+    longPressTimer.current = setTimeout(() => {
+      const touch = e.touches[0];
+      if (touch) {
+        setContextMenu({ x: touch.clientX, y: touch.clientY, message: msg });
+      }
+    }, 500);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
+
+  const handleTouchMove = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
+
   async function toggleReaction(messageId: string, emoji: string) {
     const msgReactions = reactions.get(messageId) ?? [];
     const existing = msgReactions.find((r) => r.user_id === currentUserId && r.emoji === emoji);
@@ -536,12 +607,32 @@ export function MessageList({
   }, [messages]);
 
   const parentRef = listRef;
+  const scrollRestoreRef = useRef<{ prevScrollHeight: number; prevScrollTop: number } | null>(null);
+  const prevCountRef = useRef(messagesWithMeta.length);
+
   const virtualizer = useVirtualizer({
     count: messagesWithMeta.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ESTIMATED_ROW_HEIGHT,
     overscan: OVERSCAN,
   });
+
+  // Maintain scroll position when older messages are prepended
+  useEffect(() => {
+    const el = parentRef.current;
+    if (!scrollRestoreRef.current || !el) {
+      prevCountRef.current = messagesWithMeta.length;
+      return;
+    }
+    const { prevScrollHeight, prevScrollTop } = scrollRestoreRef.current;
+    const newScrollHeight = el.scrollHeight;
+    const heightDiff = newScrollHeight - prevScrollHeight;
+    if (heightDiff > 0) {
+      el.scrollTop = prevScrollTop + heightDiff;
+    }
+    scrollRestoreRef.current = null;
+    prevCountRef.current = messagesWithMeta.length;
+  }, [messagesWithMeta.length]);
 
   // Detect scroll-to-top for loading older messages
   const handleScroll = useCallback(() => {
@@ -551,6 +642,7 @@ export function MessageList({
     setShowJumpButton(!isAtBottom);
 
     if (onLoadOlder && hasMoreOlder && !loadingOlder && scrollTop < TOP_TRIGGER_OFFSET) {
+      scrollRestoreRef.current = { prevScrollHeight: scrollHeight, prevScrollTop: scrollTop };
       onLoadOlder();
     }
 
@@ -631,6 +723,10 @@ export function MessageList({
                   onDelete={onDelete}
                   onThreadOpen={onThreadOpen}
                   onStartEdit={(m) => startEdit(m)}
+                  onMessageContextMenu={handleContextMenu}
+                  onMessageTouchStart={handleTouchStart}
+                  onMessageTouchEnd={handleTouchEnd}
+                  onMessageTouchMove={handleTouchMove}
                   onSubmitEdit={submitEdit}
                   onCancelEdit={handleCancelEdit}
                   onSetEditContent={setEditContent}
@@ -665,6 +761,74 @@ export function MessageList({
           )}
           Jump to present ↓
         </button>
+      )}
+
+      {/* Context menu */}
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          style={{
+            position: "fixed",
+            left: contextMenu.x,
+            top: contextMenu.y,
+            zIndex: 100,
+          }}
+          className="min-w-[160px] rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] py-1 shadow-[var(--shadow-xl)]"
+          role="menu"
+          aria-label="Message actions"
+        >
+          <button
+            onClick={() => {
+              onReply?.(contextMenu.message);
+              setContextMenu(null);
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+            role="menuitem"
+          >
+            <Reply size={14} /> Reply
+          </button>
+          <button
+            onClick={() => {
+              navigator.clipboard
+                .writeText(contextMenu.message.content)
+                .then(() => {
+                  addToast({ title: "Copied to clipboard", variant: "success", duration: 2000 });
+                })
+                .catch(() => {
+                  addToast({ title: "Error", description: "Failed to copy", variant: "error" });
+                });
+              setContextMenu(null);
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+            role="menuitem"
+          >
+            <Copy size={14} /> Copy text
+          </button>
+          {contextMenu.message.user_id === currentUserId && onEdit && (
+            <button
+              onClick={() => {
+                startEdit(contextMenu.message);
+                setContextMenu(null);
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+              role="menuitem"
+            >
+              <Pencil size={14} /> Edit
+            </button>
+          )}
+          {contextMenu.message.user_id === currentUserId && onDelete && (
+            <button
+              onClick={() => {
+                setDeleteConfirmId(contextMenu.message.id);
+                setContextMenu(null);
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-status-danger-fg)] hover:bg-[var(--color-background-tertiary)]"
+              role="menuitem"
+            >
+              <Trash2 size={14} /> Delete
+            </button>
+          )}
+        </div>
       )}
 
       {/* Delete confirmation dialog */}

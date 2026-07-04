@@ -123,7 +123,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       const res = await api.get<{ messages: Message[]; nextCursor: string | null }>(
         `/channels/${channelId}/messages?cursor=${nextCursor}`,
       );
-      setMessages((prev) => [...prev, ...res.messages]);
+      setMessages((prev) => [...res.messages, ...prev]);
       setNextCursor(res.nextCursor);
       if (!res.nextCursor) setHasMoreOlder(false);
       loadProfiles(res.messages);

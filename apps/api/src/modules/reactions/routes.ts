@@ -1,6 +1,6 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
-import { requireChannelAccess } from "../../middleware/require-membership.js";
+import { requireMessageAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { reactionService } from "./service.js";
 
@@ -10,7 +10,7 @@ router.use(authenticate);
 router.get(
   "/messages/:id/reactions",
   validateUuidParam("id"),
-  requireChannelAccess("id"),
+  requireMessageAccess("id"),
   async (req, res) => {
     const reactions = await reactionService.getByMessage(req.params.id as string, req.supabase!);
     res.json({ reactions });
@@ -41,7 +41,7 @@ router.get("/reactions/batch", async (req, res) => {
 router.post(
   "/messages/:id/reactions",
   validateUuidParam("id"),
-  requireChannelAccess("id"),
+  requireMessageAccess("id"),
   async (req, res) => {
     const { emoji } = req.body;
     if (!emoji || typeof emoji !== "string" || emoji.length > 10) {
@@ -67,7 +67,7 @@ router.post(
 router.delete(
   "/messages/:id/reactions/:emoji",
   validateUuidParam("id"),
-  requireChannelAccess("id"),
+  requireMessageAccess("id"),
   async (req, res) => {
     const emoji = decodeURIComponent(req.params.emoji as string);
     const removed = await reactionService.remove(
