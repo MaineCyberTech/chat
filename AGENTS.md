@@ -685,15 +685,19 @@ Full end-to-end test completed successfully:
 
 All features from Tiers 1, 2, and 3 are now implemented (July 4, 2026):
 
-### Infrastructure & CI Remaining
+### Infrastructure & CI — Complete
 
-- **`hardening.yml` CI workflow broken** — references nonexistent scripts
-- **Migration rollback scripts** — Supabase CLI lacks native rollback; document manual process
-- **DO monitoring alerts** — CPU >80%, memory >80%
-- **E2E tests for messaging/WebSocket flow**
-- **E2E tests for file upload**
-- **Diff coverage checking**
-- **Pre-commit hook with eslint + typecheck** (currently prettier only)
+All infrastructure/CI items have been resolved:
+
+| Item | Status | Details |
+|------|--------|---------|
+| `hardening.yml` CI workflow | ✅ Already fixed | Uses valid Python scripts (run_hardening_pipeline.py, generate_executive_stakeholder_pack.py) |
+| Migration rollback docs | ✅ Done | `docs/runbooks/migration-rollback.md` — manual process, rollback SQL patterns, safe practices |
+| DO monitoring alerts | ✅ Done | Terraform: `digitalocean_monitor_alert` for CPU >80%, memory >80%, disk >90% with email |
+| E2E: messaging/WebSocket | ✅ Done | Tests for send/edit/delete + WebSocket real-time + typing indicator (2-page test) |
+| E2E: file upload | ✅ Done | Tests for image + text file upload via attachment button |
+| Diff coverage checking | ✅ Already configured | `validate.yml` diff-coverage job uses `pnpm test -- --changed --coverage` |
+| Pre-commit hook | ✅ Already configured | `.husky/pre-commit` runs `lint-staged` (prettier + eslint) + `turbo typecheck --affected` |
 
 ## Local Development
 
