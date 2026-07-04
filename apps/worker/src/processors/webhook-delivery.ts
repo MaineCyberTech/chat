@@ -2,7 +2,7 @@ import { Worker, Job, Queue } from "bullmq";
 import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 
 export interface WebhookDeliveryJobData {
   webhookId: string;
@@ -34,7 +34,7 @@ async function resolveHostname(url: string): Promise<string[]> {
   try {
     const { hostname } = new URL(url);
     if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) || /^\[.+\]$/.test(hostname)) {
-      return [hostname.replace(/[\[\]]/g, "")];
+      return [hostname.replace(/[[\]]/g, "")];
     }
     const dns = await import("node:dns/promises");
     const records = await dns.resolve4(hostname);

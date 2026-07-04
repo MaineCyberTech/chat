@@ -106,35 +106,6 @@ async function deliverPush(
   return sentCount > 0;
 }
 
-async function encryptVapid(
-  endpoint: string,
-  p256dh: string,
-  auth: string,
-  payload: string,
-  publicKey: string,
-  privateKey: string,
-  subject: string,
-): Promise<{ headers: Record<string, string>; body: Buffer | null }> {
-  try {
-    const webPush = await import("web-push");
-    const vapidKeys = { publicKey, privateKey };
-    const subscription = { endpoint, keys: { p256dh, auth } };
-
-    const result = await webPush.sendNotification(
-      { ...subscription, keys: { p256dh: subscription.keys.p256dh, auth: subscription.keys.auth } },
-      payload,
-      {
-        vapidDetails: { subject, ...vapidKeys },
-        TTL: 86400,
-      },
-    );
-
-    return { headers: {}, body: null };
-  } catch {
-    return { headers: {}, body: null };
-  }
-}
-
 async function deliverEmail(
   supabase: ReturnType<typeof createSupabaseClient>,
   data: NotificationJobData,

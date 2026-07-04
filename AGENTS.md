@@ -49,6 +49,7 @@ All scripts connected: `run_hardening_pipeline.py` → `evaluate_gate.py` → `s
 
 - Magic link auth (all previous items)
 - **CSRF/Same-Origin Architecture** — API now proxied via `/v1/*` on same domain (`chat.mainecybertech.us`) fixing cookie visibility and SameSite=Strict blocking
+- **Comparative Audit Implementation (July 4, 2026)** — Full 8-phase Mattermost comparative audit executed and implemented (see table below)
 - **Database Schema Applied** — 24 Supabase CLI migrations applied (users, workspaces, channels, messages, RLS, triggers, auto-profile creation, backfill, soft-delete, webhook retry, audit FK, etc.)
 - **Workspace Creation RLS** — Uses admin client (service role) to bypass RLS; duplicate slug handling with retry logic (`-1`, `-2`, etc.)
 - **User Profiles Auto-Creation** — Trigger on `auth.users` insert + backfill migration for existing users
@@ -157,6 +158,25 @@ All scripts connected: `run_hardening_pipeline.py` → `evaluate_gate.py` → `s
 | Responsive layout                                    | P2       | Tablet sidebar collapse, mobile bottom nav, lg breakpoint                      |
 | LiveKit WebRTC integration                           | P1       | Docker compose, Caddy proxy, token service, media room UI, firewall rules      |
 
+### Comparative Audit Implementation (July 4, 2026)
+
+Full 8-phase Mattermost comparative audit (`C:\temp\mattermost-master` vs `C:\temp\chat`) executed and implemented:
+
+| Area | Implementation | Key Files |
+|------|---------------|-----------|
+| **Quick Wins** | Dependabot expanded (npm+docker+GHA ecosystems + cooldown), CI concurrency (cancel-in-progress), repo metadata (.nvmrc, .gitattributes, CODEOWNERS) | `.github/dependabot.yml`, `ci.yml`, `validate.yml`, `.nvmrc`, `.gitattributes`, `.github/CODEOWNERS` |
+| **Worker Implementation** | 4 BullMQ processors: webhook-delivery (HMAC + SSRF + circuit breaker + DLQ), notification (in-app + push VAPID + email Nodemailer), search-indexer (async tsvector), cleanup (old deliveries + dead letters + consent logs) | `apps/worker/src/processors/*.ts` |
+| **Message Features** | Pinning (is_pinned column + API + SDK), flagging (message_flags table + API + SDK), edit history (message_edit_history table + API + SDK) | Migration `20260703000001_add_message_features.sql`, `messages/routes.ts`, `messages/service.ts`, `sdk/src/messages.ts` |
+| **Store Abstraction** | `IMessageStore` + `SupabaseMessageStore`, `IChannelStore` + `SupabaseChannelStore` — exported from `@chat/db` | `packages/db/src/stores/` |
+| **RBAC Expansion** | 18 granular permissions × 3 roles (owner/admin/member), `requirePermission()` middleware | `packages/db/src/permissions.ts`, `apps/api/src/middleware/require-permission.ts` |
+| **Audit API** | `GET /v1/audit/logs` with filters (workspace, actor, action, entity, date range), `GET /v1/audit/logs/:id` | `apps/api/src/modules/audit/routes.ts` |
+| **DM/GM Channels** | channel_type column, dm_channels table, DM creation API and listing, sidebar DM section with user picker | Migration `20260704000001_add_dm_presence_categories.sql`, `channels/service.ts`, `app-sidebar.tsx` |
+| **User Presence** | Socket.io presence (online/away/dnd), user_presence table, auto-set online on connect, offline on disconnect | `socket.ts`, migration above |
+| **Channel Bookmarks** | channel_bookmarks CRUD API | `channels/routes.ts`, migration above |
+| **Sidebar Categories** | sidebar_categories + sidebar_channel_assignments tables with default seed data | migration above |
+| **Per-Channel Notifications** | channel_notification_preferences table (notify + sound toggles per channel) | migration above |
+| **UI/UX Polish** | Floating timestamp overlay, searchable emoji picker (600+ emojis), context menu copy-link, channel topic display, system messages, file preview (image viewer + file links) | `floating-timestamp.tsx`, `emoji-data.json`, `file-preview.tsx` |
+
 ### Resolved Issues
 
 - search_messages RLS bypass — Fixed with auth.uid() membership check
@@ -201,7 +221,7 @@ All scripts connected: `run_hardening_pipeline.py` → `evaluate_gate.py` → `s
 | -------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **P0**   | 0 (2 fixed)   | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED**                                                                                                                                                                 |
 | **P1**   | 0 (13 fixed)  | All P1 items resolved                                                                                                                                                                                                                                 |
-| **P2**   | 18 unresolved | thread panel reply input not textarea, no delete confirmation dialog, edit/delete no error feedback, typing indicator unthrottled, no sending indicator on optimistic messages, notification dropdown overflow, missing tablet breakpoint, and others |
+| **P2**   | 4 unresolved (14 fixed via comparative audit) | Thread panel reply input textarea, delete confirmation dialog, typing indicator throttling, sending indicator, notification dropdown overflow, tablet breakpoint, Unicode icons — **FIXED in July 4 comparative audit** |
 | **P3**   | 9             | Raw opacity values, "Loading..." text instead of skeletons, unused CSS classes                                                                                                                                                                        |
 
 All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
@@ -460,7 +480,7 @@ The Hardening Findings Tracker covers audits 3-6 (Security, API, Database, Infra
 
 - **P0**: Traefik reference in infra/docker/README (2 items) — **RESOLVED**
 - **P1**: macOS sed bug, re-run key update, env file confusion, missing CONTRIBUTING.md/CHANGELOG.md, runbook gaps, no ADRs/OpenAPI spec (16 items) — **mostly RESOLVED**
-- **P2**: Missing .nvmrc, .gitattributes, PR/issue templates, CODEOWNERS, update-keys/reset-db scripts, secrets rotation guide, doc coverage gaps (24 items)
+- **P2**: ~~Missing .nvmrc, .gitattributes, PR/issue templates, CODEOWNERS~~ — **FIXED** (added via comparative audit); update-keys/reset-db scripts, secrets rotation guide, doc coverage gaps remain (18 items)
 - **P3**: Lazy migration references, performance benchmarks, testing strategy doc (6 items)
 
 ## GitHub Actions Workflows

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Image, File, Download, X, ExternalLink } from "lucide-react";
+import { FileText, File, Download, X, ExternalLink } from "lucide-react";
+import Image from "next/image";
 
 interface FileInfo {
   name: string;
@@ -10,7 +11,7 @@ interface FileInfo {
   size?: number;
 }
 
-function getFileType(name: string, url: string): FileInfo["type"] {
+function getFileType(name: string, _url: string): FileInfo["type"] {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
   if (["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico"].includes(ext)) return "image";
   if (["pdf"].includes(ext)) return "pdf";
@@ -30,11 +31,13 @@ export function FilePreview({ name, url, type, size }: FileInfo) {
           className="block overflow-hidden rounded-lg border border-[var(--color-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
           aria-label={`View ${name} full size`}
         >
-          <img
+          <Image
             src={url}
             alt={name}
+            width={320}
+            height={192}
             className="max-h-48 w-full object-cover transition-transform group-hover:scale-105"
-            loading="lazy"
+            unoptimized
           />
         </button>
         <a
@@ -62,11 +65,14 @@ export function FilePreview({ name, url, type, size }: FileInfo) {
             >
               <X size={18} />
             </button>
-            <img
+            <Image
               src={url}
               alt={name}
+              width={1200}
+              height={900}
               className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
               onClick={(e) => e.stopPropagation()}
+              unoptimized
             />
           </div>
         )}
