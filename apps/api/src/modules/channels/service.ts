@@ -10,6 +10,7 @@ interface CreateChannelInput {
   created_by: string;
   topic?: string;
   is_private?: boolean;
+  is_read_only?: boolean;
   channel_type?: "public" | "private" | "dm" | "group";
 }
 
@@ -70,6 +71,7 @@ export class ChannelService {
           created_by: input.created_by,
           topic: input.topic ?? null,
           is_private: input.is_private ?? false,
+          is_read_only: input.is_read_only ?? false,
           channel_type: input.channel_type ?? (input.is_private ? "private" : "public"),
         })
         .select("*")

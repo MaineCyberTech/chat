@@ -1,107 +1,61 @@
 "use client";
 
-import React, { useState } from "react";
-import { FileText, File, Download, X, ExternalLink } from "lucide-react";
-import Image from "next/image";
+import { useState } from "react";
+import { X, Download } from "lucide-react";
 
-interface FileInfo {
-  name: string;
+interface Props {
   url: string;
-  type: "image" | "pdf" | "code" | "other";
-  size?: number;
+  type: "image" | "video" | "audio" | "file";
+  name: string;
 }
 
-function getFileType(name: string, _url: string): FileInfo["type"] {
-  const ext = name.split(".").pop()?.toLowerCase() ?? "";
-  if (["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico"].includes(ext)) return "image";
-  if (["pdf"].includes(ext)) return "pdf";
-  if (
-    [
-      "js",
-      "ts",
-      "tsx",
-      "jsx",
-      "py",
-      "go",
-      "rs",
-      "rb",
-      "java",
-      "c",
-      "cpp",
-      "h",
-      "css",
-      "scss",
-      "html",
-      "json",
-      "yaml",
-      "toml",
-      "sh",
-      "bash",
-      "sql",
-      "md",
-    ].includes(ext)
-  )
-    return "code";
-  return "other";
-}
+export function FilePreview({ url, type, name }: Props) {
+  const [expanded, setExpanded] = useState(false);
 
-export function FilePreview({ name, url, type, size }: FileInfo) {
-  const [showFull, setShowFull] = useState(false);
-  const fileType = type ?? getFileType(name, url);
-
-  if (fileType === "image") {
+  if (type === "image") {
     return (
-      <div className="group relative mt-1 inline-block max-w-xs">
+      <div className="my-1">
         <button
-          onClick={() => setShowFull(true)}
-          className="block overflow-hidden rounded-lg border border-[var(--color-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
-          aria-label={`View ${name} full size`}
+          onClick={() => setExpanded(!expanded)}
+          className="block max-w-xs rounded-lg overflow-hidden border border-[var(--color-border-primary)] hover:opacity-90 transition-opacity"
         >
-          <Image
-            src={url}
-            alt={name}
-            width={320}
-            height={192}
-            className="max-h-48 w-full object-cover transition-transform group-hover:scale-105"
-            unoptimized
-          />
+          <img src={url} alt={name} className="max-h-48 w-auto object-cover" loading="lazy" />
         </button>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-dialog-bg)]/80 text-[var(--color-foreground-secondary)] opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:text-[var(--color-foreground-primary)]"
-          aria-label={`Download ${name}`}
-        >
-          <Download size={14} />
-        </a>
-
-        {showFull && (
+        {expanded && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)] p-4"
-            onClick={() => setShowFull(false)}
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Image preview: ${name}`}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            onClick={() => setExpanded(false)}
           >
             <button
-              onClick={() => setShowFull(false)}
-              className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-dialog-bg)] text-[var(--color-foreground-secondary)] shadow-lg hover:text-[var(--color-foreground-primary)]"
+              onClick={() => setExpanded(false)}
+              className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30"
               aria-label="Close preview"
             >
               <X size={18} />
             </button>
-            <Image
-              src={url}
-              alt={name}
-              width={1200}
-              height={900}
-              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-              unoptimized
-            />
+            <img src={url} alt={name} className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (type === "video") {
+    return (
+      <div className="my-1 max-w-md">
+        <video controls className="w-full rounded-lg border border-[var(--color-border-primary)]" preload="metadata">
+          <source src={url} />
+        </video>
+      </div>
+    );
+  }
+
+  if (type === "audio") {
+    return (
+      <div className="my-1 max-w-sm">
+        <audio controls className="w-full" preload="none">
+          <source src={url} />
+        </audio>
       </div>
     );
   }
@@ -111,18 +65,10 @@ export function FilePreview({ name, url, type, size }: FileInfo) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-1 inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] px-3 py-2 text-sm text-[var(--color-foreground-primary)] transition-colors hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+      className="my-1 inline-flex items-center gap-2 rounded-lg border border-[var(--color-border-primary)] px-3 py-2 text-sm text-[var(--color-brand-primary)] hover:bg-[var(--color-background-tertiary)]"
     >
-      {fileType === "pdf" ? <FileText size={16} /> : <File size={16} />}
-      <span className="max-w-[200px] truncate">{name}</span>
-      {size && (
-        <span className="text-xs text-[var(--color-foreground-tertiary)]">
-          {size > 1024 * 1024
-            ? `${(size / (1024 * 1024)).toFixed(1)} MB`
-            : `${(size / 1024).toFixed(0)} KB`}
-        </span>
-      )}
-      <ExternalLink size={12} className="text-[var(--color-foreground-tertiary)]" />
+      <Download size={14} />
+      {name}
     </a>
   );
 }

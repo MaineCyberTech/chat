@@ -1,84 +1,72 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
+import { requireChannelAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
-import { notificationService } from "./service.js";
-import { pushSubscriptionService } from "./push-subscription-service.js";
-import { z } from "zod";
+import { getSupabase } from "../../lib/supabase.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
 
-const pushSubscriptionSchema = z.object({
-  endpoint: z.string().url(),
-  p256dh: z.string().min(1),
-  auth: z.string().min(1),
-  user_agent: z.string().optional(),
-});
+// Get notification preference for a channel
+router.get(
+  "/channels/:id/notification-preference",
+  validateUuidParam("id"),
+  requireChannelAccess("id"),
+  async (req, res) => {
+    const supabase = getSupabase();
+    const { data } = await supabase
+      .from("channel_notification_preferences")
+      .select("notify, notify_sound")
+      .eq("channel_id", req.params.id)
+      .eq("user_id", req.userId)
+      .single();
+    res.json({ preference: data ?? { notify: true, notify_sound: true } });
+  },
+);
 
-// Push subscription routes
-router.post("/push-subscriptions", async (req, res) => {
-  const parsed = pushSubscriptionSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
-  }
-  const subscription = await pushSubscriptionService.create(req.userId!, parsed.data);
-  res.status(201).json({ subscription });
-});
+// Upsert notification preference
+router.put(
+  "/channels/:id/notification-preference",
+  validateUuidParam("id"),
+  requireChannelAccess("id"),
+  async (req, res) => {
+    const { notify, notify_sound } = req.body as { notify?: boolean; notify_sound?: boolean };
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("channel_notification_preferences")
+      .upsert(
+        {
+          user_id: req.userId,
+          channel_id: req.params.id,
+          notify: notify ?? true,
+          notify_sound: notify_sound ?? true,
+        },
+        { onConflict: "user_id,channel_id" },
+      )
+      .select("*")
+      .single();
+    if (error) {
+      res.status(500).json({ error: { code: "UPDATE_FAILED", message: error.message } });
+      return;
+    }
+    res.json({ preference: data });
+  },
+);
 
-router.get("/push-subscriptions", async (req, res) => {
-  const subscriptions = await pushSubscriptionService.list(req.userId!);
-  res.json({ subscriptions });
-});
-
-router.delete("/push-subscriptions/:id", validateUuidParam("id"), async (req, res) => {
-  const deleted = await pushSubscriptionService.delete(req.userId!, req.params.id as string);
-  if (!deleted) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Subscription not found" } });
-    return;
-  }
-  res.status(204).send();
-});
-
-// VAPID public key for frontend
-router.get("/push-subscriptions/vapid-key", async (_req, res) => {
-  const publicKey = pushSubscriptionService.getVapidPublicKey();
-  res.json({ publicKey });
-});
-
-// Existing notification routes
-router.get("/notifications", async (req, res) => {
-  const { workspace_id } = req.query;
-  const notifications = await notificationService.list(
-    req.userId!,
-    workspace_id as string | undefined,
-  );
-  const unread = await notificationService.unreadCount(
-    req.userId!,
-    workspace_id as string | undefined,
-  );
-  res.json({ notifications, unread });
-});
-
-router.get("/notifications/unread", async (_req, res) => {
-  const { workspace_id } = _req.query;
-  const count = await notificationService.unreadCount(
-    _req.userId!,
-    workspace_id as string | undefined,
-  );
-  res.json({ unread: count });
-});
-
-router.patch("/notifications/:id/read", validateUuidParam("id"), async (req, res) => {
-  await notificationService.markRead(req.userId!, req.params.id as string);
-  res.status(204).send();
-});
-
-router.post("/notifications/read-all", async (req, res) => {
-  await notificationService.markAllRead(req.userId!);
-  res.status(204).send();
-});
+// Delete notification preference (reset to defaults)
+router.delete(
+  "/channels/:id/notification-preference",
+  validateUuidParam("id"),
+  requireChannelAccess("id"),
+  async (req, res) => {
+    const supabase = getSupabase();
+    await supabase
+      .from("channel_notification_preferences")
+      .delete()
+      .eq("channel_id", req.params.id)
+      .eq("user_id", req.userId);
+    res.status(204).send();
+  },
+);
 
 export default router;

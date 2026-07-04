@@ -10,8 +10,9 @@ import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { ThreadPanel } from "./thread-panel";
 import { SearchBar } from "./search-bar";
-import { Badge, Skeleton, useToast } from "@chat/ui";
-import { X, Phone, ArrowLeft, ExternalLink } from "lucide-react";
+import { Skeleton, useToast } from "@chat/ui";
+import { X, Phone, ArrowLeft, ExternalLink, Bell, BellOff, Info } from "lucide-react";
+import { ChannelInfo } from "./channel-info";
 import type { Message, UserProfile } from "@chat/db";
 import type { Socket } from "socket.io-client";
 
@@ -86,6 +87,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const [profiles, setProfiles] = useState<Map<string, UserProfile>>(new Map());
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
+  const [channelMuted, setChannelMuted] = useState(false);
+  const [showChannelInfo, setShowChannelInfo] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
   const { addToast } = useToast();
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -437,41 +440,66 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   return (
     <div className="flex h-full">
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-3 md:gap-3 md:px-6">
+        <div className="flex shrink-0 items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:gap-3 md:px-6">
           <h1 className="min-w-0 truncate text-base font-semibold md:text-lg"># {channelName}</h1>
-          <Badge variant="success">{onlineCount} online</Badge>
+          <span className="hidden md:inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200">{onlineCount} online</span>
           <span className="hidden text-xs text-[var(--color-foreground-tertiary)] md:inline">
             {memberCount} members
           </span>
-          <button
-            onClick={() => startCall(channelId)}
-            className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-xs text-white hover:opacity-90"
-            aria-label="Start audio/video call"
-            title="Start call"
-          >
-            <Phone size={14} />
-          </button>
-          <button
-            onClick={() => {
-              const url = `${window.location.origin}/${workspaceSlug}/${channelId}`;
-              window.open(
-                url,
-                `chat-${channelId}`,
-                "width=1200,height=800,menubar=no,toolbar=no,location=no,status=no",
-              );
-            }}
-            className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-            aria-label="Open channel in new window"
-            title="Popout channel"
-          >
-            <ExternalLink size={14} />
-          </button>
-          <div className="mt-2 w-full md:mt-0 md:ml-auto md:w-64">
-            {workspaceId && workspaceSlug && (
-              <SearchBar workspaceId={workspaceId} workspaceSlug={workspaceSlug} />
-            )}
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={async () => {
+                try {
+                  if (channelMuted) {
+                    await api.delete(`/channels/${channelId}/notification-preference`);
+                  } else {
+                    await api.put(`/channels/${channelId}/notification-preference`, { notify: false });
+                  }
+                  setChannelMuted(!channelMuted);
+                  addToast({ title: channelMuted ? "Unmuted channel" : "Muted channel", variant: "success", duration: 2000 });
+                } catch {
+                  addToast({ title: "Error", description: "Failed to update notification preference", variant: "error" });
+                }
+              }}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${channelMuted ? "text-[var(--color-status-danger-fg)]" : "text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"}`}
+              aria-label={channelMuted ? "Unmute channel" : "Mute channel"}
+              title={channelMuted ? "Unmute channel" : "Mute channel"}
+            >
+              {channelMuted ? <BellOff size={14} /> : <Bell size={14} />}
+            </button>
+            <button
+              onClick={() => setShowChannelInfo(!showChannelInfo)}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg ${showChannelInfo ? "bg-[var(--color-background-tertiary)] text-[var(--color-brand-primary)]" : "text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"}`}
+              aria-label={showChannelInfo ? "Close channel info" : "Channel info"}
+              title="Channel info"
+            >
+              <Info size={14} />
+            </button>
+            <button
+              onClick={() => startCall(channelId)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-xs text-white hover:opacity-90"
+              aria-label="Start audio/video call"
+              title="Start call"
+            >
+              <Phone size={14} />
+            </button>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/${workspaceSlug}/${channelId}`;
+                window.open(url, `chat-${channelId}`, "width=1200,height=800,menubar=no,toolbar=no,location=no,status=no");
+              }}
+              className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+              aria-label="Open channel in new window"
+            >
+              <ExternalLink size={14} />
+            </button>
           </div>
-          <div className="relative w-full md:w-48">
+        </div>
+        <div className="hidden md:flex shrink-0 items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:px-6">
+          {workspaceId && workspaceSlug && (
+            <SearchBar workspaceId={workspaceId} workspaceSlug={workspaceSlug} />
+          )}
+          <div className="relative ml-auto w-48">
             <input
               type="text"
               value={filterQuery}
@@ -596,6 +624,13 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             </div>
           </div>
         </>
+      )}
+
+      {/* Channel Info sidebar (desktop only) */}
+      {showChannelInfo && (
+        <div className="hidden md:block">
+          <ChannelInfo channelId={channelId} onClose={() => setShowChannelInfo(false)} />
+        </div>
       )}
 
       {activeRoom && <MediaRoom roomName={activeRoom} onLeave={endCall} />}

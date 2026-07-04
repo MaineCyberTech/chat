@@ -4,6 +4,10 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Avatar, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
 import { Reply, Pencil, X, Smile, Copy, Trash2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { CodeBlock } from "./code-block";
+import { FilePreview } from "./file-preview";
 import type { Message, UserProfile } from "@chat/db";
 
 const GROUP_GAP_MS = 5 * 60 * 1000;
@@ -181,7 +185,9 @@ const MessageItem = React.memo(function MessageItem({
       >
         <div className={`flex w-9 shrink-0 ${isOwn ? "ml-2" : "mr-2"}`}>
           {showAuthor ? (
-            <Avatar src={avatar} fallback={name.charAt(0).toUpperCase()} size="sm" />
+            <div className="shrink-0">
+              <Avatar src={avatar} fallback={name.charAt(0).toUpperCase()} size="sm" />
+            </div>
           ) : (
             <div className="w-8" />
           )}
@@ -246,7 +252,34 @@ const MessageItem = React.memo(function MessageItem({
                     <Reply size={12} className="mr-0.5 inline" /> Reply
                   </p>
                 )}
-                <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
+                <div className="text-sm break-words">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      a: ({ href, children }) => {
+                        if (!href) return <>{children}</>;
+                        const isImage = /\.(png|jpg|jpeg|gif|webp|svg|bmp)(\?.*)?$/i.test(href);
+                        const isVideo = /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(href);
+                        const isAudio = /\.(mp3|wav|ogg|m4a)(\?.*)?$/i.test(href);
+                        const fileName = href.split("/").pop() ?? "file";
+                        if (isImage) return <FilePreview url={href} type="image" name={fileName} />;
+                        if (isVideo) return <FilePreview url={href} type="video" name={fileName} />;
+                        if (isAudio) return <FilePreview url={href} type="audio" name={fileName} />;
+                        return <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand-primary)] underline">{children}</a>;
+                      },
+                      code: ({ className, children }) => {
+                        const match = /language-(\w+)/.exec(className ?? "");
+                        const code = String(children).replace(/\n$/, "");
+                        if (match) return <CodeBlock code={code} language={match[1]} />;
+                        return <code className="rounded bg-[var(--color-background-tertiary)] px-1 py-0.5 font-mono text-xs">{children}</code>;
+                      },
+                      pre: ({ children }) => <>{children}</>,
+                      img: ({ src, alt }) => src ? <FilePreview url={String(src)} type="image" name={alt ?? "image"} /> : null,
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
                 {msg.edited_at && <p className="mt-0.5 text-xs opacity-70">edited</p>}
                 {sendingIds?.has(msg.id) && (
                   <p className="mt-0.5 text-xs italic opacity-60">sending...</p>
@@ -678,19 +711,21 @@ export function MessageList({
 
   if (messages.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-[var(--color-foreground-tertiary)]">
-          No messages yet. Start the conversation!
-        </p>
+      <div className="relative flex-1 overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <p className="text-sm text-[var(--color-foreground-tertiary)]">
+            No messages yet. Start the conversation!
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative flex-1">
+    <div className="relative flex-1 overflow-hidden">
       <div
         ref={listRef}
-        className="h-full overflow-y-auto overscroll-contain md:pb-0"
+        className="absolute inset-0 overflow-y-auto overscroll-contain"
         style={{ paddingBottom: "var(--bottom-nav-height)" }}
       >
         {loadingOlder && (
@@ -717,10 +752,10 @@ export function MessageList({
             onDelete={onDelete}
             onThreadOpen={onThreadOpen}
             onStartEdit={(m) => startEdit(m)}
-            onMessageContextMenu={handleContextMenu}
-            onMessageTouchStart={handleTouchStart}
-            onMessageTouchEnd={handleTouchEnd}
-            onMessageTouchMove={handleTouchMove}
+                  onMessageContextMenu={handleContextMenu}
+                  onMessageTouchStart={handleTouchStart}
+                  onMessageTouchEnd={handleTouchEnd}
+                  onMessageTouchMove={handleTouchMove}
             onSubmitEdit={submitEdit}
             onCancelEdit={handleCancelEdit}
             onSetEditContent={setEditContent}
@@ -792,7 +827,7 @@ export function MessageList({
           </button>
           <button
             onClick={() => {
-              const permalink = `${window.location.origin}/channels/${contextMenu.message.channel_id}/${contextMenu.message.id}`;
+              const permalink = `${window.location.origin}/pl/${contextMenu.message.id}`;
               navigator.clipboard
                 .writeText(permalink)
                 .then(() => {
