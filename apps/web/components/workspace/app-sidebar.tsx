@@ -9,7 +9,7 @@ import { ChannelList } from "@/components/channel/channel-list";
 import { CreateChannelDialog } from "@/components/channel/create-channel-dialog";
 import { Avatar } from "@chat/ui";
 import { SidebarGroup } from "@chat/ui";
-import { PanelLeftClose, PanelLeft, Settings } from "lucide-react";
+import { Bookmark, PanelLeftClose, PanelLeft, Settings } from "lucide-react";
 import type { Channel, Workspace } from "@chat/db";
 import { api } from "@/lib/api";
 
@@ -404,6 +404,19 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                   />
                 </div>
               )}
+            </SidebarGroup>
+          )}
+
+          {/* Saved Messages section */}
+          {workspaceSlug && (
+            <SidebarGroup title="Saved" defaultOpen>
+              <Link
+                href={`/${workspaceSlug}/saved`}
+                className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-[var(--color-foreground-secondary)] transition-colors hover:bg-[var(--color-background-tertiary)]"
+              >
+                <Bookmark size={14} />
+                <span>Saved Messages</span>
+              </Link>
             </SidebarGroup>
           )}
 

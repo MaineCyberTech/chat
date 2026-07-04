@@ -249,6 +249,8 @@ export function MessageInput({
   const [loadedDraft, setLoadedDraft] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
+  const [showMentionWarning, setShowMentionWarning] = useState(false);
+  const [pendingMentionText, setPendingMentionText] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [showFormatting, setShowFormatting] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -524,6 +526,15 @@ export function MessageInput({
       }
     }
 
+    // Check for @everyone/@here mention warning
+    const hasEveryone = /\B@everyone\b/.test(text);
+    const hasHere = /\B@here\b/.test(text);
+    if ((hasEveryone || hasHere) && !showMentionWarning) {
+      setPendingMentionText(text);
+      setShowMentionWarning(true);
+      return;
+    }
+
     setSending(true);
     setSendError("");
     try {
@@ -543,7 +554,7 @@ export function MessageInput({
     } finally {
       setSending(false);
     }
-  }, [content, files, onSend, onFileUpload, onTypingStop, channelId, sending]);
+  }, [content, files, onSend, onFileUpload, onTypingStop, channelId, sending, showMentionWarning]);
 
   // Drag-drop handlers
   useEffect(() => {
@@ -566,12 +577,40 @@ export function MessageInput({
     el.addEventListener("dragover", onDragOver);
     el.addEventListener("dragleave", onDragLeave);
     el.addEventListener("drop", onDrop);
-    return () => {
-      el.removeEventListener("dragover", onDragOver);
-      el.removeEventListener("dragleave", onDragLeave);
-      el.removeEventListener("drop", onDrop);
-    };
   }, [onFileUpload]);
+
+  function confirmMentionSend() {
+    setShowMentionWarning(false);
+    const text = pendingMentionText || content;
+    setPendingMentionText("");
+    // Re-trigger submit via the parent's onSend
+    setSending(true);
+    setSendError("");
+    (async () => {
+      try {
+        if (text) await onSend(text);
+        if (files.length > 0 && onFileUpload) {
+          for (const file of files) await onFileUpload(file);
+        }
+        setContent("");
+        setFiles([]);
+        localStorage.removeItem(`${DRAFT_KEY_PREFIX}${channelId}`);
+        if (onTypingStop) onTypingStop();
+        textareaRef.current?.focus();
+      } catch {
+        const msg = "Failed to send message. Please try again.";
+        setSendError(msg);
+        addToast({ title: "Error", description: msg, variant: "error" });
+      } finally {
+        setSending(false);
+      }
+    })();
+  }
+
+  function cancelMentionSend() {
+    setShowMentionWarning(false);
+    setPendingMentionText("");
+  }
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
@@ -828,6 +867,35 @@ export function MessageInput({
           {sendError}
         </p>
       )}
+
+      {/* @everyone/@here confirmation dialog */}
+      {showMentionWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)] p-4">
+          <div className="max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]" role="alertdialog">
+            <h2 className="text-sm font-semibold text-[var(--color-foreground-primary)]">
+              Notify all channel members?
+            </h2>
+            <p className="mt-2 text-xs text-[var(--color-foreground-secondary)]">
+              Your message contains <strong>@everyone</strong> or <strong>@here</strong>, which will notify all members of this channel. Are you sure you want to send it?
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={cancelMentionSend}
+                className="rounded-lg border border-[var(--color-border-primary)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmMentionSend}
+                className="rounded-lg bg-[var(--color-brand-primary)] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+              >
+                Send anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {typingUsers && typingUsers.length > 0 && (
         <p
           className="mt-1 text-xs text-[var(--color-foreground-tertiary)]"

@@ -679,6 +679,51 @@ Full end-to-end test completed successfully:
 - **`setup-dev.sh` uses wrong migration paths** — `packages/db/sql/migrations/*.sql` doesn't exist (PowerShell version uses `supabase/migrations/*.sql` correctly)
 - **`aggregate_runs.py`** — Created to combine all run summaries into `latest_run.json` for gate evaluation. Reads all `docs/audits/runs/*/summaries/*_summary.json` files.
 
+## Remaining Feature Work
+
+### Tier 1 — API/DB Ready, Need UI (Highest Priority)
+
+| Feature | Status | Backend | Frontend |
+|---------|--------|---------|----------|
+| **Saved/Flagged Messages View** | ✅ API+DB+SDK done | `message_flags` table, SDK methods, API routes | Sidebar section + flagged page |
+| **@everyone/@here Confirmation** | ✅ Mention parser done | `mentions/parser.ts` supports @everyone/@here | Confirmation dialog before send |
+| **Quick Channel Switcher (Ctrl+K)** | 🟡 Partial | Channel list API exists | Modal with fuzzy-search |
+| **Drag-and-Drop File Upload** | ✅ Upload API done | `/messages/upload` endpoint | Visual drop zone overlay |
+| **Invite System UX** | ✅ Member APIs done | Member CRUD endpoints, RLS policies | Modal with search + multi-select |
+
+### Tier 2 — Medium Impact Features
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Channel Intro Message** | 🔴 Not started | Show channel purpose + member count at top of empty channels |
+| **GIF Picker** | 🔴 Not started | `/gif` slash command exists but no UI — searchable picker modal |
+| **Notification Sounds** | 🟡 DB column exists | `channel_notification_preferences.notify_sound` — needs audio assets + playback |
+| **Message Priority Badges** | 🔴 Not started | Add urgent/important badges with colored indicators |
+| **Expanded Keyboard Shortcuts** | 🟡 8 done (of ~40) | Add Ctrl+Shift+U (upload), Ctrl+Shift+M (DM), Ctrl+Shift+] (next channel), etc. |
+| **Drafts Persistence + Sidebar** | 🟡 localStorage only | Server-side drafts table, drafts section in sidebar |
+
+### Tier 3 — Larger Efforts
+
+| Feature | Notes |
+|---------|-------|
+| **Message Reminders** | New DB table + worker processor + UI modal with preset times |
+| **Custom Emoji** | Upload API, emoji management UI, picker integration |
+| **User Groups** | @groupname mentions with CRUD UI |
+| **WYSIWYG Rich Text Editor** | Toggle between markdown and rich text modes |
+| **Notification Preferences Page** | Per-channel notification settings UI |
+| **Channel Export (CSV/JSON)** | Export job in worker with download UI |
+| **Mobile-Specific Views** | Dedicated mobile channel header, sidebar, and views |
+
+### Infrastructure & CI Remaining
+
+- **`hardening.yml` CI workflow broken** — references nonexistent scripts
+- **Migration rollback scripts** — Supabase CLI lacks native rollback; document manual process
+- **DO monitoring alerts** — CPU >80%, memory >80%
+- **E2E tests for messaging/WebSocket flow**
+- **E2E tests for file upload**
+- **Diff coverage checking**
+- **Pre-commit hook with eslint + typecheck** (currently prettier only)
+
 ## Local Development
 
 ```powershell
