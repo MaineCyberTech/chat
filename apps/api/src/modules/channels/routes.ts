@@ -184,7 +184,7 @@ router.post(
   },
 );
 
-// DM channel endpoints
+// DM/GM channel endpoints
 router.post(
   "/workspaces/:workspaceId/dm",
   validateUuidParam("workspaceId"),
@@ -202,7 +202,37 @@ router.post(
       req.supabase,
     );
     if (!channel) {
-      res.status(500).json({ error: { code: "CREATE_FAILED", message: "Could not create DM channel" } });
+      res
+        .status(500)
+        .json({ error: { code: "CREATE_FAILED", message: "Could not create DM channel" } });
+      return;
+    }
+    res.status(201).json({ channel });
+  },
+);
+
+router.post(
+  "/workspaces/:workspaceId/gm",
+  validateUuidParam("workspaceId"),
+  requireWorkspaceMembership("workspaceId"),
+  async (req, res) => {
+    const { targetUserIds } = req.body;
+    if (!targetUserIds || !Array.isArray(targetUserIds) || targetUserIds.length < 1) {
+      res
+        .status(400)
+        .json({ error: { code: "INVALID_INPUT", message: "targetUserIds array required" } });
+      return;
+    }
+    const channel = await channelService.createGroupChannel(
+      req.params.workspaceId as string,
+      req.userId!,
+      targetUserIds,
+      req.supabase,
+    );
+    if (!channel) {
+      res
+        .status(500)
+        .json({ error: { code: "CREATE_FAILED", message: "Could not create group channel" } });
       return;
     }
     res.status(201).json({ channel });
@@ -210,13 +240,10 @@ router.post(
 );
 
 // Get DM channels for current user
-router.get(
-  "/dm-channels",
-  async (req, res) => {
-    const channels = await channelService.listDmChannels(req.userId!, req.supabase);
-    res.json({ channels });
-  },
-);
+router.get("/dm-channels", async (req, res) => {
+  const channels = await channelService.listDmChannels(req.userId!, req.supabase);
+  res.json({ channels });
+});
 
 // Get workspace channel IDs (for sidebar categorization)
 router.get(
@@ -235,8 +262,8 @@ router.get(
   validateUuidParam("id"),
   requireChannelAccess("id"),
   async (req, res) => {
-    const { data: bookmarks } = await req.supabase!
-      .from("channel_bookmarks")
+    const { data: bookmarks } = await req
+      .supabase!.from("channel_bookmarks")
       .select("*")
       .eq("channel_id", req.params.id as string)
       .order("sort_order", { ascending: true });
@@ -254,8 +281,8 @@ router.post(
       res.status(400).json({ error: { code: "INVALID_INPUT", message: "title required" } });
       return;
     }
-    const { data: bookmark, error } = await req.supabase!
-      .from("channel_bookmarks")
+    const { data: bookmark, error } = await req
+      .supabase!.from("channel_bookmarks")
       .insert({
         channel_id: req.params.id as string,
         message_id: messageId ?? null,
@@ -268,7 +295,9 @@ router.post(
       .single();
 
     if (error || !bookmark) {
-      res.status(500).json({ error: { code: "CREATE_FAILED", message: "Could not create bookmark" } });
+      res
+        .status(500)
+        .json({ error: { code: "CREATE_FAILED", message: "Could not create bookmark" } });
       return;
     }
     res.status(201).json({ bookmark });
@@ -281,8 +310,8 @@ router.delete(
   validateUuidParam("bookmarkId"),
   requireChannelAccess("id"),
   async (req, res) => {
-    const { error } = await req.supabase!
-      .from("channel_bookmarks")
+    const { error } = await req
+      .supabase!.from("channel_bookmarks")
       .delete()
       .eq("id", req.params.bookmarkId as string);
     if (error) {

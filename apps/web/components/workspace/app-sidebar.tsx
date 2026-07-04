@@ -33,12 +33,13 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [dmChannels, setDmChannels] = useState<Channel[]>([]);
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [chatUsers, setChatUsers] = useState<{ id: string; display_name: string }[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [userStatus, setUserStatus] = useState<{ status: string; custom_status?: string }>({
     status: "online",
   });
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const statusMenuRef = useRef<HTMLDivElement>(null);
-// Auto-collapse sidebar at md breakpoint (768px) for tablet layout
+  // Auto-collapse sidebar at md breakpoint (768px) for tablet layout
   // Respects user manual toggles — won't override after first user interaction
   useEffect(() => {
     function handleResize() {
@@ -124,6 +125,34 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     } catch {
       console.warn("Failed to create DM channel");
     }
+  }
+
+  async function createGroupChat() {
+    if (!workspace || selectedUserIds.size === 0) return;
+    const targetUserIds = Array.from(selectedUserIds);
+    try {
+      const res = await api.post<{ channel: Channel }>(`/workspaces/${workspace.id}/gm`, {
+        targetUserIds,
+      });
+      setDmChannels((prev) => {
+        if (prev.find((c) => c.id === res.channel.id)) return prev;
+        return [res.channel, ...prev];
+      });
+      setShowUserPicker(false);
+      setSelectedUserIds(new Set());
+      window.location.href = `/${workspaceSlug}/${res.channel.slug}`;
+    } catch {
+      console.warn("Failed to create group chat");
+    }
+  }
+
+  function toggleUserSelection(userId: string) {
+    setSelectedUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
   }
 
   // Fetch user status
@@ -269,7 +298,10 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           )}
           {collapsed && (
             <button
-              onClick={() => { userToggledRef.current = true; setCollapsed(false); }}
+              onClick={() => {
+                userToggledRef.current = true;
+                setCollapsed(false);
+              }}
               className="mx-auto flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
               aria-label="Expand sidebar"
             >
@@ -279,7 +311,10 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           {!collapsed && (
             <>
               <button
-                onClick={() => { userToggledRef.current = true; setCollapsed(true); }}
+                onClick={() => {
+                  userToggledRef.current = true;
+                  setCollapsed(true);
+                }}
                 className="hidden min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg p-2 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] md:flex"
                 aria-label="Collapse sidebar"
               >
@@ -408,13 +443,16 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
             </SidebarGroup>
           )}
 
-          {/* User picker for starting DM */}
+          {/* User picker for starting DM or GM */}
           {showUserPicker && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)] p-4">
               <div className="w-full max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]">
                 <h3 className="mb-2 text-sm font-semibold text-[var(--color-foreground-primary)]">
                   Start a conversation
                 </h3>
+                <p className="mb-2 text-xs text-[var(--color-foreground-tertiary)]">
+                  Click a name for a DM, or select multiple for a group chat
+                </p>
                 <div className="max-h-48 space-y-0.5 overflow-y-auto">
                   {chatUsers.length === 0 && (
                     <p className="text-xs text-[var(--color-foreground-tertiary)]">
@@ -424,19 +462,45 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                   {chatUsers.map((u) => (
                     <button
                       key={u.id}
-                      onClick={() => startDm(u.id)}
-                      className="w-full rounded-md px-3 py-1.5 text-left text-sm text-[var(--color-foreground-primary)] transition-colors hover:bg-[var(--color-background-tertiary)]"
+                      onClick={() => {
+                        if (selectedUserIds.size === 0) {
+                          startDm(u.id);
+                        } else {
+                          toggleUserSelection(u.id);
+                        }
+                      }}
+                      className={`w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors hover:bg-[var(--color-background-tertiary)] ${
+                        selectedUserIds.has(u.id)
+                          ? "bg-[var(--color-brand-primary-light)] text-[var(--color-brand-primary)]"
+                          : "text-[var(--color-foreground-primary)]"
+                      }`}
                     >
+                      <span className="mr-2">{selectedUserIds.has(u.id) ? "✓" : "+"}</span>
                       {u.display_name ?? u.id.slice(0, 8)}
                     </button>
                   ))}
                 </div>
-                <button
-                  onClick={() => setShowUserPicker(false)}
-                  className="mt-2 w-full rounded-md bg-[var(--color-background-tertiary)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
-                >
-                  Cancel
-                </button>
+                <div className="mt-3 flex gap-2">
+                  {selectedUserIds.size > 0 && (
+                    <button
+                      onClick={createGroupChat}
+                      className="flex-1 rounded-md bg-[var(--color-brand-primary)] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                    >
+                      Start group ({selectedUserIds.size})
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setShowUserPicker(false);
+                      setSelectedUserIds(new Set());
+                    }}
+                    className={`rounded-md bg-[var(--color-background-tertiary)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)] ${
+                      selectedUserIds.size > 0 ? "flex-1" : "w-full"
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           )}

@@ -26,7 +26,8 @@ export const metadata: Metadata = {
 const themeScript = `
 (function(){var t=localStorage.getItem("chat-theme")||"system";if(t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme:dark)").matches))document.documentElement.classList.add("dark")})()`;
 
-const viewportScript = "!function(){function u(){var h=window.innerHeight;document.documentElement.style.setProperty('--vh',(h/100)+'px')}u();window.addEventListener('resize',u);window.addEventListener('orientationchange',function(){setTimeout(u,100)})}()";
+const viewportScript =
+  "!function(){function u(){var h=window.innerHeight;document.documentElement.style.setProperty('--vh',(h/100)+'px')}u();window.addEventListener('resize',u);window.addEventListener('orientationchange',function(){setTimeout(u,100)})}()";
 
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
@@ -50,7 +51,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Chat Platform" />
       </head>
-      <body className="flex min-h-screen flex-col antialiased">
+      <body
+        className="flex h-screen min-h-0 flex-col overflow-hidden antialiased"
+        style={{ height: "calc(var(--vh, 1vh) * 100)" }}
+      >
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: viewportScript }} />
         <a

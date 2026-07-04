@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Avatar, Button, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
-import { X } from "lucide-react";
+import { X, ChevronDown, ChevronRight } from "lucide-react";
 import type { Message, UserProfile } from "@chat/db";
 
 interface Props {
@@ -59,6 +59,7 @@ export function ThreadPanel({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [participants, setParticipants] = useState<ParticipantInfo[]>([]);
+  const [collapsed, setCollapsed] = useState(false);
   const { addToast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
   const replyRef = useRef<HTMLTextAreaElement>(null);
@@ -193,120 +194,130 @@ export function ThreadPanel({
 
         <div className="mb-3 border-t border-[var(--color-border-primary)]" />
 
+        {/* Collapse toggle for replies */}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="mb-2 flex w-full items-center gap-1 rounded-md px-1 py-1 text-xs font-medium text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+        >
+          {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+          {replies.length} {replies.length === 1 ? "reply" : "replies"}
+        </button>
+
         {/* Replies */}
-        {isLoading ? (
-          <div className="space-y-3" aria-busy="true" aria-live="polite">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex gap-2">
-                <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--color-skeleton-bg)]" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-3 w-24 animate-pulse rounded bg-[var(--color-skeleton-bg)]" />
-                  <div className="h-4 w-full animate-pulse rounded bg-[var(--color-skeleton-bg)]" />
-                  <div className="h-4 w-3/4 animate-pulse rounded bg-[var(--color-skeleton-bg)]" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : replies.length === 0 ? (
-          <p className="text-center text-xs text-[var(--color-foreground-tertiary)]">
-            No replies yet
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {replies.map((reply) => {
-              const isOwn = reply.user_id === currentUserId;
-              const name = authorName(reply.user_id, profiles);
-              const isEditing = editingId === reply.id;
-              return (
-                <div key={reply.id} className="group flex gap-2">
-                  <Avatar
-                    src={avatarUrl(reply.user_id, profiles)}
-                    fallback={name.charAt(0).toUpperCase()}
-                    size="sm"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-[var(--color-foreground-primary)]">
-                      {name}
-                      <span className="ml-2 text-[var(--color-foreground-tertiary)]">
-                        {formatTime(reply.created_at)}
-                      </span>
-                    </p>
-                    {isEditing ? (
-                      <div className="mt-1 space-y-1">
-                        <textarea
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleEditSubmit(reply.id);
-                            }
-                            if (e.key === "Escape") {
-                              setEditingId(null);
-                            }
-                          }}
-                          className="w-full rounded border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-2 py-1 text-sm text-[var(--color-input-fg)]"
-                          rows={2}
-                          aria-label="Edit reply"
-                        />
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleEditSubmit(reply.id)}
-                            className="text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="text-xs text-[var(--color-foreground-tertiary)] hover:underline"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p
-                        className={`mt-0.5 text-sm break-words whitespace-pre-wrap ${
-                          isOwn
-                            ? "text-[var(--color-brand-primary)]"
-                            : "text-[var(--color-foreground-primary)]"
-                        }`}
-                      >
-                        {reply.content}
-                      </p>
-                    )}
-                    {reply.edited_at && (
-                      <p className="mt-0.5 text-xs text-[var(--color-foreground-tertiary)]">
-                        edited
-                      </p>
-                    )}
-                    {isOwn && !isEditing && (
-                      <div className="mt-0.5 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                        <button
-                          onClick={() => {
-                            setEditingId(reply.id);
-                            setEditContent(reply.content);
-                          }}
-                          className="text-xs text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground-primary)]"
-                          aria-label="Edit reply"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirmId(reply.id)}
-                          className="text-xs text-[var(--color-status-danger-fg)] hover:underline"
-                          aria-label="Delete reply"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
+        {!collapsed &&
+          (isLoading ? (
+            <div className="space-y-3" aria-busy="true" aria-live="polite">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex gap-2">
+                  <div className="h-8 w-8 animate-pulse rounded-full bg-[var(--color-skeleton-bg)]" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-24 animate-pulse rounded bg-[var(--color-skeleton-bg)]" />
+                    <div className="h-4 w-full animate-pulse rounded bg-[var(--color-skeleton-bg)]" />
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-[var(--color-skeleton-bg)]" />
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          ) : replies.length === 0 ? (
+            <p className="text-center text-xs text-[var(--color-foreground-tertiary)]">
+              No replies yet
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {replies.map((reply) => {
+                const isOwn = reply.user_id === currentUserId;
+                const name = authorName(reply.user_id, profiles);
+                const isEditing = editingId === reply.id;
+                return (
+                  <div key={reply.id} className="group flex gap-2">
+                    <Avatar
+                      src={avatarUrl(reply.user_id, profiles)}
+                      fallback={name.charAt(0).toUpperCase()}
+                      size="sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-[var(--color-foreground-primary)]">
+                        {name}
+                        <span className="ml-2 text-[var(--color-foreground-tertiary)]">
+                          {formatTime(reply.created_at)}
+                        </span>
+                      </p>
+                      {isEditing ? (
+                        <div className="mt-1 space-y-1">
+                          <textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleEditSubmit(reply.id);
+                              }
+                              if (e.key === "Escape") {
+                                setEditingId(null);
+                              }
+                            }}
+                            className="w-full rounded border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-2 py-1 text-sm text-[var(--color-input-fg)]"
+                            rows={2}
+                            aria-label="Edit reply"
+                          />
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleEditSubmit(reply.id)}
+                              className="text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="text-xs text-[var(--color-foreground-tertiary)] hover:underline"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p
+                          className={`mt-0.5 text-sm break-words whitespace-pre-wrap ${
+                            isOwn
+                              ? "text-[var(--color-brand-primary)]"
+                              : "text-[var(--color-foreground-primary)]"
+                          }`}
+                        >
+                          {reply.content}
+                        </p>
+                      )}
+                      {reply.edited_at && (
+                        <p className="mt-0.5 text-xs text-[var(--color-foreground-tertiary)]">
+                          edited
+                        </p>
+                      )}
+                      {isOwn && !isEditing && (
+                        <div className="mt-0.5 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            onClick={() => {
+                              setEditingId(reply.id);
+                              setEditContent(reply.content);
+                            }}
+                            className="text-xs text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground-primary)]"
+                            aria-label="Edit reply"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(reply.id)}
+                            className="text-xs text-[var(--color-status-danger-fg)] hover:underline"
+                            aria-label="Delete reply"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
 
         <div ref={bottomRef} />
       </div>

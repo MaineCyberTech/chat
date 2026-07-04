@@ -192,44 +192,44 @@ const MessageItem = React.memo(function MessageItem({
               {name}
             </p>
           )}
-          <div className="flex items-end gap-1">
-            {editingId === msg.id ? (
-              <div className="flex flex-col gap-1">
-                <div className="flex w-full gap-1">
-                  <input
-                    value={editContent}
-                    onChange={(e) => onSetEditContent(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") onCancelEdit();
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        onSubmitEdit();
-                      }
-                    }}
-                    className="flex-1 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-1 text-sm text-[var(--color-input-fg)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
-                    autoFocus
-                    aria-label="Edit message"
-                  />
-                  <button
-                    onClick={onSubmitEdit}
-                    className="shrink-0 text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={onCancelEdit}
-                    className="shrink-0 text-xs text-[var(--color-foreground-tertiary)] hover:underline"
-                  >
-                    Cancel
-                  </button>
-                </div>
-                {editError && (
-                  <p className="text-xs text-[var(--color-status-danger-fg)]" role="alert">
-                    {editError}
-                  </p>
-                )}
+          {editingId === msg.id ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex w-full gap-1">
+                <input
+                  value={editContent}
+                  onChange={(e) => onSetEditContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") onCancelEdit();
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      onSubmitEdit();
+                    }
+                  }}
+                  className="flex-1 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-1 text-sm text-[var(--color-input-fg)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
+                  autoFocus
+                  aria-label="Edit message"
+                />
+                <button
+                  onClick={onSubmitEdit}
+                  className="shrink-0 text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={onCancelEdit}
+                  className="shrink-0 text-xs text-[var(--color-foreground-tertiary)] hover:underline"
+                >
+                  Cancel
+                </button>
               </div>
-            ) : (
+              {editError && (
+                <p className="text-xs text-[var(--color-status-danger-fg)]" role="alert">
+                  {editError}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="group relative">
               <div
                 onContextMenu={(e) => onMessageContextMenu(e, msg)}
                 onTouchStart={(e) => onMessageTouchStart(e, msg)}
@@ -268,59 +268,59 @@ const MessageItem = React.memo(function MessageItem({
                   </button>
                 )}
               </div>
-            )}
-            <div
-              className={`flex shrink-0 flex-col gap-0.5 transition-opacity ${
-                isHovered || editingId === msg.id
-                  ? "opacity-100"
-                  : "opacity-100 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100"
-              }`}
-            >
-              {onReply && (
-                <button
-                  onClick={() => onReply(msg)}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none md:min-h-[36px] md:min-w-[36px]"
-                  aria-label="Reply to message"
-                >
-                  <Reply size={20} />
-                </button>
-              )}
-              <button
-                onClick={() => onSetPickerMessageId(pickerMessageId === msg.id ? null : msg.id)}
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none md:min-h-[36px] md:min-w-[36px]"
-                aria-label="Add reaction"
+              <div
+                className={`absolute -top-3 right-0 z-10 hidden items-center gap-0.5 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] px-1 py-0.5 shadow-[var(--shadow-md)] group-hover:flex ${
+                  isOwn ? "flex-row-reverse" : "flex-row"
+                }`}
               >
-                <Smile size={20} />
-              </button>
-              {isOwn && onEdit && (
+                {onReply && (
+                  <button
+                    onClick={() => onReply(msg)}
+                    className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+                    aria-label="Reply"
+                  >
+                    <Reply size={14} />
+                  </button>
+                )}
                 <button
-                  onClick={() => onStartEdit(msg)}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none md:min-h-[36px] md:min-w-[36px]"
-                  aria-label="Edit message"
+                  onClick={() => onSetPickerMessageId(pickerMessageId === msg.id ? null : msg.id)}
+                  className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+                  aria-label="Add reaction"
                 >
-                  <Pencil size={20} />
+                  <Smile size={14} />
                 </button>
-              )}
-              {isOwn && onDelete && (
-                <button
-                  onClick={() => {
-                    onSetDeleteConfirmId(msg.id);
-                  }}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-status-danger-fg)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none md:min-h-[36px] md:min-w-[36px]"
-                  aria-label="Delete message"
-                >
-                  <X size={20} />
-                </button>
-              )}
+                {isOwn && onEdit && (
+                  <button
+                    onClick={() => onStartEdit(msg)}
+                    className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+                    aria-label="Edit"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                )}
+                {isOwn && onDelete && (
+                  <button
+                    onClick={() => onSetDeleteConfirmId(msg.id)}
+                    className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-status-danger-fg)]"
+                    aria-label="Delete"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
           {aggr.length > 0 && (
             <div className="mt-1 flex flex-wrap gap-1">
               {aggr.map(({ emoji, count, hasMine }) => (
                 <button
                   key={emoji}
                   onClick={() => onToggleReaction(msg.id, emoji)}
-                  title={hasMine ? `You and ${count - 1} other${count - 1 !== 1 ? "s" : ""}` : `${count} ${count === 1 ? "person" : "people"}`}
+                  title={
+                    hasMine
+                      ? `You and ${count - 1} other${count - 1 !== 1 ? "s" : ""}`
+                      : `${count} ${count === 1 ? "person" : "people"}`
+                  }
                   className={`inline-flex min-h-[44px] min-w-[44px] items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none ${
                     hasMine
                       ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary-light)]"
@@ -646,7 +646,8 @@ export function MessageList({
     requestAnimationFrame(() => {
       if (!listRef.current) return;
       const newScrollHeight = listRef.current.scrollHeight;
-      listRef.current.scrollTop = restore.prevScrollTop + (newScrollHeight - restore.prevScrollHeight);
+      listRef.current.scrollTop =
+        restore.prevScrollTop + (newScrollHeight - restore.prevScrollHeight);
     });
     scrollRestoreRef.current = null;
   }, [messagesWithMeta.length]);
@@ -687,8 +688,11 @@ export function MessageList({
 
   return (
     <div className="relative flex-1">
-      <div ref={listRef} className="h-full overflow-y-auto overscroll-contain md:pb-0"
-        style={{ paddingBottom: 'var(--bottom-nav-height)' }}>
+      <div
+        ref={listRef}
+        className="h-full overflow-y-auto overscroll-contain md:pb-0"
+        style={{ paddingBottom: "var(--bottom-nav-height)" }}
+      >
         {loadingOlder && (
           <div className="flex justify-center py-3">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-foreground-tertiary)] border-t-transparent" />

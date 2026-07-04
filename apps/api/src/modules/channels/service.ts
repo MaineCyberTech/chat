@@ -176,51 +176,70 @@ export class ChannelService {
     targetUserId: string,
     supabase?: SupabaseClient,
   ): Promise<Channel | null> {
+    return this.createGroupChannel(workspaceId, currentUserId, [targetUserId], supabase);
+  }
+
+  async createGroupChannel(
+    workspaceId: string,
+    currentUserId: string,
+    targetUserIds: string[],
+    supabase?: SupabaseClient,
+  ): Promise<Channel | null> {
     const client = this.getClient(supabase);
+    const allUserIds = [currentUserId, ...targetUserIds.filter((id) => id !== currentUserId)];
+    const isDm = allUserIds.length === 2;
 
-    // Check if DM channel already exists
-    const { data: existingDm } = await client
-      .from("dm_channels")
-      .select("channel_id")
-      .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${currentUserId})`)
-      .maybeSingle();
+    if (isDm) {
+      // Check if 2-person DM already exists via dm_members
+      const { data: existing } = await client
+        .from("dm_members")
+        .select("channel_id")
+        .eq("user_id", allUserIds[0]);
 
-    if (existingDm) {
-      const { data: existingChannel } = await client
-        .from("channels")
-        .select("*")
-        .eq("id", existingDm.channel_id)
-        .single();
-      if (existingChannel) return existingChannel as Channel;
+      if (existing) {
+        const existingIds = existing.map((r: { channel_id: string }) => r.channel_id);
+        const { data: mutual } = await client
+          .from("dm_members")
+          .select("channel_id")
+          .in("channel_id", existingIds)
+          .eq("user_id", allUserIds[1]);
+
+        if (mutual && mutual.length > 0) {
+          const { data: existingChannel } = await client
+            .from("channels")
+            .select("*")
+            .eq("id", mutual[0].channel_id)
+            .single();
+          if (existingChannel && existingChannel.channel_type !== "group") {
+            return existingChannel as Channel;
+          }
+        }
+      }
     }
 
-    // Create the channel
+    const channelName = isDm
+      ? `dm-${currentUserId.slice(0, 8)}-${targetUserIds[0].slice(0, 8)}`
+      : `gm-${allUserIds.map((id) => id.slice(0, 4)).join("-")}`;
+
     const channel = await this.create(
       {
-        name: `dm-${currentUserId.slice(0, 8)}-${targetUserId.slice(0, 8)}`,
+        name: channelName,
         workspace_id: workspaceId,
         created_by: currentUserId,
         is_private: true,
-        channel_type: "dm",
+        channel_type: isDm ? "dm" : "group",
       },
       client,
     );
 
     if (!channel) return null;
 
-    // Add both users as members
-    await this.addMember(channel.id, currentUserId);
-    await this.addMember(channel.id, targetUserId);
-
-    // Create dm_channels record
-    const { error: dmError } = await client.from("dm_channels").insert({
-      channel_id: channel.id,
-      user1_id: currentUserId,
-      user2_id: targetUserId,
-    });
-
-    if (dmError) {
-      logger.error("Failed to create dm_channels record", { error: dmError });
+    // Add all users as channel members and dm_members
+    for (const userId of allUserIds) {
+      await this.addMember(channel.id, userId);
+      await client
+        .from("dm_members")
+        .upsert({ channel_id: channel.id, user_id: userId }, { onConflict: "channel_id,user_id" });
     }
 
     return channel;
@@ -230,9 +249,9 @@ export class ChannelService {
     const client = this.getClient(supabase);
 
     const { data: dmRecords } = await client
-      .from("dm_channels")
+      .from("dm_members")
       .select("channel_id")
-      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+      .eq("user_id", userId);
 
     if (!dmRecords || dmRecords.length === 0) return [];
 
@@ -242,6 +261,7 @@ export class ChannelService {
       .select("*")
       .in("id", channelIds)
       .is("deleted_at", null)
+      .in("channel_type", ["dm", "group"])
       .order("created_at", { ascending: false });
 
     return (channels ?? []) as Channel[];

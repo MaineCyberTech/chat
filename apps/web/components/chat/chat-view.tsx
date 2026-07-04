@@ -11,7 +11,7 @@ import { MessageInput } from "./message-input";
 import { ThreadPanel } from "./thread-panel";
 import { SearchBar } from "./search-bar";
 import { Badge, Skeleton, useToast } from "@chat/ui";
-import { X, Phone, ArrowLeft } from "lucide-react";
+import { X, Phone, ArrowLeft, ExternalLink } from "lucide-react";
 import type { Message, UserProfile } from "@chat/db";
 import type { Socket } from "socket.io-client";
 
@@ -451,6 +451,21 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           >
             <Phone size={14} />
           </button>
+          <button
+            onClick={() => {
+              const url = `${window.location.origin}/${workspaceSlug}/${channelId}`;
+              window.open(
+                url,
+                `chat-${channelId}`,
+                "width=1200,height=800,menubar=no,toolbar=no,location=no,status=no",
+              );
+            }}
+            className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+            aria-label="Open channel in new window"
+            title="Popout channel"
+          >
+            <ExternalLink size={14} />
+          </button>
           <div className="mt-2 w-full md:mt-0 md:ml-auto md:w-64">
             {workspaceId && workspaceSlug && (
               <SearchBar workspaceId={workspaceId} workspaceSlug={workspaceSlug} />
@@ -489,7 +504,13 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           className="min-h-0 flex-1"
         >
           <MessageList
-            messages={filterQuery ? messages.filter((m) => m.content.toLowerCase().includes(filterQuery.toLowerCase())) : messages}
+            messages={
+              filterQuery
+                ? messages.filter((m) =>
+                    m.content.toLowerCase().includes(filterQuery.toLowerCase()),
+                  )
+                : messages
+            }
             currentUserId={user?.id}
             profiles={profiles}
             onReply={setReplyTo}
