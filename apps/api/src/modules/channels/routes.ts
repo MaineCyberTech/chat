@@ -103,6 +103,12 @@ router.patch(
     }
     const channel = await channelService.update(req.params.id as string, parsed.data);
     if (!channel) {
+      if (parsed.data.version !== undefined) {
+        res
+          .status(409)
+          .json({ error: { code: "CONFLICT", message: "Channel was modified by another user" } });
+        return;
+      }
       res.status(404).json({ error: { code: "NOT_FOUND", message: "Channel not found" } });
       return;
     }

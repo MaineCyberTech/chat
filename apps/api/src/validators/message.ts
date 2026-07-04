@@ -7,6 +7,7 @@ export const createMessageSchema = z.object({
 
 export const updateMessageSchema = z.object({
   content: z.string().min(1).max(4000),
+  version: z.number().int().positive().optional(),
 });
 
 export const searchQuerySchema = z.object({

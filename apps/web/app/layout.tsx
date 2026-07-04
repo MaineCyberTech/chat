@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import * as Sentry from "@sentry/nextjs";
+import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { AuthProvider } from "@/components/auth/auth-context";
 import { AppHeader } from "@/components/app-header";
 import { ThemeProvider } from "@chat/ui";
@@ -60,9 +61,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AuthProvider>
               <ToastProvider>
                 <AppHeader />
-                <main id="main-content" className="min-h-[calc(var(--vh)-4rem)]">
-                  {children}
-                </main>
+                <ErrorBoundary>
+                  <main id="main-content" className="min-h-[calc(var(--vh)-4rem)]">
+                    {children}
+                  </main>
+                </ErrorBoundary>
                 <VersionBadge />
                 <CookieBanner />
                 <KeyboardShortcuts />

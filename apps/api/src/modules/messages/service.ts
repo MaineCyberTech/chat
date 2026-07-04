@@ -149,14 +149,19 @@ export class MessageService {
     messageId: string,
     content: string,
     supabase?: SupabaseClient,
+    version?: number,
   ): Promise<Message | null> {
     const client = supabase ?? getSupabase();
-    const { data, error } = await client
+    let query = client
       .from("messages")
       .update({ content, edited_at: new Date().toISOString() })
-      .eq("id", messageId)
-      .select("*")
-      .single();
+      .eq("id", messageId);
+
+    if (version !== undefined) {
+      query = query.eq("version", version);
+    }
+
+    const { data, error } = await query.select("*").single();
 
     if (error || !data) return null;
 

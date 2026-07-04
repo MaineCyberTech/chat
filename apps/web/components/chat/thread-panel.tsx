@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Avatar, Button } from "@chat/ui";
+import { Avatar, Button, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
 import { X } from "lucide-react";
 import type { Message, UserProfile } from "@chat/db";
@@ -49,7 +49,9 @@ export function ThreadPanel({
 }: Props) {
   const [replyContent, setReplyContent] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
   const [participants, setParticipants] = useState<ParticipantInfo[]>([]);
+  const { addToast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
   const replyRef = useRef<HTMLTextAreaElement>(null);
 
@@ -90,9 +92,14 @@ export function ThreadPanel({
     const trimmed = replyContent.trim();
     if (!trimmed || sending) return;
     setSending(true);
+    setSendError("");
     try {
       await onSendReply(trimmed);
       setReplyContent("");
+    } catch {
+      const msg = "Failed to send reply. Please try again.";
+      setSendError(msg);
+      addToast({ title: "Error", description: msg, variant: "error" });
     } finally {
       setSending(false);
     }
@@ -216,6 +223,11 @@ export function ThreadPanel({
 
       {/* Reply input */}
       <div className="border-t border-[var(--color-border-primary)] p-3">
+        {sendError && (
+          <p className="mb-2 text-xs text-[var(--color-danger)]" role="alert">
+            {sendError}
+          </p>
+        )}
         <div className="flex gap-2">
           <textarea
             ref={replyRef}

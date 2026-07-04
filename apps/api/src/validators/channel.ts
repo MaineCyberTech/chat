@@ -9,6 +9,7 @@ export const createChannelSchema = z.object({
 export const updateChannelSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   topic: z.string().max(500).optional(),
+  version: z.number().int().positive().optional(),
 });
 
 export const addChannelMemberSchema = z.object({

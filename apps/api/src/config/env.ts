@@ -18,6 +18,7 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().optional(),
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters").optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

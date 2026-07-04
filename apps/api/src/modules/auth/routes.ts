@@ -3,7 +3,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { authLimiter, searchLimiter } from "../../middleware/rate-limit.js";
 import { authService } from "./service.js";
 import { getOnlineUsers } from "../../lib/socket.js";
-import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
+import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
 import {
   updateProfileSchema,
@@ -17,6 +17,7 @@ router.use(authLimiter);
 router.get("/session", authenticate, async (req, res) => {
   const profile = await authService.getProfile(req.userId!);
   if (!profile) {
+    logger.warn("Session profile not found", { userId: req.userId });
     res.status(404).json({ error: { code: "NOT_FOUND", message: "User profile not found" } });
     return;
   }
@@ -34,6 +35,7 @@ router.patch("/profile", authenticate, async (req, res) => {
 
   const profile = await authService.updateProfile(req.userId!, parsed.data);
   if (!profile) {
+    logger.warn("Profile update failed - user not found", { userId: req.userId });
     res.status(404).json({ error: { code: "NOT_FOUND", message: "User profile not found" } });
     return;
   }
@@ -78,11 +80,14 @@ router.post("/avatar", authenticate, async (req, res) => {
   }
 
   try {
-    const supabase = getSupabase();
+    if (!req.supabase) {
+      res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
+      return;
+    }
     const fileExt = parsed.data.contentType.split("/")[1] ?? "png";
     const filePath = `avatars/${req.userId}.${fileExt}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await req.supabase.storage
       .from("chat-uploads")
       .createSignedUploadUrl(filePath);
 
@@ -97,13 +102,13 @@ router.post("/avatar", authenticate, async (req, res) => {
     }
 
     // Use signed URL for avatar access (expires in 1 hour, refreshed on demand)
-    const { data: signedUrlData } = await supabase.storage
+    const { data: signedUrlData } = await req.supabase.storage
       .from("chat-uploads")
       .createSignedUrl(filePath, 3600);
 
     const avatarUrl =
       signedUrlData?.signedUrl ??
-      supabase.storage.from("chat-uploads").getPublicUrl(filePath).data.publicUrl;
+      req.supabase.storage.from("chat-uploads").getPublicUrl(filePath).data.publicUrl;
 
     const profile = await authService.updateProfile(req.userId!, { avatar_url: avatarUrl });
     if (!profile) {
@@ -120,11 +125,14 @@ router.post("/avatar", authenticate, async (req, res) => {
 });
 
 router.get("/avatar/:userId", authenticate, async (req, res) => {
-  const supabase = getSupabase();
+  if (!req.supabase) {
+    res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
+    return;
+  }
   const { userId } = req.params;
   const filePath = `avatars/${userId}.png`;
 
-  const { data: signedUrlData, error } = await supabase.storage
+  const { data: signedUrlData, error } = await req.supabase.storage
     .from("chat-uploads")
     .createSignedUrl(filePath, 3600);
 

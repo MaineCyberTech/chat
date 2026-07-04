@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
-import { Button } from "@chat/ui";
+import { Button, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -107,6 +107,7 @@ export function MessageInput({
   const [dragging, setDragging] = useState(false);
   const lastTypingEmitRef = useRef(0);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const { addToast } = useToast();
 
   // Close emoji picker on click outside and Escape
   useEffect(() => {
@@ -290,7 +291,9 @@ export function MessageInput({
       if (onTypingStop) onTypingStop();
       textareaRef.current?.focus();
     } catch {
-      setSendError("Failed to send message. Please try again.");
+      const msg = "Failed to send message. Please try again.";
+      setSendError(msg);
+      addToast({ title: "Error", description: msg, variant: "error" });
     } finally {
       setSending(false);
     }

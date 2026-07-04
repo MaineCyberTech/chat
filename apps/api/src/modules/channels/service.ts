@@ -15,6 +15,7 @@ interface CreateChannelInput {
 interface UpdateChannelInput {
   name?: string;
   topic?: string;
+  version?: number;
 }
 
 export interface CreateResult {
@@ -117,12 +118,13 @@ export class ChannelService {
     if (input.name !== undefined) updates.name = input.name;
     if (input.topic !== undefined) updates.topic = input.topic;
 
-    const { data, error } = await supabase
-      .from("channels")
-      .update(updates)
-      .eq("id", channelId)
-      .select("*")
-      .single();
+    let query = supabase.from("channels").update(updates).eq("id", channelId);
+
+    if (input.version !== undefined) {
+      query = query.eq("version", input.version);
+    }
+
+    const { data, error } = await query.select("*").single();
 
     if (error) return null;
 

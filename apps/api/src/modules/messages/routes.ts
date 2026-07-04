@@ -3,7 +3,6 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { requireChannelAccess, requireMessageAccess } from "../../middleware/require-membership.js";
 import { messageService } from "./service.js";
-import { getSupabase } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
 import { logAuditEvent } from "../../services/audit.js";
 import {
@@ -151,13 +150,21 @@ router.patch(
     }
 
     const sanitizedContent = sanitizeContent(parsed.data.content);
+    const version = parsed.data.version;
 
     const message = await messageService.update(
       req.params.id as string,
       sanitizedContent,
       req.supabase,
+      version,
     );
     if (!message) {
+      if (version !== undefined) {
+        res
+          .status(409)
+          .json({ error: { code: "CONFLICT", message: "Message was modified by another user" } });
+        return;
+      }
       res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
       return;
     }
@@ -204,10 +211,15 @@ router.post("/messages/upload", async (req, res) => {
   }
 
   try {
-    const supabase = getSupabase();
-    const filePath = `${req.userId}/${Date.now()}-${parsed.data.fileName}`;
+    if (!req.supabase) {
+      res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
+      return;
+    }
 
-    const { data, error } = await supabase.storage
+    const safeFileName = parsed.data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filePath = `${req.userId}/${Date.now()}-${safeFileName}`;
+
+    const { data, error } = await req.supabase.storage
       .from("chat-uploads")
       .createSignedUploadUrl(filePath);
 
@@ -224,7 +236,7 @@ router.post("/messages/upload", async (req, res) => {
     res.json({
       uploadUrl: data.signedUrl,
       filePath,
-      publicUrl: supabase.storage.from("chat-uploads").getPublicUrl(filePath).data.publicUrl,
+      publicUrl: req.supabase.storage.from("chat-uploads").getPublicUrl(filePath).data.publicUrl,
     });
   } catch (err) {
     logger.error("Upload URL generation failed", { error: String(err) });

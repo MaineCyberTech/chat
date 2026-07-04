@@ -54,7 +54,7 @@ export class AuthService {
     const supabase = getSupabase();
     const { data } = await supabase
       .from("users")
-      .select("id, email, display_name, avatar_url")
+      .select("id, display_name, avatar_url")
       .in("id", userIds);
 
     return (data ?? []) as UserProfile[];
