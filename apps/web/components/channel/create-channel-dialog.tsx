@@ -13,6 +13,7 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [topic, setTopic] = useState("");
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { addToast } = useToast();
@@ -27,6 +28,7 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
       await api.post(`/workspaces/${workspaceId}/channels`, {
         name: name.trim(),
         topic: topic.trim() || undefined,
+        is_read_only: isReadOnly,
       });
       setName("");
       setTopic("");
@@ -66,6 +68,10 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
             onChange={(e) => setTopic(e.target.value)}
             placeholder="What's this channel about?"
           />
+          <label className="flex items-center gap-2 text-xs text-[var(--color-foreground-secondary)]">
+            <input type="checkbox" checked={isReadOnly} onChange={(e) => setIsReadOnly(e.target.checked)} className="rounded border-[var(--color-input-border)]" />
+            Read-only channel (only admins can post)
+          </label>
           <div className="flex gap-2">
             <Button type="submit" disabled={loading}>
               {loading ? "Creating..." : "Create"}

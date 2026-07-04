@@ -16,7 +16,6 @@ export default function PermalinkPage() {
       .get<{ message: Message }>(`/messages/${params.postId}`)
       .then((res) => {
         const msg = res.message;
-        // Redirect to the channel, the channel page will scroll to the message
         router.replace(`/messages/${msg.channel_id}?highlight=${msg.id}`);
       })
       .catch(() => {
