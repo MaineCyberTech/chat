@@ -9,17 +9,14 @@ interface Props {
   setContent: (content: string) => void;
 }
 
-type FormatMode =
-  | "bold"
-  | "italic"
-  | "strike"
-  | "code"
-  | "link"
-  | "quote"
-  | "ul"
-  | "ol";
+type FormatMode = "bold" | "italic" | "strike" | "code" | "link" | "quote" | "ul" | "ol";
 
-function applyFormat(textarea: HTMLTextAreaElement, content: string, setContent: (c: string) => void, mode: FormatMode) {
+function applyFormat(
+  textarea: HTMLTextAreaElement,
+  content: string,
+  setContent: (c: string) => void,
+  mode: FormatMode,
+) {
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
   const selected = content.slice(start, end);

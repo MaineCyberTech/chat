@@ -92,12 +92,16 @@ export function initSocket(
       try {
         const { getSupabase } = await import("./supabase.js");
         const supabase = getSupabase();
-        await supabase.from("user_presence").upsert(
-          { user_id: userId, status: "online", last_seen_at: new Date().toISOString() },
-          { onConflict: "user_id" },
-        );
+        await supabase
+          .from("user_presence")
+          .upsert(
+            { user_id: userId, status: "online", last_seen_at: new Date().toISOString() },
+            { onConflict: "user_id" },
+          );
         io!.emit("presence:update", { userId, status: "online" });
-      } catch { logger.warn("Failed to update presence on connect"); }
+      } catch {
+        logger.warn("Failed to update presence on connect");
+      }
     })();
 
     socket.on("channel:join", async (channelId: string) => {
@@ -166,7 +170,9 @@ export function initSocket(
             socket.to(room).emit("presence:update", { userId, status });
           }
         }
-      } catch { logger.warn("Failed to set presence status"); }
+      } catch {
+        logger.warn("Failed to set presence status");
+      }
     });
 
     socket.on("typing:start", (channelId: string) => {
@@ -185,10 +191,12 @@ export function initSocket(
       try {
         const { getSupabase } = await import("./supabase.js");
         const supabase = getSupabase();
-        await supabase.from("user_presence").upsert(
-          { user_id: userId, status: "offline", last_seen_at: new Date().toISOString() },
-          { onConflict: "user_id" },
-        );
+        await supabase
+          .from("user_presence")
+          .upsert(
+            { user_id: userId, status: "offline", last_seen_at: new Date().toISOString() },
+            { onConflict: "user_id" },
+          );
 
         // Broadcast offline to all rooms
         for (const room of socket.rooms) {
@@ -196,7 +204,9 @@ export function initSocket(
             socket.to(room).emit("presence:update", { userId, status: "offline" });
           }
         }
-      } catch { logger.warn("Failed to update presence on disconnect"); }
+      } catch {
+        logger.warn("Failed to update presence on disconnect");
+      }
     });
   });
 

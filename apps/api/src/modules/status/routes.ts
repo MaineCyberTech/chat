@@ -49,7 +49,9 @@ router.get("/status", async (req, res) => {
 router.put("/status", async (req, res) => {
   const { emoji = "speech_balloon", text = "", duration } = req.body as StatusBody;
   if (text.length > 100) {
-    res.status(400).json({ error: { code: "INVALID_INPUT", message: "Status text max 100 chars" } });
+    res
+      .status(400)
+      .json({ error: { code: "INVALID_INPUT", message: "Status text max 100 chars" } });
     return;
   }
   const supabase = getSupabase();

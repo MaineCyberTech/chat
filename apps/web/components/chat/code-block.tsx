@@ -39,7 +39,7 @@ export function CodeBlock({ code, language }: Props) {
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-[var(--color-foreground-tertiary)] opacity-0 transition-opacity hover:text-[var(--color-foreground-primary)] group-hover:opacity-100 focus-visible:opacity-100"
+          className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-[var(--color-foreground-tertiary)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-[var(--color-foreground-primary)] focus-visible:opacity-100"
           aria-label="Copy code"
         >
           {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -47,10 +47,7 @@ export function CodeBlock({ code, language }: Props) {
         </button>
       </div>
       <div className="overflow-x-auto p-3 text-sm leading-relaxed">
-        <code
-          className="hljs"
-          dangerouslySetInnerHTML={{ __html: highlighted }}
-        />
+        <code className="hljs" dangerouslySetInnerHTML={{ __html: highlighted }} />
       </div>
     </div>
   );

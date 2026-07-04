@@ -34,16 +34,156 @@ const TYPING_THROTTLE_MS = 2000;
 const QUICK_EMOJIS = ["👍", "❤️", "😄", "🎉", "🔥", "👀", "🚀", "💡"];
 
 const EMOJI_LIST = [
-  "😀", "😃", "😄", "😁", "😅", "😂", "🤣", "😊", "😇", "🙂", "😉", "😌", "😍", "🥰", "😘",
-  "😗", "😙", "😚", "🤗", "🤩", "🤔", "🤨", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮",
-  "🤐", "😯", "😪", "😫", "😴", "😌", "😛", "😜", "😝", "🤤", "😒", "😓", "😔", "😕", "🙃",
-  "🤑", "😲", "☹️", "🙁", "😖", "😞", "😟", "😤", "😢", "😭", "😦", "😧", "😨", "😩", "🤯",
-  "😬", "😰", "😱", "🥵", "🥶", "😳", "🤪", "😵", "😡", "😠", "🤬", "👍", "👎", "👊", "✊",
-  "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "👀", "👁️", "❤️", "🧡", "💛",
-  "💚", "💙", "💜", "🖤", "🤍", "🤎", "💕", "💞", "💗", "💖", "💘", "💝", "⭐", "🌟", "✨",
-  "⚡", "🔥", "💥", "💫", "💨", "🌈", "☀️", "🌙", "⭐", "🌊", "💧", "❄️", "🎉", "🎊", "🎈",
-  "🎁", "🎀", "🪄", "🎶", "🎵", "📌", "📍", "💡", "🔑", "🔒", "🔓", "✅", "❌", "❓", "❗",
-  "⚠️", "🚫", "🔞", "♻️", "💯", "🔝", "🔜", "🔛", "🔙", "↗️", "📢", "🔔", "🔕", "🎤", "📷",
+  "😀",
+  "😃",
+  "😄",
+  "😁",
+  "😅",
+  "😂",
+  "🤣",
+  "😊",
+  "😇",
+  "🙂",
+  "😉",
+  "😌",
+  "😍",
+  "🥰",
+  "😘",
+  "😗",
+  "😙",
+  "😚",
+  "🤗",
+  "🤩",
+  "🤔",
+  "🤨",
+  "😐",
+  "😑",
+  "😶",
+  "🙄",
+  "😏",
+  "😣",
+  "😥",
+  "😮",
+  "🤐",
+  "😯",
+  "😪",
+  "😫",
+  "😴",
+  "😌",
+  "😛",
+  "😜",
+  "😝",
+  "🤤",
+  "😒",
+  "😓",
+  "😔",
+  "😕",
+  "🙃",
+  "🤑",
+  "😲",
+  "☹️",
+  "🙁",
+  "😖",
+  "😞",
+  "😟",
+  "😤",
+  "😢",
+  "😭",
+  "😦",
+  "😧",
+  "😨",
+  "😩",
+  "🤯",
+  "😬",
+  "😰",
+  "😱",
+  "🥵",
+  "🥶",
+  "😳",
+  "🤪",
+  "😵",
+  "😡",
+  "😠",
+  "🤬",
+  "👍",
+  "👎",
+  "👊",
+  "✊",
+  "🤛",
+  "🤜",
+  "👏",
+  "🙌",
+  "👐",
+  "🤲",
+  "🤝",
+  "🙏",
+  "✍️",
+  "💅",
+  "👀",
+  "👁️",
+  "❤️",
+  "🧡",
+  "💛",
+  "💚",
+  "💙",
+  "💜",
+  "🖤",
+  "🤍",
+  "🤎",
+  "💕",
+  "💞",
+  "💗",
+  "💖",
+  "💘",
+  "💝",
+  "⭐",
+  "🌟",
+  "✨",
+  "⚡",
+  "🔥",
+  "💥",
+  "💫",
+  "💨",
+  "🌈",
+  "☀️",
+  "🌙",
+  "⭐",
+  "🌊",
+  "💧",
+  "❄️",
+  "🎉",
+  "🎊",
+  "🎈",
+  "🎁",
+  "🎀",
+  "🪄",
+  "🎶",
+  "🎵",
+  "📌",
+  "📍",
+  "💡",
+  "🔑",
+  "🔒",
+  "🔓",
+  "✅",
+  "❌",
+  "❓",
+  "❗",
+  "⚠️",
+  "🚫",
+  "🔞",
+  "♻️",
+  "💯",
+  "🔝",
+  "🔜",
+  "🔛",
+  "🔙",
+  "↗️",
+  "📢",
+  "🔔",
+  "🔕",
+  "🎤",
+  "📷",
 ];
 
 function filterEmojis(query: string): string[] {
@@ -74,7 +214,10 @@ function MarkdownPreview({ content }: { content: string }) {
             return <CodeBlock code={code} language={match[1]} />;
           }
           return (
-            <code className="rounded bg-[var(--color-background-tertiary)] px-1 py-0.5 font-mono text-sm" {...props}>
+            <code
+              className="rounded bg-[var(--color-background-tertiary)] px-1 py-0.5 font-mono text-sm"
+              {...props}
+            >
               {children}
             </code>
           );
@@ -551,11 +694,7 @@ export function MessageInput({
 
         <div className="relative min-w-0 flex-1">
           {showFormatting && (
-            <FormattingBar
-              textareaRef={textareaRef}
-              content={content}
-              setContent={setContent}
-            />
+            <FormattingBar textareaRef={textareaRef} content={content} setContent={setContent} />
           )}
           <textarea
             ref={textareaRef}
@@ -634,8 +773,12 @@ export function MessageInput({
                       : "hover:bg-[var(--color-background-tertiary)]"
                   }`}
                 >
-                  <span className="font-medium text-[var(--color-brand-primary)]">{cmd.command}</span>
-                  <span className="text-xs text-[var(--color-foreground-tertiary)]">{cmd.description}</span>
+                  <span className="font-medium text-[var(--color-brand-primary)]">
+                    {cmd.command}
+                  </span>
+                  <span className="text-xs text-[var(--color-foreground-tertiary)]">
+                    {cmd.description}
+                  </span>
                 </button>
               ))}
             </div>

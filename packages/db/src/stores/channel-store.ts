@@ -14,7 +14,11 @@ export interface IChannelStore {
   getById(channelId: string, supabase: SupabaseClient): Promise<Channel | null>;
   getByWorkspace(workspaceId: string, supabase: SupabaseClient): Promise<Channel[]>;
   create(input: CreateChannelInput, supabase: SupabaseClient): Promise<Channel | null>;
-  update(channelId: string, input: Partial<Channel>, supabase: SupabaseClient): Promise<Channel | null>;
+  update(
+    channelId: string,
+    input: Partial<Channel>,
+    supabase: SupabaseClient,
+  ): Promise<Channel | null>;
   delete(channelId: string, supabase: SupabaseClient): Promise<boolean>;
   listMembers(channelId: string, supabase: SupabaseClient): Promise<ChannelMember[]>;
   addMember(channelId: string, userId: string, supabase: SupabaseClient): Promise<boolean>;
@@ -23,7 +27,11 @@ export interface IChannelStore {
 
 export class SupabaseChannelStore implements IChannelStore {
   async getById(channelId: string, supabase: SupabaseClient): Promise<Channel | null> {
-    const { data, error } = await supabase.from("channels").select("*").eq("id", channelId).single();
+    const { data, error } = await supabase
+      .from("channels")
+      .select("*")
+      .eq("id", channelId)
+      .single();
     if (error) return null;
     return data as Channel;
   }
@@ -56,7 +64,11 @@ export class SupabaseChannelStore implements IChannelStore {
     return data as Channel;
   }
 
-  async update(channelId: string, input: Partial<Channel>, supabase: SupabaseClient): Promise<Channel | null> {
+  async update(
+    channelId: string,
+    input: Partial<Channel>,
+    supabase: SupabaseClient,
+  ): Promise<Channel | null> {
     const { data, error } = await supabase
       .from("channels")
       .update(input)
@@ -77,10 +89,7 @@ export class SupabaseChannelStore implements IChannelStore {
   }
 
   async listMembers(channelId: string, supabase: SupabaseClient): Promise<ChannelMember[]> {
-    const { data } = await supabase
-      .from("channel_members")
-      .select("*")
-      .eq("channel_id", channelId);
+    const { data } = await supabase.from("channel_members").select("*").eq("channel_id", channelId);
     return (data ?? []) as ChannelMember[];
   }
 
@@ -91,7 +100,11 @@ export class SupabaseChannelStore implements IChannelStore {
     return !error;
   }
 
-  async removeMember(channelId: string, userId: string, supabase: SupabaseClient): Promise<boolean> {
+  async removeMember(
+    channelId: string,
+    userId: string,
+    supabase: SupabaseClient,
+  ): Promise<boolean> {
     const { error } = await supabase
       .from("channel_members")
       .delete()

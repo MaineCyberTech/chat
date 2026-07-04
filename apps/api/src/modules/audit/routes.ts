@@ -19,9 +19,7 @@ async function queryAuditLogs(
     offset?: number;
   },
 ) {
-  let dbQuery = supabase
-    .from("audit_logs")
-    .select("*", { count: "exact" });
+  let dbQuery = supabase.from("audit_logs").select("*", { count: "exact" });
 
   if (query.workspaceId) {
     dbQuery = dbQuery.eq("organization_id", query.workspaceId);
@@ -52,7 +50,8 @@ async function queryAuditLogs(
 
 router.get("/audit/logs", async (req: Request, res: Response) => {
   const supabase = req.supabase!;
-  const { workspaceId, actorUserId, action, entityType, dateFrom, dateTo, limit, offset } = req.query;
+  const { workspaceId, actorUserId, action, entityType, dateFrom, dateTo, limit, offset } =
+    req.query;
 
   if (!supabase) {
     res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });

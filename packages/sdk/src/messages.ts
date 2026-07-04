@@ -104,10 +104,12 @@ export class MessagesClient {
   }
 
   // Edit history
-  async getEditHistory(id: string): Promise<Array<{ previous_content: string; edited_at: string }>> {
-    const response = await this.client.get<{ history: Array<{ previous_content: string; edited_at: string }> }>(
-      `/messages/${id}/history`,
-    );
+  async getEditHistory(
+    id: string,
+  ): Promise<Array<{ previous_content: string; edited_at: string }>> {
+    const response = await this.client.get<{
+      history: Array<{ previous_content: string; edited_at: string }>;
+    }>(`/messages/${id}/history`);
     return response.history;
   }
 

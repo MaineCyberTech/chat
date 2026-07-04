@@ -60,11 +60,7 @@ const ROLE_PERMISSIONS: Record<WorkspaceRole, Permission[]> = {
     "webhook:delete",
     "audit:view",
   ],
-  member: [
-    "channel:create",
-    "message:flag",
-    "message:pin",
-  ],
+  member: ["channel:create", "message:flag", "message:pin"],
 };
 
 export function hasPermission(role: WorkspaceRole, permission: Permission): boolean {

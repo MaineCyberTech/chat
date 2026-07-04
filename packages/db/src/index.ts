@@ -13,7 +13,12 @@ export { hasPermission, getPermissionsForRole, getAllPermissions } from "./permi
 export type { Permission } from "./permissions.js";
 
 export { SupabaseMessageStore, messageStore } from "./stores/message-store.js";
-export type { IMessageStore, CreateMessageInput, ListByChannelOptions, ListByChannelResult } from "./stores/message-store.js";
+export type {
+  IMessageStore,
+  CreateMessageInput,
+  ListByChannelOptions,
+  ListByChannelResult,
+} from "./stores/message-store.js";
 
 export { SupabaseChannelStore, channelStore } from "./stores/channel-store.js";
 export type { IChannelStore, CreateChannelInput } from "./stores/channel-store.js";

@@ -15,7 +15,33 @@ function getFileType(name: string, _url: string): FileInfo["type"] {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
   if (["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico"].includes(ext)) return "image";
   if (["pdf"].includes(ext)) return "pdf";
-  if (["js", "ts", "tsx", "jsx", "py", "go", "rs", "rb", "java", "c", "cpp", "h", "css", "scss", "html", "json", "yaml", "toml", "sh", "bash", "sql", "md"].includes(ext)) return "code";
+  if (
+    [
+      "js",
+      "ts",
+      "tsx",
+      "jsx",
+      "py",
+      "go",
+      "rs",
+      "rb",
+      "java",
+      "c",
+      "cpp",
+      "h",
+      "css",
+      "scss",
+      "html",
+      "json",
+      "yaml",
+      "toml",
+      "sh",
+      "bash",
+      "sql",
+      "md",
+    ].includes(ext)
+  )
+    return "code";
   return "other";
 }
 

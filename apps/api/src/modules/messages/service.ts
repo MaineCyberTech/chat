@@ -217,8 +217,12 @@ export class MessageService {
     if (message) {
       try {
         const io = getIO();
-        io.to(`channel:${message.channel_id}`).emit("message:updated", { message: { ...message, is_pinned: true } });
-      } catch { logger.warn("Failed to emit pin update via socket"); }
+        io.to(`channel:${message.channel_id}`).emit("message:updated", {
+          message: { ...message, is_pinned: true },
+        });
+      } catch {
+        logger.warn("Failed to emit pin update via socket");
+      }
     }
     return true;
   }
@@ -235,8 +239,12 @@ export class MessageService {
     if (message) {
       try {
         const io = getIO();
-        io.to(`channel:${message.channel_id}`).emit("message:updated", { message: { ...message, is_pinned: false } });
-      } catch { logger.warn("Failed to emit unpin update via socket"); }
+        io.to(`channel:${message.channel_id}`).emit("message:updated", {
+          message: { ...message, is_pinned: false },
+        });
+      } catch {
+        logger.warn("Failed to emit unpin update via socket");
+      }
     }
     return true;
   }
@@ -255,10 +263,7 @@ export class MessageService {
   async flag(messageId: string, userId: string, supabase: SupabaseClient): Promise<boolean> {
     const { error } = await supabase
       .from("message_flags")
-      .upsert(
-        { user_id: userId, message_id: messageId },
-        { onConflict: "user_id,message_id" },
-      );
+      .upsert({ user_id: userId, message_id: messageId }, { onConflict: "user_id,message_id" });
     return !error;
   }
 
