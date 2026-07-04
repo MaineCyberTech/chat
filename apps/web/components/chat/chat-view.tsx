@@ -86,6 +86,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const [profiles, setProfiles] = useState<Map<string, UserProfile>>(new Map());
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
+  const [filterQuery, setFilterQuery] = useState("");
   const { addToast } = useToast();
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { activeRoom, startCall, endCall } = useMediaRoom();
@@ -455,6 +456,29 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               <SearchBar workspaceId={workspaceId} workspaceSlug={workspaceSlug} />
             )}
           </div>
+          <div className="relative w-full md:w-48">
+            <input
+              type="text"
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              placeholder="Filter messages..."
+              aria-label="Filter messages in this channel"
+              className={`w-full rounded-lg border px-2 py-1 text-xs placeholder:text-[var(--color-input-placeholder)] focus:ring-1 focus:outline-none ${
+                filterQuery
+                  ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary-bg)] text-[var(--color-brand-primary)]"
+                  : "border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-fg)] focus:border-[var(--color-input-border-focus)] focus:ring-[var(--color-input-focus-ring)]"
+              }`}
+            />
+            {filterQuery && (
+              <button
+                onClick={() => setFilterQuery("")}
+                className="absolute top-1/2 right-1 -translate-y-1/2 rounded p-0.5 text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground-primary)]"
+                aria-label="Clear filter"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
         </div>
         <ConnectionBanner />
         <div
@@ -465,7 +489,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           className="min-h-0 flex-1"
         >
           <MessageList
-            messages={messages}
+            messages={filterQuery ? messages.filter((m) => m.content.toLowerCase().includes(filterQuery.toLowerCase())) : messages}
             currentUserId={user?.id}
             profiles={profiles}
             onReply={setReplyTo}

@@ -13,19 +13,6 @@ const DURATIONS = [
   { value: "week", label: "This week" },
 ] as const;
 
-const PRESETS = [
-  { emoji: "??", text: "In a meeting", duration: "1h" as const },
-  { emoji: "??", text: "Out for lunch", duration: "30m" as const },
-  { emoji: "??", text: "Out sick", duration: "today" as const },
-  { emoji: "??", text: "Working from home", duration: "today" as const },
-  { emoji: "??", text: "On a vacation", duration: "week" as const },
-];
-
-const EMOJIS = [
-  "??", "??", "??", "??",
-  "??", "??", "??", "??",
-];
-
 interface StatusData {
   emoji: string;
   text: string;
@@ -39,7 +26,7 @@ interface Props {
 }
 
 export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
-  const [emoji, setEmoji] = useState(currentStatus?.emoji ?? "??");
+  const [emoji] = useState(currentStatus?.emoji ?? "??");
   const [text, setText] = useState(currentStatus?.text ?? "");
   const [duration, setDuration] = useState<string>("1h");
   const [saving, setSaving] = useState(false);

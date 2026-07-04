@@ -205,11 +205,15 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             <Menu size={18} />
           </button>
         </div>
-        <WorkspaceBreadcrumbsWrapper
-          workspaceSlug={params.workspaceSlug}
-          channelId={params.channelId}
-        />
-        <ErrorBoundary>{children}</ErrorBoundary>
+        <div className="shrink-0">
+          <WorkspaceBreadcrumbsWrapper
+            workspaceSlug={params.workspaceSlug}
+            channelId={params.channelId}
+          />
+        </div>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </div>
       </div>
 
       {/* Mobile bottom navigation — fixed but height-aware */}

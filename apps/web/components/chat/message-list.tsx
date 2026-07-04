@@ -320,6 +320,7 @@ const MessageItem = React.memo(function MessageItem({
                 <button
                   key={emoji}
                   onClick={() => onToggleReaction(msg.id, emoji)}
+                  title={hasMine ? `You and ${count - 1} other${count - 1 !== 1 ? "s" : ""}` : `${count} ${count === 1 ? "person" : "people"}`}
                   className={`inline-flex min-h-[44px] min-w-[44px] items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none ${
                     hasMine
                       ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary-light)]"
