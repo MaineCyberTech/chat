@@ -33,7 +33,7 @@ All scripts connected: `run_hardening_pipeline.py` → `evaluate_gate.py` → `s
 | `apps/api/`          | Express API server                  | `src/app.ts`, `src/modules/*/`, `Dockerfile`                                                                                                           |
 | `apps/web/`          | Next.js 15 frontend                 | `app/`, `components/`, `lib/`, `e2e/`                                                                                                                  |
 | `packages/ui/`       | Shared React components             | `src/components/button.tsx`, etc.                                                                                                                      |
-| `packages/db/`       | Supabase client + types             | `src/config.ts`                                                                                                                                        |
+| `packages/db/`       | Supabase client + types             | `src/config.ts`, `src/types.ts`, `src/stores/`                                                                                                         |
 | `infra/docker/`      | Compose files, Caddyfiles           | `docker-compose.devremote.yml`, `docker-compose.prod.yml`, `Caddyfile`, `Caddyfile.prod`                                                               |
 | `infra/terraform/`   | DO droplet + DNS                    | `main.tf`, `templates/cloud-init.yaml.tftpl`                                                                                                           |
 | `.github/workflows/` | CI/CD pipelines (19 workflows)      | See [Workflows section](#github-actions-workflows)                                                                                                     |
@@ -49,6 +49,21 @@ All scripts connected: `run_hardening_pipeline.py` → `evaluate_gate.py` → `s
 
 - Magic link auth (all previous items)
 - **CSRF/Same-Origin Architecture** — API now proxied via `/v1/*` on same domain (`chat.mainecybertech.us`) fixing cookie visibility and SameSite=Strict blocking
+- **Paste Image from Clipboard** — Paste handler in message-input.tsx creates File from DataTransferItem and calls onFileUpload
+- **Markdown Formatting Toolbar** — `formatting-bar.tsx` with Bold/Italic/Strikethrough/Code/Link/Quote/List buttons, wraps selected text with markdown syntax
+- **Syntax-Highlighted Code Blocks** — `code-block.tsx` with highlight.js (github-dark), language badge, copy button with confirmation, auto-detection
+- **Slash Commands with Autocomplete** — `/me`, `/code`, `/shrug`, `/poll`, `/gif`, `/joke`, `/help` with autocomplete popup when typing `/`, keyboard navigable (`lib/slash-commands.ts`)
+- **Custom User Status** — `status-modal.tsx` with emoji + text + duration presets, `/status` API (GET/PUT/DELETE), `user_statuses` table migration, display in sidebar with Set/Clear
+- **Optimistic Locking** — `version` column on messages + channels with BEFORE UPDATE trigger auto-increment; PATCH routes check version and return 409 on conflict
+- **Thread Reply Edit/Delete** — Edit/delete buttons on own thread replies, inline editing with Save/Cancel, confirmation dialog with toast feedback
+- **Channel/Workspace Delete UI** — Trash icon on hover in channel-list.tsx and workspace-list.tsx, confirmation dialog, toast feedback
+- **Search Pagination** — RPC offset parameter, API returns hasMore+offset, frontend "Show more" button
+- **Right-Click/Long-Press Context Menu** — Positioned menu (Reply/Copy/Edit/Delete), tap-and-hold 500ms on mobile, closes on click-outside/Escape
+- **Action Buttons Always Visible on Mobile** — 44px touch targets, opacity-100 below lg breakpoint (no hover gate)
+- **CSS Grid Workspace Layout** — Replaced flexbox with `grid-cols-[min-content_1fr]` matching Mattermost pattern, reliable height sizing
+- **Viewport Height Recalculation** — JS script on resize/orientationchange updates `--vh` for browsers with dynamic toolbars
+- **Adaptive Bottom Nav** — `--bottom-nav-height` CSS var (3.5rem portrait, 2.5rem landscape <480px height), `env(safe-area-inset-bottom)` for notched devices
+- **Body Flex Layout** — Changed to `flex min-h-screen flex-col` so flex-1 main properly fills remaining space
 - **Comparative Audit Implementation (July 4, 2026)** — Full 8-phase Mattermost comparative audit executed and implemented (see table below)
 - **Database Schema Applied** — 24 Supabase CLI migrations applied (users, workspaces, channels, messages, RLS, triggers, auto-profile creation, backfill, soft-delete, webhook retry, audit FK, etc.)
 - **Workspace Creation RLS** — Uses admin client (service role) to bypass RLS; duplicate slug handling with retry logic (`-1`, `-2`, etc.)
@@ -176,6 +191,16 @@ Full 8-phase Mattermost comparative audit (`C:\temp\mattermost-master` vs `C:\te
 | **Sidebar Categories** | sidebar_categories + sidebar_channel_assignments tables with default seed data | migration above |
 | **Per-Channel Notifications** | channel_notification_preferences table (notify + sound toggles per channel) | migration above |
 | **UI/UX Polish** | Floating timestamp overlay, searchable emoji picker (600+ emojis), context menu copy-link, channel topic display, system messages, file preview (image viewer + file links) | `floating-timestamp.tsx`, `emoji-data.json`, `file-preview.tsx` |
+| **Slash Commands** | /me, /code, /shrug, /poll, /gif, /joke, /help with autocomplete popup, keyboard navigation | `lib/slash-commands.ts`, `message-input.tsx` |
+| **User Status** | Status picker popup in sidebar (Online/Away/DND), status API + socket broadcast, colored indicators | `app-sidebar.tsx`, `auth/routes.ts` |
+| **Custom User Status** | Modal with emoji + text + duration presets (30m/1h/4h/today/week), suggestions, set/clear | `status-modal.tsx`, `status/routes.ts`, migration `20260627000011_custom_status.sql` |
+| **Markdown Formatting Toolbar** | Bold/Italic/Strikethrough/Code/Link/Quote/List buttons, wraps selected text | `formatting-bar.tsx`, `message-input.tsx` |
+| **Syntax-Highlighted Code Blocks** | highlight.js github-dark theme, language badge, copy button with confirmation, auto-detection | `code-block.tsx` |
+| **Paste Image from Clipboard** | Paste event creates File from DataTransferItem, calls upload handler | `message-input.tsx` |
+| **Search Autocomplete** | User profiles + channel suggestions as you type in search bar | `search-bar.tsx` |
+| **Channel Member Count** | Member count display in chat header | `chat-view.tsx` |
+| **Message Forwarding** | API endpoint + context menu for quoting messages to other channels | `messages/routes.ts` |
+| **Settings Page** | Theme + notification preferences, settings link in sidebar | `app-sidebar.tsx`, `settings/page.tsx` |
 
 ### Resolved Issues
 
@@ -212,6 +237,26 @@ Full 8-phase Mattermost comparative audit (`C:\temp\mattermost-master` vs `C:\te
 - All hardening P0-P3 findings resolved — See [Hardening Findings Tracker](#hardening-findings-tracker)
 - **Consent routes TypeScript fix** — `apps/api/src/modules/consent/routes.ts` now uses `req.supabase`/`req.userId` instead of incorrectly passing Request object to `getSupabaseForUser()`
 - **Login-form test updated** — Updated to assert on dev notice text instead of removed quick-fill test user buttons
+- **Reaction routes fixed** — Changed from `requireChannelAccess("id")` to `requireMessageAccess("id")` (was treating message ID as channel ID, 404 on every reaction)
+- **Virtual list removed** — Replaced `@tanstack/react-virtual` with flat message list (fixed overlap from fixed 64px row estimate)
+- **Scroll restore on loadOlder** — Save/restore scrollTop when older messages prepended in flat list
+- **Context menu added** — Right-click/tap-hold (500ms) opens Reply/Copy/Edit/Delete menu on any message
+- **Action buttons enlarged** — 44px min touch targets on mobile, 36px on desktop, always visible (no hover gate)
+- **Thread panel edit/delete** — Edit/delete buttons + inline editing + confirmation dialog for thread replies
+- **Channel/Workspace delete UI** — Trash icon on hover + confirmation dialog with toast feedback
+- **Search pagination** — RPC `result_offset` param, API returns `hasMore`+`offset`, frontend "Show more" button
+- **Root loading.tsx** — Created branded spinner for app shell
+- **Auth layout with ErrorBoundary** — Created `(auth)/layout.tsx` wrapping auth pages
+- **Workspace 404 page** — Created `(workspace)/not-found.tsx`
+- **CSS Grid workspace layout** — Replaced `h-screen` flexbox with `grid-cols-[min-content_1fr]`
+- **Viewport JS recalc** — Script on `resize`/`orientationchange` updates `--vh` for dynamic toolbar browsers
+- **Adaptive bottom-nav-height** — CSS var `--bottom-nav-height` (3.5rem portrait, 2.5rem landscape), `env(safe-area-inset-bottom)`
+- **Paste image from clipboard** — `message-input.tsx` paste handler creates File from DataTransferItem
+- **Slash commands** — `lib/slash-commands.ts` with `/me`, `/code`, `/shrug`, `/poll`, `/gif`, `/joke`, `/help` + autocomplete popup
+- **Markdown formatting toolbar** — `formatting-bar.tsx` with 8 formatting modes wrapping selected text
+- **Syntax-highlighted code blocks** — `code-block.tsx` with highlight.js, copy button, language badge, auto-detection
+- **Custom user status** — `status-modal.tsx` + `/status` API + `user_statuses` table migration + sidebar display
+- **api.put() added** — `lib/api.ts` now supports PUT requests
 
 ### Remaining Work
 
@@ -221,7 +266,7 @@ Full 8-phase Mattermost comparative audit (`C:\temp\mattermost-master` vs `C:\te
 | -------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **P0**   | 0 (2 fixed)   | Hardcoded colors in `login-form.tsx` and `chat-view.tsx` ConnectionBanner — **FIXED**                                                                                                                                                                 |
 | **P1**   | 0 (13 fixed)  | All P1 items resolved                                                                                                                                                                                                                                 |
-| **P2**   | 4 unresolved (14 fixed via comparative audit) | Thread panel reply input textarea, delete confirmation dialog, typing indicator throttling, sending indicator, notification dropdown overflow, tablet breakpoint, Unicode icons — **FIXED in July 4 comparative audit** |
+| **P2**   | 0 (18 fixed)  | Thread panel reply input textarea, delete confirmation dialog, typing indicator throttling, sending indicator, notification dropdown overflow, tablet breakpoint, Unicode icons, channel/workspace delete UI, search pagination — **ALL FIXED** |
 | **P3**   | 9             | Raw opacity values, "Loading..." text instead of skeletons, unused CSS classes                                                                                                                                                                        |
 
 All UX/UI phases (1–7) and chat specialization (Phases A–E) complete.
