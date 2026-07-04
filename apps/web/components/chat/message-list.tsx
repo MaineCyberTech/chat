@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { Avatar, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
 import { Reply, Pencil, X, Smile, Copy, Trash2 } from "lucide-react";
@@ -9,8 +8,6 @@ import type { Message, UserProfile } from "@chat/db";
 
 const GROUP_GAP_MS = 5 * 60 * 1000;
 const QUICK_EMOJIS = ["👍", "❤️", "😄", "😮", "😢", "🎉"];
-const ESTIMATED_ROW_HEIGHT = 64;
-const OVERSCAN = 10;
 const TOP_TRIGGER_OFFSET = 200;
 
 interface Reaction {
@@ -171,6 +168,8 @@ const MessageItem = React.memo(function MessageItem({
         </div>
       )}
       <div
+        data-message-id={msg.id}
+        data-timestamp={msg.created_at}
         className={`group flex ${isOwn ? "flex-row-reverse" : "flex-row"} ${
           msg.isGroupStart ? "mt-3" : "mt-0.5"
         }`}
@@ -606,38 +605,17 @@ export function MessageList({
     return result;
   }, [messages]);
 
-  const parentRef = listRef;
-  const scrollRestoreRef = useRef<{ prevScrollHeight: number; prevScrollTop: number } | null>(null);
-  const prevCountRef = useRef(messagesWithMeta.length);
-
-  const virtualizer = useVirtualizer({
-    count: messagesWithMeta.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => ESTIMATED_ROW_HEIGHT,
-    overscan: OVERSCAN,
-  });
-
   // Maintain scroll position when older messages are prepended
-  useEffect(() => {
-    const el = parentRef.current;
-    if (!scrollRestoreRef.current || !el) {
-      prevCountRef.current = messagesWithMeta.length;
-      return;
-    }
-    const { prevScrollHeight, prevScrollTop } = scrollRestoreRef.current;
-    const newScrollHeight = el.scrollHeight;
-    const heightDiff = newScrollHeight - prevScrollHeight;
-    if (heightDiff > 0) {
-      el.scrollTop = prevScrollTop + heightDiff;
-    }
-    scrollRestoreRef.current = null;
-    prevCountRef.current = messagesWithMeta.length;
-  }, [messagesWithMeta.length]);
+  const scrollRestoreRef = useRef<{
+    prevScrollHeight: number;
+    prevScrollTop: number;
+  } | null>(null);
 
   // Detect scroll-to-top for loading older messages
   const handleScroll = useCallback(() => {
-    if (!parentRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = parentRef.current;
+    const el = listRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
     const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
     setShowJumpButton(!isAtBottom);
 
@@ -646,22 +624,35 @@ export function MessageList({
       onLoadOlder();
     }
 
-    // Track unread count based on scroll position
     if (isAtBottom) {
       setUnreadCount(0);
-    } else if (messages.length > 0 && parentRef.current) {
-      const visibleRatio = parentRef.current.clientHeight / scrollHeight;
+    } else if (messages.length > 0 && el) {
+      const visibleRatio = el.clientHeight / scrollHeight;
       const visibleCount = Math.floor(messages.length * visibleRatio);
       setUnreadCount(Math.max(0, messages.length - visibleCount));
     }
   }, [onLoadOlder, hasMoreOlder, loadingOlder, messages.length]);
 
   useEffect(() => {
-    const el = parentRef.current;
+    const el = listRef.current;
     if (!el) return;
     el.addEventListener("scroll", handleScroll, { passive: true });
     return () => el.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
+
+  // Restore scroll position after older messages are prepended
+  useEffect(() => {
+    const el = listRef.current;
+    const restore = scrollRestoreRef.current;
+    if (!restore || !el) return;
+    const { prevScrollHeight, prevScrollTop } = restore;
+    requestAnimationFrame(() => {
+      if (!listRef.current) return;
+      const newScrollHeight = listRef.current.scrollHeight;
+      listRef.current.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+    });
+    scrollRestoreRef.current = null;
+  }, [messagesWithMeta.length]);
 
   // Auto-scroll to bottom on new messages if user was at bottom
   const lastMessageId = messages[messages.length - 1]?.id;
@@ -689,61 +680,44 @@ export function MessageList({
 
   return (
     <div className="relative flex-1">
-      <div ref={parentRef} className="h-full overflow-y-auto overscroll-contain pb-14 md:pb-0">
-        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
-          {virtualizer.getVirtualItems().map((virtualItem) => {
-            const msg = messagesWithMeta[virtualItem.index];
-            if (!msg) return null;
-            return (
-              <div
-                key={virtualItem.key}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
-                data-index={virtualItem.index}
-              >
-                <MessageItem
-                  msg={msg}
-                  currentUserId={currentUserId}
-                  profiles={profiles}
-                  editingId={editingId}
-                  editContent={editContent}
-                  hoveredId={hoveredId}
-                  reactions={reactions}
-                  pickerMessageId={pickerMessageId}
-                  editError={editError}
-                  replyCounts={replyCounts ?? new Map()}
-                  sendingIds={sendingIds}
-                  onReply={onReply}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onThreadOpen={onThreadOpen}
-                  onStartEdit={(m) => startEdit(m)}
-                  onMessageContextMenu={handleContextMenu}
-                  onMessageTouchStart={handleTouchStart}
-                  onMessageTouchEnd={handleTouchEnd}
-                  onMessageTouchMove={handleTouchMove}
-                  onSubmitEdit={submitEdit}
-                  onCancelEdit={handleCancelEdit}
-                  onSetEditContent={setEditContent}
-                  onSetHoveredId={setHoveredId}
-                  onToggleReaction={toggleReaction}
-                  onSetPickerMessageId={setPickerMessageId}
-                  onSetDeleteConfirmId={handleSetDeleteConfirmId}
-                />
-              </div>
-            );
-          })}
-        </div>
+      <div ref={listRef} className="h-full overflow-y-auto overscroll-contain pb-14 md:pb-0">
         {loadingOlder && (
           <div className="flex justify-center py-3">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-foreground-tertiary)] border-t-transparent" />
           </div>
         )}
+        {messagesWithMeta.map((msg) => (
+          <MessageItem
+            key={msg.id}
+            msg={msg}
+            currentUserId={currentUserId}
+            profiles={profiles}
+            editingId={editingId}
+            editContent={editContent}
+            hoveredId={hoveredId}
+            reactions={reactions}
+            pickerMessageId={pickerMessageId}
+            editError={editError}
+            replyCounts={replyCounts}
+            sendingIds={sendingIds}
+            onReply={onReply}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onThreadOpen={onThreadOpen}
+            onStartEdit={startEdit}
+            onSubmitEdit={submitEdit}
+            onCancelEdit={handleCancelEdit}
+            onSetEditContent={setEditContent}
+            onSetHoveredId={setHoveredId}
+            onToggleReaction={toggleReaction}
+            onSetPickerMessageId={setPickerMessageId}
+            onSetDeleteConfirmId={handleSetDeleteConfirmId}
+            onMessageContextMenu={handleContextMenu}
+            onMessageTouchStart={handleTouchStart}
+            onMessageTouchEnd={handleTouchEnd}
+            onMessageTouchMove={handleTouchMove}
+          />
+        ))}
         <div ref={bottomRef} />
       </div>
 
@@ -803,6 +777,24 @@ export function MessageList({
             role="menuitem"
           >
             <Copy size={14} /> Copy text
+          </button>
+          <button
+            onClick={() => {
+              const permalink = `${window.location.origin}/channels/${contextMenu.message.channel_id}/${contextMenu.message.id}`;
+              navigator.clipboard
+                .writeText(permalink)
+                .then(() => {
+                  addToast({ title: "Link copied", variant: "success", duration: 2000 });
+                })
+                .catch(() => {
+                  addToast({ title: "Error", description: "Failed to copy", variant: "error" });
+                });
+              setContextMenu(null);
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+            role="menuitem"
+          >
+            <Copy size={14} /> Copy link
           </button>
           {contextMenu.message.user_id === currentUserId && onEdit && (
             <button

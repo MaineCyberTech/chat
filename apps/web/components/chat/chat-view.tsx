@@ -229,6 +229,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         edited_at: null,
         deleted_at: null,
         archived_at: null,
+        is_pinned: false,
         created_at: new Date().toISOString(),
       };
       applyOptimistic(tempId, optimistic, () => {

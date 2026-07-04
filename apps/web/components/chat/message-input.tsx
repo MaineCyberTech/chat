@@ -29,32 +29,14 @@ const DRAFT_SAVE_DEBOUNCE_MS = 500;
 const TYPING_THROTTLE_MS = 2000;
 
 const QUICK_EMOJIS = ["👍", "❤️", "😄", "🎉", "🔥", "👀", "🚀", "💡"];
-const COMMON_EMOJIS = [
-  "😀",
-  "😂",
-  "🤣",
-  "😊",
-  "😍",
-  "🤔",
-  "😎",
-  "🙌",
-  "👏",
-  "💪",
-  "🔥",
-  "🎉",
-  "❤️",
-  "👍",
-  "👎",
-  "🎊",
-  "📌",
-  "💡",
-  "🚀",
-  "⭐",
-  "🙏",
-  "💯",
-  "✅",
-  "❌",
-];
+
+import emojiData from "./emoji-data.json";
+
+function filterEmojis(query: string): string[] {
+  if (!query) return emojiData.slice(0, 50);
+  const lower = query.toLowerCase();
+  return emojiData.filter((e) => e.toLowerCase().includes(lower)).slice(0, 50);
+}
 
 function MarkdownPreview({ content }: { content: string }) {
   return (
@@ -104,6 +86,7 @@ export function MessageInput({
   const [sendError, setSendError] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiSearch, setEmojiSearch] = useState("");
   const [dragging, setDragging] = useState(false);
   const lastTypingEmitRef = useRef(0);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -448,8 +431,16 @@ export function MessageInput({
           {showEmojiPicker && (
             <div
               ref={emojiPickerRef}
-              className="absolute bottom-full left-0 z-10 mb-1 w-64 max-w-[calc(100vw-1rem)] rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-2 shadow-[var(--shadow-xl)]"
+              className="absolute bottom-full left-0 z-10 mb-1 w-72 max-w-[calc(100vw-1rem)] rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-2 shadow-[var(--shadow-xl)]"
             >
+              <input
+                value={emojiSearch}
+                onChange={(e) => setEmojiSearch(e.target.value)}
+                placeholder="Search emojis..."
+                className="mb-2 w-full rounded-md border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-2 py-1 text-xs text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-1 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
+                aria-label="Search emojis"
+                autoFocus
+              />
               <p className="mb-1 text-xs font-medium text-[var(--color-foreground-tertiary)]">
                 Quick emojis
               </p>
@@ -466,10 +457,10 @@ export function MessageInput({
                 ))}
               </div>
               <p className="mb-1 text-xs font-medium text-[var(--color-foreground-tertiary)]">
-                All emojis
+                {emojiSearch ? "Search results" : "All emojis"}
               </p>
               <div className="flex max-h-32 flex-wrap gap-1 overflow-y-auto">
-                {COMMON_EMOJIS.map((e) => (
+                {filterEmojis(emojiSearch).map((e) => (
                   <button
                     key={e}
                     onClick={() => insertEmoji(e)}
