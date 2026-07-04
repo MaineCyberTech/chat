@@ -218,7 +218,7 @@ export class MessageService {
       try {
         const io = getIO();
         io.to(`channel:${message.channel_id}`).emit("message:updated", { message: { ...message, is_pinned: true } });
-      } catch {}
+      } catch { logger.warn("Failed to emit pin update via socket"); }
     }
     return true;
   }
@@ -236,7 +236,7 @@ export class MessageService {
       try {
         const io = getIO();
         io.to(`channel:${message.channel_id}`).emit("message:updated", { message: { ...message, is_pinned: false } });
-      } catch {}
+      } catch { logger.warn("Failed to emit unpin update via socket"); }
     }
     return true;
   }

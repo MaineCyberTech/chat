@@ -27,8 +27,9 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [wsLoading, setWsLoading] = useState(false);
   const [sidebarRef, setSidebarRef] = useState<HTMLElement | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  const collapsedRef = useRef(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const collapsedRef = useRef(true);
+  const userToggledRef = useRef(false);
   const [dmChannels, setDmChannels] = useState<Channel[]>([]);
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [chatUsers, setChatUsers] = useState<{ id: string; display_name: string }[]>([]);
@@ -37,10 +38,11 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   });
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const statusMenuRef = useRef<HTMLDivElement>(null);
-
-  // Auto-collapse sidebar at md breakpoint (768px) for tablet layout
+// Auto-collapse sidebar at md breakpoint (768px) for tablet layout
+  // Respects user manual toggles — won't override after first user interaction
   useEffect(() => {
     function handleResize() {
+      if (userToggledRef.current) return;
       const width = window.innerWidth;
       if (width >= 768 && width < 1024) {
         if (!collapsedRef.current) {
@@ -123,6 +125,14 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       console.warn("Failed to create DM channel");
     }
   }
+
+  // Fetch user status
+  React.useEffect(() => {
+    api
+      .get<{ status: { status: string; custom_status?: string } }>("/auth/status")
+      .then((res) => setUserStatus(res.status))
+      .catch(() => {});
+  }, []);
 
   // Fetch user status
   React.useEffect(() => {
@@ -259,7 +269,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           )}
           {collapsed && (
             <button
-              onClick={() => setCollapsed(false)}
+              onClick={() => { userToggledRef.current = true; setCollapsed(false); }}
               className="mx-auto flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
               aria-label="Expand sidebar"
             >
@@ -269,7 +279,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           {!collapsed && (
             <>
               <button
-                onClick={() => setCollapsed(true)}
+                onClick={() => { userToggledRef.current = true; setCollapsed(true); }}
                 className="hidden min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg p-2 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] md:flex"
                 aria-label="Collapse sidebar"
               >

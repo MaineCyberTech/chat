@@ -6,6 +6,9 @@ import { api } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Paperclip, Smile, Eye, Send, Image, File, X } from "lucide-react";
+import { FormattingBar } from "./formatting-bar";
+import { CodeBlock } from "./code-block";
+import { SLASH_COMMANDS } from "@/lib/slash-commands";
 
 interface Props {
   channelId: string;
@@ -30,12 +33,23 @@ const TYPING_THROTTLE_MS = 2000;
 
 const QUICK_EMOJIS = ["👍", "❤️", "😄", "🎉", "🔥", "👀", "🚀", "💡"];
 
-import emojiData from "./emoji-data.json";
+const EMOJI_LIST = [
+  "😀", "😃", "😄", "😁", "😅", "😂", "🤣", "😊", "😇", "🙂", "😉", "😌", "😍", "🥰", "😘",
+  "😗", "😙", "😚", "🤗", "🤩", "🤔", "🤨", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮",
+  "🤐", "😯", "😪", "😫", "😴", "😌", "😛", "😜", "😝", "🤤", "😒", "😓", "😔", "😕", "🙃",
+  "🤑", "😲", "☹️", "🙁", "😖", "😞", "😟", "😤", "😢", "😭", "😦", "😧", "😨", "😩", "🤯",
+  "😬", "😰", "😱", "🥵", "🥶", "😳", "🤪", "😵", "😡", "😠", "🤬", "👍", "👎", "👊", "✊",
+  "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "👀", "👁️", "❤️", "🧡", "💛",
+  "💚", "💙", "💜", "🖤", "🤍", "🤎", "💕", "💞", "💗", "💖", "💘", "💝", "⭐", "🌟", "✨",
+  "⚡", "🔥", "💥", "💫", "💨", "🌈", "☀️", "🌙", "⭐", "🌊", "💧", "❄️", "🎉", "🎊", "🎈",
+  "🎁", "🎀", "🪄", "🎶", "🎵", "📌", "📍", "💡", "🔑", "🔒", "🔓", "✅", "❌", "❓", "❗",
+  "⚠️", "🚫", "🔞", "♻️", "💯", "🔝", "🔜", "🔛", "🔙", "↗️", "📢", "🔔", "🔕", "🎤", "📷",
+];
 
 function filterEmojis(query: string): string[] {
-  if (!query) return emojiData.slice(0, 50);
+  if (!query) return EMOJI_LIST.slice(0, 50);
   const lower = query.toLowerCase();
-  return emojiData.filter((e) => e.toLowerCase().includes(lower)).slice(0, 50);
+  return EMOJI_LIST.filter((e: string) => e.toLowerCase().includes(lower)).slice(0, 50);
 }
 
 function MarkdownPreview({ content }: { content: string }) {
@@ -53,11 +67,19 @@ function MarkdownPreview({ content }: { content: string }) {
             {children}
           </a>
         ),
-        code: ({ children }) => (
-          <code className="rounded bg-[var(--color-background-tertiary)] px-1 py-0.5 font-mono text-sm">
-            {children}
-          </code>
-        ),
+        code: ({ className, children, ...props }) => {
+          const match = /language-(\w+)/.exec(className ?? "");
+          const code = String(children).replace(/\n$/, "");
+          if (match) {
+            return <CodeBlock code={code} language={match[1]} />;
+          }
+          return (
+            <code className="rounded bg-[var(--color-background-tertiary)] px-1 py-0.5 font-mono text-sm" {...props}>
+              {children}
+            </code>
+          );
+        },
+        pre: ({ children }) => <>{children}</>,
       }}
     >
       {content}
@@ -85,9 +107,12 @@ export function MessageInput({
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [showFormatting, setShowFormatting] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiSearch, setEmojiSearch] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [slashQuery, setSlashQuery] = useState<string | null>(null);
+  const [slashIndex, setSlashIndex] = useState(0);
   const lastTypingEmitRef = useRef(0);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
@@ -145,6 +170,29 @@ export function MessageInput({
       .catch(() => console.warn("Failed to fetch workspace members for mentions"));
   }, [workspaceId]);
 
+  // Paste handler for clipboard images
+  useEffect(() => {
+    const el = dropRef.current;
+    if (!el || !onFileUpload) return;
+    function handlePaste(e: ClipboardEvent) {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const imageItems = Array.from(items).filter(
+        (item) => item.kind === "file" && item.type.startsWith("image/"),
+      );
+      if (imageItems.length === 0) return;
+      e.preventDefault();
+      for (const item of imageItems) {
+        const file = item.getAsFile();
+        if (file && onFileUpload) {
+          onFileUpload(file);
+        }
+      }
+    }
+    el.addEventListener("paste", handlePaste);
+    return () => el.removeEventListener("paste", handlePaste);
+  }, [onFileUpload]);
+
   const filteredMembers = useMemo(() => {
     if (!mentionQuery) return [];
     const q = mentionQuery.toLowerCase();
@@ -152,6 +200,12 @@ export function MessageInput({
       (m) => m.display_name?.toLowerCase().includes(q) || m.email.toLowerCase().includes(q),
     );
   }, [mentionQuery, members]);
+
+  const filteredCommands = useMemo(() => {
+    if (!slashQuery) return [];
+    const q = slashQuery.toLowerCase();
+    return SLASH_COMMANDS.filter((cmd) => cmd.command.toLowerCase().includes(q));
+  }, [slashQuery]);
 
   // Track @mention state
   function getMentionAtCursor(
@@ -180,7 +234,6 @@ export function MessageInput({
     setContent(newContent);
     setMentionQuery(null);
 
-    // Restore cursor position
     requestAnimationFrame(() => {
       const pos = mention.start + name.length + 2;
       textarea.setSelectionRange(pos, pos);
@@ -204,6 +257,17 @@ export function MessageInput({
         onTypingStop();
       }
 
+      // Check for slash command at start of line
+      const beforeCursor = value.slice(0, cursorPos);
+      const lastNewline = beforeCursor.lastIndexOf("\n");
+      const currentLine = beforeCursor.slice(lastNewline + 1);
+      if (currentLine.startsWith("/") && !currentLine.includes(" ")) {
+        setSlashQuery(currentLine);
+        setSlashIndex(0);
+      } else {
+        setSlashQuery(null);
+      }
+
       // Check for @mention
       const mention = getMentionAtCursor(value, cursorPos);
       if (mention) {
@@ -224,6 +288,36 @@ export function MessageInput({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Slash command navigation
+      if (slashQuery && filteredCommands.length > 0) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setSlashIndex((i) => (i + 1) % filteredCommands.length);
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setSlashIndex((i) => (i - 1 + filteredCommands.length) % filteredCommands.length);
+          return;
+        }
+        if (e.key === "Enter" || e.key === "Tab") {
+          e.preventDefault();
+          const cmd = filteredCommands[slashIndex];
+          if (cmd) {
+            setContent(cmd.command + " ");
+            setSlashQuery(null);
+            textareaRef.current?.focus();
+          }
+          return;
+        }
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setSlashQuery(null);
+          return;
+        }
+      }
+
+      // Mention navigation
       if (mentionQuery && filteredMembers.length > 0) {
         if (e.key === "ArrowDown") {
           e.preventDefault();
@@ -253,13 +347,39 @@ export function MessageInput({
         handleSubmit();
       }
     },
-    [mentionQuery, filteredMembers, mentionIndex],
+    [mentionQuery, filteredCommands, filteredMembers, mentionIndex, slashQuery, slashIndex],
   );
 
   const handleSubmit = useCallback(async () => {
-    const text = content.trim();
+    let text = content.trim();
     if (!text && files.length === 0) return;
     if (sending) return;
+
+    // Execute slash command if content starts with /
+    if (text.startsWith("/")) {
+      const firstWord = text.split(" ")[0]?.toLowerCase();
+      let commandResult: string | null = null;
+      if (firstWord === "/me" && text.length > 3) {
+        commandResult = `_${text.slice(4).trim()}_`;
+      } else if (firstWord === "/shrug") {
+        commandResult = `${text.slice(7).trim()} ¯\\_(ツ)_/¯`;
+      } else if (firstWord === "/tableflip") {
+        commandResult = `${text.slice(11).trim()} (╯°□°)╯︵ ┻━┻`;
+      } else if (firstWord === "/code" && text.length > 5) {
+        commandResult = "```\n" + text.slice(6).trim() + "\n```";
+      } else if (firstWord === "/joke") {
+        const jokes = [
+          "Why do programmers prefer dark mode? Because light attracts bugs!",
+          "There are 10 types of people in the world: those who understand binary and those who don't.",
+          "Why was the JavaScript developer sad? Because he didn't Node how to Express himself.",
+          "I told my computer I needed a break. Now it won't stop sending me vacation ads.",
+        ];
+        commandResult = jokes[Math.floor(Math.random() * jokes.length)] ?? null;
+      }
+      if (commandResult !== null) {
+        text = commandResult;
+      }
+    }
 
     setSending(true);
     setSendError("");
@@ -382,45 +502,67 @@ export function MessageInput({
       )}
 
       <div className="flex items-end gap-2">
-        <input
-          type="file"
-          id={`file-upload-${channelId}`}
-          onChange={handleFileSelect}
-          multiple
-          className="hidden"
-        />
-        <label
-          htmlFor={`file-upload-${channelId}`}
-          className="flex min-h-[44px] min-w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-          aria-label="Attach file"
-        >
-          <Paperclip size={18} />
-        </label>
-        <button
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-          aria-label="Emoji picker"
-        >
-          <Smile size={18} />
-        </button>
-        <button
-          onClick={() => setShowPreview(!showPreview)}
-          className={`flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg p-2 text-xs font-medium transition-colors ${
-            showPreview
-              ? "bg-[var(--color-brand-primary)] text-white"
-              : "text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
-          }`}
-          aria-label={showPreview ? "Hide preview" : "Show preview"}
-        >
-          <Eye size={18} />
-        </button>
+        <div className="flex shrink-0 flex-col gap-1">
+          <input
+            type="file"
+            id={`file-upload-${channelId}`}
+            onChange={handleFileSelect}
+            multiple
+            className="hidden"
+          />
+          <label
+            htmlFor={`file-upload-${channelId}`}
+            className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+            aria-label="Attach file"
+          >
+            <Paperclip size={18} />
+          </label>
+          <button
+            onClick={() => setShowFormatting(!showFormatting)}
+            className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-xs font-medium transition-colors ${
+              showFormatting
+                ? "bg-[var(--color-brand-primary)] text-white"
+                : "text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+            }`}
+            aria-label="Toggle formatting toolbar"
+            title="Formatting"
+          >
+            <span className="text-base leading-none">T</span>
+          </button>
+          <button
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            className="flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+            aria-label="Emoji picker"
+          >
+            <Smile size={18} />
+          </button>
+          <button
+            onClick={() => setShowPreview(!showPreview)}
+            className={`flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg p-2 text-xs font-medium transition-colors ${
+              showPreview
+                ? "bg-[var(--color-brand-primary)] text-white"
+                : "text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+            }`}
+            aria-label={showPreview ? "Hide preview" : "Show preview"}
+          >
+            <Eye size={18} />
+          </button>
+        </div>
+
         <div className="relative min-w-0 flex-1">
+          {showFormatting && (
+            <FormattingBar
+              textareaRef={textareaRef}
+              content={content}
+              setContent={setContent}
+            />
+          )}
           <textarea
             ref={textareaRef}
             value={content}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message... Use @ to mention someone"
+            placeholder="Type a message... Use @ to mention, / for commands"
             rows={1}
             className="max-h-[120px] min-h-[44px] w-full resize-none rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             style={{ overflowY: "auto" }}
@@ -474,9 +616,34 @@ export function MessageInput({
             </div>
           )}
 
+          {/* Slash commands autocomplete */}
+          {slashQuery !== null && filteredCommands.length > 0 && (
+            <div className="absolute bottom-full left-0 z-10 mb-1 max-h-40 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-background-primary)] shadow-[var(--shadow-xl)]">
+              {filteredCommands.map((cmd, i) => (
+                <button
+                  key={cmd.command}
+                  onClick={() => {
+                    setContent(cmd.command + " ");
+                    setSlashQuery(null);
+                    textareaRef.current?.focus();
+                  }}
+                  onMouseEnter={() => setSlashIndex(i)}
+                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${
+                    i === slashIndex
+                      ? "bg-[var(--color-background-tertiary)]"
+                      : "hover:bg-[var(--color-background-tertiary)]"
+                  }`}
+                >
+                  <span className="font-medium text-[var(--color-brand-primary)]">{cmd.command}</span>
+                  <span className="text-xs text-[var(--color-foreground-tertiary)]">{cmd.description}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Mentions autocomplete */}
           {mentionQuery !== null && filteredMembers.length > 0 && (
-            <div className="absolute right-0 bottom-full left-0 z-10 mb-1 max-h-40 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-background-primary)] shadow-[var(--shadow-xl)]">
+            <div className="absolute bottom-full left-0 z-10 mb-1 max-h-40 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-background-primary)] shadow-[var(--shadow-xl)]">
               {filteredMembers.map((member, i) => (
                 <button
                   key={member.user_id}
@@ -502,6 +669,7 @@ export function MessageInput({
             </div>
           )}
         </div>
+
         <div className="flex min-h-[44px] min-w-[44px] shrink-0">
           <Button
             size="md"

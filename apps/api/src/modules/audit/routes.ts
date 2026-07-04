@@ -1,7 +1,5 @@
 import { Router, type Request, type Response } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
-import { requirePermission } from "../../middleware/require-permission.js";
-import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -24,8 +22,6 @@ async function queryAuditLogs(
   let dbQuery = supabase
     .from("audit_logs")
     .select("*", { count: "exact" });
-
-  const conditions: Record<string, string> = {};
 
   if (query.workspaceId) {
     dbQuery = dbQuery.eq("organization_id", query.workspaceId);

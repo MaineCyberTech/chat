@@ -97,7 +97,7 @@ export function initSocket(
           { onConflict: "user_id" },
         );
         io!.emit("presence:update", { userId, status: "online" });
-      } catch {}
+      } catch { logger.warn("Failed to update presence on connect"); }
     })();
 
     socket.on("channel:join", async (channelId: string) => {
@@ -166,7 +166,7 @@ export function initSocket(
             socket.to(room).emit("presence:update", { userId, status });
           }
         }
-      } catch {}
+      } catch { logger.warn("Failed to set presence status"); }
     });
 
     socket.on("typing:start", (channelId: string) => {
@@ -196,7 +196,7 @@ export function initSocket(
             socket.to(room).emit("presence:update", { userId, status: "offline" });
           }
         }
-      } catch {}
+      } catch { logger.warn("Failed to update presence on disconnect"); }
     });
   });
 

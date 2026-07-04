@@ -2,11 +2,11 @@ import type { Request, Response, NextFunction } from "express";
 import { hasPermission, type Permission } from "@chat/db";
 import type { WorkspaceRole } from "@chat/db";
 
-declare global {
-  namespace Express {
-    interface Request {
-      workspaceRole?: WorkspaceRole;
-    }
+export {};
+
+declare module "express" {
+  interface Request {
+    workspaceRole?: WorkspaceRole;
   }
 }
 

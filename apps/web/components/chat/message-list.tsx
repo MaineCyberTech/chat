@@ -192,7 +192,7 @@ const MessageItem = React.memo(function MessageItem({
               {name}
             </p>
           )}
-          <div className="flex items-start gap-1">
+          <div className="flex items-end gap-1">
             {editingId === msg.id ? (
               <div className="flex flex-col gap-1">
                 <div className="flex w-full gap-1">
@@ -606,6 +606,7 @@ export function MessageList({
   }, [messages]);
 
   const scrollRestoreRef = useRef<{ prevScrollHeight: number; prevScrollTop: number } | null>(null);
+  const initialLoadRef = useRef(true);
 
   // Detect scroll-to-top for loading older messages
   const handleScroll = useCallback(() => {
@@ -652,10 +653,20 @@ export function MessageList({
   // Auto-scroll to bottom on new messages if user was at bottom
   const lastMessageId = messages[messages.length - 1]?.id;
   useEffect(() => {
-    if (!showJumpButton && bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "instant" });
     }
-  }, [lastMessageId, showJumpButton]);
+  }, [lastMessageId]);
+
+  // Scroll to bottom on initial load after messages arrive
+  useEffect(() => {
+    if (messages.length > 0 && initialLoadRef.current) {
+      initialLoadRef.current = false;
+      requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "instant" });
+      });
+    }
+  }, [messages.length]);
 
   function scrollToBottom() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
