@@ -553,7 +553,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           aria-live="polite"
           aria-atomic="false"
           aria-label="Messages"
-          className="min-h-0 flex-1"
+          className="flex min-h-0 flex-1 flex-col"
         >
           <MessageList
             messages={
