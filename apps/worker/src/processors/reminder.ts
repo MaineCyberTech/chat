@@ -16,7 +16,7 @@ export async function processReminders() {
       .lte("remind_at", now);
 
     if (error) {
-      logger.error("Failed to fetch due reminders", { error: error.message });
+      logger.error({ error: error.message }, "Failed to fetch due reminders");
       return;
     }
 
@@ -32,22 +32,20 @@ export async function processReminders() {
           body: `You asked to be reminded: ${(reminder as Record<string, unknown>).messages ? ((reminder as Record<string, unknown>).messages as Record<string, unknown>).content : ""}`,
           data: {
             message_id: reminder.message_id,
-            channel_id: ((reminder as Record<string, unknown>).messages as Record<string, unknown>).channel_id,
+            channel_id: ((reminder as Record<string, unknown>).messages as Record<string, unknown>)
+              .channel_id,
           },
         });
 
         // Mark as notified
-        await supabase
-          .from("message_reminders")
-          .update({ notified: true })
-          .eq("id", reminder.id);
+        await supabase.from("message_reminders").update({ notified: true }).eq("id", reminder.id);
       } catch (err) {
-        logger.error("Failed to process reminder", { id: reminder.id, error: String(err) });
+        logger.error({ id: reminder.id, error: String(err) }, "Failed to process reminder");
       }
     }
 
     logger.info(`Processed ${due.length} reminders`);
   } catch (err) {
-    logger.error("Reminder processor failed", { error: String(err) });
+    logger.error({ error: String(err) }, "Reminder processor failed");
   }
 }

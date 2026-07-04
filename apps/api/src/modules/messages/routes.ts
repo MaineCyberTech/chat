@@ -400,8 +400,8 @@ router.post("/messages/:id/remind", authenticate, validateUuidParam("id"), async
     res.status(400).json({ error: { code: "INVALID_INPUT", message: "remindAt required" } });
     return;
   }
-  const { data, error } = await req.supabase!
-    .from("message_reminders")
+  const { data, error } = await req
+    .supabase!.from("message_reminders")
     .insert({
       user_id: req.userId,
       message_id: req.params.id as string,
@@ -417,8 +417,8 @@ router.post("/messages/:id/remind", authenticate, validateUuidParam("id"), async
 });
 
 router.get("/reminders", authenticate, async (req, res) => {
-  const { data } = await req.supabase!
-    .from("message_reminders")
+  const { data } = await req
+    .supabase!.from("message_reminders")
     .select("*, messages!inner(content, channel_id)")
     .eq("user_id", req.userId)
     .eq("notified", false)
@@ -427,8 +427,8 @@ router.get("/reminders", authenticate, async (req, res) => {
 });
 
 router.delete("/reminders/:id", authenticate, async (req, res) => {
-  const { error } = await req.supabase!
-    .from("message_reminders")
+  const { error } = await req
+    .supabase!.from("message_reminders")
     .delete()
     .eq("id", req.params.id as string)
     .eq("user_id", req.userId);
@@ -439,39 +439,61 @@ router.delete("/reminders/:id", authenticate, async (req, res) => {
   res.status(204).send();
 });
 
-router.get("/channels/:channelId/export", validateUuidParam("channelId"), requireChannelAccess("channelId"), async (req, res) => {
-  const format = (req.query.format as string) ?? "json";
-  const { data: messages } = await req.supabase!
-    .from("messages")
-    .select("*, users!inner(display_name, email)")
-    .eq("channel_id", req.params.channelId as string)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true });
+router.get(
+  "/channels/:channelId/export",
+  validateUuidParam("channelId"),
+  requireChannelAccess("channelId"),
+  async (req, res) => {
+    const format = (req.query.format as string) ?? "json";
+    const { data: messages } = await req
+      .supabase!.from("messages")
+      .select("*, users!inner(display_name, email)")
+      .eq("channel_id", req.params.channelId as string)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true });
 
-  if (!messages) {
-    res.status(500).json({ error: { code: "QUERY_FAILED", message: "Failed to fetch messages" } });
-    return;
-  }
+    if (!messages) {
+      res
+        .status(500)
+        .json({ error: { code: "QUERY_FAILED", message: "Failed to fetch messages" } });
+      return;
+    }
 
-  const rows = messages.map((m: Record<string, unknown>) => ({
-    id: m.id,
-    author: (m.users as Record<string, unknown>).display_name ?? (m.users as Record<string, unknown>).email,
-    content: typeof m.content === "string" ? m.content.replace(/[\n\r]+/g, " ") : "",
-    created_at: m.created_at,
-    edited_at: m.edited_at ?? "",
-  }));
+    const rows = messages.map((m: Record<string, unknown>) => ({
+      id: m.id,
+      author:
+        (m.users as Record<string, unknown>).display_name ??
+        (m.users as Record<string, unknown>).email,
+      content: typeof m.content === "string" ? m.content.replace(/[\n\r]+/g, " ") : "",
+      created_at: m.created_at,
+      edited_at: m.edited_at ?? "",
+    }));
 
-  if (format === "csv") {
-    const header = "id,author,content,created_at,edited_at\n";
-    const csv = header + rows.map((r: Record<string, string>) => `"${r.id}","${r.author}","${r.content.replace(/"/g, '""')}","${r.created_at}","${r.edited_at}"`).join("\n");
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", `attachment; filename="channel-${req.params.channelId}.csv"`);
-    res.send(csv);
-  } else {
-    res.setHeader("Content-Type", "application/json");
-    res.setHeader("Content-Disposition", `attachment; filename="channel-${req.params.channelId}.json"`);
-    res.json({ messages: rows });
-  }
-});
+    if (format === "csv") {
+      const header = "id,author,content,created_at,edited_at\n";
+      const csv =
+        header +
+        rows
+          .map(
+            (r) =>
+              `"${String(r.id)}","${String(r.author)}","${String(r.content).replace(/"/g, '""')}","${String(r.created_at)}","${String(r.edited_at)}"`,
+          )
+          .join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="channel-${req.params.channelId}.csv"`,
+      );
+      res.send(csv);
+    } else {
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="channel-${req.params.channelId}.json"`,
+      );
+      res.json({ messages: rows });
+    }
+  },
+);
 
 export default router;
