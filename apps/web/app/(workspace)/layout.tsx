@@ -7,10 +7,11 @@ import { useAuth } from "@/components/auth/auth-context";
 import { AppSidebar } from "@/components/workspace/app-sidebar";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { QuickSwitcher } from "@/components/chat/quick-switcher";
+import { useSwipeBack } from "@/lib/use-swipe-back";
 import { Skeleton } from "@chat/ui";
 import { api } from "@/lib/api";
 import { register } from "@/lib/keyboard-shortcut-registry";
-import { Menu, Hash, Settings as SettingsIcon } from "lucide-react";
+import { Menu, Hash, Settings as SettingsIcon, ArrowLeft } from "lucide-react";
 import type { Workspace, Channel } from "@chat/db";
 
 function WorkspaceBreadcrumbs({
@@ -119,6 +120,13 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [channels, setChannels] = useState<string[]>([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  // Swipe-back gesture on mobile
+  useSwipeBack(() => {
+    if (params.channelId && params.workspaceSlug) {
+      router.push(`/${params.workspaceSlug}`);
+    }
+  });
 
   // Fetch channels for keyboard navigation
   useEffect(() => {
@@ -234,6 +242,16 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       <nav className="fixed right-0 bottom-0 left-0 z-30 flex shrink-0 items-center justify-around border-t border-[var(--color-border-primary)] bg-[var(--color-background-primary)] md:hidden"
         style={{ height: 'var(--bottom-nav-height)', paddingBottom: 'var(--safe-area-bottom)' }}
       >
+        {params.channelId && params.workspaceSlug && (
+          <button
+            onClick={() => router.push(`/${params.workspaceSlug}`)}
+            className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs text-[var(--color-foreground-secondary)]"
+            aria-label="Back"
+          >
+            <ArrowLeft size={20} />
+            <span>Back</span>
+          </button>
+        )}
         <button
           onClick={() => setSidebarOpen(true)}
           className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs text-[var(--color-foreground-secondary)]"

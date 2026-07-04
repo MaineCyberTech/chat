@@ -64,11 +64,33 @@ body {
   body.sidebar-mobile-open {
     overflow: hidden;
   }
+
+  /* Ensure message list fills available height on mobile */
+  [role="log"] {
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Disable hover effects on touch devices — use tap instead */
+  .group:hover .group-hover\\:flex {
+    display: none;
+  }
+  .group:active .group-hover\\:flex,
+  .group:focus-within .group-hover\\:flex {
+    display: flex;
+  }
 }
 
 @media (hover: none) {
   .hover-only {
     display: none;
+  }
+
+  /* Show action icons on tap for touch devices */
+  .group:active .action-overlay,
+  .group:focus-within .action-overlay {
+    display: flex !important;
   }
 }
 
