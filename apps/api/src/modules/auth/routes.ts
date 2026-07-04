@@ -144,6 +144,55 @@ router.get("/avatar/:userId", authenticate, async (req, res) => {
   res.json({ avatarUrl: signedUrlData.signedUrl });
 });
 
+// User status (presence)
+router.get("/status", authenticate, async (req, res) => {
+  const { data } = await req
+    .supabase!.from("user_presence")
+    .select("*")
+    .eq("user_id", req.userId!)
+    .single();
+  res.json({
+    status: data ?? {
+      user_id: req.userId,
+      status: "online",
+      last_seen_at: new Date().toISOString(),
+    },
+  });
+});
+
+router.patch("/status", authenticate, async (req, res) => {
+  const { status, customStatus } = req.body;
+  if (status && !["online", "away", "dnd"].includes(status)) {
+    res.status(400).json({ error: { code: "INVALID_INPUT", message: "Invalid status" } });
+    return;
+  }
+  const { error } = await req.supabase!.from("user_presence").upsert(
+    {
+      user_id: req.userId!,
+      status: status ?? "online",
+      custom_status: customStatus ?? null,
+      last_seen_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (error) {
+    res.status(500).json({ error: { code: "UPDATE_FAILED", message: error.message } });
+    return;
+  }
+
+  // Broadcast status change via Socket.io
+  try {
+    const { getIO } = await import("../../lib/socket.js");
+    const io = getIO();
+    io.emit("presence:update", { userId: req.userId, status: status ?? "online" });
+  } catch (err) {
+    logger.warn("Failed to broadcast status change", { error: String(err) });
+  }
+
+  res.json({ success: true });
+});
+
 // GDPR Data Export
 router.get("/export", authenticate, async (req, res) => {
   const supabase = getSupabaseAdmin();

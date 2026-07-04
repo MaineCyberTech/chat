@@ -9,7 +9,7 @@ import { ChannelList } from "@/components/channel/channel-list";
 import { CreateChannelDialog } from "@/components/channel/create-channel-dialog";
 import { Avatar } from "@chat/ui";
 import { SidebarGroup } from "@chat/ui";
-import { PanelLeftClose, PanelLeft } from "lucide-react";
+import { PanelLeftClose, PanelLeft, Settings } from "lucide-react";
 import type { Channel, Workspace } from "@chat/db";
 import { api } from "@/lib/api";
 
@@ -32,6 +32,11 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [dmChannels, setDmChannels] = useState<Channel[]>([]);
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [chatUsers, setChatUsers] = useState<{ id: string; display_name: string }[]>([]);
+  const [userStatus, setUserStatus] = useState<{ status: string; custom_status?: string }>({
+    status: "online",
+  });
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
 
   // Auto-collapse sidebar at md breakpoint (768px) for tablet layout
   useEffect(() => {
@@ -105,10 +110,9 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   async function startDm(targetUserId: string) {
     if (!workspace) return;
     try {
-      const res = await api.post<{ channel: Channel }>(
-        `/workspaces/${workspace.id}/dm`,
-        { targetUserId },
-      );
+      const res = await api.post<{ channel: Channel }>(`/workspaces/${workspace.id}/dm`, {
+        targetUserId,
+      });
       setDmChannels((prev) => {
         if (prev.find((c) => c.id === res.channel.id)) return prev;
         return [res.channel, ...prev];
@@ -119,6 +123,49 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       console.warn("Failed to create DM channel");
     }
   }
+
+  // Fetch user status
+  React.useEffect(() => {
+    api
+      .get<{ status: { status: string; custom_status?: string } }>("/auth/status")
+      .then((res) => setUserStatus(res.status))
+      .catch(() => {});
+  }, []);
+
+  async function setStatus(status: string) {
+    try {
+      await api.patch("/auth/status", { status });
+      setUserStatus((prev) => ({ ...prev, status }));
+      setShowStatusMenu(false);
+      // Also emit via socket
+      const { getSocket } = await import("@/lib/socket");
+      const s = await getSocket();
+      s.emit("presence:set", status);
+    } catch {
+      console.warn("Failed to set status");
+    }
+  }
+
+  const statusColor =
+    userStatus.status === "online"
+      ? "bg-green-500"
+      : userStatus.status === "away"
+        ? "bg-yellow-500"
+        : userStatus.status === "dnd"
+          ? "bg-red-500"
+          : "bg-gray-400";
+
+  // Close status menu on click outside
+  useEffect(() => {
+    if (!showStatusMenu) return;
+    function handleClick(e: MouseEvent) {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setShowStatusMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showStatusMenu]);
 
   // Focus trap for mobile sidebar
   useEffect(() => {
@@ -186,12 +233,29 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
         }`}
       >
         {/* User area */}
-        <div className="flex items-center gap-2 border-b border-[var(--color-border-primary)] px-3 py-3">
-          {!collapsed && <Avatar fallback={user?.email ?? "?"} size="sm" />}
+        <div className="relative flex items-center gap-2 border-b border-[var(--color-border-primary)] px-3 py-3">
           {!collapsed && (
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-foreground-primary)]">
-              {user?.email ?? "Chat"}
-            </span>
+            <div className="relative shrink-0">
+              <Avatar fallback={user?.email ?? "?"} size="sm" />
+              <button
+                onClick={() => setShowStatusMenu(!showStatusMenu)}
+                className={`absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-[var(--color-background-secondary)] ${statusColor}`}
+                aria-label={`Status: ${userStatus.status}`}
+                title={`Status: ${userStatus.status}`}
+              />
+            </div>
+          )}
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium text-[var(--color-foreground-primary)]">
+                {user?.email ?? "Chat"}
+              </span>
+              {userStatus.custom_status && (
+                <span className="block truncate text-xs text-[var(--color-foreground-tertiary)]">
+                  {userStatus.custom_status}
+                </span>
+              )}
+            </div>
           )}
           {collapsed && (
             <button
@@ -211,6 +275,15 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
               >
                 <PanelLeftClose size={14} />
               </button>
+              {workspaceSlug && (
+                <Link
+                  href={`/${workspaceSlug}/settings`}
+                  className="flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg p-2 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+                  aria-label="Settings"
+                >
+                  <Settings size={14} />
+                </Link>
+              )}
               <button
                 onClick={signOut}
                 className="shrink-0 rounded px-2 py-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
@@ -218,6 +291,31 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                 Logout
               </button>
             </>
+          )}
+
+          {/* Status picker popup */}
+          {showStatusMenu && (
+            <div
+              ref={statusMenuRef}
+              className="absolute top-full left-3 z-50 mt-1 w-40 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-1 shadow-[var(--shadow-xl)]"
+            >
+              {[
+                { key: "online", label: "Online", color: "bg-green-500" },
+                { key: "away", label: "Away", color: "bg-yellow-500" },
+                { key: "dnd", label: "Do Not Disturb", color: "bg-red-500" },
+              ].map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => setStatus(s.key)}
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)] ${
+                    userStatus.status === s.key ? "bg-[var(--color-background-tertiary)]" : ""
+                  }`}
+                >
+                  <span className={`h-2.5 w-2.5 rounded-full ${s.color}`} />
+                  {s.label}
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
@@ -309,7 +407,9 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                 </h3>
                 <div className="max-h-48 space-y-0.5 overflow-y-auto">
                   {chatUsers.length === 0 && (
-                    <p className="text-xs text-[var(--color-foreground-tertiary)]">No other members found</p>
+                    <p className="text-xs text-[var(--color-foreground-tertiary)]">
+                      No other members found
+                    </p>
                   )}
                   {chatUsers.map((u) => (
                     <button
