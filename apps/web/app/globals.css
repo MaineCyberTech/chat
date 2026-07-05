@@ -213,6 +213,7 @@
     border-radius: 12px;
     box-shadow: var(--elevation-1);
   }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,
