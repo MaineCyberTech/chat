@@ -116,6 +116,10 @@ export interface UserPreferences {
   user_id: string;
   theme: ThemePreference;
   notification_prefs: Record<string, unknown>;
+  clock_format?: string;
+  message_display?: string;
+  sidebar_show_display_name?: boolean;
+  sidebar_sort_alphabetical?: boolean;
   created_at: string;
   updated_at: string;
 }

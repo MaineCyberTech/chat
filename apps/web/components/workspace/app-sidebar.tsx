@@ -12,6 +12,7 @@ import { Avatar } from "@chat/ui";
 import {
   Bookmark,
   Clock,
+  MessageSquare,
   Users,
   PanelLeftClose,
   PanelLeft,
@@ -796,6 +797,17 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
               >
                 <Users size={14} />
                 <span>User Groups</span>
+              </Link>
+              <Link
+                href={`/${workspaceSlug}/threads`}
+                className="flex items-center gap-2 rounded-md px-5 py-1.5 text-sm transition-colors"
+                style={{
+                  color: "var(--sidebar-text)",
+                  opacity: 0.8,
+                }}
+              >
+                <MessageSquare size={14} />
+                <span>Threads</span>
               </Link>
             </div>
           )}

@@ -125,6 +125,10 @@ export default function SettingsPage() {
     if (!preferences) return;
     await savePreferences({
       theme: preferences.theme,
+      clock_format: preferences.clock_format,
+      message_display: preferences.message_display,
+      sidebar_show_display_name: preferences.sidebar_show_display_name,
+      sidebar_sort_alphabetical: preferences.sidebar_sort_alphabetical,
       notification_prefs: preferences.notification_prefs,
     });
   }
@@ -181,6 +185,82 @@ export default function SettingsPage() {
               ))}
             </div>
           </div>
+          <div>
+            <label
+              className="mb-2 block text-sm font-medium"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
+              Clock format
+            </label>
+            <select
+              value={preferences?.clock_format ?? "12h"}
+              onChange={(e) => {
+                const updated = { ...preferences, clock_format: e.target.value } as UserPreferences;
+                setPreferences(updated);
+              }}
+              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
+            >
+              <option value="12h">12-hour (2:30 PM)</option>
+              <option value="24h">24-hour (14:30)</option>
+            </select>
+          </div>
+          <div>
+            <label
+              className="mb-2 block text-sm font-medium"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
+              Message display
+            </label>
+            <select
+              value={preferences?.message_display ?? "standard"}
+              onChange={(e) => {
+                const updated = {
+                  ...preferences,
+                  message_display: e.target.value,
+                } as UserPreferences;
+                setPreferences(updated);
+              }}
+              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
+            >
+              <option value="standard">Standard (full profile)</option>
+              <option value="compact">Compact (minimal)</option>
+            </select>
+          </div>
+        </div>
+      </SidebarGroup>
+
+      <SidebarGroup title="Sidebar" defaultOpen>
+        <div className="space-y-4">
+          <ToggleRow
+            label="Show channel display names"
+            description="Display channel names instead of IDs in the sidebar"
+            checked={preferences?.sidebar_show_display_name ?? true}
+            onChange={(v) => {
+              const updated = { ...preferences, sidebar_show_display_name: v } as UserPreferences;
+              setPreferences(updated);
+            }}
+            disabled={saving}
+          />
+          <ToggleRow
+            label="Sort channels alphabetically"
+            description="Alphabetically sort channels within categories"
+            checked={preferences?.sidebar_sort_alphabetical ?? false}
+            onChange={(v) => {
+              const updated = { ...preferences, sidebar_sort_alphabetical: v } as UserPreferences;
+              setPreferences(updated);
+            }}
+            disabled={saving}
+          />
         </div>
       </SidebarGroup>
 

@@ -7,6 +7,19 @@ import { threadService } from "./service.js";
 const router = Router();
 router.use(authenticate);
 
+// List all threads for current user
+router.get("/threads", async (req: Request, res: Response) => {
+  const { data, error } = await req
+    .supabase!.from("thread_participants")
+    .select(
+      "thread_metadata!inner(messages!inner(id, content, user_id, created_at, channel_id), reply_count, last_reply_at), last_viewed_at",
+    )
+    .eq("user_id", req.userId)
+    .order("last_reply_at", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ threads: data });
+});
+
 // Get thread metadata and replies for a message
 router.get(
   "/messages/:id/thread",
