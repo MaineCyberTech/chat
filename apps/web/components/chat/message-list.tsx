@@ -19,17 +19,10 @@ import remarkGfm from "remark-gfm";
 import { CodeBlock } from "./code-block";
 import { FilePreview } from "./file-preview";
 import { RemindModal } from "./remind-modal";
+import { EmojiPicker } from "./emoji-picker";
 import type { Message, UserProfile } from "@chat/db";
 
 const GROUP_GAP_MS = 5 * 60 * 1000;
-const QUICK_EMOJIS = [
-  "\u{1f44d}",
-  "\u2764\ufe0f",
-  "\u{1f604}",
-  "\u{1f62e}",
-  "\u{1f622}",
-  "\u{1f389}",
-];
 const TOP_TRIGGER_OFFSET = 200;
 
 interface Reaction {
@@ -167,6 +160,7 @@ const MessageItem = React.memo(function MessageItem({
   const showAuthor = msg.isGroupStart ?? true;
   const name = authorName(msg.user_id, profiles);
   const avatar = avatarUrl(msg.user_id, profiles);
+  const reactionBtnRef = useRef<HTMLButtonElement>(null);
   function aggregated(messageId: string) {
     const msgReactions = reactions.get(messageId) ?? [];
     const grouped = new Map<string, { count: number; hasMine: boolean }>();
@@ -430,6 +424,7 @@ const MessageItem = React.memo(function MessageItem({
                     </button>
                   )}
                   <button
+                    ref={reactionBtnRef}
                     onClick={() => onSetPickerMessageId(pickerMessageId === msg.id ? null : msg.id)}
                     className="post-menu__item"
                     aria-label="Add reaction"
@@ -495,28 +490,14 @@ const MessageItem = React.memo(function MessageItem({
             {/* Emoji picker popover */}
             {pickerMessageId === msg.id && (
               <div className="relative mt-1" style={{ zIndex: 10 }}>
-                <div
-                  className="absolute top-0 left-0 z-10 flex gap-0.5 rounded-lg border p-1"
-                  style={{
-                    background: "var(--center-channel-bg)",
-                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                    boxShadow: "var(--elevation-3)",
+                <EmojiPicker
+                  onSelect={(emoji) => {
+                    onToggleReaction(msg.id, emoji);
+                    onSetPickerMessageId(null);
                   }}
-                >
-                  {QUICK_EMOJIS.map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => {
-                        onToggleReaction(msg.id, emoji);
-                        onSetPickerMessageId(null);
-                      }}
-                      className="flex h-8 w-8 items-center justify-center rounded p-1 text-lg leading-none transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                      aria-label={`React with ${emoji}`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
+                  onClose={() => onSetPickerMessageId(null)}
+                  anchorEl={reactionBtnRef.current}
+                />
               </div>
             )}
 
