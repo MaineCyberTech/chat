@@ -205,48 +205,14 @@
 }
 
 @layer components {
-  .app__body {
-    #root, #root.channel-view {
-      display: grid;
-      overflow: hidden;
-      min-height: 100%;
-      grid-template:
-        "header header header" min-content
-        "team-sidebar main app-sidebar" 1fr
-        "footer footer footer" min-content /
-        min-content minmax(385px, 1fr) min-content;
-    }
-
-    #global-header {
-      grid-area: header;
-    }
-
-    .team-sidebar {
-      grid-area: team-sidebar;
-    }
-
-    .app__content {
-      grid-area: main;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: var(--center-channel-bg);
-      border-radius: 12px;
-      box-shadow: var(--elevation-1);
-    }
-
-    .sidebar--right {
-      grid-area: app-sidebar;
-    }
-  }
-
-  #channel_view.channel-view {
-    overflow: hidden;
-    border-radius: var(--radius-l);
+  .app__content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     background: var(--center-channel-bg);
+    border-radius: 12px;
     box-shadow: var(--elevation-1);
   }
-}
 
 @media (prefers-reduced-motion: reduce) {
   *,

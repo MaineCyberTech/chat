@@ -163,8 +163,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       className="app__body"
       style={{ height: "100vh", display: "flex", flexDirection: "column" }}
     >
-      {/* Grid root - Mattermost style */}
-      <div id="root" className="channel-view" style={{ flex: 1, minHeight: 0 }}>
+      {/* Flex row for sidebar + content */}
+      <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
         {/* Mobile header */}
         <div
           id="global-header"
@@ -172,6 +172,11 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           style={{
             background: "var(--sidebar-header-bg)",
             color: "var(--sidebar-header-text-color)",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 30,
           }}
         >
           <button
@@ -185,8 +190,11 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           <span className="truncate text-sm font-semibold">{params.workspaceSlug ?? "Chat"}</span>
         </div>
 
-        {/* Main content area */}
-        <div style={{ display: "flex", width: sidebarWidth, minWidth: 200, position: "relative" }}>
+        {/* Sidebar (desktop) */}
+        <div
+          className="hidden md:flex"
+          style={{ width: sidebarWidth, minWidth: 200, position: "relative", flexShrink: 0 }}
+        >
           <div style={{ width: "100%", overflow: "hidden" }}>
             <AppSidebar
               workspaceSlug={params.workspaceSlug}
@@ -217,9 +225,38 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           />
         </div>
 
-        <div className="app__content">
+        {/* Main content */}
+        <div
+          className="app__content"
+          style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}
+        >
           <ErrorBoundary>{children}</ErrorBoundary>
         </div>
+
+        {/* Mobile sidebar overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-20 md:hidden"
+            style={{ background: "rgba(0,0,0,0.5)" }}
+            onClick={() => setSidebarOpen(false)}
+          >
+            <div
+              style={{
+                width: "80vw",
+                maxWidth: 320,
+                height: "100%",
+                background: "var(--sidebar-bg)",
+              }}
+            >
+              <AppSidebar
+                workspaceSlug={params.workspaceSlug}
+                channelId={params.channelId}
+                mobileOpen={sidebarOpen}
+                onMobileClose={() => setSidebarOpen(false)}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Mobile bottom navigation */}
         <nav
@@ -228,7 +265,11 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             height: "var(--bottom-nav-height)",
             borderTop: "var(--border-default)",
             background: "var(--center-channel-bg)",
-            gridColumn: "1 / -1",
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 20,
           }}
         >
           {params.channelId && params.workspaceSlug && (
