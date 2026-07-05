@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Skeleton } from "@chat/ui";
-import { Settings, ChevronDown } from "lucide-react";
+import { Settings, ChevronDown, FileText, MessageSquare } from "lucide-react";
 
 function highlightText(text: string, query: string): React.ReactNode {
   if (!query || query.length < 2) return text;
@@ -84,6 +84,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
     { id: string; name: string; slug: string }[]
   >([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [searchType, setSearchType] = useState<"messages" | "files">("messages");
+  const [showTypeMenu, setShowTypeMenu] = useState(false);
+  const [showOperatorHint, setShowOperatorHint] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const autocompleteRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -215,47 +218,158 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   return (
     <div className="relative">
       <div className="flex gap-1">
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            clearTimeout(debounceRef.current);
-            debounceRef.current = setTimeout(() => search(e.target.value), SEARCH_DEBOUNCE_MS);
-          }}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          placeholder="Search messages..."
-          aria-label="Search messages"
-          aria-autocomplete="list"
-          aria-controls="search-results"
-          aria-expanded={open && results.length > 0}
-          className="w-full rounded-lg border px-3 py-1.5 text-sm placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus:border-[var(--button-bg)] focus:ring-2 focus:ring-[rgba(var(--button-bg-rgb),0.24)] focus:outline-none"
-          style={{
-            border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
-            background: "var(--center-channel-bg)",
-            color: "var(--center-channel-color)",
-          }}
-        />
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`shrink-0 rounded-lg px-2 text-xs font-medium transition-colors ${
-            showFilters ? "" : ""
-          }`}
-          style={{
-            background: showFilters
-              ? "var(--button-bg)"
-              : "rgba(var(--center-channel-color-rgb), 0.08)",
-            color: showFilters ? "#fff" : "rgba(var(--center-channel-color-rgb), 0.72)",
-          }}
-          aria-label="Toggle search filters"
-          aria-pressed={showFilters}
-          title="Search filters"
-        >
-          <Settings size={16} />
-        </button>
+        <div className="relative flex-1">
+          <div className="flex">
+            <button
+              onClick={() => setShowTypeMenu(!showTypeMenu)}
+              className="flex shrink-0 items-center gap-1 rounded-l-lg px-2 py-1.5 text-xs font-medium"
+              style={{
+                background: "rgba(var(--center-channel-color-rgb), 0.08)",
+                color: "rgba(var(--center-channel-color-rgb), 0.72)",
+                borderRight: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
+              }}
+              aria-label="Search type"
+            >
+              {searchType === "messages" ? <MessageSquare size={12} /> : <FileText size={12} />}
+              {searchType === "messages" ? "Messages" : "Files"}
+              <ChevronDown size={10} />
+            </button>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                const v = e.target.value;
+                const opMatch = v.match(/\b(from|in|channel|has):\s*\w*$/i);
+                setShowOperatorHint(!opMatch && v.length >= 2 && !v.includes(":"));
+                clearTimeout(debounceRef.current);
+                debounceRef.current = setTimeout(() => search(v), SEARCH_DEBOUNCE_MS);
+              }}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+              placeholder={`Search ${searchType}...`}
+              aria-label={`Search ${searchType}`}
+              aria-autocomplete="list"
+              aria-controls="search-results"
+              aria-expanded={open && results.length > 0}
+              className="w-full px-3 py-1.5 text-sm placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus:outline-none"
+              style={{
+                border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
+                borderLeft: "none",
+                borderRight: "none",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
+            />
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex shrink-0 items-center rounded-r-lg px-2 py-1.5 text-xs font-medium transition-colors"
+              style={{
+                background: showFilters
+                  ? "var(--button-bg)"
+                  : "rgba(var(--center-channel-color-rgb), 0.08)",
+                color: showFilters ? "#fff" : "rgba(var(--center-channel-color-rgb), 0.72)",
+              }}
+              aria-label="Toggle search filters"
+              aria-pressed={showFilters}
+              title="Search filters"
+            >
+              <Settings size={16} />
+            </button>
+          </div>
+
+          {/* Search type dropdown */}
+          {showTypeMenu && (
+            <div
+              className="absolute top-full left-0 z-50 mt-1 w-36 rounded-lg border py-1 shadow-[var(--elevation-4)]"
+              style={{
+                background: "var(--center-channel-bg)",
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+              }}
+            >
+              <button
+                onClick={() => {
+                  setSearchType("messages");
+                  setShowTypeMenu(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                style={{
+                  color: "var(--center-channel-color)",
+                  fontWeight: searchType === "messages" ? 600 : 400,
+                }}
+              >
+                <MessageSquare size={14} />
+                Messages
+              </button>
+              <button
+                onClick={() => {
+                  setSearchType("files");
+                  setShowTypeMenu(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                style={{
+                  color: "var(--center-channel-color)",
+                  fontWeight: searchType === "files" ? 600 : 400,
+                }}
+              >
+                <FileText size={14} />
+                Files
+              </button>
+            </div>
+          )}
+
+          {/* Operator hints */}
+          {showOperatorHint && query.length >= 2 && (
+            <div
+              className="absolute left-0 z-50 mt-1 w-auto rounded-lg border px-3 py-2 shadow-[var(--elevation-3)]"
+              style={{
+                background: "var(--center-channel-bg)",
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                top: "100%",
+              }}
+            >
+              <p
+                className="mb-1 text-xs font-medium"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
+                Search operators
+              </p>
+              <div className="space-y-0.5">
+                {[
+                  { op: "from:", desc: "Search by author" },
+                  { op: "in:", desc: "Search in a channel" },
+                  { op: "channel:", desc: "Search in a channel" },
+                  { op: "has:", desc: "Filter by has:link, has:image, has:file" },
+                ].map(({ op, desc }) => (
+                  <button
+                    key={op}
+                    onClick={() => {
+                      setQuery((prev) => prev + op);
+                      inputRef.current?.focus();
+                    }}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                    style={{ color: "var(--center-channel-color)" }}
+                  >
+                    <code
+                      className="rounded px-1 py-0.5 text-xs font-medium"
+                      style={{
+                        background: "rgba(var(--button-bg-rgb), 0.12)",
+                        color: "var(--button-bg)",
+                      }}
+                    >
+                      {op}
+                    </code>
+                    <span style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                      {desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       {showFilters && (
         <div className="mt-1 flex flex-wrap gap-2">
@@ -322,8 +436,11 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       {/* Autocomplete dropdown for users/channels */}
       {showAutocomplete && query.length >= 2 && !open && (
         <div
-          className="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border border-[var(--color-border-primary)] p-2 shadow-[var(--shadow-xl)]"
-          style={{ background: "var(--center-channel-bg)" }}
+          className="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border p-2 shadow-[var(--elevation-4)]"
+          style={{
+            background: "var(--center-channel-bg)",
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+          }}
         >
           {autocompleteUsers.length > 0 && (
             <div className="mb-1">
@@ -340,7 +457,8 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                     setAuthorFilter(u.id);
                     setShowAutocomplete(false);
                   }}
-                  className="w-full rounded-md px-2 py-1 text-left text-sm text-[var(--color-foreground-primary)] hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                  className="w-full rounded-md px-2 py-1 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                  style={{ color: "var(--center-channel-color)" }}
                 >
                   {u.display_name ?? u.id.slice(0, 8)}
                 </button>
@@ -362,7 +480,8 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                     setQuery(`#${ch.name}`);
                     setShowAutocomplete(false);
                   }}
-                  className="w-full rounded-md px-2 py-1 text-left text-sm text-[var(--color-foreground-primary)] hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                  className="w-full rounded-md px-2 py-1 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                  style={{ color: "var(--center-channel-color)" }}
                 >
                   # {ch.name}
                 </button>
@@ -383,24 +502,24 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       {open && results.length > 0 && (
         <div
           id="search-results"
-          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] shadow-[var(--shadow-xl)]"
-          style={{ background: "var(--center-channel-bg)" }}
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border shadow-[var(--elevation-4)]"
+          style={{
+            background: "var(--center-channel-bg)",
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+          }}
           role="listbox"
         >
           {results.map((r, index) => (
             <Link
               key={r.id}
               href={`/${workspaceSlug}/${r.channel_slug ?? r.channel_id}`}
-              className={`block border-b border-[var(--color-border-primary)] px-4 py-2 transition-colors ${
-                index !== selectedIndex
-                  ? "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                  : ""
-              }`}
-              style={
-                index === selectedIndex
-                  ? { background: "rgba(var(--center-channel-color-rgb), 0.08)" }
-                  : undefined
-              }
+              className="block border-b px-4 py-2 transition-colors"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.08)",
+                ...(index !== selectedIndex
+                  ? {}
+                  : { background: "rgba(var(--center-channel-color-rgb), 0.08)" }),
+              }}
               role="option"
               aria-selected={index === selectedIndex}
             >
@@ -429,8 +548,11 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       )}
       {loading && (
         <div
-          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] p-2 shadow-[var(--shadow-xl)]"
-          style={{ background: "var(--center-channel-bg)" }}
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border p-2 shadow-[var(--elevation-4)]"
+          style={{
+            background: "var(--center-channel-bg)",
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+          }}
         >
           <div className="space-y-1">
             <Skeleton className="h-12 w-3/4" />
@@ -441,8 +563,11 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       )}
       {open && results.length === 0 && !loading && query.length >= 2 && (
         <div
-          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] p-4 shadow-[var(--shadow-xl)]"
-          style={{ background: "var(--center-channel-bg)" }}
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border p-4 shadow-[var(--elevation-4)]"
+          style={{
+            background: "var(--center-channel-bg)",
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+          }}
         >
           <p
             className="text-center text-sm"
