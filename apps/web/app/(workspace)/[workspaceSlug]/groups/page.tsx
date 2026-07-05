@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
 import { Users, Plus, Pencil, Trash2, X, Check } from "lucide-react";
@@ -21,8 +22,10 @@ interface WorkspaceMember {
   email: string;
 }
 
-export default function UserGroupsPage({ params }: { params: { workspaceSlug: string } }) {
+export default function UserGroupsPage() {
   const { user } = useAuth();
+  const params = useParams<{ workspaceSlug: string }>();
+  const workspaceSlug = params?.workspaceSlug ?? "";
   const [groups, setGroups] = useState<Group[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,11 +37,11 @@ export default function UserGroupsPage({ params }: { params: { workspaceSlug: st
   const [workspaceId, setWorkspaceId] = useState("");
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !workspaceSlug) return;
     api
       .get<{ workspaces: { id: string; slug: string }[] }>("/workspaces")
       .then((res) => {
-        const ws = res.workspaces.find((w) => w.slug === params.workspaceSlug);
+        const ws = res.workspaces.find((w) => w.slug === workspaceSlug);
         if (!ws) return;
         setWorkspaceId(ws.id);
         Promise.all([
@@ -53,7 +56,7 @@ export default function UserGroupsPage({ params }: { params: { workspaceSlug: st
           .finally(() => setLoading(false));
       })
       .catch(() => setLoading(false));
-  }, [user, params.workspaceSlug]);
+  }, [user, workspaceSlug]);
 
   function openCreate() {
     setEditingGroup(null);
