@@ -232,15 +232,24 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           aria-autocomplete="list"
           aria-controls="search-results"
           aria-expanded={open && results.length > 0}
-          className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-1.5 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
+          className="w-full rounded-lg border px-3 py-1.5 text-sm placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus:border-[var(--button-bg)] focus:ring-2 focus:ring-[rgba(var(--button-bg-rgb),0.24)] focus:outline-none"
+          style={{
+            border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
+            background: "var(--center-channel-bg)",
+            color: "var(--center-channel-color)",
+          }}
         />
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`shrink-0 rounded-lg px-2 text-xs font-medium transition-colors ${
-            showFilters
-              ? "bg-[var(--color-brand-primary)] text-white"
-              : "bg-[var(--color-background-tertiary)] text-[var(--color-foreground-secondary)]"
+            showFilters ? "" : ""
           }`}
+          style={{
+            background: showFilters
+              ? "var(--button-bg)"
+              : "rgba(var(--center-channel-color-rgb), 0.08)",
+            color: showFilters ? "#fff" : "rgba(var(--center-channel-color-rgb), 0.72)",
+          }}
           aria-label="Toggle search filters"
           aria-pressed={showFilters}
           title="Search filters"
@@ -251,29 +260,48 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       {showFilters && (
         <div className="mt-1 flex flex-wrap gap-2">
           <div className="min-w-[120px] flex-1">
-            <label className="mb-0.5 block text-xs text-[var(--color-foreground-tertiary)]">
+            <label
+              className="mb-0.5 block text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            >
               From
             </label>
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full rounded border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-2 py-1 text-xs text-[var(--color-input-fg)]"
+              className="w-full rounded px-2 py-1 text-xs"
+              style={{
+                border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
             />
           </div>
           <div className="min-w-[120px] flex-1">
-            <label className="mb-0.5 block text-xs text-[var(--color-foreground-tertiary)]">
+            <label
+              className="mb-0.5 block text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            >
               To
             </label>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full rounded border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-2 py-1 text-xs text-[var(--color-input-fg)]"
+              className="w-full rounded px-2 py-1 text-xs"
+              style={{
+                border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
             />
           </div>
           <div className="min-w-[120px] flex-1">
-            <label className="mb-0.5 block text-xs text-[var(--color-foreground-tertiary)]">
+            <label
+              className="mb-0.5 block text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            >
               Author ID
             </label>
             <input
@@ -281,17 +309,28 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               value={authorFilter}
               onChange={(e) => setAuthorFilter(e.target.value)}
               placeholder="User ID (UUID)"
-              className="w-full rounded border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-2 py-1 text-xs text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)]"
+              className="w-full rounded px-2 py-1 text-xs placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)]"
+              style={{
+                border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
             />
           </div>
         </div>
       )}
       {/* Autocomplete dropdown for users/channels */}
       {showAutocomplete && query.length >= 2 && !open && (
-        <div className="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-2 shadow-[var(--shadow-xl)]">
+        <div
+          className="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border border-[var(--color-border-primary)] p-2 shadow-[var(--shadow-xl)]"
+          style={{ background: "var(--center-channel-bg)" }}
+        >
           {autocompleteUsers.length > 0 && (
             <div className="mb-1">
-              <p className="mb-0.5 px-2 text-xs font-medium text-[var(--color-foreground-tertiary)]">
+              <p
+                className="mb-0.5 px-2 text-xs font-medium"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
                 Users
               </p>
               {autocompleteUsers.map((u) => (
@@ -301,7 +340,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                     setAuthorFilter(u.id);
                     setShowAutocomplete(false);
                   }}
-                  className="w-full rounded-md px-2 py-1 text-left text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+                  className="w-full rounded-md px-2 py-1 text-left text-sm text-[var(--color-foreground-primary)] hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
                 >
                   {u.display_name ?? u.id.slice(0, 8)}
                 </button>
@@ -310,7 +349,10 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           )}
           {autocompleteChannels.length > 0 && (
             <div>
-              <p className="mb-0.5 px-2 text-xs font-medium text-[var(--color-foreground-tertiary)]">
+              <p
+                className="mb-0.5 px-2 text-xs font-medium"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
                 Channels
               </p>
               {autocompleteChannels.map((ch) => (
@@ -320,7 +362,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                     setQuery(`#${ch.name}`);
                     setShowAutocomplete(false);
                   }}
-                  className="w-full rounded-md px-2 py-1 text-left text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
+                  className="w-full rounded-md px-2 py-1 text-left text-sm text-[var(--color-foreground-primary)] hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
                 >
                   # {ch.name}
                 </button>
@@ -328,7 +370,12 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             </div>
           )}
           {autocompleteUsers.length === 0 && autocompleteChannels.length === 0 && (
-            <p className="px-2 text-sm text-[var(--color-foreground-tertiary)]">No suggestions</p>
+            <p
+              className="px-2 text-sm"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            >
+              No suggestions
+            </p>
           )}
         </div>
       )}
@@ -336,7 +383,8 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       {open && results.length > 0 && (
         <div
           id="search-results"
-          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] shadow-[var(--shadow-xl)]"
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] shadow-[var(--shadow-xl)]"
+          style={{ background: "var(--center-channel-bg)" }}
           role="listbox"
         >
           {results.map((r, index) => (
@@ -344,15 +392,23 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               key={r.id}
               href={`/${workspaceSlug}/${r.channel_slug ?? r.channel_id}`}
               className={`block border-b border-[var(--color-border-primary)] px-4 py-2 transition-colors ${
-                index === selectedIndex
-                  ? "bg-[var(--color-background-tertiary)]"
-                  : "hover:bg-[var(--color-background-tertiary)]"
+                index !== selectedIndex
+                  ? "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                  : ""
               }`}
+              style={
+                index === selectedIndex
+                  ? { background: "rgba(var(--center-channel-color-rgb), 0.08)" }
+                  : undefined
+              }
               role="option"
               aria-selected={index === selectedIndex}
             >
               <p className="text-sm break-words">{highlightText(r.content.slice(0, 200), query)}</p>
-              <p className="mt-0.5 text-xs text-[var(--color-foreground-tertiary)]">
+              <p
+                className="mt-0.5 text-xs"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
                 {new Date(r.created_at).toLocaleDateString()}
               </p>
             </Link>
@@ -361,7 +417,8 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             <button
               onClick={() => search(query, true)}
               disabled={loadingMore}
-              className="flex w-full items-center justify-center gap-1 px-4 py-2 text-xs font-medium text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-1 px-4 py-2 text-xs font-medium hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
               aria-label="Load more search results"
             >
               <ChevronDown size={14} />
@@ -371,7 +428,10 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         </div>
       )}
       {loading && (
-        <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-2 shadow-[var(--shadow-xl)]">
+        <div
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] p-2 shadow-[var(--shadow-xl)]"
+          style={{ background: "var(--center-channel-bg)" }}
+        >
           <div className="space-y-1">
             <Skeleton className="h-12 w-3/4" />
             <Skeleton className="h-12 w-2/3" />
@@ -380,8 +440,14 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         </div>
       )}
       {open && results.length === 0 && !loading && query.length >= 2 && (
-        <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]">
-          <p className="text-center text-sm text-[var(--color-foreground-tertiary)]">
+        <div
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-[var(--color-border-primary)] p-4 shadow-[var(--shadow-xl)]"
+          style={{ background: "var(--center-channel-bg)" }}
+        >
+          <p
+            className="text-center text-sm"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          >
             No results for &ldquo;{query}&rdquo;
           </p>
         </div>
