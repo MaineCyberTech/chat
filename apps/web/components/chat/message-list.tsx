@@ -11,6 +11,7 @@ import {
   Copy,
   Trash2,
   Clock,
+  Bookmark,
   AlertCircle,
   AlertTriangle,
 } from "lucide-react";
@@ -45,6 +46,8 @@ interface Props {
   loadingOlder?: boolean;
   replyCounts?: Map<string, number>;
   sendingIds?: Set<string>;
+  flaggedMessages?: Set<string>;
+  onToggleFlag?: (messageId: string, flagged: boolean) => void;
 }
 
 interface ContextMenuState {
@@ -100,6 +103,8 @@ const MessageItem = React.memo(function MessageItem({
   onCancelEdit,
   onSetEditContent,
   onToggleReaction,
+  onToggleFlag,
+  flaggedMessages,
   onSetPickerMessageId,
   onSetDeleteConfirmId,
   onMessageContextMenu,
@@ -117,6 +122,7 @@ const MessageItem = React.memo(function MessageItem({
   editError: string;
   replyCounts?: Map<string, number>;
   sendingIds?: Set<string>;
+  flaggedMessages?: Set<string>;
   onReply?: (message: Message) => void;
   onEdit?: (messageId: string, content: string) => Promise<void>;
   onDelete?: (messageId: string) => Promise<void>;
@@ -126,6 +132,7 @@ const MessageItem = React.memo(function MessageItem({
   onCancelEdit: () => void;
   onSetEditContent: (content: string) => void;
   onToggleReaction: (messageId: string, emoji: string) => Promise<void>;
+  onToggleFlag?: (messageId: string, currentlyFlagged: boolean) => void;
   onSetPickerMessageId: (id: string | null) => void;
   onSetDeleteConfirmId: (id: string | null) => void;
   onMessageContextMenu: (e: React.MouseEvent, msg: Message) => void;
@@ -134,6 +141,7 @@ const MessageItem = React.memo(function MessageItem({
   onMessageTouchMove: () => void;
 }) {
   const isOwn = msg.user_id === currentUserId;
+  const isFlagged = flaggedMessages?.has(msg.id) ?? false;
   const showDate = msg.showDate ?? false;
   const showAuthor = msg.isGroupStart ?? true;
   const name = authorName(msg.user_id, profiles);
@@ -400,8 +408,12 @@ const MessageItem = React.memo(function MessageItem({
                   </div>
                   {msg.edited_at && (
                     <p
-                      className="mt-0.5 text-xs"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      className="mt-0.5"
+                      style={{
+                        fontSize: 11,
+                        fontStyle: "italic",
+                        color: "rgba(var(--center-channel-color-rgb), 0.75)",
+                      }}
                     >
                       (edited)
                     </p>
@@ -434,6 +446,14 @@ const MessageItem = React.memo(function MessageItem({
                     aria-label="Add reaction"
                   >
                     <Smile size={14} />
+                  </button>
+                  <button
+                    onClick={() => onToggleFlag?.(msg.id, isFlagged)}
+                    className="post-menu__item"
+                    aria-label={isFlagged ? "Unsave message" : "Save message"}
+                    style={{ color: isFlagged ? "var(--button-bg)" : undefined }}
+                  >
+                    <Bookmark size={14} />
                   </button>
                   {isOwn && onEdit && (
                     <button
@@ -555,6 +575,25 @@ export function MessageList({
   const [editError, setEditError] = useState("");
   const [showJumpButton, setShowJumpButton] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [flaggedMsgs, setFlaggedMsgs] = useState<Set<string>>(new Set());
+
+  async function toggleFlag(messageId: string, currentlyFlagged: boolean) {
+    try {
+      if (currentlyFlagged) {
+        await api.delete(`/messages/${messageId}/flag`);
+        setFlaggedMsgs((prev) => {
+          const next = new Set(prev);
+          next.delete(messageId);
+          return next;
+        });
+      } else {
+        await api.post(`/messages/${messageId}/flag`, {});
+        setFlaggedMsgs((prev) => new Set(prev).add(messageId));
+      }
+    } catch {
+      console.warn("Failed to toggle flag");
+    }
+  }
   const deleteDialogRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
 
@@ -880,6 +919,7 @@ export function MessageList({
             editError={editError}
             replyCounts={replyCounts ?? new Map()}
             sendingIds={sendingIds}
+            flaggedMessages={flaggedMsgs}
             onReply={onReply}
             onEdit={onEdit}
             onDelete={onDelete}
@@ -893,6 +933,7 @@ export function MessageList({
             onCancelEdit={handleCancelEdit}
             onSetEditContent={setEditContent}
             onToggleReaction={toggleReaction}
+            onToggleFlag={toggleFlag}
             onSetPickerMessageId={setPickerMessageId}
             onSetDeleteConfirmId={handleSetDeleteConfirmId}
           />
