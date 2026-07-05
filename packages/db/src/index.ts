@@ -8,6 +8,7 @@ export type { PushSubscription, PushSubscriptionInput } from "./types.js";
 export type { WebhookEndpoint, WebhookDelivery, WebhookDeadLetter } from "./types.js";
 export type { FeatureFlag } from "./types.js";
 export type { ConsentLog } from "./types.js";
+export type { SidebarCategory, SidebarChannelAssignment } from "./types.js";
 
 export { hasPermission, getPermissionsForRole, getAllPermissions } from "./permissions.js";
 export type { Permission } from "./permissions.js";

@@ -216,3 +216,21 @@ export interface ConsentLog {
   user_agent: string | null;
   created_at: string;
 }
+
+export interface SidebarCategory {
+  id: string;
+  user_id: string;
+  workspace_id: string;
+  name: string;
+  sort_order: number;
+  is_collapsible: boolean;
+  created_at: string;
+}
+
+export interface SidebarChannelAssignment {
+  id: string;
+  category_id: string;
+  channel_id: string;
+  sort_order: number;
+  created_at: string;
+}

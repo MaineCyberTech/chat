@@ -17,6 +17,7 @@ import {
   Search,
   Plus,
   ChevronDown,
+  X,
   UserPlus,
 } from "lucide-react";
 import type { Channel, Workspace } from "@chat/db";
@@ -53,8 +54,15 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     status: "online",
   });
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [categories, setCategories] = useState<
+    Array<{ id: string; name: string; sort_order: number; channels: string[] }>
+  >([]);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [renamingCategory, setRenamingCategory] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const statusMenuRef = useRef<HTMLDivElement>(null);
-  const [channelsExpanded, setChannelsExpanded] = useState(true);
   const [dmExpanded, setDmExpanded] = useState(true);
   const [showUnreads, setShowUnreads] = useState(false);
   const [unreads, setUnreads] = useState<Map<string, { count: number; mentions: number }>>(
@@ -138,6 +146,20 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       .catch(() => setChatUsers([]));
   }, [workspace, user]);
 
+  // Fetch sidebar categories
+  React.useEffect(() => {
+    if (!workspace) return;
+    api
+      .get<{
+        categories: Array<{ id: string; name: string; sort_order: number; channels: string[] }>;
+      }>(`/sidebar-categories?workspace_id=${workspace.id}`)
+      .then((res) => {
+        setCategories(res.categories);
+        setExpandedCategories(new Set(res.categories.map((c: { id: string }) => c.id)));
+      })
+      .catch(() => setCategories([]));
+  }, [workspace]);
+
   async function startDm(targetUserId: string) {
     if (!workspace) return;
     try {
@@ -201,6 +223,44 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       s.emit("presence:set", status);
     } catch {
       console.warn("Failed to set status");
+    }
+  }
+
+  async function createCategory() {
+    if (!workspace || !newCategoryName.trim()) return;
+    try {
+      const res = await api.post<{
+        category: { id: string; name: string; sort_order: number; channels: string[] };
+      }>("/sidebar-categories", {
+        workspace_id: workspace.id,
+        name: newCategoryName.trim(),
+      });
+      setCategories((prev) => [...prev, { ...res.category, channels: [] }]);
+      setExpandedCategories((prev) => new Set(prev).add(res.category.id));
+      setNewCategoryName("");
+      setCreatingCategory(false);
+    } catch {
+      console.warn("Failed to create category");
+    }
+  }
+
+  async function renameCategory(id: string, name: string) {
+    if (!name.trim()) return;
+    try {
+      await api.patch(`/sidebar-categories/${id}`, { name: name.trim() });
+      setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name: name.trim() } : c)));
+      setRenamingCategory(null);
+    } catch {
+      console.warn("Failed to rename category");
+    }
+  }
+
+  async function deleteCategory(id: string) {
+    try {
+      await api.delete(`/sidebar-categories/${id}`);
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+    } catch {
+      console.warn("Failed to delete category");
     }
   }
 
@@ -434,70 +494,174 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
             </div>
           )}
 
-          {/* Channels section */}
+          {/* Category-driven channels */}
           {workspaceSlug && !collapsed && (
             <div className="mb-2">
-              <div className="mm-sidebar-group-header flex w-full items-center gap-1">
-                <button
-                  onClick={() => setChannelsExpanded(!channelsExpanded)}
-                  className="flex cursor-pointer items-center gap-1"
-                >
-                  <ChevronDown
-                    size={12}
-                    style={{
-                      transform: channelsExpanded ? "rotate(0deg)" : "rotate(-90deg)",
-                      transition: "transform 200ms",
-                    }}
-                  />
-                  Channels
-                </button>
-                <button
-                  onClick={() => setShowUnreads(!showUnreads)}
-                  className="ml-auto rounded px-2 py-0.5 text-[10px] font-medium uppercase transition-colors"
-                  style={{
-                    color: showUnreads
-                      ? "var(--sidebar-text-active-color)"
-                      : "rgba(255,255,255,0.5)",
-                    background: showUnreads ? "rgba(255,255,255,0.15)" : "transparent",
-                  }}
-                  aria-label={showUnreads ? "Show all channels" : "Show unread channels only"}
-                >
-                  {showUnreads ? "All" : "Unreads"}
-                </button>
-              </div>
-              {channelsExpanded && (
-                <>
-                  {wsLoading || !workspace ? (
-                    <div className="space-y-1 px-4">
-                      {[1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="h-7 animate-pulse rounded"
-                          style={{ background: "rgba(255,255,255,0.08)" }}
+              {categories.map((cat) => {
+                const isDefault = cat.name === "Channels" || cat.name === "Direct Messages";
+                const isExpanded = expandedCategories.has(cat.id);
+                return (
+                  <div key={cat.id} className="mb-1">
+                    <div className="mm-sidebar-group-header group flex w-full items-center gap-1">
+                      <button
+                        onClick={() => {
+                          const next = new Set(expandedCategories);
+                          if (isExpanded) next.delete(cat.id);
+                          else next.add(cat.id);
+                          setExpandedCategories(next);
+                        }}
+                        className="flex cursor-pointer items-center gap-1"
+                      >
+                        <ChevronDown
+                          size={12}
+                          style={{
+                            transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+                            transition: "transform 200ms",
+                          }}
                         />
-                      ))}
+                      </button>
+                      {renamingCategory === cat.id ? (
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            renameCategory(cat.id, renameValue);
+                          }}
+                          className="flex flex-1 items-center gap-1"
+                        >
+                          <input
+                            autoFocus
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onBlur={() => setRenamingCategory(null)}
+                            className="flex-1 rounded px-1 py-0.5 text-xs"
+                            style={{
+                              background: "rgba(255,255,255,0.1)",
+                              color: "#fff",
+                              border: "none",
+                              outline: "none",
+                            }}
+                            aria-label="Category name"
+                          />
+                        </form>
+                      ) : (
+                        <span
+                          className="flex-1 cursor-pointer text-xs font-semibold tracking-wider uppercase"
+                          onDoubleClick={() => {
+                            setRenamingCategory(cat.id);
+                            setRenameValue(cat.name);
+                          }}
+                        >
+                          {cat.name}
+                        </span>
+                      )}
+                      {!isDefault && (
+                        <button
+                          onClick={() => deleteCategory(cat.id)}
+                          className="mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)]"
+                          aria-label={`Delete ${cat.name}`}
+                        >
+                          <X size={10} style={{ color: "rgba(255,255,255,0.5)" }} />
+                        </button>
+                      )}
                     </div>
-                  ) : (
-                    <div key={channelRefreshKey}>
-                      <ChannelList
-                        workspaceSlug={workspaceSlug}
-                        workspaceId={workspace.id}
-                        activeChannelId={channelId}
-                        showUnreads={showUnreads}
-                        unreadChannels={unreadChannelIds}
-                        unreads={unreads}
-                      />
-                    </div>
-                  )}
-                  {workspace && (
-                    <div className="mt-1 px-3">
-                      <CreateChannelDialog
-                        workspaceId={workspace.id}
-                        onCreated={handleChannelCreated}
-                      />
-                    </div>
-                  )}
-                </>
+                    {isExpanded && (
+                      <>
+                        {cat.name === "Channels" && (
+                          <>
+                            <div className="flex items-center justify-end px-5 py-0.5">
+                              <button
+                                onClick={() => setShowUnreads(!showUnreads)}
+                                className="rounded px-2 py-0.5 text-[10px] font-medium uppercase transition-colors"
+                                style={{
+                                  color: showUnreads
+                                    ? "var(--sidebar-text-active-color)"
+                                    : "rgba(255,255,255,0.5)",
+                                  background: showUnreads
+                                    ? "rgba(255,255,255,0.15)"
+                                    : "transparent",
+                                }}
+                                aria-label={
+                                  showUnreads ? "Show all channels" : "Show unread channels only"
+                                }
+                              >
+                                {showUnreads ? "All" : "Unreads"}
+                              </button>
+                            </div>
+                            {wsLoading || !workspace ? (
+                              <div className="space-y-1 px-4">
+                                {[1, 2, 3].map((i) => (
+                                  <div
+                                    key={i}
+                                    className="h-7 animate-pulse rounded"
+                                    style={{ background: "rgba(255,255,255,0.08)" }}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <div key={channelRefreshKey}>
+                                <ChannelList
+                                  workspaceSlug={workspaceSlug}
+                                  workspaceId={workspace.id}
+                                  activeChannelId={channelId}
+                                  showUnreads={showUnreads}
+                                  unreadChannels={unreadChannelIds}
+                                  unreads={unreads}
+                                />
+                              </div>
+                            )}
+                            {workspace && (
+                              <div className="mt-1 px-3">
+                                <CreateChannelDialog
+                                  workspaceId={workspace.id}
+                                  onCreated={handleChannelCreated}
+                                />
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+              {/* Add category */}
+              {creatingCategory ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    createCategory();
+                  }}
+                  className="flex items-center gap-1 px-4 py-1"
+                >
+                  <input
+                    autoFocus
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    onBlur={() => {
+                      setCreatingCategory(false);
+                      setNewCategoryName("");
+                    }}
+                    placeholder="Category name"
+                    className="flex-1 rounded px-2 py-1 text-xs"
+                    style={{
+                      background: "rgba(255,255,255,0.1)",
+                      color: "#fff",
+                      border: "none",
+                      outline: "none",
+                    }}
+                    aria-label="New category name"
+                  />
+                </form>
+              ) : (
+                <button
+                  onClick={() => setCreatingCategory(true)}
+                  className="flex w-full items-center gap-1 rounded px-5 py-1 text-xs transition-colors hover:bg-[rgba(255,255,255,0.08)]"
+                  style={{ color: "rgba(255,255,255,0.5)" }}
+                  aria-label="Add category"
+                >
+                  <Plus size={12} />
+                  Add category
+                </button>
               )}
             </div>
           )}

@@ -35,6 +35,7 @@ import auditRoutes from "./modules/audit/routes.js";
 import statusRoutes from "./modules/status/routes.js";
 import emojiRoutes from "./modules/emoji/routes.js";
 import groupRoutes from "./modules/groups/routes.js";
+import sidebarRoutes from "./modules/sidebar/routes.js";
 
 function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = process.hrtime.bigint();
@@ -99,6 +100,7 @@ export function createApp(frontendUrl: string): Express {
   app.use("/v1", statusRoutes);
   app.use("/v1", emojiRoutes);
   app.use("/v1", groupRoutes);
+  app.use("/v1/sidebar-categories", sidebarRoutes);
 
   app.get("/", (_req, res) => {
     res.json({ name: "chat-api", status: "running" });
