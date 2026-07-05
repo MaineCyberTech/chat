@@ -149,6 +149,9 @@
     display: flex;
     align-items: center;
   }
+  .mm-sidebar-channel:hover {
+    background: var(--sidebar-text-hover-bg);
+  }
   .mm-sidebar-channel.active::before {
     position: absolute;
     top: 0;
@@ -200,7 +203,11 @@
     font-weight: 600;
     text-transform: uppercase;
     color: rgba(var(--sidebar-text-rgb), 0.6);
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
+    transition: color 150ms;
+  }
+  .mm-sidebar-group-header:hover {
+    color: rgba(var(--sidebar-text-rgb), 0.8);
   }
 }
 
@@ -283,14 +290,14 @@
   top: -12px;
   right: 0;
   display: flex;
-  padding: 2px;
+  padding: 4px;
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
 }
 .mm-post:hover .post-menu,
 .mm-post.a11y--active .post-menu {
-  border-color: rgba(var(--center-channel-color-rgb), 0.16);
+  border-color: rgba(var(--center-channel-color-rgb), 0.2);
   background: var(--center-channel-bg);
   box-shadow: var(--elevation-1);
 }

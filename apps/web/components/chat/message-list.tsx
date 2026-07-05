@@ -203,11 +203,11 @@ const MessageItem = React.memo(function MessageItem({
         <div className="flex items-start gap-2 px-4 py-1">
           {/* Avatar column */}
           {showAuthor ? (
-            <div className="shrink-0" style={{ width: 36 }}>
+            <div className="shrink-0" style={{ width: 44 }}>
               <div
                 style={{
-                  width: 24,
-                  height: 24,
+                  width: 32,
+                  height: 32,
                   borderRadius: "var(--radius-full)",
                   overflow: "hidden",
                 }}
@@ -216,7 +216,7 @@ const MessageItem = React.memo(function MessageItem({
                   <img src={avatar} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <span
-                    className="flex h-full w-full items-center justify-center text-[10px] font-semibold"
+                    className="flex h-full w-full items-center justify-center text-xs font-semibold"
                     style={{
                       background: "rgba(var(--button-bg-rgb), 0.16)",
                       color: "var(--button-bg)",
@@ -228,7 +228,7 @@ const MessageItem = React.memo(function MessageItem({
               </div>
             </div>
           ) : (
-            <div style={{ width: 36 }} className="shrink-0 pt-0.5 text-right">
+            <div style={{ width: 44 }} className="shrink-0 pt-0.5 text-right">
               <span
                 style={{
                   fontSize: 11,
@@ -345,7 +345,7 @@ const MessageItem = React.memo(function MessageItem({
                       {msg.priority.charAt(0).toUpperCase() + msg.priority.slice(1)}
                     </span>
                   )}
-                  <div className="text-sm break-words" style={{ lineHeight: "1.6" }}>
+                  <div className="text-sm break-words" style={{ lineHeight: "20px" }}>
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
