@@ -2,78 +2,49 @@
 
 import React, { useState } from "react";
 import { Bold, Italic, Code, Link, Quote, List, ListOrdered, Strikethrough } from "lucide-react";
+import { type Editor } from "@tiptap/react";
 
 interface Props {
-  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
-  content: string;
-  setContent: (content: string) => void;
+  editorRef: React.RefObject<Editor | null>;
 }
 
 type FormatMode = "bold" | "italic" | "strike" | "code" | "link" | "quote" | "ul" | "ol";
 
-function applyFormat(
-  textarea: HTMLTextAreaElement,
-  content: string,
-  setContent: (c: string) => void,
-  mode: FormatMode,
-) {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const selected = content.slice(start, end);
-  const before = content.slice(0, start);
-  const after = content.slice(end);
-
-  let replacement: string;
-  let cursorOffset: number;
-
+function applyFormat(editor: Editor, mode: FormatMode) {
   switch (mode) {
     case "bold":
-      replacement = `**${selected || "bold"}**`;
-      cursorOffset = selected ? 0 : -4;
+      editor.chain().focus().toggleBold().run();
       break;
     case "italic":
-      replacement = `*${selected || "italic"}*`;
-      cursorOffset = selected ? 0 : -2;
+      editor.chain().focus().toggleItalic().run();
       break;
     case "strike":
-      replacement = `~~${selected || "strikethrough"}~~`;
-      cursorOffset = selected ? 0 : -4;
+      editor.chain().focus().toggleStrike().run();
       break;
-    case "code":
-      if (selected.includes("\n")) {
-        replacement = "```\n" + (selected || "code") + "\n```";
-        cursorOffset = selected ? 0 : -6;
+    case "code": {
+      const { from, to } = editor.state.selection;
+      if (from !== to) {
+        editor.chain().focus().toggleCode().run();
       } else {
-        replacement = "`" + (selected || "code") + "`";
-        cursorOffset = selected ? 0 : -2;
+        editor.chain().focus().toggleCodeBlock().run();
       }
       break;
-    case "link":
-      replacement = selected ? `[${selected}](url)` : "[link](url)";
-      cursorOffset = selected ? -5 : -6;
+    }
+    case "link": {
+      const url = window.prompt("Enter URL:");
+      if (url) editor.chain().focus().setLink({ href: url }).run();
       break;
+    }
     case "quote":
-      replacement = "> " + (selected || "quote").replace(/\n/g, "\n> ");
-      cursorOffset = 0;
+      editor.chain().focus().toggleBlockquote().run();
       break;
     case "ul":
-      replacement = "- " + (selected || "item").replace(/\n/g, "\n- ");
-      cursorOffset = 0;
+      editor.chain().focus().toggleBulletList().run();
       break;
     case "ol":
-      replacement = "1. " + (selected || "item").replace(/\n/g, "\n2. ");
-      cursorOffset = 0;
+      editor.chain().focus().toggleOrderedList().run();
       break;
   }
-
-  const newContent = before + replacement + after;
-  setContent(newContent);
-
-  requestAnimationFrame(() => {
-    const newPos = start + replacement.length + cursorOffset;
-    textarea.setSelectionRange(newPos, newPos);
-    textarea.focus();
-  });
 }
 
 const FORMAT_BUTTONS: { mode: FormatMode; icon: React.ReactNode; label: string }[] = [
@@ -87,7 +58,7 @@ const FORMAT_BUTTONS: { mode: FormatMode; icon: React.ReactNode; label: string }
   { mode: "ol", icon: <ListOrdered size={14} />, label: "Numbered list" },
 ];
 
-export function FormattingBar({ textareaRef, content, setContent }: Props) {
+export function FormattingBar({ editorRef }: Props) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
@@ -96,8 +67,8 @@ export function FormattingBar({ textareaRef, content, setContent }: Props) {
         <button
           key={mode}
           onClick={() => {
-            if (textareaRef.current) {
-              applyFormat(textareaRef.current, content, setContent, mode);
+            if (editorRef.current) {
+              applyFormat(editorRef.current, mode);
             }
           }}
           className="flex h-7 w-7 items-center justify-center rounded transition-colors"

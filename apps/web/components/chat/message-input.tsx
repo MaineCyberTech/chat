@@ -21,6 +21,7 @@ import {
 import { FormattingBar } from "./formatting-bar";
 import { CodeBlock } from "./code-block";
 import { EmojiPicker, searchEmojis } from "./emoji-picker";
+import { TipTapEditor, type Editor } from "./tiptap-editor";
 import { SLASH_COMMANDS } from "@/lib/slash-commands";
 
 type PostPriority = "standard" | "important" | "urgent" | "critical";
@@ -91,8 +92,8 @@ export function MessageInput({
   onTypingStop,
   typingUsers,
 }: Props) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const tiptapRef = useRef<Editor | null>(null);
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -188,7 +189,7 @@ export function MessageInput({
     const draft = localStorage.getItem(`${DRAFT_KEY_PREFIX}${channelId}`);
     if (draft) {
       setContent(draft);
-      textareaRef.current?.focus();
+      setTimeout(() => tiptapRef.current?.commands.focus(), 0);
     }
     setLoadedDraft(true);
   }, [channelId]);
@@ -262,41 +263,37 @@ export function MessageInput({
   }
 
   function insertMention(member: Member) {
-    if (!textareaRef.current) return;
-    const textarea = textareaRef.current;
-    const cursorPos = textarea.selectionStart;
-    const mention = getMentionAtCursor(content, cursorPos);
+    const editor = tiptapRef.current;
+    if (!editor) return;
+    const text = editor.getText();
+    const cursorPos = editor.state.selection.from;
+    const mention = getMentionAtCursor(text, cursorPos);
     if (!mention) return;
     const name = member.display_name ?? member.email.split("@")[0] ?? "?";
-    const before = content.slice(0, mention.start);
-    const after = content.slice(cursorPos);
-    const newContent = `${before}@${name} ${after}`;
-    setContent(newContent);
+    const before = text.slice(0, mention.start);
+    const after = text.slice(cursorPos);
+    const newText = `${before}@${name} ${after}`;
+    editor.commands.setContent(newText);
+    setContent(editor.getHTML());
     setMentionQuery(null);
-    requestAnimationFrame(() => {
-      const pos = mention.start + name.length + 2;
-      textarea.setSelectionRange(pos, pos);
-      textarea.focus();
-    });
+    editor.commands.focus();
   }
 
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const value = e.target.value;
-      const cursorPos = e.target.selectionStart;
-      setContent(value);
+  const handleTipTapChange = useCallback(
+    (text: string) => {
+      const cursorPos = tiptapRef.current?.state.selection.from ?? text.length;
 
-      if (value.trim() && onTypingStart) {
+      if (text.trim() && onTypingStart) {
         const now = Date.now();
         if (now - lastTypingEmitRef.current > TYPING_THROTTLE_MS) {
           lastTypingEmitRef.current = now;
           onTypingStart();
         }
-      } else if (!value.trim() && onTypingStop) {
+      } else if (!text.trim() && onTypingStop) {
         onTypingStop();
       }
 
-      const beforeCursor = value.slice(0, cursorPos);
+      const beforeCursor = text.slice(0, cursorPos);
       const lastNewline = beforeCursor.lastIndexOf("\n");
       const currentLine = beforeCursor.slice(lastNewline + 1);
       if (currentLine.startsWith("/") && !currentLine.includes(" ")) {
@@ -306,7 +303,7 @@ export function MessageInput({
         setSlashQuery(null);
       }
 
-      const mention = getMentionAtCursor(value, cursorPos);
+      const mention = getMentionAtCursor(text, cursorPos);
       if (mention) {
         setMentionQuery(mention.query);
         setMentionIndex(0);
@@ -314,14 +311,14 @@ export function MessageInput({
         setMentionQuery(null);
       }
 
-      const colonBefore = value.slice(0, cursorPos);
+      const colonBefore = text.slice(0, cursorPos);
       const colonStart = colonBefore.lastIndexOf(":", cursorPos - 1);
       if (
         colonStart !== -1 &&
         colonStart < cursorPos - 1 &&
         !colonBefore.slice(colonStart + 1).includes(" ")
       ) {
-        const q = value.slice(colonStart + 1, cursorPos);
+        const q = text.slice(colonStart + 1, cursorPos);
         if (q.length > 0 && q.length < 40) {
           setColonQuery({ start: colonStart, end: cursorPos, query: q });
           setColonIndex(0);
@@ -331,107 +328,100 @@ export function MessageInput({
       } else {
         setColonQuery(null);
       }
-
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "auto";
-        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
-      }
     },
     [onTypingStart, onTypingStop],
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    (e: KeyboardEvent): boolean => {
       if (slashQuery && filteredCommands.length > 0) {
         if (e.key === "ArrowDown") {
           e.preventDefault();
           setSlashIndex((i) => (i + 1) % filteredCommands.length);
-          return;
+          return true;
         }
         if (e.key === "ArrowUp") {
           e.preventDefault();
           setSlashIndex((i) => (i - 1 + filteredCommands.length) % filteredCommands.length);
-          return;
+          return true;
         }
         if (e.key === "Enter" || e.key === "Tab") {
           e.preventDefault();
           const cmd = filteredCommands[slashIndex];
           if (cmd) {
-            setContent(cmd.command + " ");
+            const editor = tiptapRef.current;
+            if (editor) {
+              editor.commands.setContent(cmd.command + " ");
+              editor.commands.focus();
+            }
             setSlashQuery(null);
-            textareaRef.current?.focus();
           }
-          return;
+          return true;
         }
         if (e.key === "Escape") {
           e.preventDefault();
           setSlashQuery(null);
-          return;
+          return true;
         }
       }
       if (mentionQuery && filteredMembers.length > 0) {
         if (e.key === "ArrowDown") {
           e.preventDefault();
           setMentionIndex((i) => (i + 1) % filteredMembers.length);
-          return;
+          return true;
         }
         if (e.key === "ArrowUp") {
           e.preventDefault();
           setMentionIndex((i) => (i - 1 + filteredMembers.length) % filteredMembers.length);
-          return;
+          return true;
         }
         if (e.key === "Enter" || e.key === "Tab") {
           e.preventDefault();
           const m = filteredMembers[mentionIndex];
           if (m) insertMention(m);
-          return;
+          return true;
         }
         if (e.key === "Escape") {
           e.preventDefault();
           setMentionQuery(null);
-          return;
+          return true;
         }
       }
       if (colonQuery && colonEmojis.length > 0) {
         if (e.key === "ArrowDown") {
           e.preventDefault();
           setColonIndex((i) => (i + 1) % colonEmojis.length);
-          return;
+          return true;
         }
         if (e.key === "ArrowUp") {
           e.preventDefault();
           setColonIndex((i) => (i - 1 + colonEmojis.length) % colonEmojis.length);
-          return;
+          return true;
         }
         if (e.key === "Enter" || e.key === "Tab") {
           e.preventDefault();
           const emoji = colonEmojis[colonIndex];
           if (emoji) {
-            const textarea = textareaRef.current;
-            if (textarea) {
-              const newContent =
-                content.slice(0, colonQuery.start) + emoji.c + " " + content.slice(colonQuery.end);
-              setContent(newContent);
-              const pos = colonQuery.start + emoji.c.length + 1;
-              requestAnimationFrame(() => {
-                textarea.setSelectionRange(pos, pos);
-                textarea.focus();
-              });
+            const editor = tiptapRef.current;
+            if (editor) {
+              const text = editor.getText();
+              const before = text.slice(0, colonQuery.start);
+              const after = text.slice(colonQuery.end);
+              const newText = `${before}${emoji.c} ${after}`;
+              editor.commands.setContent(newText);
+              editor.commands.focus();
             }
           }
           setColonQuery(null);
-          return;
+          return true;
         }
         if (e.key === "Escape") {
           e.preventDefault();
           setColonQuery(null);
-          return;
+          return true;
         }
       }
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleSubmit();
-      }
+      return false;
     },
     [
       mentionQuery,
@@ -443,12 +433,13 @@ export function MessageInput({
       colonQuery,
       colonEmojis,
       colonIndex,
-      content,
     ],
   );
 
   const handleSubmit = useCallback(async () => {
-    let text = content.trim();
+    const editor = tiptapRef.current;
+    const rawText = editor?.getText().trim() ?? "";
+    let text = rawText;
     if (!text && files.length === 0) return;
     if (sending) return;
 
@@ -509,7 +500,7 @@ export function MessageInput({
       setFiles([]);
       localStorage.removeItem(`${DRAFT_KEY_PREFIX}${channelId}`);
       if (onTypingStop) onTypingStop();
-      textareaRef.current?.focus();
+      tiptapRef.current?.commands.focus();
     } catch {
       const msg = "Failed to send message. Please try again.";
       setSendError(msg);
@@ -572,7 +563,7 @@ export function MessageInput({
         setFiles([]);
         localStorage.removeItem(`${DRAFT_KEY_PREFIX}${channelId}`);
         if (onTypingStop) onTypingStop();
-        textareaRef.current?.focus();
+        tiptapRef.current?.commands.focus();
       } catch {
         const msg = "Failed to send message.";
         setSendError(msg);
@@ -611,19 +602,12 @@ export function MessageInput({
   );
 
   function insertEmoji(emoji: string) {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const before = content.slice(0, start);
-    const after = content.slice(textarea.selectionEnd);
-    const newContent = `${before}${emoji} ${after}`;
-    setContent(newContent);
+    const editor = tiptapRef.current;
+    if (editor) {
+      editor.commands.insertContent(`${emoji} `);
+      editor.commands.focus();
+    }
     setShowEmojiPicker(false);
-    const pos = start + emoji.length + 1;
-    requestAnimationFrame(() => {
-      textarea.setSelectionRange(pos, pos);
-      textarea.focus();
-    });
   }
 
   return (
@@ -689,9 +673,7 @@ export function MessageInput({
               background: "var(--center-channel-bg)",
             }}
           >
-            {showFormatting && (
-              <FormattingBar textareaRef={textareaRef} content={content} setContent={setContent} />
-            )}
+            {showFormatting && <FormattingBar editorRef={tiptapRef} />}
 
             {/* File attachments */}
             {files.length > 0 && (
@@ -732,33 +714,16 @@ export function MessageInput({
               </div>
             )}
 
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={handleChange}
+            <TipTapEditor
+              ref={tiptapRef}
+              content={content}
+              onChange={(html, text) => {
+                setContent(html);
+                handleTipTapChange(text);
+              }}
+              onEnter={handleSubmit}
               onKeyDown={handleKeyDown}
               placeholder="Type a message... Use @ to mention, / for commands"
-              rows={1}
-              className="custom-textarea"
-              style={{
-                overflow: "hidden",
-                width: "100%",
-                minHeight: 46,
-                maxHeight: 120,
-                border: "none",
-                borderRadius: 4,
-                background: "transparent",
-                color: "var(--center-channel-color)",
-                lineHeight: "20px",
-                resize: "none",
-                whiteSpace: "break-spaces",
-                wordWrap: "break-word",
-                padding: "12px",
-                outline: "none",
-                fontFamily: "inherit",
-                fontSize: 14,
-              }}
-              aria-label="Message"
             />
 
             {/* Emoji picker */}
@@ -788,20 +753,16 @@ export function MessageInput({
                   <button
                     key={emoji.n}
                     onClick={() => {
-                      const textarea = textareaRef.current;
-                      if (!textarea) return;
-                      const newContent =
-                        content.slice(0, colonQuery.start) +
-                        emoji.c +
-                        " " +
-                        content.slice(colonQuery.end);
-                      setContent(newContent);
+                      const editor = tiptapRef.current;
+                      if (!editor) return;
+                      const text = editor.getText();
+                      const before = text.slice(0, colonQuery.start);
+                      const after = text.slice(colonQuery.end);
+                      const newText = `${before}${emoji.c} ${after}`;
+                      editor.commands.setContent(newText);
+                      setContent(editor.getHTML());
                       setColonQuery(null);
-                      const pos = colonQuery.start + emoji.c.length + 1;
-                      requestAnimationFrame(() => {
-                        textarea.setSelectionRange(pos, pos);
-                        textarea.focus();
-                      });
+                      editor.commands.focus();
                     }}
                     onMouseEnter={() => setColonIndex(i)}
                     className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${i === colonIndex ? "bg-[rgba(var(--center-channel-color-rgb),0.08)]" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"}`}
@@ -832,9 +793,12 @@ export function MessageInput({
                   <button
                     key={cmd.command}
                     onClick={() => {
-                      setContent(cmd.command + " ");
+                      const editor = tiptapRef.current;
+                      if (editor) {
+                        editor.commands.setContent(cmd.command + " ");
+                        editor.commands.focus();
+                      }
                       setSlashQuery(null);
-                      textareaRef.current?.focus();
                     }}
                     onMouseEnter={() => setSlashIndex(i)}
                     className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${i === slashIndex ? "bg-[rgba(var(--center-channel-color-rgb),0.08)]" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"}`}
