@@ -345,7 +345,10 @@ const MessageItem = React.memo(function MessageItem({
                       {msg.priority.charAt(0).toUpperCase() + msg.priority.slice(1)}
                     </span>
                   )}
-                  <div className="text-sm break-words" style={{ lineHeight: "20px" }}>
+                  <div
+                    className="text-sm break-words"
+                    style={{ lineHeight: "20px", color: "var(--center-channel-color)" }}
+                  >
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
