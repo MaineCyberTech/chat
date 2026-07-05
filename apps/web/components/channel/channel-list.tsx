@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Skeleton, useToast } from "@chat/ui";
-import { Trash2, Hash, Lock, GripVertical } from "lucide-react";
+import { Trash2, Hash, Lock, GripVertical, Link2, Copy, ExternalLink } from "lucide-react";
 import type { Channel } from "@chat/db";
 
 interface UnreadInfo {
@@ -37,6 +38,11 @@ export function ChannelList({
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragNode = useRef<HTMLElement | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; channel: Channel } | null>(
+    null,
+  );
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -46,6 +52,25 @@ export function ChannelList({
       .catch(() => setChannels([]))
       .finally(() => setLoading(false));
   }, [workspaceId]);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    function handleClick(e: MouseEvent | TouchEvent) {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node))
+        setContextMenu(null);
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setContextMenu(null);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("touchstart", handleClick, { passive: true });
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("touchstart", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [contextMenu]);
 
   async function handleDelete(channelId: string) {
     setDeleting(true);
@@ -165,6 +190,10 @@ export function ChannelList({
               onDragStart={(e) => handleDragStart(e, ch.id)}
               onDragOver={(e) => handleDragOver(e, ch.id)}
               onDragEnd={handleDragEnd}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu({ x: e.clientX, y: e.clientY, channel: ch });
+              }}
               style={{
                 opacity: isDragging ? 0.5 : 1,
                 borderTop: isDragOver
@@ -223,6 +252,79 @@ export function ChannelList({
           );
         })}
       </ul>
+
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-50 w-48 rounded-lg border py-1 shadow-[var(--elevation-4)]"
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+            background: "var(--center-channel-bg)",
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+          }}
+        >
+          <button
+            onClick={() => {
+              const url = `${window.location.origin}/${workspaceSlug}/${contextMenu.channel.slug}`;
+              navigator.clipboard
+                .writeText(url)
+                .then(() => {
+                  addToast({ title: "Link copied", variant: "success", duration: 2000 });
+                })
+                .catch(() => {});
+              setContextMenu(null);
+            }}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+            style={{ color: "var(--center-channel-color)" }}
+          >
+            <Link2 size={14} />
+            Copy link
+          </button>
+          <button
+            onClick={() => {
+              navigator.clipboard
+                .writeText(contextMenu.channel.name)
+                .then(() => {
+                  addToast({ title: "Name copied", variant: "success", duration: 2000 });
+                })
+                .catch(() => {});
+              setContextMenu(null);
+            }}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+            style={{ color: "var(--center-channel-color)" }}
+          >
+            <Copy size={14} />
+            Copy name
+          </button>
+          <button
+            onClick={() => {
+              router.push(`/${workspaceSlug}/${contextMenu.channel.slug}`);
+              setContextMenu(null);
+            }}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+            style={{ color: "var(--center-channel-color)" }}
+          >
+            <ExternalLink size={14} />
+            Go to channel
+          </button>
+          <div
+            className="my-1"
+            style={{ borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.08)" }}
+          />
+          <button
+            onClick={() => {
+              setDeleteConfirmId(contextMenu.channel.id);
+              setContextMenu(null);
+            }}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--dnd-indicator-rgb,235,66,90),0.08)]"
+            style={{ color: "var(--dnd-indicator)" }}
+          >
+            <Trash2 size={14} />
+            Delete channel
+          </button>
+        </div>
+      )}
 
       {deleteConfirmId && (
         <div
