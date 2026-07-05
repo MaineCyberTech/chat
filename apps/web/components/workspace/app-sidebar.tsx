@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-context";
 import { WorkspaceList } from "./workspace-list";
@@ -56,6 +56,10 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [channelsExpanded, setChannelsExpanded] = useState(true);
   const [dmExpanded, setDmExpanded] = useState(true);
   const [showUnreads, setShowUnreads] = useState(false);
+  const [unreads, setUnreads] = useState<Map<string, { count: number; mentions: number }>>(
+    new Map(),
+  );
+  const unreadChannelIds = useMemo(() => new Set(unreads.keys()), [unreads]);
 
   // Auto-collapse sidebar at md breakpoint (768px) for tablet layout
   useEffect(() => {
@@ -249,6 +253,42 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     document.body.classList.toggle("sidebar-mobile-open", mobileOpen);
   }, [mobileOpen]);
 
+  // Socket unread updates
+  useEffect(() => {
+    let cancelled = false;
+    import("@/lib/socket").then(({ getSocket }) => {
+      if (cancelled) return;
+      getSocket().then((s) => {
+        if (cancelled) return;
+        s.on(
+          "unread:update",
+          ({
+            channelId: cId,
+            count,
+            mentions,
+          }: {
+            channelId: string;
+            count: number;
+            mentions: number;
+          }) => {
+            setUnreads((prev) => {
+              const next = new Map(prev);
+              if (count === 0 && mentions === 0) {
+                next.delete(cId);
+              } else {
+                next.set(cId, { count, mentions });
+              }
+              return next;
+            });
+          },
+        );
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <>
       {mobileOpen && (
@@ -437,6 +477,8 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                         workspaceId={workspace.id}
                         activeChannelId={channelId}
                         showUnreads={showUnreads}
+                        unreadChannels={unreadChannelIds}
+                        unreads={unreads}
                       />
                     </div>
                   )}

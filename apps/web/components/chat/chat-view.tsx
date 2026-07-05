@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { ChannelInfo } from "./channel-info";
 import { NotificationPreferencesModal } from "./notification-preferences-modal";
+import { playNotificationSound, showDesktopNotification } from "@/lib/notification-sound";
 import { ChannelBookmarks } from "./channel-bookmarks";
 import type { Message, UserProfile } from "@chat/db";
 import type { Socket } from "socket.io-client";
@@ -199,6 +200,13 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         if (deduplicateEcho(message.id)) return;
         setMessages((prev) => [...prev, message]);
         loadProfiles([message]);
+        if (message.user_id !== user?.id) {
+          playNotificationSound();
+          showDesktopNotification(
+            `New message in #${channelName ?? "channel"}`,
+            message.content.slice(0, 120),
+          );
+        }
       });
 
       socket.on("message:updated", ({ message }: { message: Message }) => {

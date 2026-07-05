@@ -7,12 +7,18 @@ import { Skeleton, useToast } from "@chat/ui";
 import { Trash2, Hash, Lock, GripVertical } from "lucide-react";
 import type { Channel } from "@chat/db";
 
+interface UnreadInfo {
+  count: number;
+  mentions: number;
+}
+
 interface Props {
   workspaceSlug: string;
   workspaceId: string;
   activeChannelId?: string;
   showUnreads?: boolean;
   unreadChannels?: Set<string>;
+  unreads?: Map<string, UnreadInfo>;
 }
 
 export function ChannelList({
@@ -21,6 +27,7 @@ export function ChannelList({
   activeChannelId,
   showUnreads,
   unreadChannels,
+  unreads,
 }: Props) {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,6 +149,8 @@ export function ChannelList({
           const isActive = activeChannelId === ch.id;
           const isDragging = dragId === ch.id;
           const isDragOver = dragOverId === ch.id;
+          const unreadInfo = unreads?.get(ch.id);
+          const hasUnread = unreadInfo && unreadInfo.count > 0 && !isActive;
           return (
             <li
               key={ch.id}
@@ -180,7 +189,21 @@ export function ChannelList({
                     style={{ color: "rgba(255,255,255,0.5)", cursor: "grab" }}
                   />
                   {channelIcon(ch)}
-                  <span className="truncate">{ch.name}</span>
+                  <span
+                    className="truncate"
+                    style={{
+                      fontWeight: hasUnread ? 600 : 400,
+                      color: hasUnread ? "var(--sidebar-unread-text)" : undefined,
+                    }}
+                  >
+                    {ch.name}
+                  </span>
+                  {hasUnread && <span className="sidebar-unread-dot ml-auto" />}
+                  {unreadInfo && unreadInfo.mentions > 0 && !isActive && (
+                    <span className="sidebar-unread-badge ml-auto">
+                      {unreadInfo.mentions > 99 ? "99+" : unreadInfo.mentions}
+                    </span>
+                  )}
                 </Link>
                 <button
                   onClick={() => setDeleteConfirmId(ch.id)}
