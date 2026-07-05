@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type { Channel, Workspace } from "@chat/db";
 import { api } from "@/lib/api";
+import { usePresence, statusColor as presenceColor, statusClass } from "@/lib/use-presence";
 
 interface Props {
   workspaceSlug?: string;
@@ -60,6 +61,12 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     new Map(),
   );
   const unreadChannelIds = useMemo(() => new Set(unreads.keys()), [unreads]);
+  const { getStatus } = usePresence();
+  const dmNameMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const u of chatUsers) m.set(u.id, u.display_name);
+    return m;
+  }, [chatUsers]);
 
   // Auto-collapse sidebar at md breakpoint (768px) for tablet layout
   useEffect(() => {
@@ -550,8 +557,23 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                             }}
                           >
                             <span className="mr-2 inline-flex items-center gap-1">
-                              <span className="status-pill status-pill--online" />
-                              {ch.name.replace(/^dm-/, "")}
+                              {ch.name.startsWith("dm-")
+                                ? (() => {
+                                    const otherId = ch.name.replace(/^dm-/, "");
+                                    const status = getStatus(otherId);
+                                    const displayName =
+                                      dmNameMap.get(otherId) ?? otherId.slice(0, 8);
+                                    return (
+                                      <>
+                                        <span
+                                          className={`status-pill ${statusClass(status)}`}
+                                          style={{ background: presenceColor(status) }}
+                                        />
+                                        {displayName}
+                                      </>
+                                    );
+                                  })()
+                                : ch.name.replace(/^gm-/, "").slice(0, 20)}
                             </span>
                           </Link>
                         </li>

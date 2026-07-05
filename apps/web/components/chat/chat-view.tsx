@@ -184,6 +184,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   useEffect(() => {
     let socket: Socket | null = null;
     let isConnectionAttempted = false;
+    let presenceHandler: ((data: { total: number }) => void) | null = null;
 
     function setup(s: Socket) {
       socket = s;
@@ -217,9 +218,10 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         removeItem(id);
       });
 
-      socket.on("presence:update", ({ total }: { total: number }) => {
+      presenceHandler = ({ total }: { total: number }) => {
         setOnlineCount(total);
-      });
+      };
+      socket.on("presence:update", presenceHandler);
 
       socket.on("typing:start", ({ userId }: { userId: string }) => {
         if (userId !== user?.id) {
@@ -277,7 +279,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         socket.off("message:new");
         socket.off("message:updated");
         socket.off("message:deleted");
-        socket.off("presence:update");
+        if (presenceHandler) socket.off("presence:update", presenceHandler);
         socket.off("typing:start");
         socket.off("typing:stop");
         socket.off("channel:user_joined");
