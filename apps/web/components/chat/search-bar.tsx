@@ -87,6 +87,8 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   const [searchType, setSearchType] = useState<"messages" | "files">("messages");
   const [showTypeMenu, setShowTypeMenu] = useState(false);
   const [showOperatorHint, setShowOperatorHint] = useState(false);
+  const [showFileExtSuggest, setShowFileExtSuggest] = useState(false);
+  const [hasQuery, setHasQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const autocompleteRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -243,6 +245,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 const v = e.target.value;
                 const opMatch = v.match(/\b(from|in|channel|has):\s*\w*$/i);
                 setShowOperatorHint(!opMatch && v.length >= 2 && !v.includes(":"));
+                const hasMatch = v.match(/\bhas:\s*(\w*)$/i);
+                setShowFileExtSuggest(!!hasMatch);
+                setHasQuery(hasMatch?.[1]?.toLowerCase() ?? "");
                 clearTimeout(debounceRef.current);
                 debounceRef.current = setTimeout(() => search(v), SEARCH_DEBOUNCE_MS);
               }}
@@ -320,7 +325,64 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             </div>
           )}
 
-          {/* Operator hints */}
+          {/* File extension suggestions for has: operator */}
+          {showFileExtSuggest && (
+            <div
+              className="absolute left-0 z-50 mt-1 w-auto rounded-lg border px-3 py-2 shadow-[var(--elevation-3)]"
+              style={{
+                background: "var(--center-channel-bg)",
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                top: "100%",
+              }}
+            >
+              <p
+                className="mb-1 text-xs font-medium"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
+                File type suggestions
+              </p>
+              <div className="space-y-0.5">
+                {[
+                  { ext: "has:image", desc: "Images" },
+                  { ext: "has:video", desc: "Videos" },
+                  { ext: "has:audio", desc: "Audio files" },
+                  { ext: "has:file", desc: "Documents" },
+                  { ext: "has:link", desc: "Links" },
+                  { ext: "has:code", desc: "Code snippets" },
+                  { ext: "has:pdf", desc: "PDF documents" },
+                  { ext: "has:spreadsheet", desc: "Spreadsheets" },
+                ]
+                  .filter((s) => !hasQuery || s.ext.replace("has:", "").startsWith(hasQuery))
+                  .slice(0, 6)
+                  .map(({ ext, desc }) => (
+                    <button
+                      key={ext}
+                      onClick={() => {
+                        const before = query.replace(/\bhas:\s*\w*$/i, "");
+                        setQuery(before + ext + " ");
+                        setShowFileExtSuggest(false);
+                        inputRef.current?.focus();
+                      }}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                      style={{ color: "var(--center-channel-color)" }}
+                    >
+                      <code
+                        className="rounded px-1 py-0.5 text-xs font-medium"
+                        style={{
+                          background: "rgba(var(--button-bg-rgb), 0.12)",
+                          color: "var(--button-bg)",
+                        }}
+                      >
+                        {ext}
+                      </code>
+                      <span style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                        {desc}
+                      </span>
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
           {showOperatorHint && query.length >= 2 && (
             <div
               className="absolute left-0 z-50 mt-1 w-auto rounded-lg border px-3 py-2 shadow-[var(--elevation-3)]"
