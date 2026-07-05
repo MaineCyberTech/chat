@@ -9,8 +9,7 @@ import { ChannelList } from "@/components/channel/channel-list";
 import { CreateChannelDialog } from "@/components/channel/create-channel-dialog";
 import { InviteMembersModal } from "./invite-members-modal";
 import { Avatar } from "@chat/ui";
-import { SidebarGroup } from "@chat/ui";
-import { Bookmark, PanelLeftClose, PanelLeft, Settings, Search, Plus, ChevronDown, Hash, UserPlus } from "lucide-react";
+import { Bookmark, PanelLeftClose, PanelLeft, Settings, Search, Plus, ChevronDown, UserPlus } from "lucide-react";
 import type { Channel, Workspace } from "@chat/db";
 import { api } from "@/lib/api";
 
@@ -239,9 +238,6 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     if (typeof window === "undefined") return;
     document.body.classList.toggle("sidebar-mobile-open", mobileOpen);
   }, [mobileOpen]);
-
-  const sidebarWidth = collapsed ? 60 : SIDEBAR_WIDTH;
-  const gridColumns = collapsed ? "60px 1fr" : `${SIDEBAR_WIDTH}px 1fr`;
 
   return (
     <>

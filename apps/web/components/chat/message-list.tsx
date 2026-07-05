@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Avatar, useToast } from "@chat/ui";
+import { useToast } from "@chat/ui";
 import { api } from "@/lib/api";
 import { Reply, Pencil, X, Smile, Copy, Trash2, Clock, AlertCircle, AlertTriangle } from "lucide-react";
 import ReactMarkdown from "react-markdown";

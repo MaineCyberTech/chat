@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
@@ -8,10 +8,9 @@ import { AppSidebar } from "@/components/workspace/app-sidebar";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { QuickSwitcher } from "@/components/chat/quick-switcher";
 import { useSwipeBack } from "@/lib/use-swipe-back";
-import { Skeleton } from "@chat/ui";
 import { api } from "@/lib/api";
 import { register } from "@/lib/keyboard-shortcut-registry";
-import { Menu, Hash, Settings as SettingsIcon, ArrowLeft, Plus } from "lucide-react";
+import { Menu, Hash, Settings as SettingsIcon, ArrowLeft } from "lucide-react";
 import type { Workspace, Channel } from "@chat/db";
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
