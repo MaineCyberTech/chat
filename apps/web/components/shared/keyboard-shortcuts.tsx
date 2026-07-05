@@ -100,17 +100,25 @@ export function KeyboardShortcuts() {
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-md rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]"
+        className="w-full max-w-md rounded-lg border bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-4)]"
+        style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-4 text-lg font-semibold text-[var(--color-foreground-primary)]">
+        <h2 className="mb-4 text-lg font-semibold text-[var(--center-channel-color)]">
           Keyboard Shortcuts
         </h2>
         <div className="space-y-2">
           {SHORTCUTS.map((s) => (
             <div key={s.keys} className="flex items-center justify-between">
-              <span className="text-sm text-[var(--color-foreground-primary)]">{s.label}</span>
-              <kbd className="rounded-md border border-[var(--color-border-primary)] bg-[var(--color-background-tertiary)] px-2 py-0.5 font-mono text-xs text-[var(--color-foreground-primary)]">
+              <span className="text-sm text-[var(--center-channel-color)]">{s.label}</span>
+              <kbd
+                className="rounded-md border px-2 py-0.5 font-mono text-xs"
+                style={{
+                  borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                  backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)",
+                  color: "var(--center-channel-color)",
+                }}
+              >
                 {s.keys}
               </kbd>
             </div>
@@ -118,7 +126,11 @@ export function KeyboardShortcuts() {
         </div>
         <button
           onClick={() => setOpen(false)}
-          className="mt-4 w-full rounded-md bg-[var(--color-foreground-primary)] py-2 text-sm text-[var(--color-background-primary)]"
+          className="mt-4 w-full rounded-md py-2 text-sm"
+          style={{
+            backgroundColor: "var(--center-channel-color)",
+            color: "var(--center-channel-bg)",
+          }}
         >
           Close
         </button>

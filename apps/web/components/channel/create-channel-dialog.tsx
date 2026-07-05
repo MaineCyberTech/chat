@@ -16,6 +16,7 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [triggerHovered, setTriggerHovered] = useState(false);
   const { addToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -48,7 +49,17 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2 rounded-md px-3 py-1 text-sm text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+        className="flex w-full items-center gap-2 rounded-md px-3 py-1 text-sm transition-colors"
+        style={{
+          color: triggerHovered
+            ? "var(--center-channel-color)"
+            : "rgba(var(--center-channel-color-rgb), 0.56)",
+          backgroundColor: triggerHovered
+            ? "rgba(var(--center-channel-color-rgb), 0.08)"
+            : undefined,
+        }}
+        onMouseEnter={() => setTriggerHovered(true)}
+        onMouseLeave={() => setTriggerHovered(false)}
       >
         <span className="text-lg leading-none">+</span> Add channel
       </button>
@@ -68,12 +79,16 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
             onChange={(e) => setTopic(e.target.value)}
             placeholder="What's this channel about?"
           />
-          <label className="flex items-center gap-2 text-xs text-[var(--color-foreground-secondary)]">
+          <label
+            className="flex items-center gap-2 text-xs"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          >
             <input
               type="checkbox"
               checked={isReadOnly}
               onChange={(e) => setIsReadOnly(e.target.checked)}
-              className="rounded border-[var(--color-input-border)]"
+              className="rounded"
+              style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
             />
             Read-only channel (only admins can post)
           </label>

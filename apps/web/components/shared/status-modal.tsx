@@ -67,38 +67,47 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)] p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.5)" }}
       role="dialog"
       aria-label="Set custom status"
     >
-      <div className="w-full max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]">
+      <div className="w-full max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-4)]">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[var(--color-foreground-primary)]">
+          <h2 className="text-base font-semibold text-[var(--center-channel-color)]">
             Set a status
           </h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
             aria-label="Close"
           >
             <X size={16} />
           </button>
         </div>
         <div className="mb-3 flex gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-lg">
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-lg border bg-[var(--center-channel-bg)] text-lg"
+            style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+          >
             {emoji}
           </div>
           <input
             value={text}
             onChange={(e) => setText(e.target.value.slice(0, 100))}
             placeholder="What's your status?"
-            className="flex-1 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-2 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
+            className="flex-1 rounded-lg border bg-[var(--center-channel-bg)] px-3 py-2 text-sm text-[var(--center-channel-color)] placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus:border-[var(--button-bg)] focus:ring-2 focus:ring-[rgba(var(--button-bg-rgb),0.24)] focus:outline-none"
+            style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
             maxLength={100}
             autoFocus
           />
         </div>
         <div className="mb-3">
-          <p className="mb-1 text-xs font-medium text-[var(--color-foreground-tertiary)]">
+          <p
+            className="mb-1 text-xs font-medium"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          >
             Clear after
           </p>
           <div className="flex flex-wrap gap-1">
@@ -109,8 +118,8 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
                 className={
                   "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors " +
                   (duration === d.value
-                    ? "bg-[var(--color-brand-primary)] text-white"
-                    : "bg-[var(--color-background-tertiary)] text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)]")
+                    ? "bg-[var(--button-bg)] text-white"
+                    : "bg-[rgba(var(--center-channel-color-rgb),0.08)] text-[rgba(var(--center-channel-color-rgb),0.72)] hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]")
                 }
               >
                 {d.label}
@@ -123,21 +132,25 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
             <button
               onClick={handleClear}
               disabled={saving}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--color-status-danger-fg)] hover:bg-[var(--color-background-tertiary)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--dnd-indicator)] hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Clear status
             </button>
           )}
           <button
             onClick={onClose}
-            className="rounded-lg border border-[var(--color-border-primary)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)]"
+            className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+            style={{
+              borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+              color: "rgba(var(--center-channel-color-rgb), 0.72)",
+            }}
           >
             Cancel
           </button>
           <button
             onClick={handleSet}
             disabled={saving || !text.trim()}
-            className="rounded-lg bg-[var(--color-brand-primary)] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-[var(--button-bg)] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? "Saving..." : "Set status"}
           </button>

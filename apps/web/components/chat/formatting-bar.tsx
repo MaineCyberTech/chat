@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Bold, Italic, Code, Link, Quote, List, ListOrdered, Strikethrough } from "lucide-react";
 
 interface Props {
@@ -88,9 +88,11 @@ const FORMAT_BUTTONS: { mode: FormatMode; icon: React.ReactNode; label: string }
 ];
 
 export function FormattingBar({ textareaRef, content, setContent }: Props) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   return (
     <div className="mb-1 flex flex-wrap gap-0.5">
-      {FORMAT_BUTTONS.map(({ mode, icon, label }) => (
+      {FORMAT_BUTTONS.map(({ mode, icon, label }, index) => (
         <button
           key={mode}
           onClick={() => {
@@ -98,7 +100,17 @@ export function FormattingBar({ textareaRef, content, setContent }: Props) {
               applyFormat(textareaRef.current, content, setContent, mode);
             }
           }}
-          className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+          className="flex h-7 w-7 items-center justify-center rounded transition-colors"
+          style={{
+            color:
+              hoveredIndex === index
+                ? "var(--center-channel-color)"
+                : "rgba(var(--center-channel-color-rgb), 0.56)",
+            backgroundColor:
+              hoveredIndex === index ? "rgba(var(--center-channel-color-rgb), 0.08)" : undefined,
+          }}
+          onMouseEnter={() => setHoveredIndex(index)}
+          onMouseLeave={() => setHoveredIndex(null)}
           aria-label={label}
           title={label}
         >

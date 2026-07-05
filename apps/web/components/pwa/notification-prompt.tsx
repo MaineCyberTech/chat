@@ -83,21 +83,21 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
     <Dialog open={isOpen} onClose={onClose} title="Push Notifications">
       <div className="space-y-4">
         {!isSupported && (
-          <div className="text-center text-sm text-[var(--color-status-danger-fg)]">
+          <div className="text-center text-sm" style={{ color: "var(--dnd-indicator)" }}>
             Push notifications are not supported in this browser.
           </div>
         )}
 
         {isSupported && !isDenied && !isSubscribed && (
           <div className="space-y-3">
-            <p className="text-sm text-[var(--color-foreground-secondary)]">
+            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
               Get notified about new replies and mentions even when the app is closed.
             </p>
-            <p className="text-sm text-[var(--color-foreground-tertiary)]">
+            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
               You can change this later in settings.
             </p>
             {error && (
-              <p className="text-sm text-[var(--color-status-danger-fg)]" role="alert">
+              <p className="text-sm" style={{ color: "var(--dnd-indicator)" }} role="alert">
                 {error}
               </p>
             )}
@@ -116,14 +116,23 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-[var(--color-foreground-primary)]">
+                <p className="text-sm font-medium text-[var(--center-channel-color)]">
                   Notifications Enabled
                 </p>
-                <p className="text-sm text-[var(--color-foreground-tertiary)]">
+                <p
+                  className="text-sm"
+                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                >
                   You'll receive push notifications for replies and mentions.
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-status-success-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-status-success-fg)]">
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+                style={{
+                  backgroundColor: "rgba(var(--online-indicator-rgb,6,214,160),0.12)",
+                  color: "var(--online-indicator)",
+                }}
+              >
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 Active
               </span>
@@ -141,10 +150,10 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
 
         {isDenied && (
           <div className="space-y-3 text-center">
-            <p className="text-sm text-[var(--color-status-danger-fg)]">
+            <p className="text-sm" style={{ color: "var(--dnd-indicator)" }}>
               Notifications are blocked in your browser settings.
             </p>
-            <p className="text-sm text-[var(--color-foreground-tertiary)]">
+            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
               Please enable notifications for this site in your browser settings, then try again.
             </p>
             <Button variant="secondary" className="w-full" onClick={onClose}>

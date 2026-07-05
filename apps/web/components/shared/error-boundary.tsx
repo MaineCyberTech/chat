@@ -35,11 +35,17 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
       return (
-        <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[var(--color-background-primary)] p-8 text-center">
-          <h2 className="text-xl font-semibold text-[var(--color-foreground-primary)]">
+        <div
+          className="flex h-screen flex-col items-center justify-center gap-4 p-8 text-center"
+          style={{ backgroundColor: "var(--center-channel-bg)" }}
+        >
+          <h2 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
             Something went wrong
           </h2>
-          <p className="max-w-md text-sm text-[var(--color-foreground-secondary)]">
+          <p
+            className="max-w-md text-sm"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          >
             An unexpected error occurred. Please try refreshing the page.
           </p>
           <Button onClick={() => window.location.reload()}>Refresh Page</Button>

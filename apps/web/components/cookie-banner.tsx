@@ -42,13 +42,20 @@ export function CookieBanner() {
 
   return (
     <div
-      className="fixed right-0 bottom-0 left-0 z-50 border-t border-[var(--color-border-primary)] bg-[var(--color-background-primary)] p-4 shadow-[var(--shadow-xl)]"
+      className="fixed right-0 bottom-0 left-0 z-50 border-t p-4 shadow-[var(--shadow-xl)]"
       role="dialog"
       aria-label="Cookie consent"
       aria-live="polite"
+      style={{
+        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+        backgroundColor: "var(--center-channel-bg)",
+      }}
     >
       <div className="mx-auto flex max-w-4xl flex-col items-start gap-3 sm:flex-row sm:items-center">
-        <p className="flex-1 text-sm text-[var(--color-foreground-secondary)]">
+        <p
+          className="flex-1 text-sm"
+          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+        >
           This site uses cookies for authentication and analytics. By continuing, you agree to our
           use of cookies.
         </p>

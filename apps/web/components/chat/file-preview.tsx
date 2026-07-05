@@ -11,13 +11,15 @@ interface Props {
 
 export function FilePreview({ url, type, name }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [hoveredLink, setHoveredLink] = useState(false);
 
   if (type === "image") {
     return (
       <div className="my-1">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="block max-w-xs overflow-hidden rounded-lg border border-[var(--color-border-primary)] transition-opacity hover:opacity-90"
+          className="block max-w-xs overflow-hidden rounded-lg border transition-opacity hover:opacity-90"
+          style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
         >
           <img src={url} alt={name} className="max-h-48 w-auto object-cover" loading="lazy" />
         </button>
@@ -50,7 +52,8 @@ export function FilePreview({ url, type, name }: Props) {
       <div className="my-1 max-w-md">
         <video
           controls
-          className="w-full rounded-lg border border-[var(--color-border-primary)]"
+          className="w-full rounded-lg border"
+          style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
           preload="metadata"
         >
           <source src={url} />
@@ -74,7 +77,14 @@ export function FilePreview({ url, type, name }: Props) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="my-1 inline-flex items-center gap-2 rounded-lg border border-[var(--color-border-primary)] px-3 py-2 text-sm text-[var(--color-brand-primary)] hover:bg-[var(--color-background-tertiary)]"
+      className="my-1 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+      style={{
+        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+        color: "var(--button-bg)",
+        backgroundColor: hoveredLink ? "rgba(var(--center-channel-color-rgb), 0.08)" : undefined,
+      }}
+      onMouseEnter={() => setHoveredLink(true)}
+      onMouseLeave={() => setHoveredLink(false)}
     >
       <Download size={14} />
       {name}

@@ -2,16 +2,23 @@
 
 export default function AuthError({ reset }: { error: Error; reset: () => void }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--color-background-primary)]">
-      <h2 className="text-xl font-semibold text-[var(--color-foreground-primary)]">
+    <div
+      className="flex min-h-screen flex-col items-center justify-center gap-4"
+      style={{ backgroundColor: "var(--center-channel-bg)" }}
+    >
+      <h2 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
         Something went wrong
       </h2>
-      <p className="text-sm text-[var(--color-foreground-secondary)]">
+      <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
         An error occurred on the authentication page.
       </p>
       <button
         onClick={reset}
-        className="rounded-md bg-[var(--color-foreground-primary)] px-4 py-2 text-sm text-[var(--color-background-primary)]"
+        className="rounded-md px-4 py-2 text-sm"
+        style={{
+          backgroundColor: "var(--center-channel-color)",
+          color: "var(--center-channel-bg)",
+        }}
       >
         Try again
       </button>

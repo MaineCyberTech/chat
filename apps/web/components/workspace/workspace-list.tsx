@@ -51,7 +51,9 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
 
   if (workspaces.length === 0) {
     return (
-      <p className="px-2 text-sm text-[var(--color-foreground-tertiary)]">No workspaces yet</p>
+      <p className="px-2 text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+        No workspaces yet
+      </p>
     );
   }
 
@@ -63,20 +65,26 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
             <div className="group flex items-center">
               <Link
                 href={`/${ws.slug}`}
-                className={`block flex-1 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-[var(--color-background-tertiary)] ${
-                  activeSlug === ws.slug
-                    ? "bg-[var(--color-background-tertiary)] font-medium"
-                    : "text-[var(--color-foreground-primary)]"
+                className={`block flex-1 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] ${
+                  activeSlug === ws.slug ? "font-medium" : "text-[var(--center-channel-color)]"
                 }`}
+                style={
+                  activeSlug === ws.slug
+                    ? { backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)" }
+                    : undefined
+                }
               >
                 # {ws.name}
               </Link>
               <button
                 onClick={() => setDeleteConfirmId(ws.id)}
-                className="mr-1 flex h-6 w-6 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[var(--color-background-tertiary)]"
+                className="mr-1 flex h-6 w-6 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
                 aria-label={`Delete workspace ${ws.name}`}
               >
-                <Trash2 size={12} className="text-[var(--color-foreground-tertiary)]" />
+                <Trash2
+                  size={12}
+                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                />
               </button>
             </div>
           </li>
@@ -86,19 +94,22 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
-            className="w-full max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]"
+            className="w-full max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-4)]"
             role="alertdialog"
             aria-label="Delete workspace"
           >
-            <h3 className="text-sm font-semibold text-[var(--color-foreground-primary)]">
+            <h3 className="text-sm font-semibold text-[var(--center-channel-color)]">
               Delete workspace?
             </h3>
-            <p className="mt-1 text-xs text-[var(--color-foreground-secondary)]">
+            <p
+              className="mt-1 text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
               This will permanently delete the workspace and all its channels and messages. This
               cannot be undone.
             </p>
             {deleteError && (
-              <p className="mt-2 text-xs text-[var(--color-status-danger-fg)]" role="alert">
+              <p className="mt-2 text-xs" style={{ color: "var(--dnd-indicator)" }} role="alert">
                 {deleteError}
               </p>
             )}
@@ -108,14 +119,16 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
                   setDeleteConfirmId(null);
                   setDeleteError("");
                 }}
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)]"
+                className="rounded-md px-3 py-1.5 text-xs font-medium hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirmId)}
                 disabled={deleting}
-                className="rounded-md bg-[var(--color-status-danger-fg)] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ backgroundColor: "var(--dnd-indicator)" }}
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>

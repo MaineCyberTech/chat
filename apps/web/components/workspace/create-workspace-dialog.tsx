@@ -16,6 +16,7 @@ export function CreateWorkspaceDialog({ onCreated, children }: Props) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [triggerHovered, setTriggerHovered] = useState(false);
   const { addToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -59,7 +60,17 @@ export function CreateWorkspaceDialog({ onCreated, children }: Props) {
       ) : (
         <button
           onClick={() => setOpen(true)}
-          className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+          className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors"
+          style={{
+            color: triggerHovered
+              ? "var(--center-channel-color)"
+              : "rgba(var(--center-channel-color-rgb), 0.56)",
+            backgroundColor: triggerHovered
+              ? "rgba(var(--center-channel-color-rgb), 0.08)"
+              : undefined,
+          }}
+          onMouseEnter={() => setTriggerHovered(true)}
+          onMouseLeave={() => setTriggerHovered(false)}
         >
           <span className="text-lg leading-none">+</span> Add workspace
         </button>

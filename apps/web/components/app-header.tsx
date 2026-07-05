@@ -23,15 +23,27 @@ export function AppHeader() {
   if (!user) return null;
 
   return (
-    <header className="flex items-center justify-between border-b border-[var(--color-border-primary)] bg-[var(--color-background-primary)] px-4 py-2">
-      <Link href="/" className="text-sm font-semibold text-[var(--color-foreground-primary)]">
+    <header
+      className="flex items-center justify-between border-b px-4 py-2"
+      style={{
+        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+        backgroundColor: "var(--center-channel-bg)",
+      }}
+    >
+      <Link
+        href="/"
+        className="text-sm font-semibold"
+        style={{ color: "var(--center-channel-color)" }}
+      >
         Chat Platform
       </Link>
       <div className="flex items-center gap-3">
         <ThemeToggle />
         <NotificationBell />
         <AvatarUpload />
-        <span className="text-xs text-[var(--color-foreground-tertiary)]">{user.email}</span>
+        <span className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+          {user.email}
+        </span>
         <Button variant="ghost" size="sm" onClick={showInstallPrompt} aria-label="Install app">
           <Smartphone size={18} />
         </Button>

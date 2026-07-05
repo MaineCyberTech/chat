@@ -94,44 +94,57 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)] p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.5)" }}
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-sm flex-col rounded-lg bg-[var(--color-dialog-bg)] shadow-[var(--shadow-xl)]"
+        className="flex w-full max-w-sm flex-col rounded-lg bg-[var(--center-channel-bg)] shadow-[var(--elevation-4)]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="Invite members"
       >
-        <div className="flex items-center justify-between border-b border-[var(--color-border-primary)] px-4 py-3">
-          <h2 className="text-sm font-semibold text-[var(--color-foreground-primary)]">
+        <div
+          className="flex items-center justify-between border-b px-4 py-3"
+          style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+        >
+          <h2 className="text-sm font-semibold text-[var(--center-channel-color)]">
             Invite Members
           </h2>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+            className="flex h-7 w-7 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
             aria-label="Close"
           >
             <X size={14} />
           </button>
         </div>
-        <div className="relative border-b border-[var(--color-border-primary)] px-3 py-2">
+        <div
+          className="relative border-b px-3 py-2"
+          style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+        >
           <Search
             size={14}
-            className="absolute top-1/2 left-5 -translate-y-1/2 text-[var(--color-foreground-tertiary)]"
+            className="absolute top-1/2 left-5 -translate-y-1/2"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
           />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search members..."
-            className="w-full rounded-md border border-[var(--color-input-border)] bg-[var(--color-input-bg)] py-1.5 pr-2 pl-7 text-sm text-[var(--color-input-fg)] placeholder:text-[var(--color-input-placeholder)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
+            className="w-full rounded-md border bg-[var(--center-channel-bg)] py-1.5 pr-2 pl-7 text-sm text-[var(--center-channel-color)] placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus:border-[var(--button-bg)] focus:ring-2 focus:ring-[rgba(var(--button-bg-rgb),0.24)] focus:outline-none"
+            style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
             aria-label="Search members"
           />
         </div>
         <div className="max-h-56 overflow-y-auto p-1">
           {results.length === 0 && (
-            <p className="px-3 py-4 text-center text-xs text-[var(--color-foreground-tertiary)]">
+            <p
+              className="px-3 py-4 text-center text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            >
               No members found
             </p>
           )}
@@ -142,17 +155,19 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
                 key={m.user_id}
                 onClick={() => toggle(m.user_id)}
                 className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm ${
-                  isSelected
-                    ? "bg-[var(--color-brand-primary-light)]"
-                    : "hover:bg-[var(--color-background-tertiary)]"
+                  isSelected ? "" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
                 }`}
+                style={
+                  isSelected ? { backgroundColor: "rgba(var(--button-bg-rgb), 0.12)" } : undefined
+                }
               >
                 <div
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
                     isSelected
-                      ? "bg-[var(--color-brand-primary)] text-white"
+                      ? "text-white"
                       : "bg-[var(--color-avatar-bg)] text-[var(--color-avatar-fg)]"
                   }`}
+                  style={isSelected ? { backgroundColor: "var(--button-bg)" } : undefined}
                 >
                   {isSelected ? (
                     <UserCheck size={14} />
@@ -161,31 +176,47 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-[var(--color-foreground-primary)]">
+                  <p className="truncate font-medium text-[var(--center-channel-color)]">
                     {m.display_name ?? m.email.split("@")[0]}
                   </p>
-                  <p className="truncate text-xs text-[var(--color-foreground-tertiary)]">
+                  <p
+                    className="truncate text-xs"
+                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  >
                     {m.email}
                   </p>
                 </div>
                 {isSelected ? (
-                  <X size={14} className="shrink-0 text-[var(--color-brand-primary)]" />
+                  <X size={14} className="shrink-0" style={{ color: "var(--button-bg)" }} />
                 ) : (
-                  <Plus size={14} className="shrink-0 text-[var(--color-foreground-tertiary)]" />
+                  <Plus
+                    size={14}
+                    className="shrink-0"
+                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  />
                 )}
               </button>
             );
           })}
         </div>
-        <div className="border-t border-[var(--color-border-primary)] px-4 py-3">
+        <div
+          className="border-t px-4 py-3"
+          style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+        >
           <button
             onClick={handleInvite}
             disabled={selected.size === 0 || sending}
             className={`w-full rounded-lg px-4 py-2 text-sm font-medium text-white ${
-              selected.size === 0 || sending
-                ? "cursor-not-allowed bg-[var(--color-background-tertiary)] text-[var(--color-foreground-tertiary)]"
-                : "bg-[var(--color-brand-primary)] hover:opacity-90"
+              selected.size === 0 || sending ? "cursor-not-allowed" : "hover:opacity-90"
             }`}
+            style={
+              selected.size === 0 || sending
+                ? {
+                    backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)",
+                    color: "rgba(var(--center-channel-color-rgb), 0.56)",
+                  }
+                : { backgroundColor: "var(--button-bg)" }
+            }
           >
             {sending
               ? "Inviting..."

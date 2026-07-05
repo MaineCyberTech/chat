@@ -37,10 +37,21 @@ export function InstallPrompt({ isOpen, onClose, userEmail }: InstallPromptProps
         <div className="space-y-3">
           {instructions.steps.map((step, index) => (
             <div key={index} className="flex items-start gap-3 text-sm">
-              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[var(--color-background-tertiary)] text-xs font-medium text-[var(--color-foreground-primary)]">
+              <span
+                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-medium"
+                style={{
+                  backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)",
+                  color: "var(--center-channel-color)",
+                }}
+              >
                 {index + 1}
               </span>
-              <p className="pt-0.5 text-[var(--color-foreground-secondary)]">{step}</p>
+              <p
+                className="pt-0.5"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              >
+                {step}
+              </p>
             </div>
           ))}
         </div>
@@ -52,7 +63,10 @@ export function InstallPrompt({ isOpen, onClose, userEmail }: InstallPromptProps
         )}
 
         {userEmail && !isInstallable && !instructions.showButton && (
-          <p className="text-center text-xs text-[var(--color-foreground-tertiary)]">
+          <p
+            className="text-center text-xs"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          >
             Already installed or using a browser that doesn't support installation prompts.
             {userEmail && " You're signed in, so your data will sync automatically."}
           </p>

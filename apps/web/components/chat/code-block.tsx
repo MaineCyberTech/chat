@@ -12,6 +12,7 @@ interface Props {
 
 export function CodeBlock({ code, language }: Props) {
   const [copied, setCopied] = useState(false);
+  const [btnHovered, setBtnHovered] = useState(false);
 
   const highlighted = useMemo(() => {
     if (language && hljs.getLanguage(language)) {
@@ -32,14 +33,30 @@ export function CodeBlock({ code, language }: Props) {
   };
 
   return (
-    <div className="group relative my-2 overflow-hidden rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-code-bg,#1e1e2e)]">
-      <div className="flex items-center justify-between border-b border-[var(--color-border-primary)] bg-[var(--color-background-tertiary)] px-3 py-1.5">
-        <span className="text-xs font-medium text-[var(--color-foreground-tertiary)]">
+    <div className="group relative my-2 overflow-hidden rounded-lg border bg-[var(--color-code-bg,#1e1e2e)]">
+      <div
+        className="flex items-center justify-between border-b px-3 py-1.5"
+        style={{
+          borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+          backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)",
+        }}
+      >
+        <span
+          className="text-xs font-medium"
+          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        >
           {detectedLang}
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-[var(--color-foreground-tertiary)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-[var(--color-foreground-primary)] focus-visible:opacity-100"
+          className="flex items-center gap-1 rounded px-2 py-0.5 text-xs opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+          style={{
+            color: btnHovered
+              ? "var(--center-channel-color)"
+              : "rgba(var(--center-channel-color-rgb), 0.56)",
+          }}
+          onMouseEnter={() => setBtnHovered(true)}
+          onMouseLeave={() => setBtnHovered(false)}
           aria-label="Copy code"
         >
           {copied ? <Check size={12} /> : <Copy size={12} />}

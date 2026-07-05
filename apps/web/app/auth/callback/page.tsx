@@ -66,10 +66,11 @@ function AuthCallbackContent() {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
         <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-[var(--color-status-danger-fg)]">{error}</p>
+          <p style={{ color: "var(--dnd-indicator)" }}>{error}</p>
           <button
             onClick={() => router.push("/login")}
-            className="text-sm text-[var(--color-foreground-secondary)] underline hover:text-[var(--color-foreground-primary)]"
+            className="text-sm underline hover:text-[var(--center-channel-color)]"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
           >
             Back to sign in
           </button>
@@ -81,8 +82,13 @@ function AuthCallbackContent() {
   return (
     <main className="flex min-h-screen items-center justify-center p-8">
       <div className="flex flex-col items-center gap-3">
-        <p className="text-[var(--color-foreground-secondary)]">Completing sign in...</p>
-        <div className="h-1 w-32 overflow-hidden rounded-full bg-[var(--color-background-tertiary)]">
+        <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+          Completing sign in...
+        </p>
+        <div
+          className="h-1 w-32 overflow-hidden rounded-full"
+          style={{ backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)" }}
+        >
           <div
             className="h-full animate-pulse rounded-full bg-[var(--color-accent-primary)]"
             style={{ width: "60%" }}
@@ -99,8 +105,14 @@ export default function AuthCallbackPage() {
       fallback={
         <div className="flex min-h-screen items-center justify-center p-8">
           <div className="flex flex-col items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border-primary)] border-t-[var(--color-brand-primary)]" />
-            <p className="text-sm text-[var(--color-foreground-secondary)]">
+            <div
+              className="h-8 w-8 animate-spin rounded-full border-2"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                borderTopColor: "var(--button-bg)",
+              }}
+            />
+            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
               Completing sign in...
             </p>
           </div>

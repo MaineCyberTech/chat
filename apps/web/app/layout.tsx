@@ -59,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: viewportScript }} />
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-[var(--color-background-primary)] focus:p-4 focus:text-[var(--color-foreground-primary)]"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-[var(--center-channel-bg)] focus:p-4 focus:text-[var(--center-channel-color)]"
         >
           Skip to main content
         </a>

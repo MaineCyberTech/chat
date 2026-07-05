@@ -36,7 +36,10 @@ export default function WorkspacePageClient() {
 
   if (!workspace) {
     return (
-      <div className="flex h-full items-center justify-center text-[var(--color-foreground-tertiary)]">
+      <div
+        className="flex h-full items-center justify-center"
+        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+      >
         Workspace not found
       </div>
     );
@@ -44,16 +47,19 @@ export default function WorkspacePageClient() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-[var(--color-border-primary)] px-6 py-3">
-        <h1 className="text-lg font-semibold text-[var(--color-foreground-primary)]">
+      <div
+        className="border-b px-6 py-3"
+        style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+      >
+        <h1 className="text-lg font-semibold" style={{ color: "var(--center-channel-color)" }}>
           # {workspace.name}
         </h1>
       </div>
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-        <h2 className="text-xl font-semibold text-[var(--color-foreground-primary)]">
+        <h2 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
           Welcome to {workspace.name}
         </h2>
-        <p className="max-w-md text-[var(--color-foreground-secondary)]">
+        <p className="max-w-md" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
           Select a channel from the sidebar or create a new one to start messaging.
         </p>
         <div key={channelRefresh}>

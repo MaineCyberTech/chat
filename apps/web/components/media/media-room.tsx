@@ -33,7 +33,8 @@ export function MediaRoom({ roomName, onLeave }: Props) {
         <p className="text-sm text-[var(--color-status-danger-fg)]">{error}</p>
         <button
           onClick={onLeave}
-          className="rounded bg-[var(--color-brand-primary)] px-4 py-2 text-sm text-white"
+          className="rounded px-4 py-2 text-sm text-white"
+          style={{ backgroundColor: "var(--button-bg)" }}
         >
           Close
         </button>
@@ -44,13 +45,22 @@ export function MediaRoom({ roomName, onLeave }: Props) {
   if (!token) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-foreground-tertiary)] border-t-transparent" />
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
+          style={{
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.56)",
+            borderTopColor: "transparent",
+          }}
+        />
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-background-primary)]">
+    <div
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ backgroundColor: "var(--center-channel-bg)" }}
+    >
       <LiveKitRoom
         token={token}
         serverUrl={wsUrl}
@@ -64,7 +74,8 @@ export function MediaRoom({ roomName, onLeave }: Props) {
         <ControlBar variation="minimal" />
         <button
           onClick={onLeave}
-          className="absolute top-4 right-4 z-50 rounded-full bg-[var(--color-status-danger-fg)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          className="absolute top-4 right-4 z-50 rounded-full px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          style={{ backgroundColor: "var(--color-status-danger-fg)" }}
         >
           Leave Call
         </button>

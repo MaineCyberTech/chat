@@ -123,14 +123,21 @@ export function NotificationBell() {
             setOpen(true);
           }
         }}
-        className="relative flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
+        className="relative flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] focus-visible:ring-2 focus-visible:ring-[rgba(var(--button-bg-rgb),0.24)] focus-visible:outline-none"
+        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
         aria-expanded={open}
         aria-haspopup="menu"
       >
         <Bell size={18} />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-status-danger-bg)] px-1 text-[10px] font-bold text-[var(--color-status-danger-fg)]">
+          <span
+            className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+            style={{
+              backgroundColor: "rgba(var(--dnd-indicator-rgb),0.12)",
+              color: "var(--dnd-indicator)",
+            }}
+          >
             {unread > 99 ? "99+" : unread}
           </span>
         )}
@@ -140,16 +147,23 @@ export function NotificationBell() {
           ref={menuRef}
           role="menu"
           onKeyDown={handleKeyDown}
-          className="absolute top-full right-0 z-50 mt-1 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] shadow-[var(--shadow-xl)]"
+          className="absolute top-full right-0 z-50 mt-1 w-80 max-w-[calc(100vw-2rem)] rounded-lg border bg-[var(--center-channel-bg)] shadow-[var(--elevation-4)]"
+          style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
         >
-          <div className="border-b border-[var(--color-border-primary)] px-4 py-2">
-            <p className="text-sm font-semibold text-[var(--color-foreground-primary)]">
+          <div
+            className="border-b px-4 py-2"
+            style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+          >
+            <p className="text-sm font-semibold text-[var(--center-channel-color)]">
               Notifications
             </p>
           </div>
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-[var(--color-foreground-tertiary)]">
+              <p
+                className="px-4 py-6 text-center text-sm"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
                 No notifications
               </p>
             ) : (
@@ -158,7 +172,11 @@ export function NotificationBell() {
                   key={n.id}
                   role="menuitem"
                   tabIndex={0}
-                  className={`border-b border-[var(--color-border-primary)] px-4 py-3 transition-colors hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none ${n.read ? "" : "bg-[var(--color-status-info-bg)]"}`}
+                  className={`border-b px-4 py-3 transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] focus-visible:ring-2 focus-visible:ring-[rgba(var(--button-bg-rgb),0.24)] focus-visible:outline-none ${n.read ? "" : ""}`}
+                  style={{
+                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                    backgroundColor: n.read ? undefined : "rgba(var(--button-bg-rgb),0.12)",
+                  }}
                   onClick={() => !n.read && handleMarkRead(n.id)}
                   onKeyDown={(e) => {
                     if ((e.key === "Enter" || e.key === " ") && !n.read) {
@@ -167,15 +185,21 @@ export function NotificationBell() {
                     }
                   }}
                 >
-                  <p className="text-sm font-medium text-[var(--color-foreground-primary)]">
+                  <p className="text-sm font-medium text-[var(--center-channel-color)]">
                     {n.title}
                   </p>
                   {n.body && (
-                    <p className="mt-0.5 text-xs text-[var(--color-foreground-secondary)]">
+                    <p
+                      className="mt-0.5 text-xs"
+                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                    >
                       {n.body}
                     </p>
                   )}
-                  <p className="mt-1 text-[10px] text-[var(--color-foreground-tertiary)]">
+                  <p
+                    className="mt-1 text-[10px]"
+                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  >
                     {new Date(n.created_at).toLocaleDateString()}
                   </p>
                 </div>

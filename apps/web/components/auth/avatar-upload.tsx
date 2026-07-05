@@ -76,7 +76,7 @@ export function AvatarUpload() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="rounded-lg focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
+        className="rounded-lg focus-visible:ring-2 focus-visible:ring-[rgba(var(--button-bg-rgb),0.24)] focus-visible:outline-none"
         aria-label="Profile settings"
       >
         <Avatar src={avatarUrl} fallback={user?.email ?? "?"} size="sm" />
@@ -84,11 +84,20 @@ export function AvatarUpload() {
       {open && (
         <div
           ref={menuRef}
-          className="absolute top-full right-0 z-50 mt-1 w-56 max-w-[calc(100vw-1rem)] rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] py-1 shadow-[var(--shadow-xl)]"
+          className="absolute top-full right-0 z-50 mt-1 w-56 max-w-[calc(100vw-1rem)] rounded-lg border bg-[var(--center-channel-bg)] py-1 shadow-[var(--elevation-4)]"
+          style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
         >
           {previewUrl && (
-            <div className="border-b border-[var(--color-border-primary)] px-4 py-2">
-              <p className="mb-1 text-xs text-[var(--color-foreground-tertiary)]">Preview</p>
+            <div
+              className="border-b px-4 py-2"
+              style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+            >
+              <p
+                className="mb-1 text-xs"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
+                Preview
+              </p>
               <Image
                 src={previewUrl}
                 alt="Preview of uploaded avatar"
@@ -108,12 +117,12 @@ export function AvatarUpload() {
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[var(--color-foreground-primary)] transition-colors hover:bg-[var(--color-background-tertiary)] disabled:opacity-50"
+            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[var(--center-channel-color)] transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] disabled:opacity-50"
           >
             {uploading ? "Uploading..." : "Upload photo"}
           </button>
           {uploadError && (
-            <p className="px-4 py-1 text-xs text-[var(--color-status-danger-fg)]" role="alert">
+            <p className="px-4 py-1 text-xs" style={{ color: "var(--dnd-indicator)" }} role="alert">
               {uploadError}
             </p>
           )}

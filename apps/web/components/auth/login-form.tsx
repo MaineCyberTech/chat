@@ -66,15 +66,24 @@ export function LoginForm() {
 
   if (status === "sent" || status === "signedup") {
     return (
-      <div className="rounded-lg border border-[var(--color-status-success-border)] bg-[var(--color-status-success-bg)] p-6 text-center">
-        <p className="text-[var(--color-status-success-fg)]">{message}</p>
+      <div
+        className="rounded-lg border p-6 text-center"
+        style={{
+          borderColor: "var(--online-indicator)",
+          backgroundColor: "rgba(var(--online-indicator-rgb,6,214,160),0.12)",
+        }}
+      >
+        <p style={{ color: "var(--online-indicator)" }}>{message}</p>
       </div>
     );
   }
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-4">
-      <div className="flex overflow-hidden rounded-lg border border-[var(--color-border-primary)]">
+      <div
+        className="flex overflow-hidden rounded-lg border"
+        style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+      >
         <button
           onClick={() => {
             setMode("signin");
@@ -82,10 +91,16 @@ export function LoginForm() {
             setMessage("");
           }}
           className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-            mode === "signin"
-              ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-fg)]"
-              : "bg-[var(--color-background-primary)] text-[var(--color-foreground-secondary)] hover:text-[var(--color-foreground-primary)]"
+            mode === "signin" ? "text-[#fff]" : "hover:text-[var(--center-channel-color)]"
           }`}
+          style={
+            mode === "signin"
+              ? { backgroundColor: "var(--button-bg)" }
+              : {
+                  backgroundColor: "var(--center-channel-bg)",
+                  color: "rgba(var(--center-channel-color-rgb), 0.72)",
+                }
+          }
         >
           Sign In
         </button>
@@ -96,10 +111,16 @@ export function LoginForm() {
             setMessage("");
           }}
           className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-            mode === "signup"
-              ? "bg-[var(--color-button-primary-bg)] text-[var(--color-button-primary-fg)]"
-              : "bg-[var(--color-background-primary)] text-[var(--color-foreground-secondary)] hover:text-[var(--color-foreground-primary)]"
+            mode === "signup" ? "text-[#fff]" : "hover:text-[var(--center-channel-color)]"
           }`}
+          style={
+            mode === "signup"
+              ? { backgroundColor: "var(--button-bg)" }
+              : {
+                  backgroundColor: "var(--center-channel-bg)",
+                  color: "rgba(var(--center-channel-color-rgb), 0.72)",
+                }
+          }
         >
           Sign Up
         </button>
@@ -125,7 +146,7 @@ export function LoginForm() {
           placeholder="Enter your password"
         />
         {status === "error" && (
-          <p className="text-sm text-[var(--color-status-danger-fg)]" role="alert">
+          <p className="text-sm" style={{ color: "var(--dnd-indicator)" }} role="alert">
             {message}
           </p>
         )}
@@ -149,10 +170,16 @@ export function LoginForm() {
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[var(--color-border-primary)]" />
+          <div
+            className="w-full border-t"
+            style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+          />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-[var(--color-background-primary)] px-2 text-[var(--color-foreground-tertiary)]">
+          <span
+            className="bg-[var(--center-channel-bg)] px-2"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          >
             or continue with
           </span>
         </div>
@@ -187,7 +214,10 @@ export function LoginForm() {
 
       {isDev && (
         <div className="pt-2">
-          <p className="mb-2 text-center text-xs text-[var(--color-foreground-tertiary)]">
+          <p
+            className="mb-2 text-center text-xs"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          >
             Local dev — no test accounts in production
           </p>
         </div>

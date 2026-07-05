@@ -65,7 +65,8 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
     return (
       <div
         ref={popoverRef}
-        className="fixed z-50 w-64 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]"
+        className="fixed z-50 w-64 rounded-lg border bg-[var(--center-channel-bg)] p-4 shadow-[var(--elevation-4)]"
+        style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
       >
         <div className="animate-pulse space-y-2">
           <div className="h-10 w-10 rounded-full bg-[var(--color-skeleton-bg)]" />
@@ -81,13 +82,15 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
   return (
     <div
       ref={popoverRef}
-      className="fixed z-50 w-64 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]"
+      className="fixed z-50 w-64 rounded-lg border bg-[var(--center-channel-bg)] p-4 shadow-[var(--elevation-4)]"
+      style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
       role="dialog"
       aria-label={`${profile.display_name ?? "User"} profile`}
     >
       <button
         onClick={onClose}
-        className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+        className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
         aria-label="Close profile"
       >
         <X size={14} />
@@ -97,16 +100,22 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
           {(profile.display_name ?? profile.id).charAt(0).toUpperCase()}
         </div>
         <div>
-          <p className="text-sm font-medium text-[var(--color-foreground-primary)]">
+          <p className="text-sm font-medium text-[var(--center-channel-color)]">
             {profile.display_name ?? "Unknown"}
           </p>
         </div>
       </div>
       <div className="mt-3 space-y-1.5">
-        <div className="flex items-center gap-2 text-xs text-[var(--color-foreground-tertiary)]">
+        <div
+          className="flex items-center gap-2 text-xs"
+          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        >
           <Mail size={12} /> {profile.email ?? "No email"}
         </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--color-foreground-tertiary)]">
+        <div
+          className="flex items-center gap-2 text-xs"
+          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        >
           <Calendar size={12} /> Joined {"Unknown"}
         </div>
       </div>

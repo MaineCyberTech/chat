@@ -25,18 +25,32 @@ export default function PermalinkPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--color-background-primary)] p-8 text-center">
-        <h1 className="text-xl font-semibold text-[var(--color-foreground-primary)]">
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center"
+        style={{ backgroundColor: "var(--center-channel-bg)" }}
+      >
+        <h1 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
           Message not found
         </h1>
-        <p className="text-sm text-[var(--color-foreground-secondary)]">{error}</p>
+        <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+          {error}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-background-primary)]">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border-primary)] border-t-[var(--color-brand-primary)]" />
+    <div
+      className="flex min-h-screen items-center justify-center"
+      style={{ backgroundColor: "var(--center-channel-bg)" }}
+    >
+      <div
+        className="h-8 w-8 animate-spin rounded-full border-2"
+        style={{
+          borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+          borderTopColor: "var(--button-bg)",
+        }}
+      />
     </div>
   );
 }

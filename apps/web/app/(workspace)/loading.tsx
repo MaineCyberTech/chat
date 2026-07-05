@@ -1,7 +1,10 @@
 export default function WorkspaceLoading() {
   return (
-    <div className="flex h-screen bg-[var(--color-background-primary)]">
-      <div className="flex w-60 flex-col gap-2 border-r border-[var(--color-border-primary)] p-3">
+    <div className="flex h-screen" style={{ backgroundColor: "var(--center-channel-bg)" }}>
+      <div
+        className="flex w-60 flex-col gap-2 border-r p-3"
+        style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+      >
         <div className="h-8 animate-pulse rounded-md bg-[var(--color-skeleton-bg)]" />
         <div className="h-8 animate-pulse rounded-md bg-[var(--color-skeleton-bg)]" />
         <div className="h-8 animate-pulse rounded-md bg-[var(--color-skeleton-bg)]" />

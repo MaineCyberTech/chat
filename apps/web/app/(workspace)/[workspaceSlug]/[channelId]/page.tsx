@@ -69,7 +69,10 @@ export default function ChannelPageClient() {
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center text-[var(--color-foreground-tertiary)]">
+      <div
+        className="flex h-full items-center justify-center"
+        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+      >
         <p>Channel not found</p>
       </div>
     );

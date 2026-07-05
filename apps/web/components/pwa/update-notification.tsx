@@ -15,12 +15,18 @@ export function UpdateNotification() {
       role="status"
       aria-live="polite"
     >
-      <div className="flex min-w-[300px] items-center gap-3 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] px-4 py-3 shadow-[var(--shadow-xl)]">
+      <div
+        className="flex min-w-[300px] items-center gap-3 rounded-lg border bg-[var(--color-dialog-bg)] px-4 py-3 shadow-[var(--shadow-xl)]"
+        style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+      >
         <div className="flex-1">
-          <p className="text-sm font-medium text-[var(--color-foreground-primary)]">
+          <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
             Update Available
           </p>
-          <p className="mt-0.5 text-xs text-[var(--color-foreground-secondary)]">
+          <p
+            className="mt-0.5 text-xs"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          >
             A new version of the app is ready. Refresh to update.
           </p>
         </div>
