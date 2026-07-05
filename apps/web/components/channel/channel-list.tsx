@@ -98,6 +98,11 @@ export function ChannelList({
     setChannels(reordered);
     setDragId(null);
     setDragOverId(null);
+    // Persist new order
+    const newOrder = reordered.map((c) => c.id);
+    api.patch(`/workspaces/${workspaceId}/channels/reorder`, { channelIds: newOrder }).catch(() => {
+      addToast({ title: "Error", description: "Failed to save channel order", variant: "error" });
+    });
   }
 
   function channelIcon(ch: Channel) {

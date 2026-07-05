@@ -41,6 +41,7 @@ export interface Channel {
   topic: string | null;
   is_private: boolean;
   channel_type: "public" | "private" | "dm" | "group";
+  sort_order: number;
   created_by: string;
   deleted_at: string | null;
   created_at: string;

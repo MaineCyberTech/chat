@@ -245,6 +245,30 @@ router.get("/dm-channels", async (req, res) => {
   res.json({ channels });
 });
 
+// Reorder channels in a workspace
+router.patch(
+  "/workspaces/:workspaceId/channels/reorder",
+  validateUuidParam("workspaceId"),
+  requireWorkspaceMembership("workspaceId"),
+  async (req, res) => {
+    const { channelIds } = req.body;
+    if (!Array.isArray(channelIds)) {
+      res
+        .status(400)
+        .json({ error: { code: "INVALID_INPUT", message: "channelIds array required" } });
+      return;
+    }
+    const ok = await channelService.reorderChannel(req.params.workspaceId as string, channelIds);
+    if (!ok) {
+      res
+        .status(500)
+        .json({ error: { code: "REORDER_FAILED", message: "Could not reorder channels" } });
+      return;
+    }
+    res.json({ success: true });
+  },
+);
+
 // Get workspace channel IDs (for sidebar categorization)
 router.get(
   "/workspaces/:workspaceId/channel-ids",
@@ -323,7 +347,9 @@ router.patch(
       .update(updates)
       .eq("id", req.params.bookmarkId as string);
     if (error) {
-      res.status(500).json({ error: { code: "UPDATE_FAILED", message: "Could not update bookmark" } });
+      res
+        .status(500)
+        .json({ error: { code: "UPDATE_FAILED", message: "Could not update bookmark" } });
       return;
     }
     res.status(200).json({ success: true });

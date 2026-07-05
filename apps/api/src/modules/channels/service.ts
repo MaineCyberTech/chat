@@ -36,10 +36,29 @@ export class ChannelService {
       .from("channels")
       .select("*")
       .eq("workspace_id", workspaceId)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
 
     if (error) return [];
     return (data ?? []) as Channel[];
+  }
+
+  async reorderChannel(workspaceId: string, channelIds: string[]): Promise<boolean> {
+    const supabase = getSupabase();
+    const updates = channelIds.map((id, index) => ({
+      id,
+      sort_order: index,
+    }));
+    // Update each channel's sort_order
+    for (const update of updates) {
+      const { error } = await supabase
+        .from("channels")
+        .update({ sort_order: update.sort_order })
+        .eq("id", update.id)
+        .eq("workspace_id", workspaceId);
+      if (error) return false;
+    }
+    return true;
   }
 
   async getById(channelId: string, supabase?: SupabaseClient): Promise<Channel | null> {
