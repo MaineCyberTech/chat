@@ -40,6 +40,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [refreshKey, setRefreshKey] = useState(0);
   const [channelRefreshKey, setChannelRefreshKey] = useState(0);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [wsLoading, setWsLoading] = useState(false);
   const [sidebarRef, setSidebarRef] = useState<HTMLElement | null>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -62,6 +63,8 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [renameValue, setRenameValue] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [showTeamMenu, setShowTeamMenu] = useState(false);
+  const teamMenuRef = useRef<HTMLDivElement>(null);
   const statusMenuRef = useRef<HTMLDivElement>(null);
   const [dmExpanded, setDmExpanded] = useState(true);
   const [showUnreads, setShowUnreads] = useState(false);
@@ -113,6 +116,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     api
       .get<{ workspaces: Workspace[] }>("/workspaces")
       .then((res) => {
+        setWorkspaces(res.workspaces);
         const ws = res.workspaces.find((w) => w.slug === workspaceSlug);
         setWorkspace(ws ?? null);
       })
@@ -285,6 +289,25 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showStatusMenu]);
 
+  // Close team menu on click outside
+  useEffect(() => {
+    if (!showTeamMenu) return;
+    function handleClick(e: MouseEvent) {
+      if (teamMenuRef.current && !teamMenuRef.current.contains(e.target as Node)) {
+        setShowTeamMenu(false);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowTeamMenu(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [showTeamMenu]);
+
   // Focus trap for mobile sidebar
   useEffect(() => {
     if (!mobileOpen || !sidebarRef) return;
@@ -412,20 +435,88 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <div
-                  className="truncate font-semibold"
-                  style={{
-                    fontSize: 16,
-                    lineHeight: "22px",
-                    color: "var(--sidebar-header-text-color)",
-                  }}
-                >
-                  {user?.email?.split("@")[0] ?? "Chat"}
-                </div>
-                <div
-                  style={{ fontSize: 14, color: "rgba(var(--sidebar-header-text-color-rgb), 0.8)" }}
-                >
-                  {userStatus.custom_status || `${userStatus.status}`}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowTeamMenu(!showTeamMenu)}
+                    className="flex w-full items-center gap-1 truncate font-semibold"
+                    style={{
+                      fontSize: 14,
+                      lineHeight: "18px",
+                      color: "var(--sidebar-header-text-color)",
+                    }}
+                  >
+                    <span className="truncate">{workspace?.name ?? workspaceSlug ?? "Chat"}</span>
+                    <ChevronDown size={10} className="shrink-0" />
+                  </button>
+                  <div
+                    className="truncate text-xs"
+                    style={{ color: "rgba(var(--sidebar-header-text-color-rgb), 0.8)" }}
+                  >
+                    {userStatus.custom_status || `${userStatus.status}`}
+                  </div>
+                  {showTeamMenu && (
+                    <div
+                      ref={teamMenuRef}
+                      className="absolute top-full left-0 z-50 mt-1 w-56 rounded-lg border py-1 shadow-[var(--elevation-4)]"
+                      style={{
+                        background: "var(--center-channel-bg)",
+                        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                      }}
+                    >
+                      {workspaces.map((w) => (
+                        <Link
+                          key={w.id}
+                          href={`/${w.slug}`}
+                          onClick={() => setShowTeamMenu(false)}
+                          className={`flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] ${w.slug === workspaceSlug ? "font-semibold" : ""}`}
+                          style={{ color: "var(--center-channel-color)" }}
+                        >
+                          <div
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs font-bold text-white"
+                            style={{
+                              background:
+                                w.slug === workspaceSlug
+                                  ? "var(--button-bg)"
+                                  : "rgba(var(--center-channel-color-rgb), 0.56)",
+                            }}
+                          >
+                            {w.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="truncate">{w.name}</span>
+                          {w.slug === workspaceSlug && (
+                            <span className="ml-auto text-xs" style={{ color: "var(--button-bg)" }}>
+                              ✓
+                            </span>
+                          )}
+                        </Link>
+                      ))}
+                      <div
+                        className="my-1"
+                        style={{
+                          borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.08)",
+                        }}
+                      />
+                      <button
+                        onClick={() => setShowTeamMenu(false)}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                        style={{ color: "var(--center-channel-color)" }}
+                      >
+                        <Plus size={14} />
+                        Create workspace
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowInviteModal(true);
+                          setShowTeamMenu(false);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                        style={{ color: "var(--center-channel-color)" }}
+                      >
+                        <UserPlus size={14} />
+                        Invite members
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               <button
