@@ -13,6 +13,8 @@ interface NotificationPrefs {
   message_notifications: boolean;
   mention_notifications: boolean;
   digest: "never" | "daily" | "weekly";
+  sound?: string;
+  trigger_words?: string[];
 }
 
 export default function SettingsPage() {
@@ -92,9 +94,9 @@ export default function SettingsPage() {
 
   function handleNotificationChange(
     key: keyof NotificationPrefs,
-    value: boolean | NotificationPrefs["digest"],
+    value: boolean | NotificationPrefs["digest"] | string | string[],
   ) {
-    const current = (preferences?.notification_prefs ?? {}) as unknown as NotificationPrefs;
+    const current = (preferences?.notification_prefs ?? {}) as Record<string, unknown>;
     const updated = {
       ...preferences,
       notification_prefs: { ...current, [key]: value },
@@ -129,8 +131,17 @@ export default function SettingsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-[var(--color-foreground-tertiary)]">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--color-border-primary)] border-t-[var(--color-brand-primary)]" />
+      <div
+        className="flex h-full flex-col items-center justify-center gap-3"
+        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+      >
+        <div
+          className="h-6 w-6 animate-spin rounded-full border-2"
+          style={{
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+            borderTopColor: "var(--button-bg)",
+          }}
+        />
         <span className="text-sm">Loading preferences...</span>
       </div>
     );
@@ -143,12 +154,17 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
-      <h1 className="text-2xl font-bold text-[var(--color-foreground-primary)]">Preferences</h1>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--center-channel-color)" }}>
+        Preferences
+      </h1>
 
       <SidebarGroup title="Appearance" defaultOpen>
         <div className="space-y-4">
           <div>
-            <label className="mb-2 block text-sm font-medium text-[var(--color-foreground-secondary)]">
+            <label
+              className="mb-2 block text-sm font-medium"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
               Theme
             </label>
             <div className="flex gap-2">
@@ -199,7 +215,68 @@ export default function SettingsPage() {
             disabled={saving}
           />
           <div>
-            <label className="mb-2 block text-sm font-medium text-[var(--color-foreground-secondary)]">
+            <label
+              className="mb-2 block text-sm font-medium"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
+              Notification sound
+            </label>
+            <select
+              value={notifPrefs.sound ?? "chime"}
+              onChange={(e) => handleNotificationChange("sound", e.target.value)}
+              disabled={saving}
+              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
+            >
+              <option value="chime">Chime</option>
+              <option value="bell">Bell</option>
+              <option value="ding">Ding</option>
+              <option value="pop">Pop</option>
+              <option value="none">None (silent)</option>
+            </select>
+          </div>
+          <div>
+            <label
+              className="mb-2 block text-sm font-medium"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
+              Trigger words
+            </label>
+            <p
+              className="mb-1 text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            >
+              You&#39;ll be notified when any of these words are mentioned (comma-separated)
+            </p>
+            <input
+              type="text"
+              value={(notifPrefs.trigger_words ?? []).join(", ")}
+              onChange={(e) => {
+                const words = e.target.value
+                  .split(",")
+                  .map((w) => w.trim())
+                  .filter(Boolean);
+                handleNotificationChange("trigger_words", words);
+              }}
+              disabled={saving}
+              placeholder="e.g. deploy, urgent, bug"
+              className="w-full rounded-lg border px-3 py-2 text-sm placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus-visible:outline-none"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
+            />
+          </div>
+          <div>
+            <label
+              className="mb-2 block text-sm font-medium"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
               Email digest
             </label>
             <select
@@ -208,7 +285,12 @@ export default function SettingsPage() {
                 handleNotificationChange("digest", e.target.value as NotificationPrefs["digest"])
               }
               disabled={saving}
-              className="rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-background-primary)] px-3 py-2 text-sm text-[var(--color-foreground-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
+              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
             >
               <option value="never">Never</option>
               <option value="daily">Daily</option>
@@ -222,8 +304,8 @@ export default function SettingsPage() {
         <div
           className={`rounded-lg p-3 text-sm ${
             saveStatus === "success"
-              ? "bg-[var(--color-status-success-bg)] text-[var(--color-status-success-fg)]"
-              : "bg-[var(--color-status-danger-bg)] text-[var(--color-status-danger-fg)]"
+              ? "bg-[rgba(var(--online-indicator-rgb,6,214,160),0.12)] text-[var(--online-indicator)]"
+              : "bg-[rgba(var(--dnd-indicator-rgb),0.12)] text-[var(--dnd-indicator)]"
           }`}
           role="alert"
         >
@@ -236,29 +318,41 @@ export default function SettingsPage() {
       </Button>
 
       <SidebarGroup title="Per-Channel Notifications" defaultOpen={false}>
-        <p className="mb-2 text-xs text-[var(--color-foreground-tertiary)]">
+        <p
+          className="mb-2 text-xs"
+          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        >
           Configure notification preferences for individual channels.
         </p>
         <div className="space-y-1">
           {channels.length === 0 && (
-            <p className="text-xs text-[var(--color-foreground-tertiary)]">No channels found</p>
+            <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+              No channels found
+            </p>
           )}
           {channels.map((ch) => {
             const notify = channelPrefs.get(ch.id) ?? true;
             return (
               <div
                 key={ch.id}
-                className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-[var(--color-background-tertiary)]"
+                className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
               >
-                <span className="text-sm text-[var(--color-foreground-primary)]"># {ch.name}</span>
+                <span className="text-sm" style={{ color: "var(--center-channel-color)" }}>
+                  # {ch.name}
+                </span>
                 <button
                   onClick={() => toggleChannelNotif(ch.id, notify)}
                   disabled={notifSaving === ch.id}
                   className={`flex h-7 w-7 items-center justify-center rounded-md ${
                     notify
-                      ? "text-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-light)]"
-                      : "text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+                      ? "hover:bg-[rgba(var(--button-bg-rgb),0.12)]"
+                      : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
                   }`}
+                  style={{
+                    color: notify
+                      ? "var(--button-bg)"
+                      : "rgba(var(--center-channel-color-rgb), 0.56)",
+                  }}
                   aria-label={notify ? `Mute ${ch.name}` : `Unmute ${ch.name}`}
                 >
                   {notify ? <Bell size={14} /> : <BellOff size={14} />}
@@ -288,17 +382,22 @@ function ToggleRow({
   return (
     <div className="flex items-center justify-between">
       <div className="flex-1">
-        <p className="text-sm font-medium text-[var(--color-foreground-primary)]">{label}</p>
-        <p className="text-xs text-[var(--color-foreground-tertiary)]">{description}</p>
+        <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
+          {label}
+        </p>
+        <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+          {description}
+        </p>
       </div>
       <button
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         disabled={disabled}
-        className={`relative ml-4 inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none ${
-          checked ? "bg-[var(--color-button-primary-bg)]" : "bg-[var(--color-background-tertiary)]"
-        }`}
+        className={`relative ml-4 inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:ring-2 focus-visible:outline-none`}
+        style={{
+          background: checked ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.08)",
+        }}
       >
         <span
           className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
