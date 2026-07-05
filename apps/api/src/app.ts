@@ -37,6 +37,7 @@ import emojiRoutes from "./modules/emoji/routes.js";
 import userGroupRoutes from "./modules/user-groups/routes.js";
 import sidebarRoutes from "./modules/sidebar/routes.js";
 import scheduledRoutes from "./modules/scheduled-posts/routes.js";
+import adminRoutes from "./modules/admin/routes.js";
 
 function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = process.hrtime.bigint();
@@ -103,6 +104,7 @@ export function createApp(frontendUrl: string): Express {
   app.use("/v1/groups", userGroupRoutes);
   app.use("/v1/sidebar-categories", sidebarRoutes);
   app.use("/v1/scheduled-posts", scheduledRoutes);
+  app.use("/v1/admin", adminRoutes);
 
   app.get("/", (_req, res) => {
     res.json({ name: "chat-api", status: "running" });

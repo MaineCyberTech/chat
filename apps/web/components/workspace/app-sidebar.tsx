@@ -21,6 +21,7 @@ import {
   ChevronDown,
   X,
   UserPlus,
+  Shield,
 } from "lucide-react";
 import type { Channel, Workspace } from "@chat/db";
 import { api } from "@/lib/api";
@@ -1023,6 +1024,15 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                     style={{ color: "rgba(255,255,255,0.6)" }}
                   >
                     <Settings size={14} />
+                  </Link>
+                )}
+                {workspaceSlug && (
+                  <Link
+                    href={`/${workspaceSlug}/admin`}
+                    className="hover:opacity-80"
+                    style={{ color: "rgba(255,255,255,0.6)" }}
+                  >
+                    <Shield size={14} />
                   </Link>
                 )}
               </span>
