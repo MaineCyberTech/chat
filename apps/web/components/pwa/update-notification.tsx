@@ -16,8 +16,11 @@ export function UpdateNotification() {
       aria-live="polite"
     >
       <div
-        className="flex min-w-[300px] items-center gap-3 rounded-lg border bg-[var(--color-dialog-bg)] px-4 py-3 shadow-[var(--shadow-xl)]"
-        style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+        className="flex min-w-[300px] items-center gap-3 rounded-lg border px-4 py-3 shadow-[var(--elevation-4)]"
+        style={{
+          background: "var(--center-channel-bg)",
+          borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+        }}
       >
         <div className="flex-1">
           <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>

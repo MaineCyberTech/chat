@@ -30,7 +30,9 @@ export function MediaRoom({ roomName, onLeave }: Props) {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 p-8">
-        <p className="text-sm text-[var(--color-status-danger-fg)]">{error}</p>
+        <p className="text-sm" style={{ color: "var(--dnd-indicator)" }}>
+          {error}
+        </p>
         <button
           onClick={onLeave}
           className="rounded px-4 py-2 text-sm text-white"
@@ -75,7 +77,7 @@ export function MediaRoom({ roomName, onLeave }: Props) {
         <button
           onClick={onLeave}
           className="absolute top-4 right-4 z-50 rounded-full px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-          style={{ backgroundColor: "var(--color-status-danger-fg)" }}
+          style={{ backgroundColor: "var(--dnd-indicator)" }}
         >
           Leave Call
         </button>

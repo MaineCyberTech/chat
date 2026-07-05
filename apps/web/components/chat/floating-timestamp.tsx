@@ -74,7 +74,15 @@ export function FloatingTimestamp({ containerRef }: Props) {
 
   return (
     <div className="pointer-events-none fixed top-0 left-1/2 z-50 -translate-x-1/2 px-3 py-1">
-      <div className="rounded-full bg-[var(--color-background-elevated)] px-3 py-1 text-xs font-medium text-[var(--color-foreground-muted)] shadow-sm ring-1 ring-[var(--color-border)] backdrop-blur-sm transition-opacity">
+      <div
+        className="rounded-full px-3 py-1 text-xs font-medium shadow-sm backdrop-blur-sm transition-opacity"
+        style={{
+          background: "var(--center-channel-bg)",
+          color: "rgba(var(--center-channel-color-rgb), 0.56)",
+          boxShadow:
+            "0 1px 2px rgba(0,0,0,0.05), 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.08)",
+        }}
+      >
         {timestamp}
       </div>
     </div>
