@@ -1,8 +1,11 @@
 import { z } from "zod";
 
+const postPriorityEnum = z.enum(["standard", "important", "urgent", "critical"]);
+
 export const createMessageSchema = z.object({
   content: z.string().min(1).max(4000),
   parent_id: z.string().uuid().optional(),
+  priority: postPriorityEnum.default("standard"),
 });
 
 export const updateMessageSchema = z.object({

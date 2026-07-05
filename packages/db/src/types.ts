@@ -52,6 +52,8 @@ export interface ChannelMember {
   joined_at: string;
 }
 
+export type PostPriority = "standard" | "important" | "urgent" | "critical";
+
 export interface Message {
   id: string;
   channel_id: string;
@@ -59,6 +61,7 @@ export interface Message {
   content: string;
   parent_id: string | null;
   is_pinned: boolean;
+  priority: PostPriority;
   edited_at: string | null;
   deleted_at: string | null;
   archived_at: string | null;

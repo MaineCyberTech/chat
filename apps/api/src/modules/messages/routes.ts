@@ -113,6 +113,7 @@ router.post(
         user_id: req.userId!,
         content: sanitizedContent,
         parent_id: parsed.data.parent_id,
+        priority: parsed.data.priority,
       },
       req.supabase,
     );

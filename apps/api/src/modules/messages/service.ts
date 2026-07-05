@@ -12,6 +12,7 @@ interface CreateMessageInput {
   user_id: string;
   content: string;
   parent_id?: string;
+  priority?: string;
 }
 
 export class MessageService {
@@ -69,6 +70,7 @@ export class MessageService {
         user_id: input.user_id,
         content: input.content,
         parent_id: input.parent_id ?? null,
+        priority: input.priority ?? "standard",
       })
       .select("*")
       .single();

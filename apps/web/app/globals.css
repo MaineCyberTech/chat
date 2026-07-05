@@ -12,6 +12,236 @@
   --breakpoint-lg: 1024px;
 }
 
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: var(--font-sans);
+    background: var(--sidebar-header-bg);
+    color: var(--center-channel-color);
+    overscroll-behavior: none;
+  }
+
+  :root {
+    --header-height: 3rem;
+    --bottom-nav-height: 3.5rem;
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --vh: 100vh;
+
+    /* Mattermost Color Variables */
+    --button-bg: #166de0;
+    --button-color: #fff;
+    --center-channel-bg: #fff;
+    --center-channel-color: #3d3c40;
+    --center-channel-bg-rgb: 255, 255, 255;
+    --center-channel-color-rgb: 61, 60, 64;
+
+    --sidebar-bg: #145dbf;
+    --sidebar-header-bg: #1153ab;
+    --sidebar-header-text-color: #fff;
+    --sidebar-text: #fff;
+    --sidebar-text-active-border: #579eff;
+    --sidebar-text-active-color: #fff;
+    --sidebar-text-hover-bg: #4578bf;
+    --sidebar-unread-text: #fff;
+    --sidebar-team-background: #0b428c;
+    --sidebar-bg-rgb: 20, 93, 191;
+
+    --online-indicator: #06d6a0;
+    --away-indicator: #ffbc42;
+    --dnd-indicator: #d24b4e;
+    --offline-indicator: rgba(175, 179, 192, 0.75);
+
+    --link-color: #2389d7;
+    --mention-bg: #fff;
+    --mention-color: #145dbf;
+    --mention-highlight-bg: #ffe577;
+    --new-message-separator: #f80;
+    --error-text: #d24b4e;
+    --warning-text: #cc8f00;
+
+    /* Elevation / Shadows */
+    --elevation-1: 0 2px 3px 0 rgba(0, 0, 0, 0.08);
+    --elevation-2: 0 4px 6px 0 rgba(0, 0, 0, 0.12);
+    --elevation-3: 0 6px 14px 0 rgba(0, 0, 0, 0.12);
+    --elevation-4: 0 8px 24px 0 rgba(0, 0, 0, 0.12);
+    --elevation-5: 0 12px 32px 0 rgba(0, 0, 0, 0.12);
+    --elevation-6: 0 20px 32px 0 rgba(0, 0, 0, 0.12);
+
+    /* Radius */
+    --radius-xs: 2px;
+    --radius-s: 4px;
+    --radius-m: 8px;
+    --radius-l: 12px;
+    --radius-xl: 16px;
+    --radius-full: 50%;
+
+    /* Borders */
+    --border-default: solid 1px rgba(var(--center-channel-color-rgb), 0.12);
+    --border-light: solid 1px rgba(var(--center-channel-color-rgb), 0.08);
+    --border-dark: solid 1px rgba(var(--center-channel-color-rgb), 0.16);
+
+    /* Semantic colors */
+    --semantic-color-info: 93, 137, 234;
+    --semantic-color-success: 61, 184, 135;
+    --semantic-color-warning: 204, 143, 0;
+    --semantic-color-danger: 210, 75, 78;
+  }
+
+  /* Scrollbar - Mattermost style */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background: rgba(var(--center-channel-color-rgb), 0.4);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--center-channel-color-rgb), 0.4) transparent;
+  }
+}
+
+@layer utilities {
+  .mm-font-heading {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 16px;
+  }
+
+  .mm-post {
+    position: relative;
+    overflow: hidden;
+    max-width: 100%;
+    padding: 8px 0.5em 0 1.5em;
+    transition: background-color 200ms;
+    word-wrap: break-word;
+  }
+  .mm-post:hover {
+    background-color: rgba(var(--center-channel-color-rgb), 0.04);
+  }
+  .mm-post--editing {
+    background-color: rgba(var(--button-bg-rgb), 0.08);
+  }
+  .mm-post--compact {
+    padding: 4px 0.5em 0 1.5em;
+  }
+
+  .mm-sidebar-channel {
+    position: relative;
+    height: 32px;
+    display: flex;
+    align-items: center;
+  }
+  .mm-sidebar-channel.active::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    background: var(--sidebar-text-active-border);
+    content: '';
+  }
+
+  .mm-channel-header {
+    position: relative;
+    z-index: 15;
+    width: 100%;
+    max-height: 56px;
+    padding: 12px;
+    border-radius: 12px 12px 0 0;
+    border-bottom: var(--border-default);
+    background: var(--center-channel-bg);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+  }
+
+  .mm-button-icon {
+    display: flex;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: transparent;
+    color: rgba(var(--center-channel-color-rgb), 0.75);
+    transition: background-color 150ms, color 150ms;
+  }
+  .mm-button-icon:hover {
+    background: rgba(var(--center-channel-color-rgb), 0.08);
+    color: rgba(var(--center-channel-color-rgb), 1);
+  }
+
+  .mm-sidebar-group-header {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 16px 0 19px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: rgba(var(--sidebar-text-rgb), 0.6);
+    letter-spacing: 0.5px;
+  }
+}
+
+@layer components {
+  .app__body {
+    #root, #root.channel-view {
+      display: grid;
+      overflow: hidden;
+      min-height: 100%;
+      grid-template:
+        "header header header" min-content
+        "team-sidebar main app-sidebar" 1fr
+        "footer footer footer" min-content /
+        min-content minmax(385px, 1fr) min-content;
+    }
+
+    #global-header {
+      grid-area: header;
+    }
+
+    .team-sidebar {
+      grid-area: team-sidebar;
+    }
+
+    .app__content {
+      grid-area: main;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--center-channel-bg);
+      border-radius: 12px;
+      box-shadow: var(--elevation-1);
+    }
+
+    .sidebar--right {
+      grid-area: app-sidebar;
+    }
+  }
+
+  #channel_view.channel-view {
+    overflow: hidden;
+    border-radius: var(--radius-l);
+    background: var(--center-channel-bg);
+    box-shadow: var(--elevation-1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -23,23 +253,6 @@
   }
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-sans);
-  background: var(--color-background-primary, #ffffff);
-  color: var(--color-foreground-primary, #0a0a0a);
-  overscroll-behavior: none;
-}
-
-/* Viewport height: prefer dvh (dynamic), fallback to 100vh, updated on resize/orientation */
-:root {
-  --header-height: 3rem;
-  --bottom-nav-height: 3.5rem;
-  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  --vh: 100vh;
-}
 /* Smaller bottom nav in landscape on small screens */
 @media (max-height: 480px) {
   :root {
@@ -51,13 +264,9 @@ body {
     --vh: 100dvh;
   }
 }
-/* JS-driven viewport height for browsers that don't fully support dvh */
+
 .vh-fix {
   --vh: 100vh;
-}
-
-* {
-  box-sizing: border-box;
 }
 
 @media (max-width: 767px) {
@@ -65,14 +274,12 @@ body {
     overflow: hidden;
   }
 
-  /* Ensure message list fills available height on mobile */
   [role="log"] {
     min-height: 0;
     flex: 1;
     overflow: hidden;
   }
 
-  /* Touch devices: show action overlay on tap/focus */
   .group:active .action-overlay,
   .group:focus-within .action-overlay {
     display: flex !important;
@@ -84,7 +291,6 @@ body {
     display: none;
   }
 
-  /* Show action icons on tap for touch devices */
   .group:active .action-overlay,
   .group:focus-within .action-overlay {
     display: flex !important;
@@ -92,57 +298,33 @@ body {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fade-in {
   animation: fadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
-
 .animate-slide-in-right {
   animation: slideInRight 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideInLeft {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
 }
-
 .animate-slide-in-left {
   animation: slideInLeft 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideInBottom {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
 .animate-slide-in {
   animation: slideInBottom 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }

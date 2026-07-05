@@ -11,107 +11,8 @@ import { useSwipeBack } from "@/lib/use-swipe-back";
 import { Skeleton } from "@chat/ui";
 import { api } from "@/lib/api";
 import { register } from "@/lib/keyboard-shortcut-registry";
-import { Menu, Hash, Settings as SettingsIcon, ArrowLeft } from "lucide-react";
+import { Menu, Hash, Settings as SettingsIcon, ArrowLeft, Plus } from "lucide-react";
 import type { Workspace, Channel } from "@chat/db";
-
-function WorkspaceBreadcrumbs({
-  workspaceSlug,
-  channelId,
-}: {
-  workspaceSlug?: string;
-  channelId?: string;
-}) {
-  const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [channel, setChannel] = useState<Channel | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const fetchWorkspace = useCallback(async (slug: string) => {
-    if (!slug) return;
-    setLoading(true);
-    try {
-      const res = await api.get<{ workspaces: Workspace[] }>("/workspaces");
-      const ws = res.workspaces.find((w) => w.slug === slug);
-      setWorkspace(ws ?? null);
-    } catch {
-      console.warn("Failed to fetch workspace for breadcrumbs");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchChannel = useCallback(async (wsId: string, chId: string) => {
-    if (!wsId || !chId) return;
-    try {
-      const res = await api.get<{ channels: Channel[] }>(`/workspaces/${wsId}/channels`);
-      const ch = res.channels.find((c) => c.id === chId);
-      setChannel(ch ?? null);
-    } catch {
-      console.warn("Failed to fetch channel for breadcrumbs");
-    }
-  }, []);
-
-  React.useEffect(() => {
-    fetchWorkspace(workspaceSlug ?? "");
-  }, [workspaceSlug, fetchWorkspace]);
-
-  React.useEffect(() => {
-    if (workspace && channelId) {
-      fetchChannel(workspace.id, channelId);
-    }
-  }, [workspace, channelId, fetchChannel]);
-
-  return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1 px-4 py-2 text-sm md:px-6">
-      <Link
-        href="/"
-        className="text-[var(--color-foreground-tertiary)] transition-colors hover:text-[var(--color-foreground-primary)]"
-      >
-        Home
-      </Link>
-      {workspaceSlug && (
-        <>
-          <span aria-hidden="true" className="text-[var(--color-foreground-tertiary)]">
-            /
-          </span>
-          <Link
-            href={`/${workspaceSlug}`}
-            className={
-              loading
-                ? "cursor-wait text-[var(--color-foreground-tertiary)]"
-                : "text-[var(--color-foreground-tertiary)] transition-colors hover:text-[var(--color-foreground-primary)]"
-            }
-          >
-            {loading ? <Skeleton className="h-4 w-20" /> : `# ${workspace?.name ?? workspaceSlug}`}
-          </Link>
-        </>
-      )}
-      {channelId && (
-        <>
-          <span aria-hidden="true" className="text-[var(--color-foreground-tertiary)]">
-            /
-          </span>
-          <span className="max-w-[200px] truncate font-medium text-[var(--color-foreground-primary)]">
-            {loading ? (
-              <Skeleton className="h-4 w-24" />
-            ) : (
-              `# ${channel?.name ?? channelId.slice(0, 8)}`
-            )}
-          </span>
-        </>
-      )}
-    </nav>
-  );
-}
-
-function WorkspaceBreadcrumbsWrapper({
-  workspaceSlug,
-  channelId,
-}: {
-  workspaceSlug?: string;
-  channelId?: string;
-}) {
-  return <WorkspaceBreadcrumbs workspaceSlug={workspaceSlug} channelId={channelId} />;
-}
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const params = useParams<{ workspaceSlug?: string; channelId?: string }>();
@@ -121,14 +22,12 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const [channels, setChannels] = useState<string[]>([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
 
-  // Swipe-back gesture on mobile
   useSwipeBack(() => {
     if (params.channelId && params.workspaceSlug) {
       router.push(`/${params.workspaceSlug}`);
     }
   });
 
-  // Fetch channels for keyboard navigation
   useEffect(() => {
     if (!user || !params.workspaceSlug) return;
     api
@@ -144,7 +43,6 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       .catch(() => console.warn("Failed to fetch workspace for keyboard nav"));
   }, [user, params.workspaceSlug]);
 
-  // Global Ctrl+K for quick switcher
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
@@ -156,7 +54,6 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Register keyboard shortcut callbacks
   useEffect(() => {
     if (!params.workspaceSlug) return;
     register("channelUp", () => {
@@ -188,95 +85,102 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
 
   if (authLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[var(--color-background-primary)]">
+      <div className="flex h-screen items-center justify-center" style={{ background: "var(--center-channel-bg)" }}>
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border-primary)] border-t-[var(--color-brand-primary)]" />
-          <p className="text-sm text-[var(--color-foreground-secondary)]">Loading workspace...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-2" style={{ borderColor: "var(--border-default)", borderTopColor: "var(--button-bg)" }} />
+          <p className="text-sm" style={{ color: "var(--center-channel-color)", opacity: 0.72 }}>Loading workspace...</p>
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return null; // redirect handled by auth context
+    return null;
   }
 
   return (
-    <div
-      className="grid h-full grid-cols-[min-content_1fr] overflow-hidden bg-[var(--color-background-primary)] md:pb-0"
-      style={{ paddingBottom: "var(--bottom-nav-height)" }}
-    >
-      {/* Sidebar — first grid column, full height */}
-      <AppSidebar
-        workspaceSlug={params.workspaceSlug}
-        channelId={params.channelId}
-        mobileOpen={sidebarOpen}
-        onMobileClose={() => setSidebarOpen(false)}
-      />
-
-      {/* Main content — second grid column, flex column */}
-      <div className="flex min-h-0 flex-col overflow-hidden">
-        {/* Mobile header row */}
-        <div className="flex shrink-0 items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:hidden">
+    <div className="app__body" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Grid root - Mattermost style */}
+      <div id="root" className="channel-view" style={{ flex: 1, minHeight: 0 }}>
+        {/* Mobile header */}
+        <div
+          id="global-header"
+          className="flex items-center gap-2 px-3 py-2 md:hidden"
+          style={{ background: "var(--sidebar-header-bg)", color: "var(--sidebar-header-text-color)" }}
+        >
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:outline-none"
+            className="flex h-9 w-9 items-center justify-center rounded"
+            style={{ background: "transparent", color: "var(--sidebar-header-text-color)" }}
             aria-label="Toggle sidebar"
-            aria-expanded={sidebarOpen}
-            aria-controls="sidebar"
           >
-            <Menu size={18} />
+            <Menu size={20} />
           </button>
+          <span className="text-sm font-semibold truncate">
+            {params.workspaceSlug ?? "Chat"}
+          </span>
         </div>
-        <div className="shrink-0">
-          <WorkspaceBreadcrumbsWrapper
-            workspaceSlug={params.workspaceSlug}
-            channelId={params.channelId}
-          />
-        </div>
-        <div className="min-h-0 flex-1 overflow-hidden">
+
+        {/* Main content area */}
+        <AppSidebar
+          workspaceSlug={params.workspaceSlug}
+          channelId={params.channelId}
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
+        />
+
+        <div className="app__content">
           <ErrorBoundary>{children}</ErrorBoundary>
         </div>
-      </div>
 
-      {/* Mobile bottom navigation — fixed but height-aware */}
-      <nav
-        className="fixed right-0 bottom-0 left-0 z-30 flex shrink-0 items-center justify-around border-t border-[var(--color-border-primary)] bg-[var(--color-background-primary)] md:hidden"
-        style={{ height: "var(--bottom-nav-height)", paddingBottom: "var(--safe-area-bottom)" }}
-      >
-        {params.channelId && params.workspaceSlug && (
+        {/* Mobile bottom navigation */}
+        <nav
+          className="flex shrink-0 items-center justify-around md:hidden"
+          style={{
+            height: "var(--bottom-nav-height)",
+            borderTop: "var(--border-default)",
+            background: "var(--center-channel-bg)",
+            gridColumn: "1 / -1",
+          }}
+        >
+          {params.channelId && params.workspaceSlug && (
+            <button
+              onClick={() => router.push(`/${params.workspaceSlug}`)}
+              className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs"
+              style={{ color: "var(--center-channel-color)", opacity: 0.72 }}
+              aria-label="Back"
+            >
+              <ArrowLeft size={20} />
+              <span>Back</span>
+            </button>
+          )}
           <button
-            onClick={() => router.push(`/${params.workspaceSlug}`)}
-            className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs text-[var(--color-foreground-secondary)]"
-            aria-label="Back"
+            onClick={() => setSidebarOpen(true)}
+            className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs"
+            style={{ color: "var(--center-channel-color)", opacity: 0.72 }}
+            aria-label="Open sidebar"
           >
-            <ArrowLeft size={20} />
-            <span>Back</span>
+            <Menu size={20} />
+            <span>Menu</span>
           </button>
-        )}
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs text-[var(--color-foreground-secondary)]"
-          aria-label="Open sidebar"
-        >
-          <Menu size={20} />
-          <span>Menu</span>
-        </button>
-        <Link
-          href={params.workspaceSlug ? `/${params.workspaceSlug}` : "/"}
-          className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs text-[var(--color-foreground-secondary)]"
-        >
-          <Hash size={20} />
-          <span>Channels</span>
-        </Link>
-        <Link
-          href={params.workspaceSlug ? `/${params.workspaceSlug}/settings` : "/"}
-          className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs text-[var(--color-foreground-secondary)]"
-        >
-          <SettingsIcon size={20} />
-          <span>Settings</span>
-        </Link>
-      </nav>
+          <Link
+            href={params.workspaceSlug ? `/${params.workspaceSlug}` : "/"}
+            className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs"
+            style={{ color: "var(--center-channel-color)", opacity: 0.72 }}
+          >
+            <Hash size={20} />
+            <span>Channels</span>
+          </Link>
+          <Link
+            href={params.workspaceSlug ? `/${params.workspaceSlug}/settings` : "/"}
+            className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 px-3 text-xs"
+            style={{ color: "var(--center-channel-color)", opacity: 0.72 }}
+          >
+            <SettingsIcon size={20} />
+            <span>Settings</span>
+          </Link>
+        </nav>
+      </div>
 
       {params.workspaceSlug && (
         <QuickSwitcher

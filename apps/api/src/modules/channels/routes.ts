@@ -304,6 +304,32 @@ router.post(
   },
 );
 
+router.patch(
+  "/channels/:id/bookmarks/:bookmarkId",
+  validateUuidParam("id"),
+  validateUuidParam("bookmarkId"),
+  requireChannelAccess("id"),
+  async (req, res) => {
+    const { sort_order, title, url, emoji } = req.body;
+    const updates: Record<string, unknown> = {};
+    if (sort_order !== undefined) updates.sort_order = sort_order;
+    if (title !== undefined) updates.title = title;
+    if (url !== undefined) updates.url = url;
+    if (emoji !== undefined) updates.emoji = emoji;
+    updates.updated_at = new Date().toISOString();
+
+    const { error } = await req
+      .supabase!.from("channel_bookmarks")
+      .update(updates)
+      .eq("id", req.params.bookmarkId as string);
+    if (error) {
+      res.status(500).json({ error: { code: "UPDATE_FAILED", message: "Could not update bookmark" } });
+      return;
+    }
+    res.status(200).json({ success: true });
+  },
+);
+
 router.delete(
   "/channels/:id/bookmarks/:bookmarkId",
   validateUuidParam("id"),

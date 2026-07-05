@@ -47,79 +47,92 @@ export function ChannelList({ workspaceSlug, workspaceId, activeChannelId }: Pro
 
   if (loading) {
     return (
-      <div className="space-y-1 px-2">
+      <div className="space-y-1 px-3">
         <Skeleton className="h-7 w-full" />
         <Skeleton className="h-7 w-4/5" />
         <Skeleton className="h-7 w-3/4" />
-        <Skeleton className="h-7 w-5/6" />
       </div>
     );
   }
 
   if (channels.length === 0) {
-    return <p className="px-2 text-sm text-[var(--color-foreground-tertiary)]">No channels yet</p>;
+    return (
+      <p className="px-5 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+        No channels yet
+      </p>
+    );
   }
 
   return (
     <>
-      <ul className="space-y-0.5" role="listbox" aria-label="Channels">
-        {channels.map((ch) => (
-          <li key={ch.id} role="option" aria-selected={activeChannelId === ch.id}>
-            <div className="group flex items-center">
-              <Link
-                href={`/${workspaceSlug}/${ch.slug}`}
-                className={`block flex-1 rounded-md px-3 py-1 text-sm transition-colors hover:bg-[var(--color-background-tertiary)] ${
-                  activeChannelId === ch.id
-                    ? "bg-[var(--color-background-tertiary)] font-medium"
-                    : "text-[var(--color-foreground-secondary)]"
-                }`}
-              >
-                # {ch.name}
-              </Link>
-              <button
-                onClick={() => setDeleteConfirmId(ch.id)}
-                className="mr-1 flex h-6 w-6 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[var(--color-background-tertiary)]"
-                aria-label={`Delete channel ${ch.name}`}
-              >
-                <Trash2 size={12} className="text-[var(--color-foreground-tertiary)]" />
-              </button>
-            </div>
-          </li>
-        ))}
+      <ul role="listbox" aria-label="Channels">
+        {channels.map((ch) => {
+          const isActive = activeChannelId === ch.id;
+          return (
+            <li key={ch.id} role="option" aria-selected={isActive}>
+              <div className="group mm-sidebar-channel">
+                <Link
+                  href={`/${workspaceSlug}/${ch.slug}`}
+                  className="flex w-full items-center px-5 text-sm transition-colors"
+                  style={{
+                    height: 32,
+                    color: isActive ? "var(--sidebar-text-active-color)" : "var(--sidebar-text)",
+                    background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
+                    fontWeight: isActive ? 600 : 400,
+                    paddingLeft: isActive ? 17 : 20,
+                    borderLeft: isActive ? "4px solid var(--sidebar-text-active-border)" : "4px solid transparent",
+                    borderRadius: "0 4px 4px 0",
+                  }}
+                >
+                  <span style={{ opacity: 0.7, marginRight: 8 }}>#</span>
+                  <span className="truncate">{ch.name}</span>
+                </Link>
+                <button
+                  onClick={() => setDeleteConfirmId(ch.id)}
+                  className="mr-2 flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100"
+                  style={{ color: "rgba(255,255,255,0.6)" }}
+                  aria-label={`Delete channel ${ch.name}`}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div
-            className="w-full max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]"
+            className="w-full max-w-sm rounded-lg p-6"
+            style={{ background: "var(--center-channel-bg)" }}
             role="alertdialog"
             aria-label="Delete channel"
           >
-            <h3 className="text-sm font-semibold text-[var(--color-foreground-primary)]">
+            <h3 className="text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
               Delete channel?
             </h3>
-            <p className="mt-1 text-xs text-[var(--color-foreground-secondary)]">
-              This will permanently delete the channel and all its messages. This cannot be undone.
+            <p className="mt-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+              This will permanently delete the channel and all its messages.
             </p>
             {deleteError && (
-              <p className="mt-2 text-xs text-[var(--color-status-danger-fg)]" role="alert">
+              <p className="mt-2 text-xs" style={{ color: "var(--error-text)" }} role="alert">
                 {deleteError}
               </p>
             )}
             <div className="mt-4 flex justify-end gap-2">
               <button
-                onClick={() => {
-                  setDeleteConfirmId(null);
-                  setDeleteError("");
-                }}
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)]"
+                onClick={() => { setDeleteConfirmId(null); setDeleteError(""); }}
+                className="rounded-md px-3 py-1.5 text-xs font-medium"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirmId)}
                 disabled={deleting}
-                className="rounded-md bg-[var(--color-status-danger-fg)] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
+                style={{ background: "var(--dnd-indicator)" }}
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>

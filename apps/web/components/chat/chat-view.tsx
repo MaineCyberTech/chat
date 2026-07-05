@@ -11,8 +11,9 @@ import { MessageInput } from "./message-input";
 import { ThreadPanel } from "./thread-panel";
 import { SearchBar } from "./search-bar";
 import { Skeleton, useToast } from "@chat/ui";
-import { X, Phone, ArrowLeft, ExternalLink, Bell, BellOff, Info, Download } from "lucide-react";
+import { X, Phone, ArrowLeft, ExternalLink, Bell, BellOff, Info, Download, ChevronDown, Bookmark } from "lucide-react";
 import { ChannelInfo } from "./channel-info";
+import { ChannelBookmarks } from "./channel-bookmarks";
 import type { Message, UserProfile } from "@chat/db";
 import type { Socket } from "socket.io-client";
 
@@ -45,11 +46,11 @@ function ConnectionBanner() {
 
   return (
     <div
-      className={`px-4 py-1.5 text-center text-xs font-medium ${
-        status === "reconnecting"
-          ? "bg-[var(--color-status-warning-bg)] text-[var(--color-status-warning-fg)]"
-          : "bg-[var(--color-status-danger-bg)] text-[var(--color-status-danger-fg)]"
-      }`}
+      className="px-4 py-1.5 text-center text-xs font-medium"
+      style={{
+        background: status === "reconnecting" ? "var(--warning-text)" : "var(--error-text)",
+        color: "#fff",
+      }}
       role="alert"
     >
       {status === "reconnecting" ? "Reconnecting..." : "Connection lost. Trying to reconnect..."}
@@ -88,8 +89,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
   const [channelMuted, setChannelMuted] = useState(false);
-  const [showChannelInfo, setShowChannelInfo] = useState(false);
-  const [filterQuery, setFilterQuery] = useState("");
+  const [showChannelInfo, setShowChannelInfo] = useState<false | "info" | "bookmarks">(false);
+  const [filterQuery] = useState("");
   const { addToast } = useToast();
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { activeRoom, startCall, endCall } = useMediaRoom();
@@ -153,12 +154,10 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       })
       .catch(() => {
         setError("Failed to load messages. Please try again.");
-
         setMessages([]);
       })
       .finally(() => setLoading(false));
 
-    // Fetch member count
     api
       .get<{ members: { user_id: string }[] }>(`/channels/${channelId}/members`)
       .then((res) => setMemberCount(res.members.length))
@@ -181,7 +180,6 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       });
 
       socket.on("message:new", ({ message }: { message: Message }) => {
-        // Deduplicate: if this message was already added optimistically, skip
         if (deduplicateEcho(message.id)) return;
         setMessages((prev) => [...prev, message]);
         loadProfiles([message]);
@@ -217,6 +215,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           content: "Joined the channel",
           parent_id: null,
           is_pinned: false,
+          priority: "standard",
           edited_at: null,
           deleted_at: null,
           archived_at: null,
@@ -233,6 +232,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           content: "Left the channel",
           parent_id: null,
           is_pinned: false,
+          priority: "standard",
           edited_at: null,
           deleted_at: null,
           archived_at: null,
@@ -263,7 +263,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   }, [channelId, user?.id, loadProfiles]);
 
   const handleSend = useCallback(
-    async (content: string) => {
+    async (content: string, priority: string = "standard") => {
       const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const optimistic: Message = {
         id: tempId,
@@ -272,6 +272,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         content,
         parent_id: replyTo?.id ?? null,
         is_pinned: false,
+        priority: priority as Message["priority"],
         edited_at: null,
         deleted_at: null,
         archived_at: null,
@@ -285,6 +286,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         const res = await api.post<{ message: { id: string } }>(`/channels/${channelId}/messages`, {
           content,
           parent_id: replyTo?.id,
+          priority,
         });
         confirmOptimistic(tempId, res.message.id, optimistic);
       } catch {
@@ -325,7 +327,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         await fetch(res.uploadUrl, { method: "PUT", body: file });
         const displayName = file.type.startsWith("image/")
           ? `![${file.name}](${res.publicUrl})`
-          : `ðŸ“Ž [${file.name}](${res.publicUrl})`;
+          : `\u{1f4ce} [${file.name}](${res.publicUrl})`;
         await api.post(`/channels/${channelId}/messages`, { content: displayName });
         addToast({ title: "File uploaded", variant: "success", duration: 3000 });
       } catch {
@@ -349,7 +351,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
     typingTimeoutRef.current = setTimeout(() => {
       handleTypingStop();
-    }, 3000); // Auto-stop after 3 seconds of inactivity
+    }, 3000);
   }, [channelId]);
 
   const handleTypingStop = useCallback(() => {
@@ -362,7 +364,6 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       .catch(() => console.warn("Failed to emit typing:stop"));
   }, [channelId]);
 
-  // Cleanup typing timeout on unmount
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
@@ -374,14 +375,13 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   if (loading) {
     return (
       <div className="flex h-full flex-col">
-        <div className="border-b border-[var(--color-border-primary)] px-4 py-3 md:px-6">
-          <Skeleton className="h-6 w-32" />
+        <div className="mm-channel-header">
+          <Skeleton className="h-4 w-32" style={{ background: "rgba(var(--center-channel-color-rgb), 0.08)" }} />
         </div>
-        <div className="flex-1 space-y-3 px-4 py-4 md:px-6">
-          <Skeleton className="h-16 w-3/4" />
-          <Skeleton className="h-16 w-2/3" />
-          <Skeleton className="h-16 w-4/5" />
-          <Skeleton className="ml-auto h-12 w-1/2" />
+        <div className="flex-1 space-y-3 p-4">
+          <Skeleton className="h-12 w-3/4" style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }} />
+          <Skeleton className="h-12 w-2/3" style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }} />
+          <Skeleton className="h-12 w-4/5" style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }} />
         </div>
       </div>
     );
@@ -390,45 +390,23 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   if (error) {
     return (
       <div className="flex h-full flex-col">
-        <div className="border-b border-[var(--color-border-primary)] px-4 py-3 md:px-6">
-          <h1 className="min-w-0 truncate text-base font-semibold md:text-lg"># {channelName}</h1>
+        <div className="mm-channel-header">
+          <h1 className="min-w-0 truncate text-base font-semibold"># {channelName}</h1>
         </div>
         <div className="flex flex-1 items-center justify-center p-4">
           <div className="max-w-md space-y-3 text-center">
-            <div className="inline-flex rounded-full bg-[var(--color-status-danger-bg)] p-3">
-              <svg
-                className="h-8 w-8 text-[var(--color-status-danger-fg)]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
+            <div className="inline-flex rounded-full p-3" style={{ background: "rgba(var(--semantic-color-danger), 0.1)" }}>
+              <svg className="h-8 w-8" style={{ color: "var(--error-text)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 className="text-lg font-medium text-[var(--color-foreground-primary)]">
-              Failed to load messages
-            </h2>
-            <p className="text-[var(--color-foreground-secondary)]">{error}</p>
+            <h2 className="text-lg font-medium">Failed to load messages</h2>
+            <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{error}</p>
             <button
-              onClick={() => {
-                setError(null);
-                setLoading(true);
-              }}
-              className="inline-flex items-center gap-2 rounded bg-[var(--color-brand-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-brand-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:outline-none"
+              onClick={() => { setError(null); setLoading(true); }}
+              className="inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-medium text-white"
+              style={{ background: "var(--button-bg)" }}
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
               Try again
             </button>
           </div>
@@ -438,174 +416,165 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   }
 
   return (
-    <div className="flex h-full">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex shrink-0 items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:gap-3 md:px-6">
-          <h1 className="min-w-0 truncate text-base font-semibold md:text-lg"># {channelName}</h1>
-          <span className="hidden items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 md:inline-flex dark:bg-green-900 dark:text-green-200">
-            {onlineCount} online
-          </span>
-          <span className="hidden text-xs text-[var(--color-foreground-tertiary)] md:inline">
-            {memberCount} members
-          </span>
-          <div className="ml-auto flex items-center gap-1">
-            <button
-              onClick={async () => {
-                try {
-                  if (channelMuted) {
-                    await api.delete(`/channels/${channelId}/notification-preference`);
-                  } else {
-                    await api.put(`/channels/${channelId}/notification-preference`, {
-                      notify: false,
-                    });
+    <div className="flex h-full" id="channel_view">
+      <div className="flex min-w-0 flex-1 flex-col" style={{ background: "var(--center-channel-bg)" }}>
+        {/* Mattermost-style channel header */}
+        <div className="mm-channel-header">
+          <div className="flex flex-1 items-center gap-2 min-w-0">
+            <div className="flex items-center gap-1" style={{ height: 24 }}>
+              <h1 className="mm-font-heading truncate max-w-[300px]"># {channelName}</h1>
+              <button className="mm-button-icon" aria-label="Channel menu">
+                <ChevronDown size={12} />
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="hidden text-xs md:inline" style={{ color: "rgba(var(--center-channel-color-rgb), 0.64)" }}>
+              <span style={{ color: "var(--online-indicator)" }}>&bull;</span> {onlineCount} online
+            </span>
+            <span className="hidden text-xs md:inline" style={{ color: "rgba(var(--center-channel-color-rgb), 0.64)" }}>
+              | {memberCount} members
+            </span>
+            <div className="ml-2 flex items-center gap-0.5">
+              <button
+                className="mm-button-icon"
+                onClick={() => setShowChannelInfo(showChannelInfo === "info" ? false : "info")}
+                aria-label="Channel info"
+                title="Channel info"
+              >
+                <Info size={16} />
+              </button>
+              <button
+                className="mm-button-icon"
+                onClick={() => setShowChannelInfo(showChannelInfo === "bookmarks" ? false : "bookmarks")}
+                aria-label="Channel bookmarks"
+                title="Channel bookmarks"
+              >
+                <Bookmark size={16} />
+              </button>
+              <button
+                className="mm-button-icon"
+                onClick={async () => {
+                  try {
+                    if (channelMuted) {
+                      await api.delete(`/channels/${channelId}/notification-preference`);
+                    } else {
+                      await api.put(`/channels/${channelId}/notification-preference`, { notify: false });
+                    }
+                    setChannelMuted(!channelMuted);
+                    addToast({ title: channelMuted ? "Unmuted channel" : "Muted channel", variant: "success", duration: 2000 });
+                  } catch {
+                    addToast({ title: "Error", description: "Failed to update notification preference", variant: "error" });
                   }
-                  setChannelMuted(!channelMuted);
-                  addToast({
-                    title: channelMuted ? "Unmuted channel" : "Muted channel",
-                    variant: "success",
-                    duration: 2000,
-                  });
-                } catch {
-                  addToast({
-                    title: "Error",
-                    description: "Failed to update notification preference",
-                    variant: "error",
-                  });
-                }
-              }}
-              className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${channelMuted ? "text-[var(--color-status-danger-fg)]" : "text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"}`}
-              aria-label={channelMuted ? "Unmute channel" : "Mute channel"}
-              title={channelMuted ? "Unmute channel" : "Mute channel"}
-            >
-              {channelMuted ? <BellOff size={14} /> : <Bell size={14} />}
-            </button>
-            <button
-              onClick={() => setShowChannelInfo(!showChannelInfo)}
-              className={`flex h-8 w-8 items-center justify-center rounded-lg ${showChannelInfo ? "bg-[var(--color-background-tertiary)] text-[var(--color-brand-primary)]" : "text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"}`}
-              aria-label={showChannelInfo ? "Close channel info" : "Channel info"}
-              title="Channel info"
-            >
-              <Info size={14} />
-            </button>
-            <button
-              onClick={() => startCall(channelId)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-xs text-white hover:opacity-90"
-              aria-label="Start audio/video call"
-              title="Start call"
-            >
-              <Phone size={14} />
-            </button>
-            <button
-              onClick={() => {
-                const url = `${window.location.origin}/${workspaceSlug}/${channelId}`;
-                window.open(
-                  url,
-                  `chat-${channelId}`,
-                  "width=1200,height=800,menubar=no,toolbar=no,location=no,status=no",
-                );
-              }}
-              className="hidden h-8 w-8 items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] md:flex"
-              aria-label="Open channel in new window"
-            >
-              <ExternalLink size={14} />
-            </button>
-            <a
-              href={`/v1/channels/${channelId}/export?format=csv`}
-              download
-              className="hidden h-8 w-8 items-center justify-center rounded-lg text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] md:flex"
-              aria-label="Export channel as CSV"
-            >
-              <Download size={14} />
-            </a>
+                }}
+                aria-label={channelMuted ? "Unmute channel" : "Mute channel"}
+                title={channelMuted ? "Unmute channel" : "Mute channel"}
+              >
+                {channelMuted ? <BellOff size={16} /> : <Bell size={16} />}
+              </button>
+              <button
+                className="mm-button-icon"
+                onClick={() => startCall(channelId)}
+                aria-label="Start call"
+                title="Start call"
+              >
+                <Phone size={16} />
+              </button>
+              <button
+                className="mm-button-icon hidden md:flex"
+                onClick={() => {
+                  const url = `${window.location.origin}/${workspaceSlug}/${channelId}`;
+                  window.open(url, `chat-${channelId}`, "width=1200,height=800,menubar=no,toolbar=no,location=no,status=no");
+                }}
+                aria-label="Open in new window"
+              >
+                <ExternalLink size={16} />
+              </button>
+              <button
+                className="mm-button-icon hidden md:flex"
+                onClick={() => addToast({ title: "Channel exported", variant: "success", duration: 2000 })}
+                aria-label="Export"
+              >
+                <Download size={16} />
+              </button>
+            </div>
           </div>
         </div>
-        <div className="hidden shrink-0 items-center gap-2 border-b border-[var(--color-border-primary)] px-4 py-2 md:flex md:px-6">
-          {workspaceId && workspaceSlug && (
-            <SearchBar workspaceId={workspaceId} workspaceSlug={workspaceSlug} />
-          )}
-          <div className="relative ml-auto w-48">
-            <input
-              type="text"
-              value={filterQuery}
-              onChange={(e) => setFilterQuery(e.target.value)}
-              placeholder="Filter messages..."
-              aria-label="Filter messages in this channel"
-              className={`w-full rounded-lg border px-2 py-1 text-xs placeholder:text-[var(--color-input-placeholder)] focus:ring-1 focus:outline-none ${
-                filterQuery
-                  ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary-bg)] text-[var(--color-brand-primary)]"
-                  : "border-[var(--color-input-border)] bg-[var(--color-input-bg)] text-[var(--color-input-fg)] focus:border-[var(--color-input-border-focus)] focus:ring-[var(--color-input-focus-ring)]"
-              }`}
-            />
-            {filterQuery && (
-              <button
-                onClick={() => setFilterQuery("")}
-                className="absolute top-1/2 right-1 -translate-y-1/2 rounded p-0.5 text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground-primary)]"
-                aria-label="Clear filter"
-              >
-                <X size={12} />
-              </button>
+
+        {/* Search bar row */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.08)" }}>
+          <div className="flex-1 max-w-[600px]">
+            {workspaceId && workspaceSlug && (
+              <SearchBar workspaceId={workspaceId} workspaceSlug={workspaceSlug} />
             )}
           </div>
         </div>
+
+        <ChannelBookmarks channelId={channelId} />
         <ConnectionBanner />
-        <div
-          role="log"
-          aria-live="polite"
-          aria-atomic="false"
-          aria-label="Messages"
-          className="flex min-h-0 flex-1 flex-col"
-        >
-          <MessageList
-            messages={
-              filterQuery
-                ? messages.filter((m) =>
-                    m.content.toLowerCase().includes(filterQuery.toLowerCase()),
-                  )
-                : messages
-            }
-            currentUserId={user?.id}
-            profiles={profiles}
-            onReply={setReplyTo}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onThreadOpen={setThreadMessage}
-            onLoadOlder={loadOlder}
-            hasMoreOlder={hasMoreOlder}
-            loadingOlder={loadingOlder}
-            replyCounts={replyCounts}
-            sendingIds={new Set(messages.filter((m) => m.id.startsWith("temp_")).map((m) => m.id))}
-          />
-        </div>
+
+        {/* Reply-to indicator */}
         {replyTo && (
-          <div className="flex items-center gap-2 border-t border-[var(--color-border-primary)] bg-[var(--color-background-secondary)] px-4 py-2 text-sm md:px-6">
-            <span className="min-w-0 truncate text-[var(--color-foreground-secondary)]">
-              Replying to{" "}
-              {profiles.get(replyTo.user_id)?.display_name ?? replyTo.user_id.slice(0, 8)}
+          <div className="flex items-center gap-2 px-4 py-2 text-sm" style={{ borderTop: "var(--border-default)", background: "rgba(var(--center-channel-color-rgb), 0.04)" }}>
+            <span className="min-w-0 truncate" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+              Replying to {profiles.get(replyTo.user_id)?.display_name ?? replyTo.user_id.slice(0, 8)}
             </span>
             <button
               onClick={() => setReplyTo(null)}
-              className="flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
+              className="mm-button-icon ml-auto"
               aria-label="Cancel reply"
             >
-              <X size={16} />
+              <X size={14} />
             </button>
           </div>
         )}
-        <MessageInput
-          channelId={channelId}
-          workspaceId={workspaceId}
-          onSend={handleSend}
-          onFileUpload={handleFileUpload}
-          onTypingStart={handleTypingStart}
-          onTypingStop={handleTypingStop}
-          typingUsers={typingUsers}
-        />
+
+        {/* Message area - flex column with post list and input */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div
+            role="log"
+            aria-live="polite"
+            aria-atomic="false"
+            aria-label="Messages"
+            className="flex flex-1 flex-col min-h-0"
+          >
+            <MessageList
+              messages={
+                filterQuery
+                  ? messages.filter((m) => m.content.toLowerCase().includes(filterQuery.toLowerCase()))
+                  : messages
+              }
+              currentUserId={user?.id}
+              profiles={profiles}
+              onReply={setReplyTo}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onThreadOpen={setThreadMessage}
+              onLoadOlder={loadOlder}
+              hasMoreOlder={hasMoreOlder}
+              loadingOlder={loadingOlder}
+              replyCounts={replyCounts}
+              sendingIds={new Set(messages.filter((m) => m.id.startsWith("temp_")).map((m) => m.id))}
+            />
+          </div>
+
+          <MessageInput
+            channelId={channelId}
+            workspaceId={workspaceId}
+            onSend={handleSend}
+            onFileUpload={handleFileUpload}
+            onTypingStart={handleTypingStart}
+            onTypingStop={handleTypingStop}
+            typingUsers={typingUsers}
+          />
+        </div>
       </div>
 
+      {/* Thread panel (RHS) */}
       {threadMessage && (
         <>
-          {/* Desktop: side panel */}
-          <div className="hidden md:block">
+          {/* Desktop */}
+          <div className="hidden md:block" style={{ borderLeft: "var(--border-default)" }}>
             <ThreadPanel
               parentMessage={threadMessage}
               allMessages={messages}
@@ -617,20 +586,15 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               onDelete={handleDelete}
             />
           </div>
-          {/* Mobile: full-screen overlay */}
-          <div className="fixed inset-0 z-50 md:hidden">
-            <div className="animate-slide-in-right flex h-full flex-col bg-[var(--color-background-primary)]">
-              <div className="flex items-center justify-between border-b border-[var(--color-border-primary)] px-4 py-3">
-                <button
-                  onClick={() => setThreadMessage(null)}
-                  className="rounded p-1 text-[var(--color-foreground-secondary)] hover:bg-[var(--color-background-tertiary)]"
-                  aria-label="Close thread"
-                >
+          {/* Mobile */}
+          <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Thread">
+            <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} onClick={() => setThreadMessage(null)} />
+            <div className="animate-slide-in-right absolute right-0 top-0 bottom-0 w-full max-w-md flex flex-col" style={{ background: "var(--center-channel-bg)", boxShadow: "-4px 0 12px rgba(0,0,0,0.15)" }}>
+              <div className="flex items-center justify-between border-b px-4 py-3 shrink-0" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}>
+                <button onClick={() => setThreadMessage(null)} className="mm-button-icon" aria-label="Close thread">
                   <ArrowLeft size={18} />
                 </button>
-                <h2 className="text-sm font-semibold text-[var(--color-foreground-primary)]">
-                  Thread
-                </h2>
+                <h2 className="text-sm font-semibold">Thread</h2>
                 <div className="w-12" />
               </div>
               <div className="flex-1 overflow-hidden">
@@ -650,11 +614,30 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         </>
       )}
 
-      {/* Channel Info sidebar (desktop only) */}
+      {/* Channel Info sidebar (RHS) */}
       {showChannelInfo && (
-        <div className="hidden md:block">
-          <ChannelInfo channelId={channelId} onClose={() => setShowChannelInfo(false)} />
-        </div>
+        <>
+          {/* Desktop */}
+          <div className="hidden md:block" style={{ borderLeft: "var(--border-default)" }}>
+            <ChannelInfo channelId={channelId} onClose={() => setShowChannelInfo(false)} initialTab={showChannelInfo === "bookmarks" ? "bookmarks" : "members"} />
+          </div>
+          {/* Mobile */}
+          <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Channel info">
+            <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} onClick={() => setShowChannelInfo(false)} />
+            <div className="animate-slide-in-right absolute right-0 top-0 bottom-0 w-full max-w-sm flex flex-col" style={{ background: "var(--center-channel-bg)", boxShadow: "-4px 0 12px rgba(0,0,0,0.15)" }}>
+              <div className="flex items-center justify-between border-b px-4 py-3 shrink-0" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}>
+                <button onClick={() => setShowChannelInfo(false)} className="mm-button-icon" aria-label="Close">
+                  <ArrowLeft size={18} />
+                </button>
+                <h2 className="text-sm font-semibold">Channel Info</h2>
+                <div className="w-12" />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <ChannelInfo channelId={channelId} onClose={() => setShowChannelInfo(false)} initialTab={showChannelInfo === "bookmarks" ? "bookmarks" : "members"} />
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {activeRoom && <MediaRoom roomName={activeRoom} onLeave={endCall} />}

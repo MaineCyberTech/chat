@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Avatar, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
-import { Reply, Pencil, X, Smile, Copy, Trash2, Clock } from "lucide-react";
+import { Reply, Pencil, X, Smile, Copy, Trash2, Clock, AlertCircle, AlertTriangle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CodeBlock } from "./code-block";
@@ -12,7 +12,7 @@ import { RemindModal } from "./remind-modal";
 import type { Message, UserProfile } from "@chat/db";
 
 const GROUP_GAP_MS = 5 * 60 * 1000;
-const QUICK_EMOJIS = ["👍", "❤️", "😄", "😮", "😢", "🎉"];
+const QUICK_EMOJIS = ["\u{1f44d}", "\u2764\ufe0f", "\u{1f604}", "\u{1f62e}", "\u{1f622}", "\u{1f389}"];
 const TOP_TRIGGER_OFFSET = 200;
 
 interface Reaction {
@@ -49,19 +49,11 @@ function authorName(userId: string, profiles: Map<string, UserProfile>): string 
 }
 
 function formatTime(dateString: string): string {
-  return new Date(dateString).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return new Date(dateString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return new Date(dateString).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
 }
 
 function avatarUrl(userId: string, profiles: Map<string, UserProfile>): string | undefined {
@@ -74,34 +66,34 @@ interface MessageMeta extends Message {
   isGroupEnd?: boolean;
 }
 
+function PostAvatar({ src, fallback }: { src?: string; fallback: string }) {
+  return (
+    <div style={{ width: 36, minWidth: 36, paddingRight: 8 }} className="text-right">
+      <div className="inline-flex" style={{ width: 24, height: 24, borderRadius: "var(--radius-full)", overflow: "hidden" }}>
+        {src ? (
+          <img src={src} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <span
+            className="flex h-full w-full items-center justify-center text-[10px] font-semibold"
+            style={{ background: "rgba(var(--button-bg-rgb), 0.16)", color: "var(--button-bg)" }}
+          >
+            {fallback.charAt(0).toUpperCase()}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const MessageItem = React.memo(function MessageItem({
-  msg,
-  currentUserId,
-  profiles,
-  editingId,
-  editContent,
-  hoveredId,
-  reactions,
-  pickerMessageId,
-  editError,
-  replyCounts = new Map(),
-  sendingIds,
-  onReply,
-  onEdit,
-  onDelete,
-  onThreadOpen,
-  onStartEdit,
-  onSubmitEdit,
-  onCancelEdit,
-  onSetEditContent,
-  onSetHoveredId,
-  onToggleReaction,
-  onSetPickerMessageId,
-  onSetDeleteConfirmId,
-  onMessageContextMenu,
-  onMessageTouchStart,
-  onMessageTouchEnd,
-  onMessageTouchMove,
+  msg, currentUserId, profiles, editingId, editContent,
+  hoveredId, reactions, pickerMessageId, editError,
+  replyCounts = new Map(), sendingIds,
+  onReply, onEdit, onDelete, onThreadOpen,
+  onStartEdit, onSubmitEdit, onCancelEdit, onSetEditContent,
+  onSetHoveredId, onToggleReaction, onSetPickerMessageId,
+  onSetDeleteConfirmId, onMessageContextMenu,
+  onMessageTouchStart, onMessageTouchEnd, onMessageTouchMove,
 }: {
   msg: MessageMeta;
   currentUserId?: string;
@@ -133,12 +125,12 @@ const MessageItem = React.memo(function MessageItem({
 }) {
   const isOwn = msg.user_id === currentUserId;
   const showDate = msg.showDate ?? false;
-  const showAuthor = !isOwn && (msg.isGroupStart ?? false);
+  const showAuthor = msg.isGroupStart ?? true;
   const name = authorName(msg.user_id, profiles);
   const avatar = avatarUrl(msg.user_id, profiles);
   const isHovered = hoveredId === msg.id;
 
-  function aggregated(messageId: string): { emoji: string; count: number; hasMine: boolean }[] {
+  function aggregated(messageId: string) {
     const msgReactions = reactions.get(messageId) ?? [];
     const grouped = new Map<string, { count: number; hasMine: boolean }>();
     for (const r of msgReactions) {
@@ -155,253 +147,224 @@ const MessageItem = React.memo(function MessageItem({
   const isSystem = (msg as unknown as Record<string, unknown>).type === "system";
   if (isSystem) {
     return (
-      <div key={msg.id} className="my-2 text-center">
-        <span className="text-xs text-[var(--color-foreground-tertiary)] italic">
+      <div className="mm-post text-center" style={{ paddingTop: 4, paddingBottom: 4 }}>
+        <span className="text-xs italic" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
           {msg.content}
         </span>
       </div>
     );
   }
 
+  const isEditing = editingId === msg.id;
+  const hasThread = !msg.parent_id && onThreadOpen;
+  const threadReplyCount = replyCounts.get(msg.id) ?? 0;
+
   return (
     <div key={msg.id}>
       {showDate && (
-        <div className="my-4 flex justify-center">
-          <span className="rounded-full bg-[var(--color-background-tertiary)] px-3 py-0.5 text-xs font-medium text-[var(--color-foreground-tertiary)]">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="flex-1" style={{ borderTop: "solid 1px rgba(var(--center-channel-color-rgb), 0.12)" }} />
+          <span
+            className="rounded px-2 py-0.5 text-xs font-semibold"
+            style={{
+              background: "rgba(var(--center-channel-color-rgb), 0.08)",
+              color: "rgba(var(--center-channel-color-rgb), 0.72)",
+            }}
+          >
             {formatDate(msg.created_at)}
           </span>
+          <div className="flex-1" style={{ borderTop: "solid 1px rgba(var(--center-channel-color-rgb), 0.12)" }} />
         </div>
       )}
       <div
         data-message-id={msg.id}
         data-timestamp={msg.created_at}
-        className={`group flex ${isOwn ? "flex-row-reverse" : "flex-row"} ${
-          msg.isGroupStart ? "mt-3" : "mt-0.5"
-        }`}
-        onMouseEnter={() => {
-          onSetHoveredId(msg.id);
-          onSetPickerMessageId(null);
-        }}
+        className={`mm-post ${isEditing ? "mm-post--editing" : ""}`}
+        onMouseEnter={() => { onSetHoveredId(msg.id); onSetPickerMessageId(null); }}
         onMouseLeave={() => onSetHoveredId(null)}
       >
-        <div className={`flex w-9 shrink-0 ${isOwn ? "ml-2" : "mr-2"}`}>
+        <div className="flex" style={{ display: "table", width: "100%", tableLayout: "fixed" }}>
+          {/* Avatar column (table-cell) */}
           {showAuthor ? (
-            <div className="shrink-0">
-              <Avatar src={avatar} fallback={name.charAt(0).toUpperCase()} size="sm" />
-            </div>
+            <PostAvatar src={avatar} fallback={name} />
           ) : (
-            <div className="w-8" />
+            <div style={{ width: 36, minWidth: 36, paddingRight: 8 }} className="text-right">
+              <span style={{ fontSize: 11, color: "rgba(var(--center-channel-color-rgb), 0.56)", whiteSpace: "nowrap" }}>
+                {formatTime(msg.created_at)}
+              </span>
+            </div>
           )}
-        </div>
-        <div className={`flex min-w-0 flex-col ${isOwn ? "items-end" : "items-start"}`}>
-          {showAuthor && (
-            <p className="mb-0.5 px-1 text-xs font-medium text-[var(--color-foreground-tertiary)]">
-              {name}
-            </p>
-          )}
-          {editingId === msg.id ? (
-            <div className="flex flex-col gap-1">
-              <div className="flex w-full gap-1">
-                <input
-                  value={editContent}
-                  onChange={(e) => onSetEditContent(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") onCancelEdit();
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      onSubmitEdit();
-                    }
-                  }}
-                  className="flex-1 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-input-bg)] px-3 py-1 text-sm text-[var(--color-input-fg)] focus:border-[var(--color-input-border-focus)] focus:ring-2 focus:ring-[var(--color-input-focus-ring)] focus:outline-none"
-                  autoFocus
-                  aria-label="Edit message"
-                />
-                <button
-                  onClick={onSubmitEdit}
-                  className="shrink-0 text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={onCancelEdit}
-                  className="shrink-0 text-xs text-[var(--color-foreground-tertiary)] hover:underline"
-                >
-                  Cancel
-                </button>
+
+          {/* Body column (table-cell) */}
+          <div style={{ display: "table-cell", width: "100%", padding: "0 0 0.2em" }}>
+            {showAuthor && (
+              <div className="flex items-baseline gap-2 mb-0.5" style={{ display: "flex" }}>
+                <span className="text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
+                  {name}
+                </span>
+                <span style={{ fontSize: 11, color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                  {formatTime(msg.created_at)}
+                </span>
               </div>
-              {editError && (
-                <p className="text-xs text-[var(--color-status-danger-fg)]" role="alert">
-                  {editError}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="group relative">
-              <div
-                onContextMenu={(e) => onMessageContextMenu(e, msg)}
-                onTouchStart={(e) => onMessageTouchStart(e, msg)}
-                onTouchEnd={onMessageTouchEnd}
-                onTouchMove={onMessageTouchMove}
-                className={`flex flex-col rounded-lg px-3 py-1.5 ${
-                  isOwn
-                    ? "bg-[var(--color-brand-primary)] text-[var(--color-brand-primary-foreground)]"
-                    : "bg-[var(--color-background-tertiary)] text-[var(--color-foreground-primary)]"
-                }`}
-              >
-                {msg.parent_id && (
-                  <p className="mb-0.5 text-xs italic opacity-70">
-                    <Reply size={12} className="mr-0.5 inline" /> Reply
-                  </p>
-                )}
-                <div className="text-sm break-words">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      a: ({ href, children }) => {
-                        if (!href) return <>{children}</>;
-                        const isImage = /\.(png|jpg|jpeg|gif|webp|svg|bmp)(\?.*)?$/i.test(href);
-                        const isVideo = /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(href);
-                        const isAudio = /\.(mp3|wav|ogg|m4a)(\?.*)?$/i.test(href);
-                        const fileName = href.split("/").pop() ?? "file";
-                        if (isImage) return <FilePreview url={href} type="image" name={fileName} />;
-                        if (isVideo) return <FilePreview url={href} type="video" name={fileName} />;
-                        if (isAudio) return <FilePreview url={href} type="audio" name={fileName} />;
-                        return (
-                          <a
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[var(--color-brand-primary)] underline"
-                          >
-                            {children}
-                          </a>
-                        );
-                      },
-                      code: ({ className, children }) => {
-                        const match = /language-(\w+)/.exec(className ?? "");
-                        const code = String(children).replace(/\n$/, "");
-                        if (match) return <CodeBlock code={code} language={match[1]} />;
-                        return (
-                          <code className="rounded bg-[var(--color-background-tertiary)] px-1 py-0.5 font-mono text-xs">
-                            {children}
-                          </code>
-                        );
-                      },
-                      pre: ({ children }) => <>{children}</>,
-                      img: ({ src, alt }) =>
-                        src ? (
-                          <FilePreview url={String(src)} type="image" name={alt ?? "image"} />
-                        ) : null,
+            )}
+
+            {/* Edit mode */}
+            {isEditing ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex gap-1">
+                  <input
+                    value={editContent}
+                    onChange={(e) => onSetEditContent(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") onCancelEdit();
+                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSubmitEdit(); }
                     }}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
+                    className="flex-1 rounded border px-2 py-1 text-sm"
+                    style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)", background: "var(--center-channel-bg)", color: "var(--center-channel-color)" }}
+                    autoFocus
+                    aria-label="Edit message"
+                  />
+                  <button onClick={onSubmitEdit} className="text-xs font-medium" style={{ color: "var(--button-bg)" }}>Save</button>
+                  <button onClick={onCancelEdit} className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>Cancel</button>
                 </div>
-                {msg.edited_at && <p className="mt-0.5 text-xs opacity-70">edited</p>}
-                {sendingIds?.has(msg.id) && (
-                  <p className="mt-0.5 text-xs italic opacity-60">sending...</p>
-                )}
-                {(msg.isGroupEnd || isHovered) && (
-                  <p className="mt-0.5 text-right text-xs opacity-50">
-                    {formatTime(msg.created_at)}
-                  </p>
-                )}
-                {!msg.parent_id && onThreadOpen && replyCounts?.has(msg.id) && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onThreadOpen(msg);
-                    }}
-                    className="mt-0.5 self-start text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
-                  >
-                    {replyCounts.get(msg.id)} {replyCounts.get(msg.id) === 1 ? "reply" : "replies"}
-                  </button>
-                )}
+                {editError && <p className="text-xs" style={{ color: "var(--error-text)" }} role="alert">{editError}</p>}
               </div>
-              <div
-                className={`absolute -top-3 right-0 z-10 hidden items-center gap-0.5 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] px-1 py-0.5 shadow-[var(--shadow-md)] group-hover:flex ${
-                  isOwn ? "flex-row-reverse" : "flex-row"
-                }`}
-              >
-                {onReply && (
-                  <button
-                    onClick={() => onReply(msg)}
-                    className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-                    aria-label="Reply"
-                  >
-                    <Reply size={14} />
-                  </button>
-                )}
-                <button
-                  onClick={() => onSetPickerMessageId(pickerMessageId === msg.id ? null : msg.id)}
-                  className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-                  aria-label="Add reaction"
+            ) : (
+              <div className="group relative">
+                <div
+                  onContextMenu={(e) => onMessageContextMenu(e, msg)}
+                  onTouchStart={(e) => onMessageTouchStart(e, msg)}
+                  onTouchEnd={onMessageTouchEnd}
+                  onTouchMove={onMessageTouchMove}
                 >
-                  <Smile size={14} />
-                </button>
-                {isOwn && onEdit && (
-                  <button
-                    onClick={() => onStartEdit(msg)}
-                    className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-                    aria-label="Edit"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                )}
-                {isOwn && onDelete && (
-                  <button
-                    onClick={() => onSetDeleteConfirmId(msg.id)}
-                    className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-status-danger-fg)]"
-                    aria-label="Delete"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
+                  {msg.parent_id && (
+                    <p className="mb-0.5 text-xs italic" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                      <Reply size={10} className="mr-0.5 inline" /> Reply
+                    </p>
+                  )}
+                  {msg.priority && msg.priority !== "standard" && (
+                    <span className="mb-1 inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-medium" style={{ background: msg.priority === "critical" ? "rgba(var(--error-text-rgb),0.08)" : msg.priority === "urgent" ? "rgba(var(--dnd-indicator-rgb),0.08)" : "rgba(var(--online-indicator-rgb),0.08)", color: msg.priority === "critical" ? "var(--error-text)" : msg.priority === "urgent" ? "var(--dnd-indicator)" : "var(--online-indicator)" }}>
+                      {msg.priority === "critical" || msg.priority === "urgent" ? <AlertTriangle size={10} /> : <AlertCircle size={10} />}
+                      {msg.priority.charAt(0).toUpperCase() + msg.priority.slice(1)}
+                    </span>
+                  )}
+                  <div className="text-sm break-words" style={{ lineHeight: "1.6" }}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        a: ({ href, children }) => {
+                          if (!href) return <>{children}</>;
+                          const isImage = /\.(png|jpg|jpeg|gif|webp|svg|bmp)(\?.*)?$/i.test(href);
+                          const isVideo = /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(href);
+                          const isAudio = /\.(mp3|wav|ogg|m4a)(\?.*)?$/i.test(href);
+                          const fileName = href.split("/").pop() ?? "file";
+                          if (isImage) return <FilePreview url={href} type="image" name={fileName} />;
+                          if (isVideo) return <FilePreview url={href} type="video" name={fileName} />;
+                          if (isAudio) return <FilePreview url={href} type="audio" name={fileName} />;
+                          return <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "var(--link-color)" }}>{children}</a>;
+                        },
+                        code: ({ className, children }) => {
+                          const match = /language-(\w+)/.exec(className ?? "");
+                          const code = String(children).replace(/\n$/, "");
+                          if (match) return <CodeBlock code={code} language={match[1]} />;
+                          return <code className="rounded px-1 py-0.5 font-mono text-xs" style={{ background: "rgba(var(--center-channel-color-rgb), 0.08)" }}>{children}</code>;
+                        },
+                        pre: ({ children }) => <>{children}</>,
+                        img: ({ src, alt }) => src ? <FilePreview url={String(src)} type="image" name={alt ?? "image"} /> : null,
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                  {msg.edited_at && <p className="mt-0.5 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>(edited)</p>}
+                  {sendingIds?.has(msg.id) && <p className="mt-0.5 text-xs italic" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>sending...</p>}
+                </div>
+
+                {/* Hover action buttons */}
+                <div
+                  className="absolute z-10 hidden items-center gap-0.5 rounded border px-1 py-0.5"
+                  style={{
+                    top: -16,
+                    right: 0,
+                    background: "var(--center-channel-bg)",
+                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                    boxShadow: "var(--elevation-2)",
+                    display: isHovered ? "flex" : "none",
+                  }}
+                >
+                  {onReply && (
+                    <button onClick={() => onReply(msg)} className="mm-button-icon w-7 h-7" aria-label="Reply"><Reply size={14} /></button>
+                  )}
+                  <button onClick={() => onSetPickerMessageId(pickerMessageId === msg.id ? null : msg.id)} className="mm-button-icon w-7 h-7" aria-label="Add reaction"><Smile size={14} /></button>
+                  {isOwn && onEdit && (
+                    <button onClick={() => onStartEdit(msg)} className="mm-button-icon w-7 h-7" aria-label="Edit"><Pencil size={14} /></button>
+                  )}
+                  {isOwn && onDelete && (
+                    <button onClick={() => onSetDeleteConfirmId(msg.id)} className="mm-button-icon w-7 h-7" aria-label="Delete"><X size={14} /></button>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          {aggr.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {aggr.map(({ emoji, count, hasMine }) => (
-                <button
-                  key={emoji}
-                  onClick={() => onToggleReaction(msg.id, emoji)}
-                  title={
-                    hasMine
-                      ? `You and ${count - 1} other${count - 1 !== 1 ? "s" : ""}`
-                      : `${count} ${count === 1 ? "person" : "people"}`
-                  }
-                  className={`inline-flex min-h-[44px] min-w-[44px] items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none ${
-                    hasMine
-                      ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary-light)]"
-                      : "border-[var(--color-border-primary)] hover:bg-[var(--color-background-tertiary)]"
-                  }`}
-                >
-                  <span>{emoji}</span>
-                  <span className="text-[var(--color-foreground-tertiary)]">{count}</span>
-                </button>
-              ))}
-            </div>
-          )}
-          {pickerMessageId === msg.id && (
-            <div className="relative mt-1">
-              <div className="absolute top-0 right-0 z-10 flex max-w-[calc(100vw-3rem)] gap-0.5 overflow-x-auto rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-background-primary)] p-1 shadow-[var(--shadow-xl)]">
-                {QUICK_EMOJIS.map((emoji) => (
+            )}
+
+            {/* Reaction buttons */}
+            {aggr.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {aggr.map(({ emoji, count, hasMine }) => (
                   <button
                     key={emoji}
-                    onClick={() => {
-                      onToggleReaction(msg.id, emoji);
-                      onSetPickerMessageId(null);
+                    onClick={() => onToggleReaction(msg.id, emoji)}
+                    title={hasMine ? `You and ${count - 1} other${count - 1 !== 1 ? "s" : ""}` : `${count} ${count === 1 ? "person" : "people"}`}
+                    className="inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition-colors"
+                    style={{
+                      minHeight: 28,
+                      minWidth: 28,
+                      borderColor: hasMine ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.16)",
+                      background: hasMine ? "rgba(var(--button-bg-rgb), 0.08)" : "transparent",
                     }}
-                    className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded p-1 text-lg leading-none transition-colors hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none md:min-h-[44px] md:min-w-[44px]"
-                    aria-label={`React with ${emoji}`}
                   >
-                    {emoji}
+                    <span>{emoji}</span>
+                    <span style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{count}</span>
                   </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Emoji picker popover */}
+            {pickerMessageId === msg.id && (
+              <div className="relative mt-1" style={{ zIndex: 10 }}>
+                <div
+                  className="absolute top-0 left-0 z-10 flex gap-0.5 rounded-lg border p-1"
+                  style={{
+                    background: "var(--center-channel-bg)",
+                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                    boxShadow: "var(--elevation-3)",
+                  }}
+                >
+                  {QUICK_EMOJIS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => { onToggleReaction(msg.id, emoji); onSetPickerMessageId(null); }}
+                      className="flex h-8 w-8 items-center justify-center rounded p-1 text-lg leading-none transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                      aria-label={`React with ${emoji}`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Thread reply count button */}
+            {hasThread && threadReplyCount > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onThreadOpen(msg); }}
+                className="mt-1 text-xs font-medium"
+                style={{ color: "var(--button-bg)" }}
+              >
+                {threadReplyCount} {threadReplyCount === 1 ? "reply" : "replies"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -409,18 +372,9 @@ const MessageItem = React.memo(function MessageItem({
 });
 
 export function MessageList({
-  messages,
-  currentUserId,
-  profiles,
-  onReply,
-  onEdit,
-  onDelete,
-  onThreadOpen,
-  onLoadOlder,
-  hasMoreOlder,
-  loadingOlder,
-  replyCounts,
-  sendingIds,
+  messages, currentUserId, profiles, onReply, onEdit, onDelete,
+  onThreadOpen, onLoadOlder, hasMoreOlder, loadingOlder,
+  replyCounts, sendingIds,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -442,7 +396,6 @@ export function MessageList({
   const deleteDialogRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
 
-  // Focus trap for delete dialog
   useEffect(() => {
     if (!deleteConfirmId || !deleteDialogRef.current) return;
     const container = deleteDialogRef.current;
@@ -454,30 +407,20 @@ export function MessageList({
       if (focusable.length === 0) return;
       const first = focusable[0]!;
       const last = focusable[focusable.length - 1]!;
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
     document.addEventListener("keydown", handleTab);
     container.querySelector<HTMLElement>("button")?.focus();
     return () => document.removeEventListener("keydown", handleTab);
   }, [deleteConfirmId]);
 
-  // Context menu close on click outside and Escape
   useEffect(() => {
     if (!contextMenu) return;
     function handleClick(e: MouseEvent | TouchEvent) {
-      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
-        setContextMenu(null);
-      }
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) setContextMenu(null);
     }
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setContextMenu(null);
-    }
+    function handleKey(e: KeyboardEvent) { if (e.key === "Escape") setContextMenu(null); }
     document.addEventListener("mousedown", handleClick);
     document.addEventListener("touchstart", handleClick);
     document.addEventListener("keydown", handleKey);
@@ -488,24 +431,13 @@ export function MessageList({
     };
   }, [contextMenu]);
 
-  // Cleanup long press timer on unmount
   useEffect(() => {
-    return () => {
-      if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    };
+    return () => { if (longPressTimer.current) clearTimeout(longPressTimer.current); };
   }, []);
 
-  const handleCancelEdit = useCallback(() => {
-    setEditingId(null);
-    setEditError("");
-  }, []);
+  const handleCancelEdit = useCallback(() => { setEditingId(null); setEditError(""); }, []);
+  const handleSetDeleteConfirmId = useCallback((id: string | null) => { setDeleteConfirmId(id); setDeleteError(""); }, []);
 
-  const handleSetDeleteConfirmId = useCallback((id: string | null) => {
-    setDeleteConfirmId(id);
-    setDeleteError("");
-  }, []);
-
-  // Fetch reactions incrementally — only for new message IDs not yet fetched
   useEffect(() => {
     const allIds = messages.map((m) => m.id);
     if (allIds.length === 0) return;
@@ -514,48 +446,25 @@ export function MessageList({
     newIds.forEach((id) => fetchedReactionsRef.current.add(id));
 
     function mergeResults(results: { id: string; reactions: Reaction[] }[]) {
-      setReactions((prev) => {
-        const next = new Map(prev);
-        results.forEach((r) => next.set(r.id, r.reactions));
-        return next;
-      });
+      setReactions((prev) => { const next = new Map(prev); results.forEach((r) => next.set(r.id, r.reactions)); return next; });
     }
 
     if (newIds.length <= 20) {
-      api
-        .get<{ reactions: Record<string, Reaction[]> }>(
-          `/reactions/batch?message_ids=${newIds.join(",")}`,
-        )
-        .then((res) => {
-          const entries = Object.entries(res.reactions).map(([id, r]) => ({ id, reactions: r }));
-          mergeResults(entries);
-        })
+      api.get<{ reactions: Record<string, Reaction[]> }>(`/reactions/batch?message_ids=${newIds.join(",")}`)
+        .then((res) => { const entries = Object.entries(res.reactions).map(([id, r]) => ({ id, reactions: r })); mergeResults(entries); })
         .catch(() => {
-          Promise.all(
-            newIds.map((id) =>
-              api
-                .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
-                .then((res) => ({ id, reactions: res.reactions }))
-                .catch(() => ({ id, reactions: [] as Reaction[] })),
-            ),
-          ).then(mergeResults);
+          Promise.all(newIds.map((id) =>
+            api.get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`).then((res) => ({ id, reactions: res.reactions })).catch(() => ({ id, reactions: [] as Reaction[] })),
+          )).then(mergeResults);
         });
     } else {
-      Promise.all(
-        newIds.map((id) =>
-          api
-            .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
-            .then((res) => ({ id, reactions: res.reactions }))
-            .catch(() => ({ id, reactions: [] as Reaction[] })),
-        ),
-      ).then(mergeResults);
+      Promise.all(newIds.map((id) =>
+        api.get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`).then((res) => ({ id, reactions: res.reactions })).catch(() => ({ id, reactions: [] as Reaction[] })),
+      )).then(mergeResults);
     }
   }, [messages]);
 
-  function startEdit(msg: Message) {
-    setEditingId(msg.id);
-    setEditContent(msg.content);
-  }
+  function startEdit(msg: Message) { setEditingId(msg.id); setEditContent(msg.content); }
 
   async function submitEdit() {
     if (!editingId || !onEdit) return;
@@ -564,10 +473,7 @@ export function MessageList({
       await onEdit(editingId, editContent);
       setEditingId(null);
       addToast({ title: "Message edited", variant: "success", duration: 3000 });
-    } catch {
-      setEditError("Failed to edit message. Please try again.");
-      addToast({ title: "Error", description: "Failed to edit message.", variant: "error" });
-    }
+    } catch { setEditError("Failed to edit message."); addToast({ title: "Error", description: "Failed to edit message.", variant: "error" }); }
   }
 
   async function confirmDelete() {
@@ -577,57 +483,29 @@ export function MessageList({
       await onDelete(deleteConfirmId);
       setDeleteConfirmId(null);
       addToast({ title: "Message deleted", variant: "success", duration: 3000 });
-    } catch {
-      setDeleteError("Failed to delete message. Please try again.");
-      addToast({ title: "Error", description: "Failed to delete message.", variant: "error" });
-    }
+    } catch { setDeleteError("Failed to delete message."); addToast({ title: "Error", description: "Failed to delete message.", variant: "error" }); }
   }
 
   const handleContextMenu = useCallback((e: React.MouseEvent, msg: Message) => {
-    e.preventDefault();
-    setContextMenu({ x: e.clientX, y: e.clientY, message: msg });
+    e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, message: msg });
   }, []);
 
   const handleTouchStart = useCallback((e: React.TouchEvent, msg: Message) => {
-    longPressTimer.current = setTimeout(() => {
-      const touch = e.touches[0];
-      if (touch) {
-        setContextMenu({ x: touch.clientX, y: touch.clientY, message: msg });
-      }
-    }, 500);
+    longPressTimer.current = setTimeout(() => { const touch = e.touches[0]; if (touch) setContextMenu({ x: touch.clientX, y: touch.clientY, message: msg }); }, 500);
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-  }, []);
-
-  const handleTouchMove = useCallback(() => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-  }, []);
+  const handleTouchEnd = useCallback(() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }, []);
+  const handleTouchMove = useCallback(() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }, []);
 
   async function toggleReaction(messageId: string, emoji: string) {
     const msgReactions = reactions.get(messageId) ?? [];
     const existing = msgReactions.find((r) => r.user_id === currentUserId && r.emoji === emoji);
-
     if (existing) {
       await api.delete(`/messages/${messageId}/reactions/${encodeURIComponent(emoji)}`);
-      setReactions((prev) => {
-        const next = new Map(prev);
-        next.set(
-          messageId,
-          (next.get(messageId) ?? []).filter((r) => r.id !== existing.id),
-        );
-        return next;
-      });
+      setReactions((prev) => { const next = new Map(prev); next.set(messageId, (next.get(messageId) ?? []).filter((r) => r.id !== existing.id)); return next; });
     } else {
-      const res = await api.post<{ reaction: Reaction }>(`/messages/${messageId}/reactions`, {
-        emoji,
-      });
-      setReactions((prev) => {
-        const next = new Map(prev);
-        next.set(messageId, [...(next.get(messageId) ?? []), res.reaction]);
-        return next;
-      });
+      const res = await api.post<{ reaction: Reaction }>(`/messages/${messageId}/reactions`, { emoji });
+      setReactions((prev) => { const next = new Map(prev); next.set(messageId, [...(next.get(messageId) ?? []), res.reaction]); return next; });
     }
   }
 
@@ -645,10 +523,7 @@ export function MessageList({
       const gap = lastUserTime ? msgTime - lastUserTime : Infinity;
       const isGroupStart = isNewDate || !isSameUser || gap > GROUP_GAP_MS;
 
-      if (result.length > 0) {
-        const prev = result[result.length - 1];
-        if (prev) prev.isGroupEnd = isGroupStart;
-      }
+      if (result.length > 0) { const prev = result[result.length - 1]; if (prev) prev.isGroupEnd = isGroupStart; }
       result.push({ ...msg, showDate: isNewDate, isGroupStart, isGroupEnd: true });
       lastDate = msgDate;
       lastUserId = msg.user_id;
@@ -660,7 +535,6 @@ export function MessageList({
   const scrollRestoreRef = useRef<{ prevScrollHeight: number; prevScrollTop: number } | null>(null);
   const initialLoadRef = useRef(true);
 
-  // Detect scroll-to-top for loading older messages
   const handleScroll = useCallback(() => {
     const el = listRef.current;
     if (!el) return;
@@ -673,9 +547,8 @@ export function MessageList({
       onLoadOlder();
     }
 
-    if (isAtBottom) {
-      setUnreadCount(0);
-    } else if (messages.length > 0 && el) {
+    if (isAtBottom) { setUnreadCount(0); }
+    else if (messages.length > 0 && el) {
       const visibleRatio = el.clientHeight / scrollHeight;
       const visibleCount = Math.floor(messages.length * visibleRatio);
       setUnreadCount(Math.max(0, messages.length - visibleCount));
@@ -689,7 +562,6 @@ export function MessageList({
     return () => el.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  // Restore scroll position after older messages are prepended
   useEffect(() => {
     const el = listRef.current;
     const restore = scrollRestoreRef.current;
@@ -697,27 +569,18 @@ export function MessageList({
     requestAnimationFrame(() => {
       if (!listRef.current) return;
       const newScrollHeight = listRef.current.scrollHeight;
-      listRef.current.scrollTop =
-        restore.prevScrollTop + (newScrollHeight - restore.prevScrollHeight);
+      listRef.current.scrollTop = restore.prevScrollTop + (newScrollHeight - restore.prevScrollHeight);
     });
     scrollRestoreRef.current = null;
   }, [messagesWithMeta.length]);
 
-  // Auto-scroll to bottom on new messages if user was at bottom
   const lastMessageId = messages[messages.length - 1]?.id;
-  useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "instant" });
-    }
-  }, [lastMessageId]);
+  useEffect(() => { if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: "instant" }); }, [lastMessageId]);
 
-  // Scroll to bottom on initial load after messages arrive
   useEffect(() => {
     if (messages.length > 0 && initialLoadRef.current) {
       initialLoadRef.current = false;
-      requestAnimationFrame(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "instant" });
-      });
+      requestAnimationFrame(() => { bottomRef.current?.scrollIntoView({ behavior: "instant" }); });
     }
   }, [messages.length]);
 
@@ -731,24 +594,27 @@ export function MessageList({
     return (
       <div className="relative flex-1 overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-sm text-[var(--color-foreground-tertiary)]">
-            No messages yet. Start the conversation!
-          </p>
+          <div className="text-center max-w-sm" style={{ padding: "120px 24px 32px" }}>
+            <h2 className="text-3xl font-semibold mb-2" style={{ letterSpacing: "-0.03em", lineHeight: "40px", color: "rgba(var(--center-channel-color-rgb), 0.08)" }}></h2>
+            <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+              No messages yet. Start the conversation!
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative flex-1 overflow-hidden">
+    <div className="relative flex-1 overflow-hidden" id="post-list">
       <div
         ref={listRef}
         className="absolute inset-0 overflow-y-auto overscroll-contain"
-        style={{ paddingBottom: "var(--bottom-nav-height)" }}
+        style={{ padding: "14px 0 7px" }}
       >
         {loadingOlder && (
           <div className="flex justify-center py-3">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-foreground-tertiary)] border-t-transparent" />
+            <div className="h-5 w-5 animate-spin rounded-full border-2" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.3)", borderTopColor: "transparent" }} />
           </div>
         )}
         {messagesWithMeta.map((msg) => (
@@ -786,158 +652,65 @@ export function MessageList({
         <div ref={bottomRef} />
       </div>
 
-      {/* Jump to present button */}
       {showJumpButton && (
         <button
           onClick={scrollToBottom}
-          className="absolute right-4 bottom-4 z-10 flex items-center gap-1.5 rounded-full border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground-primary)] shadow-[var(--shadow-xl)] transition-all hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
+          className="absolute right-4 bottom-4 z-10 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all"
+          style={{
+            background: "var(--center-channel-bg)",
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+            boxShadow: "var(--elevation-3)",
+            color: "var(--center-channel-color)",
+          }}
           aria-label="Jump to latest messages"
         >
           {unreadCount > 0 && (
-            <span className="rounded-full bg-[var(--color-brand-primary)] px-1.5 py-0.5 text-xs text-white">
+            <span className="rounded-full px-1.5 py-0.5 text-xs text-white" style={{ background: "var(--button-bg)" }}>
               {unreadCount}
             </span>
           )}
-          Jump to present ↓
+          Jump to present \u2193
         </button>
       )}
 
-      {/* Context menu */}
       {contextMenu && (
         <div
           ref={contextMenuRef}
+          className="min-w-[160px] rounded-lg border py-1"
           style={{
             position: "fixed",
             left: contextMenu.x,
             top: contextMenu.y,
             zIndex: 100,
+            background: "var(--center-channel-bg)",
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+            boxShadow: "var(--elevation-4)",
           }}
-          className="min-w-[160px] rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] py-1 shadow-[var(--shadow-xl)]"
           role="menu"
           aria-label="Message actions"
         >
-          <button
-            onClick={() => {
-              onReply?.(contextMenu.message);
-              setContextMenu(null);
-            }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
-            role="menuitem"
-          >
-            <Reply size={14} /> Reply
-          </button>
-          <button
-            onClick={() => {
-              navigator.clipboard
-                .writeText(contextMenu.message.content)
-                .then(() => {
-                  addToast({ title: "Copied to clipboard", variant: "success", duration: 2000 });
-                })
-                .catch(() => {
-                  addToast({ title: "Error", description: "Failed to copy", variant: "error" });
-                });
-              setContextMenu(null);
-            }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
-            role="menuitem"
-          >
-            <Copy size={14} /> Copy text
-          </button>
-          <button
-            onClick={() => {
-              const permalink = `${window.location.origin}/pl/${contextMenu.message.id}`;
-              navigator.clipboard
-                .writeText(permalink)
-                .then(() => {
-                  addToast({ title: "Link copied", variant: "success", duration: 2000 });
-                })
-                .catch(() => {
-                  addToast({ title: "Error", description: "Failed to copy", variant: "error" });
-                });
-              setContextMenu(null);
-            }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
-            role="menuitem"
-          >
-            <Copy size={14} /> Copy link
-          </button>
-          <button
-            onClick={() => {
-              setRemindMessageId(contextMenu.message.id);
-              setContextMenu(null);
-            }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
-            role="menuitem"
-          >
-            <Clock size={14} /> Remind me
-          </button>
+          <button onClick={() => { onReply?.(contextMenu.message); setContextMenu(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm" style={{ color: "var(--center-channel-color)" }} role="menuitem"><Reply size={14} /> Reply</button>
+          <button onClick={() => { navigator.clipboard.writeText(contextMenu.message.content).then(() => addToast({ title: "Copied", variant: "success", duration: 2000 })).catch(() => {}); setContextMenu(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm" style={{ color: "var(--center-channel-color)" }} role="menuitem"><Copy size={14} /> Copy text</button>
+          <button onClick={() => { const permalink = `${window.location.origin}/pl/${contextMenu.message.id}`; navigator.clipboard.writeText(permalink).then(() => addToast({ title: "Link copied", variant: "success", duration: 2000 })).catch(() => {}); setContextMenu(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm" style={{ color: "var(--center-channel-color)" }} role="menuitem"><Copy size={14} /> Copy link</button>
+          <button onClick={() => { setRemindMessageId(contextMenu.message.id); setContextMenu(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm" style={{ color: "var(--center-channel-color)" }} role="menuitem"><Clock size={14} /> Remind me</button>
           {contextMenu.message.user_id === currentUserId && onEdit && (
-            <button
-              onClick={() => {
-                startEdit(contextMenu.message);
-                setContextMenu(null);
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)]"
-              role="menuitem"
-            >
-              <Pencil size={14} /> Edit
-            </button>
+            <button onClick={() => { startEdit(contextMenu.message); setContextMenu(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm" style={{ color: "var(--center-channel-color)" }} role="menuitem"><Pencil size={14} /> Edit</button>
           )}
           {contextMenu.message.user_id === currentUserId && onDelete && (
-            <button
-              onClick={() => {
-                setDeleteConfirmId(contextMenu.message.id);
-                setContextMenu(null);
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-status-danger-fg)] hover:bg-[var(--color-background-tertiary)]"
-              role="menuitem"
-            >
-              <Trash2 size={14} /> Delete
-            </button>
+            <button onClick={() => { setDeleteConfirmId(contextMenu.message.id); setContextMenu(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm" style={{ color: "var(--dnd-indicator)" }} role="menuitem"><Trash2 size={14} /> Delete</button>
           )}
         </div>
       )}
 
-      {/* Delete confirmation dialog */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)]">
-          <div
-            ref={deleteDialogRef}
-            className="mx-4 max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-6 shadow-[var(--shadow-xl)]"
-            role="dialog"
-            aria-labelledby="delete-dialog-title"
-            aria-modal="true"
-          >
-            <h2
-              id="delete-dialog-title"
-              className="text-lg font-semibold text-[var(--color-foreground-primary)]"
-            >
-              Delete message?
-            </h2>
-            <p className="mt-2 text-sm text-[var(--color-foreground-secondary)]">
-              This action cannot be undone. The message will be removed for everyone.
-            </p>
-            {deleteError && (
-              <p className="mt-2 text-xs text-[var(--color-status-danger-fg)]" role="alert">
-                {deleteError}
-              </p>
-            )}
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div ref={deleteDialogRef} className="mx-4 max-w-sm rounded-lg p-6" style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }} role="dialog" aria-labelledby="delete-dialog-title" aria-modal="true">
+            <h2 id="delete-dialog-title" className="text-lg font-semibold" style={{ color: "var(--center-channel-color)" }}>Delete message?</h2>
+            <p className="mt-2 text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>This action cannot be undone.</p>
+            {deleteError && <p className="mt-2 text-xs" style={{ color: "var(--error-text)" }} role="alert">{deleteError}</p>}
             <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setDeleteConfirmId(null);
-                  setDeleteError("");
-                }}
-                className="rounded-lg border border-[var(--color-border-primary)] px-4 py-2 text-sm font-medium text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)] focus-visible:ring-2 focus-visible:ring-[var(--color-input-focus-ring)] focus-visible:outline-none"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="rounded-lg bg-[var(--color-status-danger-fg)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--color-status-danger-fg)] focus-visible:outline-none"
-              >
-                Delete
-              </button>
+              <button onClick={() => { setDeleteConfirmId(null); setDeleteError(""); }} className="rounded-lg border px-4 py-2 text-sm font-medium" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)", color: "var(--center-channel-color)" }}>Cancel</button>
+              <button onClick={confirmDelete} className="rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ background: "var(--dnd-indicator)" }}>Delete</button>
             </div>
           </div>
         </div>

@@ -10,7 +10,7 @@ import { CreateChannelDialog } from "@/components/channel/create-channel-dialog"
 import { InviteMembersModal } from "./invite-members-modal";
 import { Avatar } from "@chat/ui";
 import { SidebarGroup } from "@chat/ui";
-import { Bookmark, PanelLeftClose, PanelLeft, Settings } from "lucide-react";
+import { Bookmark, PanelLeftClose, PanelLeft, Settings, Search, Plus, ChevronDown, Hash, UserPlus } from "lucide-react";
 import type { Channel, Workspace } from "@chat/db";
 import { api } from "@/lib/api";
 
@@ -21,6 +21,10 @@ interface Props {
   onMobileClose?: () => void;
 }
 
+const SIDEBAR_WIDTH = 264;
+const SIDEBAR_MIN_WIDTH = 200;
+const SIDEBAR_MAX_WIDTH = 304;
+
 export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose }: Props) {
   const { user, signOut } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
@@ -28,7 +32,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [wsLoading, setWsLoading] = useState(false);
   const [sidebarRef, setSidebarRef] = useState<HTMLElement | null>(null);
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const collapsedRef = useRef(true);
   const userToggledRef = useRef(false);
   const [dmChannels, setDmChannels] = useState<Channel[]>([]);
@@ -41,8 +45,10 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   });
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const statusMenuRef = useRef<HTMLDivElement>(null);
+  const [channelsExpanded, setChannelsExpanded] = useState(true);
+  const [dmExpanded, setDmExpanded] = useState(true);
+
   // Auto-collapse sidebar at md breakpoint (768px) for tablet layout
-  // Respects user manual toggles — won't override after first user interaction
   useEffect(() => {
     function handleResize() {
       if (userToggledRef.current) return;
@@ -165,20 +171,11 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       .catch(() => {});
   }, []);
 
-  // Fetch user status
-  React.useEffect(() => {
-    api
-      .get<{ status: { status: string; custom_status?: string } }>("/auth/status")
-      .then((res) => setUserStatus(res.status))
-      .catch(() => {});
-  }, []);
-
   async function setStatus(status: string) {
     try {
       await api.patch("/auth/status", { status });
       setUserStatus((prev) => ({ ...prev, status }));
       setShowStatusMenu(false);
-      // Also emit via socket
       const { getSocket } = await import("@/lib/socket");
       const s = await getSocket();
       s.emit("presence:set", status);
@@ -189,12 +186,12 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
 
   const statusColor =
     userStatus.status === "online"
-      ? "bg-green-500"
+      ? "#06d6a0"
       : userStatus.status === "away"
-        ? "bg-yellow-500"
+        ? "#ffbc42"
         : userStatus.status === "dnd"
-          ? "bg-red-500"
-          : "bg-gray-400";
+          ? "#d24b4e"
+          : "rgba(175,179,192,0.75)";
 
   // Close status menu on click outside
   useEffect(() => {
@@ -211,19 +208,15 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   // Focus trap for mobile sidebar
   useEffect(() => {
     if (!mobileOpen || !sidebarRef) return;
-
     const focusableSelector =
       'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const container = sidebarRef;
-
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key !== "Tab") return;
       const focusableElements = container.querySelectorAll<HTMLElement>(focusableSelector);
       if (focusableElements.length === 0) return;
-
       const first = focusableElements[0]!;
       const last = focusableElements[focusableElements.length - 1]!;
-
       if (e.shiftKey) {
         if (document.activeElement === first) {
           e.preventDefault();
@@ -236,255 +229,289 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
         }
       }
     }
-
     const first = container.querySelector<HTMLElement>(focusableSelector);
     first?.focus();
-
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [mobileOpen, sidebarRef]);
 
-  // Toggle body scroll lock class for mobile sidebar
   useEffect(() => {
     if (typeof window === "undefined") return;
     document.body.classList.toggle("sidebar-mobile-open", mobileOpen);
   }, [mobileOpen]);
 
+  const sidebarWidth = collapsed ? 60 : SIDEBAR_WIDTH;
+  const gridColumns = collapsed ? "60px 1fr" : `${SIDEBAR_WIDTH}px 1fr`;
+
   return (
     <>
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-[var(--color-dialog-overlay)] md:hidden"
+          className="fixed inset-0 z-30"
+          style={{ background: "rgba(0,0,0,0.5)" }}
           onClick={onMobileClose}
         />
       )}
 
-      <aside
+      <div
+        id="SidebarContainer"
         ref={setSidebarRef}
-        id="sidebar"
-        className={`flex h-full flex-col border-r border-[var(--color-border-primary)] bg-[var(--color-background-secondary)] transition-all duration-200 ${
-          collapsed ? "w-14" : "w-60"
-        } ${
-          mobileOpen === undefined
-            ? ""
-            : mobileOpen
-              ? "mobile-open animate-slide-in-left fixed inset-y-0 left-0 z-40"
-              : "hidden md:flex"
-        }`}
+        className={`flex h-full flex-col ${collapsed ? "w-[60px]" : ""}`}
+        style={{
+          background: "var(--sidebar-bg)",
+          color: "var(--sidebar-text)",
+          minWidth: collapsed ? 60 : SIDEBAR_MIN_WIDTH,
+          maxWidth: collapsed ? 60 : SIDEBAR_MAX_WIDTH,
+          width: collapsed ? 60 : SIDEBAR_WIDTH,
+          gridArea: "team-sidebar",
+          overflowX: "visible",
+        }}
       >
-        {/* User area */}
-        <div className="relative flex items-center gap-2 border-b border-[var(--color-border-primary)] px-3 py-3">
-          {!collapsed && (
-            <div className="relative shrink-0">
-              <Avatar fallback={user?.email ?? "?"} size="sm" />
-              <button
-                onClick={() => setShowStatusMenu(!showStatusMenu)}
-                className={`absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-[var(--color-background-secondary)] ${statusColor}`}
-                aria-label={`Status: ${userStatus.status}`}
-                title={`Status: ${userStatus.status}`}
-              />
-            </div>
-          )}
-          {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium text-[var(--color-foreground-primary)]">
-                {user?.email ?? "Chat"}
-              </span>
-              {userStatus.custom_status && (
-                <span className="block truncate text-xs text-[var(--color-foreground-tertiary)]">
-                  {userStatus.custom_status}
-                </span>
-              )}
-            </div>
-          )}
-          {collapsed && (
+        {/* Team/User Header */}
+        <div
+          className="flex items-center gap-2 px-3 py-3"
+          style={{ background: "var(--sidebar-header-bg)", minHeight: collapsed ? 52 : 63 }}
+        >
+          {collapsed ? (
             <button
               onClick={() => {
                 userToggledRef.current = true;
                 setCollapsed(false);
               }}
-              className="mx-auto flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
+              className="mx-auto flex h-9 w-9 items-center justify-center rounded"
+              style={{ color: "var(--sidebar-header-text-color)" }}
               aria-label="Expand sidebar"
             >
               <PanelLeft size={18} />
             </button>
-          )}
-          {!collapsed && (
+          ) : (
             <>
+              <div className="relative shrink-0">
+                <Avatar fallback={user?.email ?? "?"} size="sm" />
+                <button
+                  onClick={() => setShowStatusMenu(!showStatusMenu)}
+                  className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2"
+                  style={{
+                    background: statusColor,
+                    borderColor: "var(--sidebar-header-bg)",
+                  }}
+                  aria-label={`Status: ${userStatus.status}`}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-semibold" style={{ fontSize: 16, lineHeight: "22px", color: "var(--sidebar-header-text-color)" }}>
+                  {user?.email?.split("@")[0] ?? "Chat"}
+                </div>
+                <div style={{ fontSize: 14, color: "rgba(var(--sidebar-header-text-color-rgb), 0.8)" }}>
+                  {userStatus.custom_status || `${userStatus.status}`}
+                </div>
+              </div>
               <button
                 onClick={() => {
                   userToggledRef.current = true;
                   setCollapsed(true);
                 }}
-                className="hidden min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg p-2 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)] md:flex"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded"
+                style={{ color: "var(--sidebar-header-text-color)" }}
                 aria-label="Collapse sidebar"
               >
                 <PanelLeftClose size={14} />
               </button>
-              {workspaceSlug && (
-                <Link
-                  href={`/${workspaceSlug}/settings`}
-                  className="flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg p-2 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
-                  aria-label="Settings"
-                >
-                  <Settings size={14} />
-                </Link>
-              )}
-              <button
-                onClick={signOut}
-                className="shrink-0 rounded px-2 py-1 text-xs text-[var(--color-foreground-tertiary)] hover:bg-[var(--color-background-tertiary)]"
-              >
-                Logout
-              </button>
             </>
-          )}
-
-          {/* Status picker popup */}
-          {showStatusMenu && (
-            <div
-              ref={statusMenuRef}
-              className="absolute top-full left-3 z-50 mt-1 w-40 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-dialog-bg)] p-1 shadow-[var(--shadow-xl)]"
-            >
-              {[
-                { key: "online", label: "Online", color: "bg-green-500" },
-                { key: "away", label: "Away", color: "bg-yellow-500" },
-                { key: "dnd", label: "Do Not Disturb", color: "bg-red-500" },
-              ].map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => setStatus(s.key)}
-                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)] ${
-                    userStatus.status === s.key ? "bg-[var(--color-background-tertiary)]" : ""
-                  }`}
-                >
-                  <span className={`h-2.5 w-2.5 rounded-full ${s.color}`} />
-                  {s.label}
-                </button>
-              ))}
-            </div>
           )}
         </div>
 
-        {/* Workspace section */}
-        <div className="flex-1 overflow-y-auto py-2">
-          <SidebarGroup title="Workspaces" defaultOpen>
-            <div key={refreshKey}>
-              <WorkspaceList activeSlug={workspaceSlug} />
+        {/* Channel Navigator (Jump to / search) */}
+        {!collapsed && workspaceSlug && (
+          <div className="px-3 py-2">
+            <div
+              className="flex h-9 items-center gap-2 rounded px-2 text-sm"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.72)",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                const event = new CustomEvent("chat:search-open");
+                document.dispatchEvent(event);
+              }}
+              role="button"
+              aria-label="Jump to channel or user"
+            >
+              <Search size={14} />
+              <span style={{ fontSize: 13 }}>Jump to...</span>
             </div>
-            <div className="mt-1">
-              <CreateWorkspaceDialog onCreated={handleCreated} />
-            </div>
-          </SidebarGroup>
+            <button
+              onClick={() => {
+                if (workspace) setShowInviteModal(true);
+              }}
+              className="mt-1 flex h-9 w-full items-center gap-2 rounded px-2 text-sm"
+              style={{
+                color: "rgba(255,255,255,0.72)",
+              }}
+              aria-label="Invite members"
+            >
+              <UserPlus size={14} />
+              <span style={{ fontSize: 13 }}>Invite people</span>
+            </button>
+          </div>
+        )}
 
-          {/* Channel section (shown when a workspace is selected) */}
-          {workspaceSlug && (
-            <SidebarGroup title="Channels" defaultOpen>
-              {wsLoading || !workspace ? (
-                <div className="space-y-1 px-2">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="h-7 animate-pulse rounded bg-[var(--color-skeleton-bg)]"
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div key={channelRefreshKey}>
-                  <ChannelList
-                    workspaceSlug={workspaceSlug}
-                    workspaceId={workspace.id}
-                    activeChannelId={channelId}
-                  />
-                </div>
-              )}
-              {workspace && (
-                <div className="mt-1 flex gap-1">
-                  <CreateChannelDialog
-                    workspaceId={workspace.id}
-                    onCreated={handleChannelCreated}
-                  />
-                  {!collapsed && (
-                    <button
-                      onClick={() => setShowInviteModal(true)}
-                      className="flex-1 rounded-md px-2 py-1 text-left text-xs text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-                    >
-                      + Invite
-                    </button>
+        {/* Scrollable navigation area */}
+        <div className="flex-1 overflow-y-auto py-1">
+          {/* Workspaces section */}
+          {!collapsed && (
+            <div className="mb-2">
+              <div className="mm-sidebar-group-header">
+                Workspaces
+              </div>
+              <div key={refreshKey}>
+                <WorkspaceList activeSlug={workspaceSlug} />
+              </div>
+              <div className="px-3 mt-1">
+                <CreateWorkspaceDialog onCreated={handleCreated} />
+              </div>
+            </div>
+          )}
+
+          {/* Channels section */}
+          {workspaceSlug && !collapsed && (
+            <div className="mb-2">
+              <button
+                onClick={() => setChannelsExpanded(!channelsExpanded)}
+                className="mm-sidebar-group-header w-full cursor-pointer"
+              >
+                <ChevronDown
+                  size={12}
+                  className="mr-1"
+                  style={{
+                    transform: channelsExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+                    transition: "transform 200ms",
+                  }}
+                />
+                Channels
+              </button>
+              {channelsExpanded && (
+                <>
+                  {wsLoading || !workspace ? (
+                    <div className="space-y-1 px-4">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-7 animate-pulse rounded"
+                          style={{ background: "rgba(255,255,255,0.08)" }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div key={channelRefreshKey}>
+                      <ChannelList
+                        workspaceSlug={workspaceSlug}
+                        workspaceId={workspace.id}
+                        activeChannelId={channelId}
+                      />
+                    </div>
                   )}
-                </div>
+                  {workspace && (
+                    <div className="px-3 mt-1">
+                      <CreateChannelDialog
+                        workspaceId={workspace.id}
+                        onCreated={handleChannelCreated}
+                      />
+                    </div>
+                  )}
+                </>
               )}
-            </SidebarGroup>
-          )}
-          {workspace && showInviteModal && (
-            <InviteMembersModal
-              workspaceId={workspace.id}
-              onClose={() => setShowInviteModal(false)}
-            />
+            </div>
           )}
 
-          {/* Saved Messages section */}
-          {workspaceSlug && (
-            <SidebarGroup title="Saved" defaultOpen>
+          {/* Saved Messages */}
+          {workspaceSlug && !collapsed && (
+            <div className="mb-2">
+              <div className="mm-sidebar-group-header">
+                Saved
+              </div>
               <Link
                 href={`/${workspaceSlug}/saved`}
-                className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-[var(--color-foreground-secondary)] transition-colors hover:bg-[var(--color-background-tertiary)]"
+                className="flex items-center gap-2 rounded-md px-5 py-1.5 text-sm transition-colors"
+                style={{
+                  color: "var(--sidebar-text)",
+                  opacity: 0.8,
+                }}
               >
                 <Bookmark size={14} />
                 <span>Saved Messages</span>
               </Link>
-            </SidebarGroup>
+            </div>
           )}
 
           {/* Direct Messages section */}
-          {workspaceSlug && (
-            <SidebarGroup title="Direct Messages" defaultOpen>
-              {dmChannels.length > 0 ? (
-                <ul className="space-y-0.5" role="listbox" aria-label="Direct messages">
-                  {dmChannels.map((ch) => (
-                    <li key={ch.id} role="option" aria-selected={channelId === ch.id}>
-                      <Link
-                        href={`/${workspaceSlug}/${ch.slug}`}
-                        className={`block rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-[var(--color-background-tertiary)] ${
-                          channelId === ch.id
-                            ? "bg-[var(--color-background-tertiary)] font-medium"
-                            : "text-[var(--color-foreground-secondary)]"
-                        }`}
-                      >
-                        <span className="mr-1">💬</span> {ch.name.replace(/^dm-/, "")}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="px-2 text-xs text-[var(--color-foreground-tertiary)]">
-                  No direct messages yet
-                </p>
+          {workspaceSlug && !collapsed && (
+            <div className="mb-2">
+              <button
+                onClick={() => setDmExpanded(!dmExpanded)}
+                className="mm-sidebar-group-header w-full cursor-pointer"
+              >
+                <ChevronDown
+                  size={12}
+                  className="mr-1"
+                  style={{
+                    transform: dmExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+                    transition: "transform 200ms",
+                  }}
+                />
+                Direct Messages
+              </button>
+              {dmExpanded && (
+                <>
+                  {dmChannels.length > 0 ? (
+                    <ul role="listbox" aria-label="Direct messages">
+                      {dmChannels.map((ch) => (
+                        <li key={ch.id} role="option" aria-selected={channelId === ch.id}>
+                          <Link
+                            href={`/${workspaceSlug}/${ch.slug}`}
+                            className="mm-sidebar-channel rounded-md px-5 text-sm transition-colors"
+                            style={{
+                              color: channelId === ch.id ? "var(--sidebar-text-active-color)" : "var(--sidebar-text)",
+                              background: channelId === ch.id ? "rgba(255,255,255,0.12)" : "transparent",
+                              fontWeight: channelId === ch.id ? 600 : 400,
+                            }}
+                          >
+                            <span className="mr-2">&#x1f4ac;</span>
+                            <span className="truncate">{ch.name.replace(/^dm-/, "")}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="px-5 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+                      No direct messages yet
+                    </p>
+                  )}
+                  <button
+                    onClick={() => setShowUserPicker(true)}
+                    className="flex w-full items-center gap-2 rounded px-5 py-1.5 text-sm"
+                    style={{ color: "rgba(255,255,255,0.72)" }}
+                  >
+                    <Plus size={14} />
+                    <span>New DM</span>
+                  </button>
+                </>
               )}
-              {!collapsed && (
-                <button
-                  onClick={() => setShowUserPicker(true)}
-                  className="mt-1 w-full rounded-md px-3 py-1 text-left text-xs text-[var(--color-foreground-tertiary)] transition-colors hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-foreground-primary)]"
-                >
-                  + New DM
-                </button>
-              )}
-            </SidebarGroup>
+            </div>
           )}
 
           {/* User picker for starting DM or GM */}
           {showUserPicker && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-dialog-overlay)] p-4">
-              <div className="w-full max-w-sm rounded-lg bg-[var(--color-dialog-bg)] p-4 shadow-[var(--shadow-xl)]">
-                <h3 className="mb-2 text-sm font-semibold text-[var(--color-foreground-primary)]">
-                  Start a conversation
-                </h3>
-                <p className="mb-2 text-xs text-[var(--color-foreground-tertiary)]">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+              <div className="w-full max-w-sm rounded-lg p-4 shadow-[var(--elevation-5)]" style={{ background: "var(--center-channel-bg)", color: "var(--center-channel-color)" }}>
+                <h3 className="mb-2 text-sm font-semibold">Start a conversation</h3>
+                <p className="mb-2 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
                   Click a name for a DM, or select multiple for a group chat
                 </p>
                 <div className="max-h-48 space-y-0.5 overflow-y-auto">
                   {chatUsers.length === 0 && (
-                    <p className="text-xs text-[var(--color-foreground-tertiary)]">
+                    <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
                       No other members found
                     </p>
                   )}
@@ -498,13 +525,13 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                           toggleUserSelection(u.id);
                         }
                       }}
-                      className={`w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors hover:bg-[var(--color-background-tertiary)] ${
-                        selectedUserIds.has(u.id)
-                          ? "bg-[var(--color-brand-primary-light)] text-[var(--color-brand-primary)]"
-                          : "text-[var(--color-foreground-primary)]"
-                      }`}
+                      className="w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors"
+                      style={{
+                        background: selectedUserIds.has(u.id) ? `rgba(var(--button-bg-rgb), 0.08)` : "transparent",
+                        color: selectedUserIds.has(u.id) ? "var(--link-color)" : "var(--center-channel-color)",
+                      }}
                     >
-                      <span className="mr-2">{selectedUserIds.has(u.id) ? "✓" : "+"}</span>
+                      <span className="mr-2">{selectedUserIds.has(u.id) ? "\u2713" : "+"}</span>
                       {u.display_name ?? u.id.slice(0, 8)}
                     </button>
                   ))}
@@ -513,7 +540,8 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                   {selectedUserIds.size > 0 && (
                     <button
                       onClick={createGroupChat}
-                      className="flex-1 rounded-md bg-[var(--color-brand-primary)] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                      className="flex-1 rounded-md px-3 py-1.5 text-xs font-medium text-white"
+                      style={{ background: "var(--button-bg)" }}
                     >
                       Start group ({selectedUserIds.size})
                     </button>
@@ -523,9 +551,8 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                       setShowUserPicker(false);
                       setSelectedUserIds(new Set());
                     }}
-                    className={`rounded-md bg-[var(--color-background-tertiary)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground-primary)] hover:bg-[var(--color-background-tertiary)] ${
-                      selectedUserIds.size > 0 ? "flex-1" : "w-full"
-                    }`}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium ${selectedUserIds.size > 0 ? "flex-1" : "w-full"}`}
+                    style={{ background: "rgba(var(--center-channel-color-rgb), 0.08)" }}
                   >
                     Cancel
                   </button>
@@ -533,18 +560,79 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
               </div>
             </div>
           )}
+
+          {workspace && showInviteModal && (
+            <InviteMembersModal
+              workspaceId={workspace.id}
+              onClose={() => setShowInviteModal(false)}
+            />
+          )}
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-[var(--color-border-primary)] px-3 py-2">
-          <Link
-            href="/"
-            className="text-xs text-[var(--color-sidebar-title-fg)] transition-colors hover:text-[var(--color-sidebar-title-fg-hover)]"
+        {/* Status picker popup */}
+        {showStatusMenu && (
+          <div
+            ref={statusMenuRef}
+            className="absolute left-3 z-50 mt-1 w-40 rounded-lg border p-1 shadow-[var(--elevation-3)]"
+            style={{
+              background: "var(--center-channel-bg)",
+              borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+              bottom: "48px",
+            }}
           >
-            Chat Platform
-          </Link>
-        </div>
-      </aside>
+            {[
+              { key: "online", label: "Online", color: "#06d6a0" },
+              { key: "away", label: "Away", color: "#ffbc42" },
+              { key: "dnd", label: "Do Not Disturb", color: "#d24b4e" },
+            ].map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setStatus(s.key)}
+                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm`}
+                style={{
+                  color: "var(--center-channel-color)",
+                  background: userStatus.status === s.key ? "rgba(var(--center-channel-color-rgb), 0.08)" : "transparent",
+                }}
+              >
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Footer */}
+        {!collapsed && (
+          <div style={{ borderTop: "solid 1px rgba(255,255,255,0.12)" }} className="px-3 py-2">
+            <div
+              className="flex items-center gap-2 text-xs"
+              style={{ color: "rgba(255,255,255,0.6)" }}
+            >
+              <Link href="/" className="hover:opacity-80">
+                Chat Platform
+              </Link>
+              <span className="ml-auto flex gap-1">
+                <button
+                  onClick={signOut}
+                  className="hover:opacity-80"
+                  style={{ color: "rgba(255,255,255,0.6)" }}
+                >
+                  Logout
+                </button>
+                {workspaceSlug && (
+                  <Link
+                    href={`/${workspaceSlug}/settings`}
+                    className="hover:opacity-80"
+                    style={{ color: "rgba(255,255,255,0.6)" }}
+                  >
+                    <Settings size={14} />
+                  </Link>
+                )}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 }
