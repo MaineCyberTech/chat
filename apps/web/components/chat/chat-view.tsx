@@ -11,8 +11,20 @@ import { MessageInput } from "./message-input";
 import { ThreadPanel } from "./thread-panel";
 import { SearchBar } from "./search-bar";
 import { Skeleton, useToast } from "@chat/ui";
-import { X, Phone, ArrowLeft, ExternalLink, Bell, BellOff, Info, Download, ChevronDown, Bookmark } from "lucide-react";
+import {
+  X,
+  Phone,
+  ArrowLeft,
+  ExternalLink,
+  Bell,
+  BellOff,
+  Info,
+  Download,
+  ChevronDown,
+  Bookmark,
+} from "lucide-react";
 import { ChannelInfo } from "./channel-info";
+import { NotificationPreferencesModal } from "./notification-preferences-modal";
 import { ChannelBookmarks } from "./channel-bookmarks";
 import type { Message, UserProfile } from "@chat/db";
 import type { Socket } from "socket.io-client";
@@ -88,7 +100,11 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const [profiles, setProfiles] = useState<Map<string, UserProfile>>(new Map());
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
-  const [channelMuted, setChannelMuted] = useState(false);
+  const [showNotifPrefs, setShowNotifPrefs] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState<{
+    notify: "all" | "mentions" | "none";
+    sound: boolean;
+  }>({ notify: "all", sound: true });
   const [showChannelInfo, setShowChannelInfo] = useState<false | "info" | "bookmarks">(false);
   const [filterQuery] = useState("");
   const { addToast } = useToast();
@@ -262,6 +278,13 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     };
   }, [channelId, user?.id, loadProfiles]);
 
+  // Prevent body scroll when mobile RHS is open
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    const isOpen = showChannelInfo !== false || threadMessage !== null;
+    document.body.classList.toggle("rhs-mobile-open", isMobile && isOpen);
+  }, [showChannelInfo, threadMessage]);
+
   const handleSend = useCallback(
     async (content: string, priority: string = "standard") => {
       const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -376,12 +399,24 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     return (
       <div className="flex h-full flex-col">
         <div className="mm-channel-header">
-          <Skeleton className="h-4 w-32" style={{ background: "rgba(var(--center-channel-color-rgb), 0.08)" }} />
+          <Skeleton
+            className="h-4 w-32"
+            style={{ background: "rgba(var(--center-channel-color-rgb), 0.08)" }}
+          />
         </div>
         <div className="flex-1 space-y-3 p-4">
-          <Skeleton className="h-12 w-3/4" style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }} />
-          <Skeleton className="h-12 w-2/3" style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }} />
-          <Skeleton className="h-12 w-4/5" style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }} />
+          <Skeleton
+            className="h-12 w-3/4"
+            style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
+          />
+          <Skeleton
+            className="h-12 w-2/3"
+            style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
+          />
+          <Skeleton
+            className="h-12 w-4/5"
+            style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
+          />
         </div>
       </div>
     );
@@ -395,15 +430,32 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         </div>
         <div className="flex flex-1 items-center justify-center p-4">
           <div className="max-w-md space-y-3 text-center">
-            <div className="inline-flex rounded-full p-3" style={{ background: "rgba(var(--semantic-color-danger), 0.1)" }}>
-              <svg className="h-8 w-8" style={{ color: "var(--error-text)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <div
+              className="inline-flex rounded-full p-3"
+              style={{ background: "rgba(var(--semantic-color-danger), 0.1)" }}
+            >
+              <svg
+                className="h-8 w-8"
+                style={{ color: "var(--error-text)" }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
             </div>
             <h2 className="text-lg font-medium">Failed to load messages</h2>
             <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{error}</p>
             <button
-              onClick={() => { setError(null); setLoading(true); }}
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+              }}
               className="inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-medium text-white"
               style={{ background: "var(--button-bg)" }}
             >
@@ -417,22 +469,31 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
   return (
     <div className="flex h-full" id="channel_view">
-      <div className="flex min-w-0 flex-1 flex-col" style={{ background: "var(--center-channel-bg)" }}>
+      <div
+        className="flex min-w-0 flex-1 flex-col"
+        style={{ background: "var(--center-channel-bg)" }}
+      >
         {/* Mattermost-style channel header */}
         <div className="mm-channel-header">
-          <div className="flex flex-1 items-center gap-2 min-w-0">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <div className="flex items-center gap-1" style={{ height: 24 }}>
-              <h1 className="mm-font-heading truncate max-w-[300px]"># {channelName}</h1>
+              <h1 className="mm-font-heading max-w-[300px] truncate"># {channelName}</h1>
               <button className="mm-button-icon" aria-label="Channel menu">
                 <ChevronDown size={12} />
               </button>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <span className="hidden text-xs md:inline" style={{ color: "rgba(var(--center-channel-color-rgb), 0.64)" }}>
+            <span
+              className="hidden text-xs md:inline"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.64)" }}
+            >
               <span style={{ color: "var(--online-indicator)" }}>&bull;</span> {onlineCount} online
             </span>
-            <span className="hidden text-xs md:inline" style={{ color: "rgba(var(--center-channel-color-rgb), 0.64)" }}>
+            <span
+              className="hidden text-xs md:inline"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.64)" }}
+            >
               | {memberCount} members
             </span>
             <div className="ml-2 flex items-center gap-0.5">
@@ -446,7 +507,9 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               </button>
               <button
                 className="mm-button-icon"
-                onClick={() => setShowChannelInfo(showChannelInfo === "bookmarks" ? false : "bookmarks")}
+                onClick={() =>
+                  setShowChannelInfo(showChannelInfo === "bookmarks" ? false : "bookmarks")
+                }
                 aria-label="Channel bookmarks"
                 title="Channel bookmarks"
               >
@@ -454,23 +517,11 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               </button>
               <button
                 className="mm-button-icon"
-                onClick={async () => {
-                  try {
-                    if (channelMuted) {
-                      await api.delete(`/channels/${channelId}/notification-preference`);
-                    } else {
-                      await api.put(`/channels/${channelId}/notification-preference`, { notify: false });
-                    }
-                    setChannelMuted(!channelMuted);
-                    addToast({ title: channelMuted ? "Unmuted channel" : "Muted channel", variant: "success", duration: 2000 });
-                  } catch {
-                    addToast({ title: "Error", description: "Failed to update notification preference", variant: "error" });
-                  }
-                }}
-                aria-label={channelMuted ? "Unmute channel" : "Mute channel"}
-                title={channelMuted ? "Unmute channel" : "Mute channel"}
+                onClick={() => setShowNotifPrefs(true)}
+                aria-label="Notification preferences"
+                title="Notification preferences"
               >
-                {channelMuted ? <BellOff size={16} /> : <Bell size={16} />}
+                {notifPrefs.notify === "none" ? <BellOff size={16} /> : <Bell size={16} />}
               </button>
               <button
                 className="mm-button-icon"
@@ -484,7 +535,11 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
                 className="mm-button-icon hidden md:flex"
                 onClick={() => {
                   const url = `${window.location.origin}/${workspaceSlug}/${channelId}`;
-                  window.open(url, `chat-${channelId}`, "width=1200,height=800,menubar=no,toolbar=no,location=no,status=no");
+                  window.open(
+                    url,
+                    `chat-${channelId}`,
+                    "width=1200,height=800,menubar=no,toolbar=no,location=no,status=no",
+                  );
                 }}
                 aria-label="Open in new window"
               >
@@ -492,7 +547,9 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               </button>
               <button
                 className="mm-button-icon hidden md:flex"
-                onClick={() => addToast({ title: "Channel exported", variant: "success", duration: 2000 })}
+                onClick={() =>
+                  addToast({ title: "Channel exported", variant: "success", duration: 2000 })
+                }
                 aria-label="Export"
               >
                 <Download size={16} />
@@ -502,8 +559,11 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         </div>
 
         {/* Search bar row */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.08)" }}>
-          <div className="flex-1 max-w-[600px]">
+        <div
+          className="flex items-center gap-2 border-b px-3 py-2"
+          style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.08)" }}
+        >
+          <div className="max-w-[600px] flex-1">
             {workspaceId && workspaceSlug && (
               <SearchBar workspaceId={workspaceId} workspaceSlug={workspaceSlug} />
             )}
@@ -515,9 +575,19 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
         {/* Reply-to indicator */}
         {replyTo && (
-          <div className="flex items-center gap-2 px-4 py-2 text-sm" style={{ borderTop: "var(--border-default)", background: "rgba(var(--center-channel-color-rgb), 0.04)" }}>
-            <span className="min-w-0 truncate" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
-              Replying to {profiles.get(replyTo.user_id)?.display_name ?? replyTo.user_id.slice(0, 8)}
+          <div
+            className="flex items-center gap-2 px-4 py-2 text-sm"
+            style={{
+              borderTop: "var(--border-default)",
+              background: "rgba(var(--center-channel-color-rgb), 0.04)",
+            }}
+          >
+            <span
+              className="min-w-0 truncate"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
+              Replying to{" "}
+              {profiles.get(replyTo.user_id)?.display_name ?? replyTo.user_id.slice(0, 8)}
             </span>
             <button
               onClick={() => setReplyTo(null)}
@@ -536,12 +606,14 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             aria-live="polite"
             aria-atomic="false"
             aria-label="Messages"
-            className="flex flex-1 flex-col min-h-0"
+            className="flex min-h-0 flex-1 flex-col"
           >
             <MessageList
               messages={
                 filterQuery
-                  ? messages.filter((m) => m.content.toLowerCase().includes(filterQuery.toLowerCase()))
+                  ? messages.filter((m) =>
+                      m.content.toLowerCase().includes(filterQuery.toLowerCase()),
+                    )
                   : messages
               }
               currentUserId={user?.id}
@@ -554,7 +626,9 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               hasMoreOlder={hasMoreOlder}
               loadingOlder={loadingOlder}
               replyCounts={replyCounts}
-              sendingIds={new Set(messages.filter((m) => m.id.startsWith("temp_")).map((m) => m.id))}
+              sendingIds={
+                new Set(messages.filter((m) => m.id.startsWith("temp_")).map((m) => m.id))
+              }
             />
           </div>
 
@@ -587,11 +661,33 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             />
           </div>
           {/* Mobile */}
-          <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Thread">
-            <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} onClick={() => setThreadMessage(null)} />
-            <div className="animate-slide-in-right absolute right-0 top-0 bottom-0 w-full max-w-md flex flex-col" style={{ background: "var(--center-channel-bg)", boxShadow: "-4px 0 12px rgba(0,0,0,0.15)" }}>
-              <div className="flex items-center justify-between border-b px-4 py-3 shrink-0" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}>
-                <button onClick={() => setThreadMessage(null)} className="mm-button-icon" aria-label="Close thread">
+          <div
+            className="fixed inset-0 z-50 md:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Thread"
+          >
+            <div
+              className="absolute inset-0"
+              style={{ background: "rgba(0,0,0,0.4)" }}
+              onClick={() => setThreadMessage(null)}
+            />
+            <div
+              className="animate-slide-in-right absolute top-0 right-0 bottom-0 flex w-full max-w-md flex-col"
+              style={{
+                background: "var(--center-channel-bg)",
+                boxShadow: "-4px 0 12px rgba(0,0,0,0.15)",
+              }}
+            >
+              <div
+                className="flex shrink-0 items-center justify-between border-b px-4 py-3"
+                style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}
+              >
+                <button
+                  onClick={() => setThreadMessage(null)}
+                  className="mm-button-icon"
+                  aria-label="Close thread"
+                >
                   <ArrowLeft size={18} />
                 </button>
                 <h2 className="text-sm font-semibold">Thread</h2>
@@ -619,21 +715,51 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         <>
           {/* Desktop */}
           <div className="hidden md:block" style={{ borderLeft: "var(--border-default)" }}>
-            <ChannelInfo channelId={channelId} onClose={() => setShowChannelInfo(false)} initialTab={showChannelInfo === "bookmarks" ? "bookmarks" : "members"} />
+            <ChannelInfo
+              channelId={channelId}
+              onClose={() => setShowChannelInfo(false)}
+              initialTab={showChannelInfo === "bookmarks" ? "bookmarks" : "members"}
+            />
           </div>
           {/* Mobile */}
-          <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Channel info">
-            <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} onClick={() => setShowChannelInfo(false)} />
-            <div className="animate-slide-in-right absolute right-0 top-0 bottom-0 w-full max-w-sm flex flex-col" style={{ background: "var(--center-channel-bg)", boxShadow: "-4px 0 12px rgba(0,0,0,0.15)" }}>
-              <div className="flex items-center justify-between border-b px-4 py-3 shrink-0" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}>
-                <button onClick={() => setShowChannelInfo(false)} className="mm-button-icon" aria-label="Close">
+          <div
+            className="fixed inset-0 z-50 md:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Channel info"
+          >
+            <div
+              className="absolute inset-0"
+              style={{ background: "rgba(0,0,0,0.4)" }}
+              onClick={() => setShowChannelInfo(false)}
+            />
+            <div
+              className="animate-slide-in-right absolute top-0 right-0 bottom-0 flex w-full max-w-sm flex-col"
+              style={{
+                background: "var(--center-channel-bg)",
+                boxShadow: "-4px 0 12px rgba(0,0,0,0.15)",
+              }}
+            >
+              <div
+                className="flex shrink-0 items-center justify-between border-b px-4 py-3"
+                style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}
+              >
+                <button
+                  onClick={() => setShowChannelInfo(false)}
+                  className="mm-button-icon"
+                  aria-label="Close"
+                >
                   <ArrowLeft size={18} />
                 </button>
                 <h2 className="text-sm font-semibold">Channel Info</h2>
                 <div className="w-12" />
               </div>
               <div className="flex-1 overflow-hidden">
-                <ChannelInfo channelId={channelId} onClose={() => setShowChannelInfo(false)} initialTab={showChannelInfo === "bookmarks" ? "bookmarks" : "members"} />
+                <ChannelInfo
+                  channelId={channelId}
+                  onClose={() => setShowChannelInfo(false)}
+                  initialTab={showChannelInfo === "bookmarks" ? "bookmarks" : "members"}
+                />
               </div>
             </div>
           </div>
@@ -641,6 +767,16 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       )}
 
       {activeRoom && <MediaRoom roomName={activeRoom} onLeave={endCall} />}
+
+      {showNotifPrefs && (
+        <NotificationPreferencesModal
+          channelId={channelId}
+          onClose={() => setShowNotifPrefs(false)}
+          currentNotify={notifPrefs.notify}
+          currentSound={notifPrefs.sound}
+          onSave={(prefs) => setNotifPrefs(prefs)}
+        />
+      )}
     </div>
   );
 }

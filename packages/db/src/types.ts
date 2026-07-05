@@ -40,11 +40,19 @@ export interface Channel {
   slug: string;
   topic: string | null;
   is_private: boolean;
+  channel_type: "public" | "private" | "dm" | "group";
   created_by: string;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export const CHANNEL_TYPE = {
+  PUBLIC: "public",
+  PRIVATE: "private",
+  DM: "dm",
+  GROUP: "group",
+} as const;
 
 export interface ChannelMember {
   channel_id: string;

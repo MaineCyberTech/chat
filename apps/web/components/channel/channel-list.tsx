@@ -1,24 +1,35 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Skeleton, useToast } from "@chat/ui";
-import { Trash2 } from "lucide-react";
+import { Trash2, Hash, Lock, GripVertical } from "lucide-react";
 import type { Channel } from "@chat/db";
 
 interface Props {
   workspaceSlug: string;
   workspaceId: string;
   activeChannelId?: string;
+  showUnreads?: boolean;
+  unreadChannels?: Set<string>;
 }
 
-export function ChannelList({ workspaceSlug, workspaceId, activeChannelId }: Props) {
+export function ChannelList({
+  workspaceSlug,
+  workspaceId,
+  activeChannelId,
+  showUnreads,
+  unreadChannels,
+}: Props) {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const dragNode = useRef<HTMLElement | null>(null);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -45,6 +56,56 @@ export function ChannelList({ workspaceSlug, workspaceId, activeChannelId }: Pro
     }
   }
 
+  function handleDragStart(e: React.DragEvent, channelId: string) {
+    dragNode.current = e.target as HTMLElement;
+    setDragId(channelId);
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function handleDragOver(e: React.DragEvent, channelId: string) {
+    e.preventDefault();
+    setDragOverId(channelId);
+  }
+
+  function handleDragEnd() {
+    if (!dragId || !dragOverId || dragId === dragOverId) {
+      setDragId(null);
+      setDragOverId(null);
+      return;
+    }
+    const reordered = [...channels];
+    const fromIdx = reordered.findIndex((c) => c.id === dragId);
+    const toIdx = reordered.findIndex((c) => c.id === dragOverId);
+    if (fromIdx === -1 || toIdx === -1) {
+      setDragId(null);
+      setDragOverId(null);
+      return;
+    }
+    const [moved] = reordered.splice(fromIdx, 1);
+    if (!moved) {
+      setDragId(null);
+      setDragOverId(null);
+      return;
+    }
+    reordered.splice(toIdx, 0, moved);
+    setChannels(reordered);
+    setDragId(null);
+    setDragOverId(null);
+  }
+
+  function channelIcon(ch: Channel) {
+    if (ch.channel_type === "dm" || ch.name.startsWith("dm-")) {
+      return <span className="channel-type-icon mr-2 text-xs">&#x1f464;</span>;
+    }
+    if (ch.channel_type === "group" || ch.name.startsWith("gm-")) {
+      return <span className="channel-type-icon mr-2 text-xs">&#x1f465;</span>;
+    }
+    if (ch.channel_type === "private" || ch.is_private) {
+      return <Lock size={14} className="channel-type-icon mr-2" />;
+    }
+    return <Hash size={14} className="channel-type-icon mr-2" />;
+  }
+
   if (loading) {
     return (
       <div className="space-y-1 px-3">
@@ -52,6 +113,17 @@ export function ChannelList({ workspaceSlug, workspaceId, activeChannelId }: Pro
         <Skeleton className="h-7 w-4/5" />
         <Skeleton className="h-7 w-3/4" />
       </div>
+    );
+  }
+
+  const filteredChannels =
+    showUnreads && unreadChannels ? channels.filter((c) => unreadChannels.has(c.id)) : channels;
+
+  if (showUnreads && filteredChannels.length === 0) {
+    return (
+      <p className="px-5 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+        No unread channels
+      </p>
     );
   }
 
@@ -66,10 +138,26 @@ export function ChannelList({ workspaceSlug, workspaceId, activeChannelId }: Pro
   return (
     <>
       <ul role="listbox" aria-label="Channels">
-        {channels.map((ch) => {
+        {filteredChannels.map((ch) => {
           const isActive = activeChannelId === ch.id;
+          const isDragging = dragId === ch.id;
+          const isDragOver = dragOverId === ch.id;
           return (
-            <li key={ch.id} role="option" aria-selected={isActive}>
+            <li
+              key={ch.id}
+              role="option"
+              aria-selected={isActive}
+              draggable
+              onDragStart={(e) => handleDragStart(e, ch.id)}
+              onDragOver={(e) => handleDragOver(e, ch.id)}
+              onDragEnd={handleDragEnd}
+              style={{
+                opacity: isDragging ? 0.5 : 1,
+                borderTop: isDragOver
+                  ? "2px solid var(--sidebar-text-active-border)"
+                  : "2px solid transparent",
+              }}
+            >
               <div className="group mm-sidebar-channel">
                 <Link
                   href={`/${workspaceSlug}/${ch.slug}`}
@@ -79,12 +167,19 @@ export function ChannelList({ workspaceSlug, workspaceId, activeChannelId }: Pro
                     color: isActive ? "var(--sidebar-text-active-color)" : "var(--sidebar-text)",
                     background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
                     fontWeight: isActive ? 600 : 400,
-                    paddingLeft: isActive ? 17 : 20,
-                    borderLeft: isActive ? "4px solid var(--sidebar-text-active-border)" : "4px solid transparent",
+                    paddingLeft: isActive ? 14 : 17,
+                    borderLeft: isActive
+                      ? "4px solid var(--sidebar-text-active-border)"
+                      : "4px solid transparent",
                     borderRadius: "0 4px 4px 0",
                   }}
                 >
-                  <span style={{ opacity: 0.7, marginRight: 8 }}>#</span>
+                  <GripVertical
+                    size={10}
+                    className="mr-1 opacity-0 transition-opacity group-hover:opacity-40"
+                    style={{ color: "rgba(255,255,255,0.5)", cursor: "grab" }}
+                  />
+                  {channelIcon(ch)}
                   <span className="truncate">{ch.name}</span>
                 </Link>
                 <button
@@ -102,7 +197,10 @@ export function ChannelList({ workspaceSlug, workspaceId, activeChannelId }: Pro
       </ul>
 
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+        >
           <div
             className="w-full max-w-sm rounded-lg p-6"
             style={{ background: "var(--center-channel-bg)" }}
@@ -112,7 +210,10 @@ export function ChannelList({ workspaceSlug, workspaceId, activeChannelId }: Pro
             <h3 className="text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
               Delete channel?
             </h3>
-            <p className="mt-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+            <p
+              className="mt-1 text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
               This will permanently delete the channel and all its messages.
             </p>
             {deleteError && (
@@ -122,7 +223,10 @@ export function ChannelList({ workspaceSlug, workspaceId, activeChannelId }: Pro
             )}
             <div className="mt-4 flex justify-end gap-2">
               <button
-                onClick={() => { setDeleteConfirmId(null); setDeleteError(""); }}
+                onClick={() => {
+                  setDeleteConfirmId(null);
+                  setDeleteError("");
+                }}
                 className="rounded-md px-3 py-1.5 text-xs font-medium"
                 style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
               >

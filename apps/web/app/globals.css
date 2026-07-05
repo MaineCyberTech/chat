@@ -51,6 +51,12 @@
     --sidebar-unread-text: #fff;
     --sidebar-team-background: #0b428c;
     --sidebar-bg-rgb: 20, 93, 191;
+    --sidebar-text-rgb: 255, 255, 255;
+    --sidebar-header-text-color-rgb: 255, 255, 255;
+    --button-bg-rgb: 22, 109, 224;
+    --error-text-rgb: 210, 75, 78;
+    --dnd-indicator-rgb: 210, 75, 78;
+    --online-indicator-rgb: 6, 214, 160;
 
     --online-indicator: #06d6a0;
     --away-indicator: #ffbc42;
@@ -270,8 +276,14 @@
 }
 
 @media (max-width: 767px) {
-  body.sidebar-mobile-open {
+  body.sidebar-mobile-open,
+  body.rhs-mobile-open {
     overflow: hidden;
+  }
+
+  /* Prevent iOS zoom on input focus */
+  select, textarea, input {
+    font-size: 16px;
   }
 
   [role="log"] {
@@ -295,6 +307,159 @@
   .group:focus-within .action-overlay {
     display: flex !important;
   }
+}
+
+/* Post menu — hover-reveal action bar */
+.post-menu {
+  position: absolute;
+  z-index: 6;
+  top: -12px;
+  right: 0;
+  display: flex;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+}
+.mm-post:hover .post-menu,
+.mm-post.a11y--active .post-menu {
+  border-color: rgba(var(--center-channel-color-rgb), 0.16);
+  background: var(--center-channel-bg);
+  box-shadow: var(--elevation-1);
+}
+.post-menu__item {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(var(--center-channel-color-rgb), 0.4);
+  fill: rgba(var(--center-channel-color-rgb), 0.4);
+  cursor: pointer;
+  transition: background-color 150ms, color 150ms;
+}
+.post-menu__item:hover {
+  background: rgba(var(--center-channel-color-rgb), 0.08);
+  color: rgba(var(--center-channel-color-rgb), 0.8);
+  fill: rgba(var(--center-channel-color-rgb), 0.8);
+}
+.post-menu__item:active,
+.post-menu__item--active {
+  background: rgba(var(--button-bg-rgb), 0.08);
+  color: var(--button-bg);
+  fill: var(--button-bg);
+}
+@media (min-width: 768px) {
+  .post-menu__item {
+    display: none;
+  }
+  .post-menu__item--show {
+    display: inline-flex;
+  }
+  .mm-post:hover .post-menu__item,
+  .mm-post.a11y--active .post-menu__item {
+    display: inline-flex;
+  }
+}
+
+/* Floating timestamp permalink */
+.post__permalink {
+  position: absolute;
+  top: 0;
+  left: -76px;
+  width: 60px;
+  text-align: right;
+  font-size: 0.85em;
+  color: rgba(var(--center-channel-color-rgb), 0.56);
+  opacity: 0;
+  transition: opacity 150ms;
+  pointer-events: none;
+}
+.mm-post:hover .post__permalink {
+  opacity: 1;
+  pointer-events: auto;
+}
+.post__permalink:hover {
+  text-decoration: underline;
+  color: var(--link-color);
+}
+
+/* Status pill on DMs */
+.status-pill {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  border: 2px solid var(--sidebar-bg);
+}
+.status-pill--online { background: var(--online-indicator); }
+.status-pill--away { background: var(--away-indicator); }
+.status-pill--dnd { background: var(--dnd-indicator); }
+.status-pill--offline { background: var(--offline-indicator); }
+
+/* Channel type icons */
+.channel-type-icon {
+  opacity: 0.7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Unread badge */
+.sidebar-unread-badge {
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: 100px;
+  background: var(--mention-bg);
+  color: var(--mention-color);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+}
+.sidebar-unread-badge.urgent {
+  background: var(--dnd-indicator);
+  color: #fff;
+}
+.sidebar-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mention-bg);
+  flex-shrink: 0;
+}
+
+/* Unread channel indicator (floating button) */
+.unread-indicator {
+  position: fixed;
+  z-index: 100;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--button-bg);
+  color: var(--button-color);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: var(--elevation-3);
+  cursor: pointer;
+  transition: opacity 200ms;
+  border: none;
+  white-space: nowrap;
+}
+.unread-indicator:hover {
+  box-shadow: var(--elevation-4);
 }
 
 @keyframes fadeIn {

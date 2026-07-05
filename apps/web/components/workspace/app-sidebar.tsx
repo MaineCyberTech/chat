@@ -9,7 +9,16 @@ import { ChannelList } from "@/components/channel/channel-list";
 import { CreateChannelDialog } from "@/components/channel/create-channel-dialog";
 import { InviteMembersModal } from "./invite-members-modal";
 import { Avatar } from "@chat/ui";
-import { Bookmark, PanelLeftClose, PanelLeft, Settings, Search, Plus, ChevronDown, UserPlus } from "lucide-react";
+import {
+  Bookmark,
+  PanelLeftClose,
+  PanelLeft,
+  Settings,
+  Search,
+  Plus,
+  ChevronDown,
+  UserPlus,
+} from "lucide-react";
 import type { Channel, Workspace } from "@chat/db";
 import { api } from "@/lib/api";
 
@@ -46,6 +55,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const statusMenuRef = useRef<HTMLDivElement>(null);
   const [channelsExpanded, setChannelsExpanded] = useState(true);
   const [dmExpanded, setDmExpanded] = useState(true);
+  const [showUnreads, setShowUnreads] = useState(false);
 
   // Auto-collapse sidebar at md breakpoint (768px) for tablet layout
   useEffect(() => {
@@ -295,10 +305,19 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate font-semibold" style={{ fontSize: 16, lineHeight: "22px", color: "var(--sidebar-header-text-color)" }}>
+                <div
+                  className="truncate font-semibold"
+                  style={{
+                    fontSize: 16,
+                    lineHeight: "22px",
+                    color: "var(--sidebar-header-text-color)",
+                  }}
+                >
                   {user?.email?.split("@")[0] ?? "Chat"}
                 </div>
-                <div style={{ fontSize: 14, color: "rgba(var(--sidebar-header-text-color-rgb), 0.8)" }}>
+                <div
+                  style={{ fontSize: 14, color: "rgba(var(--sidebar-header-text-color-rgb), 0.8)" }}
+                >
                   {userStatus.custom_status || `${userStatus.status}`}
                 </div>
               </div>
@@ -358,13 +377,11 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           {/* Workspaces section */}
           {!collapsed && (
             <div className="mb-2">
-              <div className="mm-sidebar-group-header">
-                Workspaces
-              </div>
+              <div className="mm-sidebar-group-header">Workspaces</div>
               <div key={refreshKey}>
                 <WorkspaceList activeSlug={workspaceSlug} />
               </div>
-              <div className="px-3 mt-1">
+              <div className="mt-1 px-3">
                 <CreateWorkspaceDialog onCreated={handleCreated} />
               </div>
             </div>
@@ -373,20 +390,34 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           {/* Channels section */}
           {workspaceSlug && !collapsed && (
             <div className="mb-2">
-              <button
-                onClick={() => setChannelsExpanded(!channelsExpanded)}
-                className="mm-sidebar-group-header w-full cursor-pointer"
-              >
-                <ChevronDown
-                  size={12}
-                  className="mr-1"
+              <div className="mm-sidebar-group-header flex w-full items-center gap-1">
+                <button
+                  onClick={() => setChannelsExpanded(!channelsExpanded)}
+                  className="flex cursor-pointer items-center gap-1"
+                >
+                  <ChevronDown
+                    size={12}
+                    style={{
+                      transform: channelsExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+                      transition: "transform 200ms",
+                    }}
+                  />
+                  Channels
+                </button>
+                <button
+                  onClick={() => setShowUnreads(!showUnreads)}
+                  className="ml-auto rounded px-2 py-0.5 text-[10px] font-medium uppercase transition-colors"
                   style={{
-                    transform: channelsExpanded ? "rotate(0deg)" : "rotate(-90deg)",
-                    transition: "transform 200ms",
+                    color: showUnreads
+                      ? "var(--sidebar-text-active-color)"
+                      : "rgba(255,255,255,0.5)",
+                    background: showUnreads ? "rgba(255,255,255,0.15)" : "transparent",
                   }}
-                />
-                Channels
-              </button>
+                  aria-label={showUnreads ? "Show all channels" : "Show unread channels only"}
+                >
+                  {showUnreads ? "All" : "Unreads"}
+                </button>
+              </div>
               {channelsExpanded && (
                 <>
                   {wsLoading || !workspace ? (
@@ -405,11 +436,12 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                         workspaceSlug={workspaceSlug}
                         workspaceId={workspace.id}
                         activeChannelId={channelId}
+                        showUnreads={showUnreads}
                       />
                     </div>
                   )}
                   {workspace && (
-                    <div className="px-3 mt-1">
+                    <div className="mt-1 px-3">
                       <CreateChannelDialog
                         workspaceId={workspace.id}
                         onCreated={handleChannelCreated}
@@ -424,9 +456,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           {/* Saved Messages */}
           {workspaceSlug && !collapsed && (
             <div className="mb-2">
-              <div className="mm-sidebar-group-header">
-                Saved
-              </div>
+              <div className="mm-sidebar-group-header">Saved</div>
               <Link
                 href={`/${workspaceSlug}/saved`}
                 className="flex items-center gap-2 rounded-md px-5 py-1.5 text-sm transition-colors"
@@ -468,13 +498,19 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                             href={`/${workspaceSlug}/${ch.slug}`}
                             className="mm-sidebar-channel rounded-md px-5 text-sm transition-colors"
                             style={{
-                              color: channelId === ch.id ? "var(--sidebar-text-active-color)" : "var(--sidebar-text)",
-                              background: channelId === ch.id ? "rgba(255,255,255,0.12)" : "transparent",
+                              color:
+                                channelId === ch.id
+                                  ? "var(--sidebar-text-active-color)"
+                                  : "var(--sidebar-text)",
+                              background:
+                                channelId === ch.id ? "rgba(255,255,255,0.12)" : "transparent",
                               fontWeight: channelId === ch.id ? 600 : 400,
                             }}
                           >
-                            <span className="mr-2">&#x1f4ac;</span>
-                            <span className="truncate">{ch.name.replace(/^dm-/, "")}</span>
+                            <span className="mr-2 inline-flex items-center gap-1">
+                              <span className="status-pill status-pill--online" />
+                              {ch.name.replace(/^dm-/, "")}
+                            </span>
                           </Link>
                         </li>
                       ))}
@@ -499,15 +535,30 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
 
           {/* User picker for starting DM or GM */}
           {showUserPicker && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-              <div className="w-full max-w-sm rounded-lg p-4 shadow-[var(--elevation-5)]" style={{ background: "var(--center-channel-bg)", color: "var(--center-channel-color)" }}>
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              style={{ background: "rgba(0,0,0,0.5)" }}
+            >
+              <div
+                className="w-full max-w-sm rounded-lg p-4 shadow-[var(--elevation-5)]"
+                style={{
+                  background: "var(--center-channel-bg)",
+                  color: "var(--center-channel-color)",
+                }}
+              >
                 <h3 className="mb-2 text-sm font-semibold">Start a conversation</h3>
-                <p className="mb-2 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+                <p
+                  className="mb-2 text-xs"
+                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                >
                   Click a name for a DM, or select multiple for a group chat
                 </p>
                 <div className="max-h-48 space-y-0.5 overflow-y-auto">
                   {chatUsers.length === 0 && (
-                    <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+                    <p
+                      className="text-xs"
+                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                    >
                       No other members found
                     </p>
                   )}
@@ -523,8 +574,12 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                       }}
                       className="w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors"
                       style={{
-                        background: selectedUserIds.has(u.id) ? `rgba(var(--button-bg-rgb), 0.08)` : "transparent",
-                        color: selectedUserIds.has(u.id) ? "var(--link-color)" : "var(--center-channel-color)",
+                        background: selectedUserIds.has(u.id)
+                          ? `rgba(var(--button-bg-rgb), 0.08)`
+                          : "transparent",
+                        color: selectedUserIds.has(u.id)
+                          ? "var(--link-color)"
+                          : "var(--center-channel-color)",
                       }}
                     >
                       <span className="mr-2">{selectedUserIds.has(u.id) ? "\u2713" : "+"}</span>
@@ -587,7 +642,10 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                 className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm`}
                 style={{
                   color: "var(--center-channel-color)",
-                  background: userStatus.status === s.key ? "rgba(var(--center-channel-color-rgb), 0.08)" : "transparent",
+                  background:
+                    userStatus.status === s.key
+                      ? "rgba(var(--center-channel-color-rgb), 0.08)"
+                      : "transparent",
                 }}
               >
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />

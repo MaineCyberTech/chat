@@ -271,6 +271,85 @@ Full 8-phase Mattermost comparative audit (`C:\temp\mattermost-master` vs `C:\te
 - **Custom user status** — `status-modal.tsx` + `/status` API + `user_statuses` table migration + sidebar display
 - **api.put() added** — `lib/api.ts` now supports PUT requests
 
+### Mattermost Comparison — Remaining Features (July 5, 2026)
+
+Full Mattermost codebase (`C:\temp\mattermost-master`) analyzed against our chat app. Key gaps organized by effort/impact:
+
+#### Quick Wins (1-2 days each)
+
+| Area          | Feature                                               | Mattermost CSS/Pattern                                 |
+| ------------- | ----------------------------------------------------- | ------------------------------------------------------ |
+| Sidebar       | Channel drag-and-drop reorder                         | `sidebar_list.tsx` (react-beautiful-dnd)               |
+| Sidebar       | Channel filter toggle (All/Unreads)                   | `channel_filter.tsx` with CSS animation                |
+| Sidebar       | Unread channel indicator (floating)                   | `unread_channel_indicator/`                            |
+| Sidebar       | Channel type icons (public/private/DM/GM)             | `sidebar_channel_icon/`                                |
+| Sidebar       | Status pill on DMs (colored dot)                      | `_status-icon.scss` (`status-wrapper` 15px dot)        |
+| Posts         | Hover-reveal action bar with box-shadow               | `_post-menu.scss` — 28px buttons, `elevation-1` shadow |
+| Posts         | Floating timestamp permalink on hover                 | `_post.scss` — `.post__permalink` absolute positioned  |
+| Posts         | `post--editing` highlight background                  | `_post.scss` — `rgba(var(--button-bg-rgb), 0.08)`      |
+| Mobile        | Prevent iOS zoom on input focus                       | `font-size: 16px` on inputs (`_mobile.scss` global)    |
+| Mobile        | Prevent body scroll when sidebar/RHS open             | `overflow: hidden` on body                             |
+| Notifications | Desktop sound notifications                           | Web Notification API                                   |
+| Notifications | Per-channel notification modal (All/Mentions/Nothing) | `channel_notifications_modal.tsx`                      |
+
+#### Medium Effort (2-4 days each)
+
+| Area          | Feature                                            | Reference                                                           |
+| ------------- | -------------------------------------------------- | ------------------------------------------------------------------- |
+| Sidebar       | Category management (create/rename/delete/reorder) | `sidebar_category/` (466 lines, draggable)                          |
+| Sidebar       | Channel context menu (right-click)                 | `sidebar_channel_menu/` (favorite, mute, move, copy, leave, delete) |
+| Sidebar       | Sidebar header team menu                           | `sidebar_header/` (team switch, browse channels, create, invite)    |
+| Sidebar       | Resizable sidebar (drag handle)                    | `resizable_sidebar/`                                                |
+| Emoji         | Category tabs (11 categories)                      | `emoji_picker_tabs.tsx`                                             |
+| Emoji         | Skin tone selector (5 tones)                       | `emoji_picker_skin.tsx`                                             |
+| Emoji         | Hover preview + name                               | `emoji_picker_preview.tsx`                                          |
+| Emoji         | `:` colon autocomplete                             | `use_editor_emoji_picker.tsx`                                       |
+| Emoji         | 3000+ emojis + recent tracking                     | `emoji.json` (3301 system emojis)                                   |
+| Search        | Messages/Files type toggle                         | `search_box_type_selector.tsx`                                      |
+| Search        | Operator hints (`from:`, `in:`, etc.)              | `search_box_hints.tsx`                                              |
+| Search        | File extension suggestions                         | `extension_suggestions_provider.tsx`                                |
+| Files         | Multi-file navigation (prev/next)                  | `file_preview_modal_main_nav/`                                      |
+| Files         | Zoom in/out/100%/fit-to-window                     | `image_preview.tsx` with pan/drag                                   |
+| Files         | File metadata panel (name, size, uploader)         | `file_preview_modal_info/`                                          |
+| Notifications | Global notification settings page                  | `user_settings_notifications.tsx` (1300 lines)                      |
+| Notifications | Desktop notification sounds (9 sounds)             | `desktop_notification_sounds_setting/`                              |
+| Notifications | Trigger words + auto-responder                     | `user_settings_notifications.tsx`                                   |
+| Keyboard      | Ctrl+K quick switcher (full)                       | `keyboard_shortcuts_modal.tsx` (35+ shortcuts)                      |
+| Keyboard      | Full shortcut modal with categories                | `keyboard_shortcuts_modal.tsx`                                      |
+
+#### High Effort (1-2 weeks each)
+
+| Area       | Feature                                       | Reference                                               |
+| ---------- | --------------------------------------------- | ------------------------------------------------------- |
+| Composer   | WYSIWYG editor (TipTap) replacing textarea    | `advanced_text_editor/` (30+ files, 3000+ lines)        |
+| Composer   | Send scheduling (later today/tomorrow/custom) | `send_button/` + `scheduled_post_indicator/`            |
+| Composer   | AI rewrite actions                            | `use_rewrite.tsx` + `ai_actions_menu.tsx`               |
+| Onboarding | Task list popover with checkmarks             | `onboarding_tasklist/` (8 files)                        |
+| Onboarding | Tour tips (5-step guided tour)                | `tours/` (15+ files)                                    |
+| Drafts     | Auto-save + drafts page + scheduled posts     | `drafts/` (20+ files)                                   |
+| Sidebar    | Multi-team sidebar (65px rail)                | `team_sidebar/`                                         |
+| Sidebar    | User groups CRUD (6 modals)                   | `user_groups_modal/`, `create_user_groups_modal/`, etc. |
+| Sidebar    | DM creation modal with multi-select           | `more_direct_channels/` (5 files)                       |
+
+### Immediate Work (In Progress — July 5, 2026)
+
+Working through Quick Wins batch:
+
+| #   | Feature                                    | Status  |
+| --- | ------------------------------------------ | ------- |
+| 1   | Channel drag-and-drop reordering           | PENDING |
+| 2   | Channel filter toggle (All/Unreads)        | PENDING |
+| 3   | Unread channel indicator (floating)        | PENDING |
+| 4   | Channel type icons (public/private/DM/GM)  | PENDING |
+| 5   | Status pill on sidebar DMs                 | PENDING |
+| 6   | Post hover-reveal action bar polish        | PENDING |
+| 7   | Post time permalink floating timestamp     | PENDING |
+| 8   | post--editing background highlight         | PENDING |
+| 9   | Prevent iOS zoom on input focus            | PENDING |
+| 10  | Prevent body scroll when sidebar/RHS open  | PENDING |
+| 11  | Desktop sound notifications                | PENDING |
+| 12  | Per-channel notification preferences modal | PENDING |
+
 ### Remaining Work
 
 **Frontend Release Gate Findings** (from `docs/audits/frontend_ux_release_gate_audit_summary.md`):
