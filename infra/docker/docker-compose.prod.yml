@@ -44,9 +44,28 @@ services:
     mem_limit: 128m
     environment:
       <<: *common-env
-      REDIS_URL: ${REDIS_URL}
+      REDIS_URL: redis://redis:6379
     networks:
       - chat-prod
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: chat-redis-prod
+    restart: unless-stopped
+    mem_limit: 64m
+    command: redis-server --appendonly yes
+    networks:
+      - chat-prod
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data
 
   livekit:
     image: livekit/livekit-server:latest
@@ -91,7 +110,7 @@ services:
     networks:
       - chat-prod
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000/healthz"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -104,3 +123,4 @@ networks:
 volumes:
   caddy-data:
   caddy-config:
+  redis-data:

@@ -245,17 +245,42 @@ jobs:
           script: |
             cd ${{ env.REPO_DIR }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+            # Aggressive disk cleanup before pulling
+            echo "=== Disk usage before cleanup ==="
+            df -h /
+            docker system df -v
+
+            # Stop and remove all containers first
+            docker compose -f infra/docker/docker-compose.prod.yml down -v --remove-orphans 2>/dev/null || true
+
+            # Remove all unused images, build cache, volumes, networks
             docker system prune -af --volumes
-            docker pull ghcr.io/${{ env.REPO_LC }}/api:latest
-            docker pull ghcr.io/${{ env.REPO_LC }}/worker:latest
-            docker pull ghcr.io/${{ env.REPO_LC }}/web:latest
-            docker compose -f infra/docker/docker-compose.prod.yml up -d --remove-orphans --force-recreate
+            docker builder prune -af
+            docker image prune -af --filter "until=24h"
+
+            echo "=== Disk usage after cleanup ==="
+            df -h /
+
+            # Pull images with retries
+            for img in api worker web; do
+              for attempt in 1 2 3; do
+                if docker pull ghcr.io/${{ env.REPO_LC }}/$img:latest; then
+                  echo "Successfully pulled $img:latest"
+                  break
+                fi
+                echo "Attempt $attempt failed for $img:latest, retrying in 5s..."
+                sleep 5
+              done
+            done
+
+            docker compose -f infra/docker/docker-compose.prod.yml up -d --force-recreate --remove-orphans
             docker image prune -af
 
       - name: Health check
         run: |
           for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ needs.provision.outputs.api_url }}/healthz || echo "000")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ needs.provision.outputs.api_url }}/health || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "API healthy at ${{ needs.provision.outputs.api_url }}"
               exit 0
@@ -289,21 +314,44 @@ jobs:
           script: |
             cd ${{ env.REPO_DIR }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+            # Aggressive disk cleanup before pulling
+            echo "=== Disk usage before cleanup ==="
+            df -h /
+            docker system df -v
+
+            docker compose -f infra/docker/docker-compose.prod.yml down -v --remove-orphans 2>/dev/null || true
+
             docker system prune -af --volumes
+            docker builder prune -af
+            docker image prune -af --filter "until=24h"
+
+            echo "=== Disk usage after cleanup ==="
+            df -h /
+
             ROLLBACK_SHA="${{ github.event.inputs.rollback_sha }}"
-            docker pull ghcr.io/${{ env.REPO_LC }}/api:${ROLLBACK_SHA}
-            docker pull ghcr.io/${{ env.REPO_LC }}/worker:${ROLLBACK_SHA}
-            docker pull ghcr.io/${{ env.REPO_LC }}/web:${ROLLBACK_SHA}
+            for img in api worker web; do
+              for attempt in 1 2 3; do
+                if docker pull ghcr.io/${{ env.REPO_LC }}/$img:${ROLLBACK_SHA}; then
+                  echo "Successfully pulled $img:${ROLLBACK_SHA}"
+                  break
+                fi
+                echo "Attempt $attempt failed for $img:${ROLLBACK_SHA}, retrying in 5s..."
+                sleep 5
+              done
+            done
+
             docker tag ghcr.io/${{ env.REPO_LC }}/api:${ROLLBACK_SHA} ghcr.io/${{ env.REPO_LC }}/api:latest
             docker tag ghcr.io/${{ env.REPO_LC }}/worker:${ROLLBACK_SHA} ghcr.io/${{ env.REPO_LC }}/worker:latest
             docker tag ghcr.io/${{ env.REPO_LC }}/web:${ROLLBACK_SHA} ghcr.io/${{ env.REPO_LC }}/web:latest
-            docker compose -f infra/docker/docker-compose.prod.yml up -d --remove-orphans
+
+            docker compose -f infra/docker/docker-compose.prod.yml up -d --force-recreate --remove-orphans
             docker image prune -af
 
       - name: Health check after rollback
         run: |
           for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ needs.provision.outputs.api_url }}/healthz || echo "000")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ needs.provision.outputs.api_url }}/health || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "API healthy at ${{ needs.provision.outputs.api_url }} after rollback"
               exit 0
