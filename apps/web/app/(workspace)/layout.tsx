@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
@@ -20,6 +20,59 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [channels, setChannels] = useState<string[]>([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const resizingRef = useRef(false);
+  const startXRef = useRef(0);
+  const startWidthRef = useRef(0);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      resizingRef.current = true;
+      startXRef.current = e.clientX;
+      startWidthRef.current = sidebarWidth;
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    },
+    [sidebarWidth],
+  );
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!resizingRef.current) return;
+      const newWidth = Math.max(
+        200,
+        Math.min(500, startWidthRef.current + (e.clientX - startXRef.current)),
+      );
+      setSidebarWidth(newWidth);
+    }
+    function onMouseUp() {
+      if (resizingRef.current) {
+        resizingRef.current = false;
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        try {
+          localStorage.setItem("sidebar_width", String(sidebarWidth));
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("sidebar_width");
+      if (saved) setSidebarWidth(parseInt(saved, 10));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useSwipeBack(() => {
     if (params.channelId && params.workspaceSlug) {
@@ -84,10 +137,18 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
 
   if (authLoading) {
     return (
-      <div className="flex h-screen items-center justify-center" style={{ background: "var(--center-channel-bg)" }}>
+      <div
+        className="flex h-screen items-center justify-center"
+        style={{ background: "var(--center-channel-bg)" }}
+      >
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2" style={{ borderColor: "var(--border-default)", borderTopColor: "var(--button-bg)" }} />
-          <p className="text-sm" style={{ color: "var(--center-channel-color)", opacity: 0.72 }}>Loading workspace...</p>
+          <div
+            className="h-8 w-8 animate-spin rounded-full border-2"
+            style={{ borderColor: "var(--border-default)", borderTopColor: "var(--button-bg)" }}
+          />
+          <p className="text-sm" style={{ color: "var(--center-channel-color)", opacity: 0.72 }}>
+            Loading workspace...
+          </p>
         </div>
       </div>
     );
@@ -98,14 +159,20 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="app__body" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+    <div
+      className="app__body"
+      style={{ height: "100vh", display: "flex", flexDirection: "column" }}
+    >
       {/* Grid root - Mattermost style */}
       <div id="root" className="channel-view" style={{ flex: 1, minHeight: 0 }}>
         {/* Mobile header */}
         <div
           id="global-header"
           className="flex items-center gap-2 px-3 py-2 md:hidden"
-          style={{ background: "var(--sidebar-header-bg)", color: "var(--sidebar-header-text-color)" }}
+          style={{
+            background: "var(--sidebar-header-bg)",
+            color: "var(--sidebar-header-text-color)",
+          }}
         >
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -115,18 +182,40 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           >
             <Menu size={20} />
           </button>
-          <span className="text-sm font-semibold truncate">
-            {params.workspaceSlug ?? "Chat"}
-          </span>
+          <span className="truncate text-sm font-semibold">{params.workspaceSlug ?? "Chat"}</span>
         </div>
 
         {/* Main content area */}
-        <AppSidebar
-          workspaceSlug={params.workspaceSlug}
-          channelId={params.channelId}
-          mobileOpen={sidebarOpen}
-          onMobileClose={() => setSidebarOpen(false)}
-        />
+        <div style={{ display: "flex", width: sidebarWidth, minWidth: 200, position: "relative" }}>
+          <div style={{ width: "100%", overflow: "hidden" }}>
+            <AppSidebar
+              workspaceSlug={params.workspaceSlug}
+              channelId={params.channelId}
+              mobileOpen={sidebarOpen}
+              onMobileClose={() => setSidebarOpen(false)}
+            />
+          </div>
+          <div
+            onMouseDown={handleMouseDown}
+            className="hidden md:block"
+            style={{
+              width: 4,
+              cursor: "col-resize",
+              background: "transparent",
+              position: "absolute",
+              right: 0,
+              top: 0,
+              bottom: 0,
+              zIndex: 10,
+              transition: "background 150ms",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "rgba(var(--center-channel-color-rgb), 0.16)")
+            }
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            aria-label="Resize sidebar"
+          />
+        </div>
 
         <div className="app__content">
           <ErrorBoundary>{children}</ErrorBoundary>
