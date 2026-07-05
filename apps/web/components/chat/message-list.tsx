@@ -80,28 +80,6 @@ interface MessageMeta extends Message {
   isGroupEnd?: boolean;
 }
 
-function PostAvatar({ src, fallback }: { src?: string; fallback: string }) {
-  return (
-    <div style={{ width: 36, minWidth: 36, paddingRight: 8 }} className="text-right">
-      <div
-        className="inline-flex"
-        style={{ width: 24, height: 24, borderRadius: "var(--radius-full)", overflow: "hidden" }}
-      >
-        {src ? (
-          <img src={src} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <span
-            className="flex h-full w-full items-center justify-center text-[10px] font-semibold"
-            style={{ background: "rgba(var(--button-bg-rgb), 0.16)", color: "var(--button-bg)" }}
-          >
-            {fallback.charAt(0).toUpperCase()}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 const MessageItem = React.memo(function MessageItem({
   msg,
   currentUserId,
@@ -222,12 +200,35 @@ const MessageItem = React.memo(function MessageItem({
         className={`mm-post ${isEditing ? "mm-post--editing" : ""}`}
         onMouseEnter={() => onSetPickerMessageId(null)}
       >
-        <div className="flex" style={{ display: "table", width: "100%", tableLayout: "fixed" }}>
-          {/* Avatar column (table-cell) */}
+        <div className="flex items-start gap-2 px-4 py-1">
+          {/* Avatar column */}
           {showAuthor ? (
-            <PostAvatar src={avatar} fallback={name} />
+            <div className="shrink-0" style={{ width: 36 }}>
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "var(--radius-full)",
+                  overflow: "hidden",
+                }}
+              >
+                {avatar ? (
+                  <img src={avatar} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span
+                    className="flex h-full w-full items-center justify-center text-[10px] font-semibold"
+                    style={{
+                      background: "rgba(var(--button-bg-rgb), 0.16)",
+                      color: "var(--button-bg)",
+                    }}
+                  >
+                    {name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+            </div>
           ) : (
-            <div style={{ width: 36, minWidth: 36, paddingRight: 8 }} className="text-right">
+            <div style={{ width: 36 }} className="shrink-0 pt-0.5 text-right">
               <span
                 style={{
                   fontSize: 11,
@@ -240,10 +241,10 @@ const MessageItem = React.memo(function MessageItem({
             </div>
           )}
 
-          {/* Body column (table-cell) */}
-          <div style={{ display: "table-cell", width: "100%", padding: "0 0 0.2em" }}>
+          {/* Body */}
+          <div className="min-w-0 flex-1">
             {showAuthor && (
-              <div className="mb-0.5 flex items-baseline gap-2" style={{ display: "flex" }}>
+              <div className="flex flex-wrap items-baseline gap-2">
                 <span
                   className="text-sm font-semibold"
                   style={{ color: "var(--center-channel-color)" }}
