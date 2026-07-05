@@ -11,6 +11,7 @@ import { InviteMembersModal } from "./invite-members-modal";
 import { Avatar } from "@chat/ui";
 import {
   Bookmark,
+  Clock,
   PanelLeftClose,
   PanelLeft,
   Settings,
@@ -757,7 +758,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
             </div>
           )}
 
-          {/* Saved Messages */}
+          {/* Saved Messages + Scheduled */}
           {workspaceSlug && !collapsed && (
             <div className="mb-2">
               <div className="mm-sidebar-group-header">Saved</div>
@@ -771,6 +772,17 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
               >
                 <Bookmark size={14} />
                 <span>Saved Messages</span>
+              </Link>
+              <Link
+                href={`/${workspaceSlug}/scheduled`}
+                className="flex items-center gap-2 rounded-md px-5 py-1.5 text-sm transition-colors"
+                style={{
+                  color: "var(--sidebar-text)",
+                  opacity: 0.8,
+                }}
+              >
+                <Clock size={14} />
+                <span>Scheduled</span>
               </Link>
             </div>
           )}
