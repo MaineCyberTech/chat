@@ -227,6 +227,17 @@ export interface SidebarCategory {
   created_at: string;
 }
 
+export interface ScheduledPost {
+  id: string;
+  user_id: string;
+  channel_id: string;
+  content: string;
+  scheduled_at: string;
+  sent_at: string | null;
+  cancelled_at: string | null;
+  created_at: string;
+}
+
 export interface SidebarChannelAssignment {
   id: string;
   category_id: string;

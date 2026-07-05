@@ -16,6 +16,7 @@ import {
   Flag,
   AlertTriangle,
   AlertCircle,
+  Clock,
 } from "lucide-react";
 import { FormattingBar } from "./formatting-bar";
 import { CodeBlock } from "./code-block";
@@ -116,6 +117,9 @@ export function MessageInput({
   const [priority, setPriority] = useState<PostPriority>("standard");
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
   const [showPriorityWarning, setShowPriorityWarning] = useState(false);
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState<string>("");
+  const schedulePickerRef = useRef<HTMLDivElement>(null);
   const priorityWarningAcked = useRef(false);
   const lastTypingEmitRef = useRef(0);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -487,7 +491,17 @@ export function MessageInput({
     setSending(true);
     setSendError("");
     try {
-      if (text) await onSend(text, priority);
+      if (scheduledAt && text) {
+        await api.post("/scheduled-posts", {
+          channel_id: channelId,
+          content: text,
+          scheduled_at: new Date(scheduledAt).toISOString(),
+        });
+        setScheduledAt("");
+        addToast({ title: "Message scheduled", variant: "success", duration: 3000 });
+      } else if (text) {
+        await onSend(text, priority);
+      }
       if (files.length > 0 && onFileUpload) {
         for (const file of files) await onFileUpload(file);
       }
@@ -503,7 +517,17 @@ export function MessageInput({
     } finally {
       setSending(false);
     }
-  }, [content, files, onSend, onFileUpload, onTypingStop, channelId, sending, showMentionWarning]);
+  }, [
+    content,
+    files,
+    onSend,
+    onFileUpload,
+    onTypingStop,
+    channelId,
+    sending,
+    showMentionWarning,
+    scheduledAt,
+  ]);
 
   useEffect(() => {
     const el = editorRef.current;
@@ -520,6 +544,17 @@ export function MessageInput({
     el.addEventListener("dragover", onDragOver);
     el.addEventListener("drop", onDrop);
   }, [onFileUpload]);
+
+  // Close schedule picker on click outside
+  useEffect(() => {
+    if (!showSchedulePicker) return;
+    function handleClick(e: MouseEvent) {
+      if (schedulePickerRef.current && !schedulePickerRef.current.contains(e.target as Node))
+        setShowSchedulePicker(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showSchedulePicker]);
 
   function confirmMentionSend() {
     setShowMentionWarning(false);
@@ -954,14 +989,86 @@ export function MessageInput({
             </div>
           </div>
 
-          {/* Send button */}
-          <div className="flex shrink-0" style={{ paddingBottom: 8 }}>
+          {/* Right action buttons */}
+          <div className="flex shrink-0 items-center gap-1" style={{ paddingBottom: 8 }}>
+            {/* Schedule button */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSchedulePicker(!showSchedulePicker)}
+                className={`flex h-8 w-8 items-center justify-center rounded ${showSchedulePicker || scheduledAt ? "" : ""}`}
+                style={{
+                  color: scheduledAt
+                    ? "var(--button-bg)"
+                    : "rgba(var(--center-channel-color-rgb), 0.56)",
+                  background: showSchedulePicker
+                    ? "rgba(var(--button-bg-rgb), 0.12)"
+                    : "transparent",
+                }}
+                aria-label="Schedule message"
+                title="Schedule message"
+              >
+                <Clock size={16} />
+              </button>
+
+              {showSchedulePicker && (
+                <div
+                  ref={schedulePickerRef}
+                  className="absolute right-0 bottom-full z-10 mb-1 w-64 rounded-lg border p-3 shadow-[var(--elevation-3)]"
+                  style={{
+                    background: "var(--center-channel-bg)",
+                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                  }}
+                >
+                  <p
+                    className="mb-2 text-xs font-medium"
+                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                  >
+                    Schedule message
+                  </p>
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                    className="w-full rounded border px-2 py-1 text-xs"
+                    style={{
+                      borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                      background: "var(--center-channel-bg)",
+                      color: "var(--center-channel-color)",
+                    }}
+                    aria-label="Schedule date and time"
+                  />
+                  <div className="mt-2 flex justify-end gap-2">
+                    {scheduledAt && (
+                      <button
+                        onClick={() => {
+                          setScheduledAt("");
+                          setShowSchedulePicker(false);
+                        }}
+                        className="rounded px-2 py-1 text-xs"
+                        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowSchedulePicker(false)}
+                      className="rounded px-2 py-1 text-xs font-medium"
+                      style={{ background: "var(--button-bg)", color: "#fff" }}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Button
               size="md"
               onClick={handleSubmit}
               disabled={sending || (!content.trim() && files.length === 0)}
             >
-              <Send size={18} />
+              {scheduledAt ? <Clock size={18} /> : <Send size={18} />}
             </Button>
           </div>
         </div>
