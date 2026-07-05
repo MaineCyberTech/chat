@@ -34,7 +34,7 @@ import liveKitRoutes from "./modules/livekit/routes.js";
 import auditRoutes from "./modules/audit/routes.js";
 import statusRoutes from "./modules/status/routes.js";
 import emojiRoutes from "./modules/emoji/routes.js";
-import groupRoutes from "./modules/groups/routes.js";
+import userGroupRoutes from "./modules/user-groups/routes.js";
 import sidebarRoutes from "./modules/sidebar/routes.js";
 import scheduledRoutes from "./modules/scheduled-posts/routes.js";
 
@@ -100,7 +100,7 @@ export function createApp(frontendUrl: string): Express {
   app.use("/v1", auditRoutes);
   app.use("/v1", statusRoutes);
   app.use("/v1", emojiRoutes);
-  app.use("/v1", groupRoutes);
+  app.use("/v1/groups", userGroupRoutes);
   app.use("/v1/sidebar-categories", sidebarRoutes);
   app.use("/v1/scheduled-posts", scheduledRoutes);
 

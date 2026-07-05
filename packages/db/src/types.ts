@@ -245,3 +245,19 @@ export interface SidebarChannelAssignment {
   sort_order: number;
   created_at: string;
 }
+
+export interface UserGroup {
+  id: string;
+  workspace_id: string;
+  name: string;
+  description: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface UserGroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  created_at: string;
+}
