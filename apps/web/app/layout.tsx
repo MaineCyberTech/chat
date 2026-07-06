@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "Chat Platform",
   description: "Real-time workspace communication platform",
   manifest: "/manifest.webmanifest",
-  themeColor: "#0a0a0a",
+  themeColor: "#ffffff",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -44,12 +44,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: dark)" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Chat Platform" />
+        <style>{"html,body{background:#fff}html.dark,body.dark{background:#1a1a1a}"}</style>
       </head>
       <body
         className="flex h-screen min-h-0 flex-col overflow-hidden antialiased"
