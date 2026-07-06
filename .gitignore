@@ -26,4 +26,18 @@ docs/prompts/
 __pycache__/
 *.pyc
 .playwright-results/
-.next/*
+
+# Test artifacts
+coverage-ts/
+.vite/
+*.test.tsx.snap
+__snapshots__/
+
+# Environment
+.env.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
