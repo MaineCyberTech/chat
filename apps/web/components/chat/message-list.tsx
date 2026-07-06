@@ -889,12 +889,12 @@ export function MessageList({
   }
 
   return (
-    <div
-      ref={listRef}
-      className="flex-1 overflow-y-auto overscroll-contain"
-      id="post-list"
-      style={{ padding: "14px 0 7px" }}
-    >
+    <div className="relative flex-1 overflow-hidden" id="post-list">
+      <div
+        ref={listRef}
+        className="absolute inset-0 overflow-y-auto overscroll-contain"
+        style={{ padding: "14px 0 7px" }}
+      >
         {loadingOlder && (
           <div className="flex justify-center py-3">
             <div

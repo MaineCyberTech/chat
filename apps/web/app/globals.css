@@ -270,10 +270,6 @@
   .group:focus-within .action-overlay {
     display: flex !important;
   }
-
-  #channel_view {
-    padding-bottom: var(--bottom-nav-height);
-  }
 }
 
 @media (hover: none) {
