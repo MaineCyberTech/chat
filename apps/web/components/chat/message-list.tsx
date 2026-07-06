@@ -848,20 +848,20 @@ export function MessageList({
 
   const lastMessageId = messages[messages.length - 1]?.id;
   useEffect(() => {
-    if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: "instant" });
+    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [lastMessageId]);
 
   useEffect(() => {
     if (messages.length > 0 && initialLoadRef.current) {
       initialLoadRef.current = false;
       requestAnimationFrame(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "instant" });
+        if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
       });
     }
   }, [messages.length]);
 
   function scrollToBottom() {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
     setShowJumpButton(false);
     setUnreadCount(0);
   }
