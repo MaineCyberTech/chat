@@ -1,5 +1,8 @@
 -- Add performance indexes identified by API response time analysis
 
+-- Enable pg_trgm extension for trigram-based text search indexes
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- Composite index for channel message listing (listByChannel query)
 -- The most common query pattern: SELECT ... FROM messages WHERE channel_id = ?
 -- ORDER BY created_at DESC LIMIT N. Without this, Postgres scans + sorts.
