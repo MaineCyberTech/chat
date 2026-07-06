@@ -1,7 +1,7 @@
 # apps/web/Dockerfile
 # Multi-stage production build for Next.js with standalone output.
 
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
@@ -43,7 +43,7 @@ ENV STANDALONE=1
 RUN pnpm turbo build --filter @chat/web
 
 # Runtime
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
