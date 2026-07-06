@@ -627,7 +627,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             role="log"
             aria-atomic="false"
             aria-label="Messages"
-            className="flex-1 overflow-y-auto"
+            className="flex-1 min-h-0 overflow-y-auto"
             style={{ padding: "14px 0 7px" }}
           >
             <MessageList

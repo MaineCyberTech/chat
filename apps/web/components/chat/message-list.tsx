@@ -886,6 +886,7 @@ export function MessageList({
   }
 
   return (
+    <>
     <div id="post-list" ref={listRef}>
       {loadingOlder && (
           <div className="flex justify-center py-3">
@@ -1113,6 +1114,6 @@ export function MessageList({
       {remindMessageId && (
         <RemindModal messageId={remindMessageId} onClose={() => setRemindMessageId(null)} />
       )}
-    </div>
+    </>
   );
 }
