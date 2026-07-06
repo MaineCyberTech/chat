@@ -6,20 +6,22 @@ const mockClient = () => ({
     select: vi.fn(() => ({
       eq: vi.fn(() => ({
         order: vi.fn(() => ({
-          data: [
-            {
-              id: "ch-1",
-              workspace_id: "ws-1",
-              name: "general",
-              slug: "general",
-              topic: null,
-              is_private: false,
-              created_by: "u1",
-              created_at: "2024-01-01",
-              updated_at: "2024-01-01",
-            },
-          ],
-          error: null,
+          order: vi.fn(() => ({
+            data: [
+              {
+                id: "ch-1",
+                workspace_id: "ws-1",
+                name: "general",
+                slug: "general",
+                topic: null,
+                is_private: false,
+                created_by: "u1",
+                created_at: "2024-01-01",
+                updated_at: "2024-01-01",
+              },
+            ],
+            error: null,
+          })),
         })),
         single: vi.fn(() => ({
           data: {

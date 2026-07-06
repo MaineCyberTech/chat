@@ -846,8 +846,6 @@ export function MessageList({
     scrollRestoreRef.current = null;
   }, [messagesWithMeta.length]);
 
-  const lastMessageId = messages[messages.length - 1]?.id;
-
   useLayoutEffect(() => {
     if (messages.length > 0 && initialLoadRef.current) {
       initialLoadRef.current = false;
