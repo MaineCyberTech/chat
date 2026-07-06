@@ -189,6 +189,10 @@ jobs:
           # Test that all migrations can be applied cleanly
           supabase db diff --schema public --dry-run || true
 
+      - name: Run SQL lint
+        run: |
+          supabase db lint --level warn || echo "Lint warnings found (non-blocking)"
+
       - name: Run database tests (if any)
         run: |
           # Run any SQL-based tests
