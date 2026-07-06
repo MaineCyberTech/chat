@@ -154,6 +154,7 @@ export function FilePreview({
 
   function renderImage(src: string, alt: string) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={alt}
@@ -355,6 +356,7 @@ export function FilePreview({
           className="block max-w-xs overflow-hidden rounded-lg border transition-opacity hover:opacity-90"
           style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
         >
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt={name} className="max-h-48 w-auto object-cover" loading="lazy" />
         </button>
         {expanded && renderFullscreen()}
