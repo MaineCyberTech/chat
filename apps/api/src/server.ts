@@ -1,4 +1,4 @@
-import { createServer, type Server } from "node:http";
+import { createServer } from "node:http";
 import { createApp } from "./app.js";
 import { loadEnv } from "./config/env.js";
 import { initSupabase } from "./lib/supabase.js";
