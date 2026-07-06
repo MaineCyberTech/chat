@@ -25,11 +25,11 @@ export class WorkspaceService {
     const client = this.getClient(supabase);
     const { data, error } = await client
       .from("workspaces")
-      .select("*")
+      .select("id, name, slug, owner_id, created_at, updated_at, deleted_at")
       .order("created_at", { ascending: true });
 
     if (error) return [];
-    return (data ?? []) as Workspace[];
+    return (data ?? []) as unknown as Workspace[];
   }
 
   async getById(workspaceId: string, supabase?: SupabaseClient): Promise<Workspace | null> {

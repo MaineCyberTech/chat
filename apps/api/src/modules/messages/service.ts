@@ -4,6 +4,7 @@ import { webhookService } from "../webhooks/service.js";
 import { notificationService } from "../notifications/service.js";
 import { resolveMentions } from "../../lib/mentions/parser.js";
 import { logger } from "../../lib/logger.js";
+import { queryWithTimeout } from "../../lib/db-timeout.js";
 import type { Message } from "@chat/db";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -25,13 +26,12 @@ export class MessageService {
     const client = supabase ?? getSupabase();
     let query = client
       .from("messages")
-      .select("*")
+      .select("id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority")
       .eq("channel_id", channelId)
       .order("created_at", { ascending: false })
-      .limit(limit + 1); // Fetch one extra to determine if there's a next page
+      .limit(limit + 1);
 
     if (cursor) {
-      // cursor format: "created_at|id" for stable pagination
       const [cursorCreatedAt, cursorId] = cursor.split("|");
       if (cursorCreatedAt && cursorId) {
         query = query.or(
@@ -40,10 +40,10 @@ export class MessageService {
       }
     }
 
-    const { data, error } = await query;
+    const { data, error } = await queryWithTimeout(query);
     if (error) return { messages: [], nextCursor: null };
 
-    const messages = (data ?? []) as Message[];
+    const messages = (data ?? []) as unknown as Message[];
     const hasMore = messages.length > limit;
     const results = hasMore ? messages.slice(0, limit) : messages;
     const nextCursor = hasMore
@@ -55,15 +55,15 @@ export class MessageService {
 
   async getById(messageId: string, supabase?: SupabaseClient): Promise<Message | null> {
     const client = supabase ?? getSupabase();
-    const { data, error } = await client.from("messages").select("*").eq("id", messageId).single();
+    const { data, error } = await queryWithTimeout(client.from("messages").select("*").eq("id", messageId).single());
 
     if (error) return null;
-    return data as Message;
+    return data as unknown as Message;
   }
 
   async create(input: CreateMessageInput, supabase?: SupabaseClient): Promise<Message | null> {
     const client = supabase ?? getSupabase();
-    const { data, error } = await client
+    const { data, error } = await queryWithTimeout(client
       .from("messages")
       .insert({
         channel_id: input.channel_id,
@@ -72,12 +72,12 @@ export class MessageService {
         parent_id: input.parent_id ?? null,
         priority: input.priority ?? "standard",
       })
-      .select("*")
-      .single();
+      .select("id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority")
+      .single());
 
     if (error || !data) return null;
 
-    const message = data as Message;
+    const message = data as unknown as Message;
 
     // Broadcast to channel room
     try {
@@ -176,11 +176,11 @@ export class MessageService {
       query = query.eq("version", version);
     }
 
-    const { data, error } = await query.select("*").single();
+    const { data, error } = await queryWithTimeout(query.select("id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority").single());
 
     if (error || !data) return null;
 
-    const message = data as Message;
+    const message = data as unknown as Message;
 
     try {
       const io = getIO();
@@ -252,14 +252,14 @@ export class MessageService {
   }
 
   async getPinned(channelId: string, supabase: SupabaseClient): Promise<Message[]> {
-    const { data } = await supabase
+    const { data } = await queryWithTimeout(supabase
       .from("messages")
-      .select("*")
+      .select("id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority")
       .eq("channel_id", channelId)
       .eq("is_pinned", true)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }));
 
-    return (data ?? []) as Message[];
+    return (data ?? []) as unknown as Message[];
   }
 
   async flag(messageId: string, userId: string, supabase: SupabaseClient): Promise<boolean> {
@@ -279,22 +279,22 @@ export class MessageService {
   }
 
   async getFlagged(userId: string, supabase: SupabaseClient): Promise<Message[]> {
-    const { data } = await supabase
+    const { data } = await queryWithTimeout(supabase
       .from("message_flags")
       .select("message_id")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }));
 
     if (!data || data.length === 0) return [];
 
     const messageIds = data.map((f: { message_id: string }) => f.message_id);
-    const { data: messages } = await supabase
+    const { data: messages } = await queryWithTimeout(supabase
       .from("messages")
-      .select("*")
+      .select("id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority")
       .in("id", messageIds)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }));
 
-    return (messages ?? []) as Message[];
+    return (messages ?? []) as unknown as Message[];
   }
 
   async getEditHistory(messageId: string, supabase: SupabaseClient) {

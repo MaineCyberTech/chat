@@ -13,6 +13,7 @@ import {
 } from "../../config/validators.js";
 import { logAuditEvent } from "../../services/audit.js";
 import { logger } from "../../lib/logger.js";
+import { responseCache } from "../../middleware/cache.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -21,6 +22,7 @@ router.get(
   "/workspaces/:workspaceId/channels",
   validateUuidParam("workspaceId"),
   requireWorkspaceMembership("workspaceId"),
+  responseCache(30),
   async (req, res) => {
     const channels = await channelService.listByWorkspace(
       req.params.workspaceId as string,
@@ -79,6 +81,7 @@ router.get(
   "/channels/:id",
   validateUuidParam("id"),
   requireChannelAccess("id"),
+  responseCache(30),
   async (req, res) => {
     const channel = await channelService.getById(req.params.id as string, req.supabase);
     if (!channel) {
@@ -147,6 +150,7 @@ router.get(
   "/channels/:id/members",
   validateUuidParam("id"),
   requireChannelAccess("id"),
+  responseCache(30),
   async (req, res) => {
     const members = await channelService.getMembers(req.params.id as string);
     res.json({ members });
@@ -240,7 +244,7 @@ router.post(
 );
 
 // Get DM channels for current user
-router.get("/dm-channels", async (req, res) => {
+router.get("/dm-channels", responseCache(30), async (req, res) => {
   const channels = await channelService.listDmChannels(req.userId!, req.supabase);
   res.json({ channels });
 });
@@ -285,6 +289,7 @@ router.get(
   "/channels/:id/bookmarks",
   validateUuidParam("id"),
   requireChannelAccess("id"),
+  responseCache(30),
   async (req, res) => {
     const { data: bookmarks } = await req
       .supabase!.from("channel_bookmarks")

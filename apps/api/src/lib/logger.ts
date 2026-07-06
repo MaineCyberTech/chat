@@ -17,33 +17,42 @@ const pinoLogger = pino({
       : undefined,
 });
 
-export const logger = {
-  debug(message: string, meta?: Record<string, unknown>) {
-    if (meta) {
-      pinoLogger.debug(meta, message);
-    } else {
-      pinoLogger.debug(message);
-    }
-  },
-  info(message: string, meta?: Record<string, unknown>) {
-    if (meta) {
-      pinoLogger.info(meta, message);
-    } else {
-      pinoLogger.info(message);
-    }
-  },
-  warn(message: string, meta?: Record<string, unknown>) {
-    if (meta) {
-      pinoLogger.warn(meta, message);
-    } else {
-      pinoLogger.warn(message);
-    }
-  },
-  error(message: string, meta?: Record<string, unknown>) {
-    if (meta) {
-      pinoLogger.error(meta, message);
-    } else {
-      pinoLogger.error(message);
-    }
-  },
-};
+function createLogger(bindings?: Record<string, unknown>) {
+  const base = bindings ? pinoLogger.child(bindings) : pinoLogger;
+
+  return {
+    debug(message: string, meta?: Record<string, unknown>) {
+      if (meta) {
+        base.debug(meta, message);
+      } else {
+        base.debug(message);
+      }
+    },
+    info(message: string, meta?: Record<string, unknown>) {
+      if (meta) {
+        base.info(meta, message);
+      } else {
+        base.info(message);
+      }
+    },
+    warn(message: string, meta?: Record<string, unknown>) {
+      if (meta) {
+        base.warn(meta, message);
+      } else {
+        base.warn(message);
+      }
+    },
+    error(message: string, meta?: Record<string, unknown>) {
+      if (meta) {
+        base.error(meta, message);
+      } else {
+        base.error(message);
+      }
+    },
+    child(newBindings: Record<string, unknown>) {
+      return createLogger({ ...bindings, ...newBindings });
+    },
+  };
+}
+
+export const logger = createLogger();

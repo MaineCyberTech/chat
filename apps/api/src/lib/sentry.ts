@@ -1,6 +1,22 @@
 import * as Sentry from "@sentry/node";
 import { loadEnv } from "../config/env.js";
 
+function setupGlobalHandlers() {
+  process.on("unhandledRejection", (reason) => {
+    Sentry.captureException(reason, {
+      level: "fatal",
+      tags: { handler: "unhandledRejection" },
+    });
+  });
+
+  process.on("uncaughtException", (error) => {
+    Sentry.captureException(error, {
+      level: "fatal",
+      tags: { handler: "uncaughtException" },
+    });
+  });
+}
+
 export function initSentry() {
   const env = loadEnv();
   if (!env.SENTRY_DSN) return;
@@ -19,6 +35,8 @@ export function initSentry() {
     }
     return event;
   });
+
+  setupGlobalHandlers();
 }
 
 export const sentryErrorMiddleware = Sentry.expressErrorHandler();

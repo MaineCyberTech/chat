@@ -12,6 +12,8 @@ import {
   uploadRequestSchema,
 } from "../../config/validators.js";
 import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
+import { responseCache } from "../../middleware/cache.js";
+import { success } from "../../lib/response.js";
 import DOMPurify from "dompurify";
 import { JSDOM } from "jsdom";
 
@@ -25,7 +27,7 @@ function sanitizeContent(content: string): string {
 const router: RouterType = Router();
 router.use(authenticate);
 
-router.get("/messages/search", async (req, res) => {
+router.get("/messages/search", responseCache(30), async (req, res) => {
   const parsed = searchQuerySchema.safeParse(req.query);
   if (!parsed.success) {
     res
@@ -78,6 +80,7 @@ router.get(
   "/channels/:channelId/messages",
   validateUuidParam("channelId"),
   requireChannelAccess("channelId"),
+  responseCache(15),
   async (req, res) => {
     const { cursor } = req.query;
     const result = await messageService.listByChannel(
@@ -86,6 +89,7 @@ router.get(
       cursor as string | undefined,
       req.supabase,
     );
+    res.setHeader("Cache-Control", "private, max-age=15");
     res.json({ messages: result.messages, nextCursor: result.nextCursor });
   },
 );
@@ -243,6 +247,7 @@ router.get(
   "/channels/:channelId/pinned",
   validateUuidParam("channelId"),
   requireChannelAccess("channelId"),
+  responseCache(30),
   async (req, res) => {
     const messages = await messageService.getPinned(req.params.channelId as string, req.supabase!);
     res.json({ messages });
@@ -275,7 +280,7 @@ router.delete(
 );
 
 // Get flagged messages
-router.get("/messages/flagged", async (req, res) => {
+router.get("/messages/flagged", responseCache(15), async (req, res) => {
   const messages = await messageService.getFlagged(req.userId!, req.supabase!);
   res.json({ messages });
 });

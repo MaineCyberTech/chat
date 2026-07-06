@@ -34,13 +34,13 @@ export class ChannelService {
     const client = this.getClient(supabase);
     const { data, error } = await client
       .from("channels")
-      .select("*")
+      .select("id, name, slug, topic, workspace_id, created_by, is_private, is_read_only, channel_type, sort_order, created_at, updated_at, deleted_at")
       .eq("workspace_id", workspaceId)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
 
     if (error) return [];
-    return (data ?? []) as Channel[];
+    return (data ?? []) as unknown as Channel[];
   }
 
   async reorderChannel(workspaceId: string, channelIds: string[]): Promise<boolean> {
@@ -279,13 +279,13 @@ export class ChannelService {
     const channelIds = dmRecords.map((r: { channel_id: string }) => r.channel_id);
     const { data: channels } = await client
       .from("channels")
-      .select("*")
+      .select("id, name, slug, topic, workspace_id, channel_type, sort_order, created_at, updated_at")
       .in("id", channelIds)
       .is("deleted_at", null)
       .in("channel_type", ["dm", "group"])
       .order("created_at", { ascending: false });
 
-    return (channels ?? []) as Channel[];
+    return (channels ?? []) as unknown as Channel[];
   }
 
   async listWorkspaceChannelIds(workspaceId: string): Promise<string[]> {

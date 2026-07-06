@@ -45,6 +45,12 @@ services:
     environment:
       <<: *common-env
       REDIS_URL: redis://redis:6379
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4100/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - chat-prod
     depends_on:
@@ -110,7 +116,7 @@ services:
     networks:
       - chat-prod
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000/healthz"]
       interval: 10s
       timeout: 5s
       retries: 5

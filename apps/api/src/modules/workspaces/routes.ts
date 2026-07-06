@@ -19,11 +19,12 @@ import {
   addWorkspaceMemberSchema,
   updateWorkspaceMemberSchema,
 } from "../../config/validators.js";
+import { responseCache } from "../../middleware/cache.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
 
-router.get("/", async (req, res) => {
+router.get("/", responseCache(30), async (req, res) => {
   logger.info("GET /v1/workspaces", { userId: req.userId });
   const workspaces = await workspaceService.listByUser(req.supabase);
   logger.info("Workspaces list result", { userId: req.userId, count: workspaces.length });
@@ -31,7 +32,7 @@ router.get("/", async (req, res) => {
 });
 
 // Consolidated bootstrap endpoint: returns workspaces with their channels in one call
-router.get("/bootstrap", async (req, res) => {
+router.get("/bootstrap", responseCache(30), async (req, res) => {
   const workspaces = await workspaceService.listByUser(req.supabase);
   const workspaceChannels = await Promise.all(
     workspaces.map(async (ws) => {
@@ -81,7 +82,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/:id", validateUuidParam("id"), requireWorkspaceMembership("id"), async (req, res) => {
+router.get("/:id", validateUuidParam("id"), requireWorkspaceMembership("id"), responseCache(30), async (req, res) => {
   const workspace = await workspaceService.getById(req.params.id as string, req.supabase);
   if (!workspace) {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
@@ -129,6 +130,7 @@ router.get(
   "/:id/members",
   validateUuidParam("id"),
   requireWorkspaceMembership("id"),
+  responseCache(30),
   async (req, res) => {
     const members = await workspaceService.getMembers(req.params.id as string, req.supabase);
     res.json({ members });

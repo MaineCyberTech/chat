@@ -64,9 +64,15 @@ async function main() {
   );
 
   // Graceful shutdown
+  const forceExit = setTimeout(() => {
+    logger.error("Worker forced shutdown after timeout");
+    process.exit(1);
+  }, 10_000).unref();
+
   const shutdown = async (signal: string) => {
+    clearTimeout(forceExit);
     logger.info({ signal }, "Shutting down worker");
-    healthServer.close();
+    await new Promise<void>((resolve) => healthServer.close(() => resolve()));
     await redis.quit();
     logger.info("Worker shut down complete");
     process.exit(0);

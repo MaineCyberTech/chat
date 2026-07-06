@@ -1,6 +1,21 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Env } from "../config/env.js";
 
+const FETCH_TIMEOUT = 15_000;
+
+function createFetchWithTimeout(timeoutMs: number): typeof fetch {
+  return async (input, init) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(input, { ...init, signal: controller.signal });
+      return response;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+}
+
 let anonClient: SupabaseClient | null = null;
 let adminClient: SupabaseClient | null = null;
 let anonUrl: string | null = null;
@@ -14,11 +29,13 @@ export function initSupabase(env: Env) {
   anonKey = env.SUPABASE_ANON_KEY;
   anonClient = createClient(anonUrl, anonKey, {
     auth: { persistSession: false },
+    global: { fetch: createFetchWithTimeout(FETCH_TIMEOUT) },
   });
 
   if (env.SUPABASE_SERVICE_ROLE_KEY) {
     adminClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
+      global: { fetch: createFetchWithTimeout(FETCH_TIMEOUT) },
     });
   }
 
@@ -56,6 +73,7 @@ export function getSupabaseForUser(jwt: string): SupabaseClient {
       headers: {
         Authorization: `Bearer ${jwt}`,
       },
+      fetch: createFetchWithTimeout(FETCH_TIMEOUT),
     },
     auth: { persistSession: false },
   });
