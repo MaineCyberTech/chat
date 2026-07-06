@@ -161,7 +161,12 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   return (
     <div
       className="app__body"
-      style={{ height: "100vh", display: "flex", flexDirection: "column" }}
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "var(--sidebar-bg)",
+      }}
     >
       {/* Flex row for sidebar + content */}
       <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>

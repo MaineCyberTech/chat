@@ -407,25 +407,37 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
   if (loading) {
     return (
-      <div className="flex h-full flex-col">
-        <div className="mm-channel-header">
-          <Skeleton
-            className="h-4 w-32"
-            style={{ background: "rgba(var(--center-channel-color-rgb), 0.08)" }}
-          />
-        </div>
-        <div className="flex-1 space-y-3 p-4">
-          <Skeleton
-            className="h-12 w-3/4"
-            style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
-          />
-          <Skeleton
-            className="h-12 w-2/3"
-            style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
-          />
-          <Skeleton
-            className="h-12 w-4/5"
-            style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
+      <div className="flex h-full" id="channel_view">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="mm-channel-header">
+            <Skeleton
+              className="h-4 w-32"
+              style={{ background: "rgba(var(--center-channel-color-rgb), 0.08)" }}
+            />
+          </div>
+          <div className="flex-1 space-y-3 p-4">
+            <Skeleton
+              className="h-12 w-3/4"
+              style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
+            />
+            <Skeleton
+              className="h-12 w-2/3"
+              style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
+            />
+            <Skeleton
+              className="h-12 w-4/5"
+              style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
+            />
+          </div>
+          <div
+            className="post-create__container"
+            style={{
+              width: "100%",
+              flex: "0 0 auto",
+              borderTop: "var(--border-default)",
+              background: "var(--center-channel-bg)",
+              height: 60,
+            }}
           />
         </div>
       </div>
