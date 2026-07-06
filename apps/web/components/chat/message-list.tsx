@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from "react";
 import { useToast } from "@chat/ui";
 import { api } from "@/lib/api";
 import {
@@ -848,14 +848,12 @@ export function MessageList({
 
   const lastMessageId = messages[messages.length - 1]?.id;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (messages.length > 0 && initialLoadRef.current) {
       initialLoadRef.current = false;
-      requestAnimationFrame(() => {
-        if (listRef.current && listRef.current.scrollHeight > listRef.current.clientHeight) {
-          listRef.current.scrollTop = listRef.current.scrollHeight;
-        }
-      });
+      if (listRef.current && listRef.current.scrollHeight > listRef.current.clientHeight) {
+        listRef.current.scrollTop = listRef.current.scrollHeight;
+      }
     }
   }, [messages.length]);
 
