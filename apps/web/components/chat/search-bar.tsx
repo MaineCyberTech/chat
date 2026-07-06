@@ -249,7 +249,6 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
 
                 // Operator hints: auto-show when no operator is being typed
                 if (!operatorHintPinned) {
-                  const opMatch = v.match(/\b(from|in|channel|has|on):\s*\w*$/i);
                   setShowOperatorHint(v.length >= 2 && !v.includes(":"));
                 }
 

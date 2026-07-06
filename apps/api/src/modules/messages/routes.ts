@@ -62,7 +62,7 @@ router.get("/messages/search", async (req, res) => {
 
   // When type is "files", filter to messages with file/attachment content
   if (parsed.data.type === "files") {
-    messages = messages.filter((m: any) => {
+    messages = messages.filter((m: { content?: string }) => {
       const c = m.content ?? "";
       return /!\[.*?\]\(|\[.*?\]\(.*?\.\w+\)|attachment|upload|\.(png|jpg|jpeg|gif|pdf|docx?|xlsx?|pptx?|txt|csv|svg|webp|mp[34]|mov|avi)/i.test(
         c,

@@ -4,7 +4,6 @@ const locales = { en } as const;
 type Locale = keyof typeof locales;
 type Messages = typeof en;
 
-let currentLocale: Locale = "en";
 let currentMessages: Messages = en;
 
 export function t(key: string, params?: Record<string, string | number>): string {
@@ -19,6 +18,5 @@ export function t(key: string, params?: Record<string, string | number>): string
 }
 
 export function setLocale(locale: Locale) {
-  currentLocale = locale;
   currentMessages = locales[locale];
 }

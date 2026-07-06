@@ -55,8 +55,5 @@
     "*.{js,mjs,cjs,json,md}": [
       "prettier --write"
     ]
-  },
-  "dependencies": {
-    "@supabase/ssr": "^0.12.0"
   }
 }
