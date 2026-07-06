@@ -109,6 +109,19 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const [showChannelInfo, setShowChannelInfo] = useState<false | "info" | "bookmarks">(false);
   const [filterQuery] = useState("");
   const { addToast } = useToast();
+  const [globalNotifPrefs, setGlobalNotifPrefs] = useState<{
+    desktop_notifications: boolean;
+    message_notifications: boolean;
+    mention_notifications: boolean;
+    mention_notification_sound: boolean;
+    sound: string;
+  }>({
+    desktop_notifications: true,
+    message_notifications: true,
+    mention_notifications: true,
+    mention_notification_sound: true,
+    sound: "standard",
+  });
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { activeRoom, startCall, endCall } = useMediaRoom();
 
@@ -179,6 +192,25 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       .get<{ members: { user_id: string }[] }>(`/channels/${channelId}/members`)
       .then((res) => setMemberCount(res.members.length))
       .catch(() => {});
+
+    api
+      .get<{ preferences: { notification_prefs: Record<string, unknown> } }>("/preferences")
+      .then((res) => {
+        const prefs = res.preferences.notification_prefs ?? {};
+        setGlobalNotifPrefs((prev) => ({
+          ...prev,
+          desktop_notifications:
+            (prefs.desktop_notifications as boolean) ?? prev.desktop_notifications,
+          message_notifications:
+            (prefs.message_notifications as boolean) ?? prev.message_notifications,
+          mention_notifications:
+            (prefs.mention_notifications as boolean) ?? prev.mention_notifications,
+          mention_notification_sound:
+            (prefs.mention_notification_sound as boolean) ?? prev.mention_notification_sound,
+          sound: (prefs.sound as string) ?? prev.sound,
+        }));
+      })
+      .catch(() => {});
   }, [channelId, loadProfiles]);
 
   useEffect(() => {
@@ -202,11 +234,24 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         setMessages((prev) => [...prev, message]);
         loadProfiles([message]);
         if (message.user_id !== user?.id) {
-          playNotificationSound();
-          showDesktopNotification(
-            `New message in #${channelName ?? "channel"}`,
-            message.content.slice(0, 120),
-          );
+          const displayName = (user?.user_metadata?.display_name as string) ?? user?.email?.split("@")[0] ?? "";
+          const isMention =
+            displayName &&
+            (message.content.includes(`@${displayName}`) ||
+              message.content.includes(`@${user?.email?.split("@")[0]}`));
+
+          if (isMention && globalNotifPrefs.mention_notification_sound) {
+            playNotificationSound(globalNotifPrefs.sound);
+          } else if (!isMention && globalNotifPrefs.message_notifications) {
+            playNotificationSound(globalNotifPrefs.sound);
+          }
+
+          if (globalNotifPrefs.desktop_notifications) {
+            showDesktopNotification(
+              `New message in #${channelName ?? "channel"}`,
+              message.content.slice(0, 120),
+            );
+          }
         }
       });
 

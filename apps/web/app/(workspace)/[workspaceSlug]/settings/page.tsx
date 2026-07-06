@@ -8,10 +8,11 @@ import { Bell, BellOff } from "lucide-react";
 import type { UserPreferences, ThemePreference } from "@chat/db";
 
 interface NotificationPrefs {
-  email_notifications: boolean;
-  push_notifications: boolean;
+  desktop_notifications: boolean;
   message_notifications: boolean;
   mention_notifications: boolean;
+  mention_notification_sound: boolean;
+  email_mode: "immediate" | "digest" | "off";
   digest: "never" | "daily" | "weekly";
   sound?: string;
   trigger_words?: string[];
@@ -267,17 +268,10 @@ export default function SettingsPage() {
       <SidebarGroup title="Notifications" defaultOpen>
         <div className="space-y-4">
           <ToggleRow
-            label="Email notifications"
-            description="Receive email notifications for important events"
-            checked={notifPrefs.email_notifications ?? true}
-            onChange={(v) => handleNotificationChange("email_notifications", v)}
-            disabled={saving}
-          />
-          <ToggleRow
-            label="Push notifications"
-            description="Receive push notifications in your browser"
-            checked={notifPrefs.push_notifications ?? true}
-            onChange={(v) => handleNotificationChange("push_notifications", v)}
+            label="Desktop notifications"
+            description="Receive notifications in your browser"
+            checked={notifPrefs.desktop_notifications ?? true}
+            onChange={(v) => handleNotificationChange("desktop_notifications", v)}
             disabled={saving}
           />
           <ToggleRow
@@ -294,6 +288,13 @@ export default function SettingsPage() {
             onChange={(v) => handleNotificationChange("mention_notifications", v)}
             disabled={saving}
           />
+          <ToggleRow
+            label="Mention notification sound"
+            description="Play a sound when someone mentions you"
+            checked={notifPrefs.mention_notification_sound ?? true}
+            onChange={(v) => handleNotificationChange("mention_notification_sound", v)}
+            disabled={saving}
+          />
           <div>
             <label
               className="mb-2 block text-sm font-medium"
@@ -302,7 +303,7 @@ export default function SettingsPage() {
               Notification sound
             </label>
             <select
-              value={notifPrefs.sound ?? "chime"}
+              value={notifPrefs.sound ?? "standard"}
               onChange={(e) => handleNotificationChange("sound", e.target.value)}
               disabled={saving}
               className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
@@ -312,11 +313,35 @@ export default function SettingsPage() {
                 color: "var(--center-channel-color)",
               }}
             >
-              <option value="chime">Chime</option>
-              <option value="bell">Bell</option>
-              <option value="ding">Ding</option>
-              <option value="pop">Pop</option>
               <option value="none">None (silent)</option>
+              <option value="subtle">Subtle</option>
+              <option value="standard">Standard</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          <div>
+            <label
+              className="mb-2 block text-sm font-medium"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
+              Email notifications
+            </label>
+            <select
+              value={notifPrefs.email_mode ?? "immediate"}
+              onChange={(e) =>
+                handleNotificationChange("email_mode", e.target.value)
+              }
+              disabled={saving}
+              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
+            >
+              <option value="immediate">Immediate</option>
+              <option value="digest">Digest (daily)</option>
+              <option value="off">Off</option>
             </select>
           </div>
           <div>
@@ -351,31 +376,6 @@ export default function SettingsPage() {
                 color: "var(--center-channel-color)",
               }}
             />
-          </div>
-          <div>
-            <label
-              className="mb-2 block text-sm font-medium"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
-            >
-              Email digest
-            </label>
-            <select
-              value={notifPrefs.digest ?? "never"}
-              onChange={(e) =>
-                handleNotificationChange("digest", e.target.value as NotificationPrefs["digest"])
-              }
-              disabled={saving}
-              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
-              style={{
-                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                background: "var(--center-channel-bg)",
-                color: "var(--center-channel-color)",
-              }}
-            >
-              <option value="never">Never</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-            </select>
           </div>
         </div>
       </SidebarGroup>
