@@ -1,0 +1,61 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "close": "Close",
+    "search": "Search"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "email": "Email address",
+    "sendMagicLink": "Send magic link",
+    "checkEmail": "Check your email for the magic link"
+  },
+  "chat": {
+    "sendMessage": "Send a message...",
+    "replyTo": "Replying to {name}",
+    "editMessage": "Edit message",
+    "deleteMessage": "Delete message?",
+    "deleteConfirm": "This action cannot be undone.",
+    "jumpToPresent": "Jump to present",
+    "noMessages": "No messages yet. Start the conversation!"
+  },
+  "sidebar": {
+    "channels": "Channels",
+    "directMessages": "Direct Messages",
+    "unreads": "Unreads",
+    "all": "All",
+    "jumpTo": "Jump to...",
+    "invitePeople": "Invite people",
+    "addChannel": "Add channel",
+    "addWorkspace": "Add workspace"
+  },
+  "notifications": {
+    "allMessages": "All messages",
+    "mentionsOnly": "Mentions only",
+    "nothing": "Nothing",
+    "notifyAll": "Notify on every message",
+    "notifyMentions": "Only when you're mentioned",
+    "notifyNone": "Mute this channel"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "keyboardShortcuts": "Keyboard Shortcuts"
+  },
+  "status": {
+    "online": "Online",
+    "away": "Away",
+    "doNotDisturb": "Do Not Disturb",
+    "offline": "Offline",
+    "setStatus": "Set status"
+  }
+}

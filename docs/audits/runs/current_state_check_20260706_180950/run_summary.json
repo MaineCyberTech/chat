@@ -1,0 +1,87 @@
+{
+  "run_id": "current_state_check_20260706_180950",
+  "generated_at": "2026-07-06T18:10:49+00:00",
+  "decision": "GO WITH RISKS",
+  "severity_totals": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 3,
+    "P3": 4
+  },
+  "category_health_scores": {
+    "security": 95.0,
+    "api_integrity": 92.0,
+    "database": 90.0,
+    "frontend": 88.0,
+    "infrastructure": 85.0,
+    "testing": 70.0,
+    "observability": 80.0,
+    "ci_cd": 85.0,
+    "hardening": 90.0,
+    "ux_ui": 90.0,
+    "api": 92.0,
+    "supply_chain": 85.0,
+    "governance": 80.0,
+    "typescript": 100.0,
+    "lint": 95.0,
+    "tests": 65.0,
+    "e2e": 60.0,
+    "build": 100.0,
+    "docker": 85.0,
+    "visual_consistency": 90.0,
+    "accessibility": 88.0,
+    "responsive": 85.0,
+    "interaction_quality": 90.0,
+    "design_system": 88.0,
+    "performance": 85.0
+  },
+  "finding_count": 7,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "infrastructure",
+      "category": "BFF",
+      "issue": "No BFF layer implemented",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "migrations",
+      "issue": "No rollback (down) scripts for migrations",
+      "file": "supabase/migrations/"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "visual_regression",
+      "issue": "No Playwright visual snapshot tests configured",
+      "file": ""
+    },
+    {
+      "severity": "P3",
+      "domain": "ux",
+      "category": "keyboard_shortcuts",
+      "issue": "Keyboard shortcuts not discoverable",
+      "file": "apps/web/app/(workspace)/layout.tsx"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "coverage",
+      "issue": "No diff coverage enforcement in CI"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "e2e",
+      "issue": "File upload and WebSocket E2E tests not yet added"
+    },
+    {
+      "severity": "P3",
+      "domain": "ux",
+      "category": "motion",
+      "issue": "No reduced-motion preference detected"
+    }
+  ]
+}

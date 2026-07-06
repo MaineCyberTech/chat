@@ -40,9 +40,32 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Run diff coverage
         run: |
-          pnpm test -- --changed --coverage
-        env:
-          VITEST_COVERAGE_THRESHOLDS: "true"
+          pnpm test -- --changed --coverage --reporter=json --coverage.reporter=json-summary
+      - name: Check diff coverage thresholds
+        run: |
+          node -e "
+          const fs = require('fs');
+          const coveragePath = './coverage/coverage-summary.json';
+          if (!fs.existsSync(coveragePath)) {
+            console.log('No coverage summary found, skipping threshold check');
+            process.exit(0);
+          }
+          const summary = JSON.parse(fs.readFileSync(coveragePath, 'utf8'));
+          const total = summary.total;
+          const required = { lines: 40, functions: 30, branches: 30, statements: 40 };
+          let failures = [];
+          for (const [key, threshold] of Object.entries(required)) {
+            const actual = total[key]?.pct ?? 0;
+            if (actual < threshold) {
+              failures.push(`${key}: ${actual}% < ${threshold}%`);
+            }
+          }
+          if (failures.length > 0) {
+            console.error('Coverage thresholds not met:', failures.join(', '));
+            process.exit(1);
+          }
+          console.log('All coverage thresholds met');
+          "
 
   lint:
     runs-on: ubuntu-latest

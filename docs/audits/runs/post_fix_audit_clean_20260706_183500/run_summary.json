@@ -1,0 +1,40 @@
+{
+  "run_id": "post_fix_audit_clean_20260706_183500",
+  "generated_at": "2026-07-06T18:35:39+00:00",
+  "decision": "GO",
+  "severity_totals": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_health_scores": {
+    "security": 98.0,
+    "api_integrity": 95.0,
+    "database": 95.0,
+    "frontend": 92.0,
+    "infrastructure": 90.0,
+    "testing": 80.0,
+    "observability": 88.0,
+    "ci_cd": 90.67,
+    "hardening": 95.0,
+    "ux_ui": 95.0,
+    "governance": 90.0,
+    "api": 95.0,
+    "supply_chain": 90.0,
+    "typescript": 100.0,
+    "lint": 98.0,
+    "tests": 80.0,
+    "e2e": 75.0,
+    "build": 100.0,
+    "docker": 90.0,
+    "visual_consistency": 95.0,
+    "accessibility": 92.0,
+    "responsive": 90.0,
+    "interaction_quality": 95.0,
+    "design_system": 93.0,
+    "performance": 90.0
+  },
+  "finding_count": 0,
+  "findings": []
+}

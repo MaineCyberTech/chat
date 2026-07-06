@@ -1,0 +1,28 @@
+{
+  "stage": "frontend_release_gate",
+  "run_id": "current_state_check_20260706_180950",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-06T18:09:50Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 1
+  },
+  "category_scores": {
+    "visual_consistency": 90,
+    "accessibility": 88,
+    "responsive": 85,
+    "interaction_quality": 90,
+    "design_system": 88,
+    "performance": 85
+  },
+  "findings": [
+    {
+      "severity": "P3",
+      "domain": "ux",
+      "category": "motion",
+      "issue": "No reduced-motion preference detected"
+    }
+  ]
+}

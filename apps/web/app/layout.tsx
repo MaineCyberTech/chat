@@ -29,6 +29,9 @@ const themeScript = `
 const viewportScript =
   "!function(){function u(){var h=window.innerHeight;document.documentElement.style.setProperty('--vh',(h/100)+'px')}u();window.addEventListener('resize',u);window.addEventListener('orientationchange',function(){setTimeout(u,100)})}()";
 
+const reducedMotionScript =
+  "!function(){var m=window.matchMedia('(prefers-reduced-motion:reduce)');if(m.matches)document.documentElement.setAttribute('data-reduced-motion','true');m.addEventListener('change',function(e){if(e.matches)document.documentElement.setAttribute('data-reduced-motion','true');else document.documentElement.removeAttribute('data-reduced-motion')})}()";
+
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -58,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: viewportScript }} />
+        <script dangerouslySetInnerHTML={{ __html: reducedMotionScript }} />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-[var(--center-channel-bg)] focus:p-4 focus:text-[var(--center-channel-color)]"

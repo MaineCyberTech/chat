@@ -107,7 +107,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
       const q = search.toLowerCase();
       return EMOJIS.filter((e) => e.n.includes(q));
     }
-    if (category) return EMOJIS.filter((e) => e.cat === category);
+    if (category) return EMOJIS.filter((e) => e.cat === category).slice(0, 500);
     return EMOJIS;
   }, [search, category]);
 
@@ -126,9 +126,13 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
     [skinTone, recent, onSelect],
   );
 
+  const activeItems = useMemo(() => {
+    return category ? filteredEmojis : filteredEmojis.slice(0, 300);
+  }, [category, filteredEmojis]);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      const items = search ? filteredEmojis : category ? filteredEmojis : EMOJIS;
+      const items = activeItems;
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setActiveIdx((prev) => Math.min(prev + 1, items.length - 1));
@@ -140,7 +144,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
         if (items[activeIdx]) handleSelect(items[activeIdx]);
       }
     },
-    [search, category, filteredEmojis, activeIdx, handleSelect],
+    [activeItems, activeIdx, handleSelect],
   );
 
   return (
@@ -222,7 +226,18 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
         className="flex gap-1 overflow-x-auto px-2 py-1"
         style={{ borderBottom: "1px solid rgba(var(--center-channel-color-rgb), 0.08)" }}
       >
-        {EMOJI_CATEGORIES.filter((c) => c.id !== "recent").map((cat) => (
+        <button
+          onClick={() => { setCategory(null); setSearch(""); setActiveIdx(-1); }}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs transition-colors"
+          style={{
+            background: category === null ? "rgba(var(--button-bg-rgb), 0.12)" : "transparent",
+          }}
+          title="All"
+          aria-label="All"
+        >
+          🗂️
+        </button>
+        {EMOJI_CATEGORIES.map((cat) => (
           <button
             key={cat.id}
             onClick={() => {
@@ -277,7 +292,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
         )}
         {filteredEmojis.length > 0 && (
           <div className="flex flex-wrap gap-0.5 px-1">
-            {filteredEmojis.slice(0, 200).map((e, i) => (
+            {activeItems.map((e, i) => (
               <button
                 key={e.n}
                 onClick={() => handleSelect(e)}

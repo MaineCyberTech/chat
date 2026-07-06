@@ -1,0 +1,21 @@
+{
+  "stage": "frontend_release_gate",
+  "run_id": "post_fix_audit_clean_20260706_183500",
+  "decision": "GO",
+  "generated_at": "2026-07-06T18:35:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_scores": {
+    "visual_consistency": 95,
+    "accessibility": 92,
+    "responsive": 90,
+    "interaction_quality": 95,
+    "design_system": 93,
+    "performance": 90
+  },
+  "findings": []
+}

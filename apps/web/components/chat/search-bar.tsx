@@ -89,6 +89,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   const [showOperatorHint, setShowOperatorHint] = useState(false);
   const [showFileExtSuggest, setShowFileExtSuggest] = useState(false);
   const [hasQuery, setHasQuery] = useState("");
+  const [operatorHintPinned, setOperatorHintPinned] = useState(false);
+  const [dotExtQuery, setDotExtQuery] = useState("");
+  const [showDotExtSuggest, setShowDotExtSuggest] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const autocompleteRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -114,7 +117,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   }, []);
 
   function buildSearchUrl(q: string, offset = 0): string {
-    let url = `/messages/search?q=${encodeURIComponent(q)}&workspace_id=${workspaceId}&offset=${offset}`;
+    let url = `/messages/search?q=${encodeURIComponent(q)}&workspace_id=${workspaceId}&type=${searchType}&offset=${offset}`;
     if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
     if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
     if (authorFilter) url += `&author_id=${encodeURIComponent(authorFilter)}`;
@@ -243,11 +246,24 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               onChange={(e) => {
                 setQuery(e.target.value);
                 const v = e.target.value;
-                const opMatch = v.match(/\b(from|in|channel|has):\s*\w*$/i);
-                setShowOperatorHint(!opMatch && v.length >= 2 && !v.includes(":"));
+
+                // Operator hints: auto-show when no operator is being typed
+                if (!operatorHintPinned) {
+                  const opMatch = v.match(/\b(from|in|channel|has|on):\s*\w*$/i);
+                  setShowOperatorHint(v.length >= 2 && !v.includes(":"));
+                }
+
+                // has: suggestions
                 const hasMatch = v.match(/\bhas:\s*(\w*)$/i);
                 setShowFileExtSuggest(!!hasMatch);
                 setHasQuery(hasMatch?.[1]?.toLowerCase() ?? "");
+
+                // File extension suggestions when typing .xxx
+                const dotMatch = v.match(/(^|\s)(\.([a-z]*))$/i);
+                const dotExtVal = dotMatch?.[3];
+                setShowDotExtSuggest(dotExtVal ? dotExtVal.length > 0 : false);
+                setDotExtQuery(dotExtVal?.toLowerCase() ?? "");
+
                 clearTimeout(debounceRef.current);
                 debounceRef.current = setTimeout(() => search(v), SEARCH_DEBOUNCE_MS);
               }}
@@ -268,6 +284,26 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 color: "var(--center-channel-color)",
               }}
             />
+            <button
+              onClick={() => {
+                setOperatorHintPinned((p) => !p);
+                setShowOperatorHint((s) => !s);
+              }}
+              className="flex shrink-0 items-center px-2 py-1.5 text-xs font-medium transition-colors"
+              style={{
+                background: showOperatorHint
+                  ? "var(--button-bg)"
+                  : "rgba(var(--center-channel-color-rgb), 0.08)",
+                color: showOperatorHint ? "#fff" : "rgba(var(--center-channel-color-rgb), 0.72)",
+                borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
+                borderBottom: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
+              }}
+              aria-label="Search operator hints"
+              aria-pressed={showOperatorHint}
+              title="Search operators"
+            >
+              <span className="text-sm font-bold leading-none">?</span>
+            </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex shrink-0 items-center rounded-r-lg px-2 py-1.5 text-xs font-medium transition-colors"
@@ -383,7 +419,81 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               </div>
             </div>
           )}
-          {showOperatorHint && query.length >= 2 && (
+          {/* File extension suggestions when typing .ext */}
+          {showDotExtSuggest && (
+            <div
+              className="absolute left-0 z-50 mt-1 w-auto rounded-lg border px-3 py-2 shadow-[var(--elevation-3)]"
+              style={{
+                background: "var(--center-channel-bg)",
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                top: "100%",
+              }}
+            >
+              <p
+                className="mb-1 text-xs font-medium"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
+                File extension suggestions
+              </p>
+              <div className="space-y-1">
+                {[
+                  {
+                    category: "Documents",
+                    exts: [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv"],
+                  },
+                  {
+                    category: "Images",
+                    exts: [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp"],
+                  },
+                  {
+                    category: "Code",
+                    exts: [".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".java", ".sql", ".json", ".yaml", ".xml"],
+                  },
+                  {
+                    category: "Media",
+                    exts: [".mp4", ".mp3", ".wav", ".ogg", ".mov", ".avi"],
+                  },
+                ]
+                  .map((grp) => ({
+                    ...grp,
+                    exts: grp.exts.filter((e) => e.replace(".", "").startsWith(dotExtQuery)),
+                  }))
+                  .filter((grp) => grp.exts.length > 0)
+                  .slice(0, 4)
+                  .map((grp) => (
+                    <div key={grp.category}>
+                      <p
+                        className="mb-0.5 px-2 text-[10px] font-medium uppercase tracking-wider"
+                        style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
+                      >
+                        {grp.category}
+                      </p>
+                      <div className="flex flex-wrap gap-1 px-2 pb-1">
+                        {grp.exts.map((ext) => (
+                          <button
+                            key={ext}
+                            onClick={() => {
+                              const before = query.replace(/(^|\s)\.[a-z]*$/i, "$1");
+                              setQuery(before + ext + " ");
+                              setShowDotExtSuggest(false);
+                              inputRef.current?.focus();
+                            }}
+                            className="rounded px-1.5 py-0.5 text-xs font-medium hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                            style={{
+                              background: "rgba(var(--button-bg-rgb), 0.1)",
+                              color: "var(--button-bg)",
+                            }}
+                          >
+                            {ext}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+          {showOperatorHint && (
             <div
               className="absolute left-0 z-50 mt-1 w-auto rounded-lg border px-3 py-2 shadow-[var(--elevation-3)]"
               style={{
@@ -403,6 +513,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   { op: "from:", desc: "Search by author" },
                   { op: "in:", desc: "Search in a channel" },
                   { op: "channel:", desc: "Search in a channel" },
+                  { op: "on:2025-01-15", desc: "Search by date" },
                   { op: "has:", desc: "Filter by has:link, has:image, has:file" },
                 ].map(({ op, desc }) => (
                   <button
@@ -571,6 +682,52 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           }}
           role="listbox"
         >
+          {/* Search type tabs */}
+          <div
+            className="flex border-b px-2"
+            style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}
+          >
+            <button
+              onClick={() => {
+                setSearchType("messages");
+                setResults([]);
+                setOpen(false);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors"
+              style={{
+                color:
+                  searchType === "messages"
+                    ? "var(--button-bg)"
+                    : "rgba(var(--center-channel-color-rgb), 0.56)",
+                borderBottom:
+                  searchType === "messages" ? "2px solid var(--button-bg)" : "2px solid transparent",
+              }}
+              aria-pressed={searchType === "messages"}
+            >
+              <MessageSquare size={12} />
+              Messages
+            </button>
+            <button
+              onClick={() => {
+                setSearchType("files");
+                setResults([]);
+                setOpen(false);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors"
+              style={{
+                color:
+                  searchType === "files"
+                    ? "var(--button-bg)"
+                    : "rgba(var(--center-channel-color-rgb), 0.56)",
+                borderBottom:
+                  searchType === "files" ? "2px solid var(--button-bg)" : "2px solid transparent",
+              }}
+              aria-pressed={searchType === "files"}
+            >
+              <FileText size={12} />
+              Files
+            </button>
+          </div>
           {results.map((r, index) => (
             <Link
               key={r.id}

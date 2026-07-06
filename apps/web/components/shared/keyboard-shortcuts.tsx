@@ -1,28 +1,68 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { getCallback } from "@/lib/keyboard-shortcut-registry";
 
-const SHORTCUTS = [
-  { keys: "Ctrl+K", label: "Open search / command palette" },
-  { keys: "Ctrl+1-9", label: "Switch workspace" },
-  { keys: "Ctrl+Shift+Up", label: "Previous channel" },
-  { keys: "Ctrl+Shift+Down", label: "Next channel" },
-  { keys: "Escape", label: "Close dialog / cancel reply" },
-  { keys: "Enter", label: "Send message" },
-  { keys: "Shift+Enter", label: "New line in message" },
-  { keys: "?", label: "Show keyboard shortcuts" },
+const SHORTCUT_CATEGORIES = [
+  {
+    name: "Navigation",
+    shortcuts: [
+      { keys: "Ctrl+K", label: "Open search / command palette" },
+      { keys: "Ctrl+Shift+Up", label: "Previous channel" },
+      { keys: "Ctrl+Shift+Down", label: "Next channel" },
+      { keys: "Escape", label: "Close dialog / cancel reply" },
+    ],
+  },
+  {
+    name: "Messaging",
+    shortcuts: [
+      { keys: "Enter", label: "Send message" },
+      { keys: "Shift+Enter", label: "New line" },
+      { keys: "Ctrl+Shift+\\", label: "Create slash command" },
+    ],
+  },
+  {
+    name: "Formatting",
+    shortcuts: [
+      { keys: "Ctrl+B", label: "Bold" },
+      { keys: "Ctrl+I", label: "Italic" },
+      { keys: "Ctrl+Shift+X", label: "Strikethrough" },
+      { keys: "Ctrl+K", label: "Insert link" },
+    ],
+  },
+  {
+    name: "General",
+    shortcuts: [
+      { keys: "?", label: "Show keyboard shortcuts" },
+      { keys: "Ctrl+Shift+/", label: "Show markdown help" },
+    ],
+  },
 ];
 
 export function KeyboardShortcuts() {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const dialogRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const filteredCategories = useMemo(() => {
+    if (!search.trim()) return SHORTCUT_CATEGORIES;
+    const q = search.toLowerCase();
+    return SHORTCUT_CATEGORIES.map((cat) => ({
+      ...cat,
+      shortcuts: cat.shortcuts.filter(
+        (s) =>
+          s.label.toLowerCase().includes(q) || s.keys.toLowerCase().includes(q),
+      ),
+    })).filter((cat) => cat.shortcuts.length > 0);
+  }, [search]);
 
   // Open/close keyboard shortcuts dialog
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       const target = e.target;
-      const isInput = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+      const isInput =
+        target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
       const mod = e.ctrlKey || e.metaKey;
 
       if (e.key === "?" && !mod && !isInput) {
@@ -83,8 +123,22 @@ export function KeyboardShortcuts() {
       }
     }
     document.addEventListener("keydown", handleTab);
-    container.querySelector<HTMLElement>("button")?.focus();
+    searchRef.current?.focus();
     return () => document.removeEventListener("keydown", handleTab);
+  }, [open]);
+
+  // Listen for sidebar "?" button click to open
+  useEffect(() => {
+    function handler() {
+      setOpen(true);
+    }
+    document.addEventListener("chat:open-shortcuts", handler);
+    return () => document.removeEventListener("chat:open-shortcuts", handler);
+  }, []);
+
+  // Clear search when dialog closes
+  useEffect(() => {
+    if (!open) setSearch("");
   }, [open]);
 
   if (!open) return null;
@@ -107,23 +161,54 @@ export function KeyboardShortcuts() {
         <h2 className="mb-4 text-lg font-semibold text-[var(--center-channel-color)]">
           Keyboard Shortcuts
         </h2>
-        <div className="space-y-2">
-          {SHORTCUTS.map((s) => (
-            <div key={s.keys} className="flex items-center justify-between">
-              <span className="text-sm text-[var(--center-channel-color)]">{s.label}</span>
-              <kbd
-                className="rounded-md border px-2 py-0.5 font-mono text-xs"
-                style={{
-                  borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                  backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)",
-                  color: "var(--center-channel-color)",
-                }}
-              >
-                {s.keys}
-              </kbd>
+
+        <input
+          ref={searchRef}
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search shortcuts..."
+          className="mb-4 w-full rounded-md border px-3 py-1.5 text-sm outline-none"
+          style={{
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+            background: "var(--center-channel-bg)",
+            color: "var(--center-channel-color)",
+          }}
+          aria-label="Search keyboard shortcuts"
+        />
+
+        <div className="max-h-80 space-y-4 overflow-y-auto">
+          {filteredCategories.map((cat) => (
+            <div key={cat.name}>
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                {cat.name}
+              </h3>
+              <div className="space-y-1">
+                {cat.shortcuts.map((s) => (
+                  <div key={s.keys} className="flex items-center justify-between">
+                    <span className="text-sm text-[var(--center-channel-color)]">{s.label}</span>
+                    <kbd
+                      className="rounded-md border px-2 py-0.5 font-mono text-xs"
+                      style={{
+                        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                        backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)",
+                        color: "var(--center-channel-color)",
+                      }}
+                    >
+                      {s.keys}
+                    </kbd>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
+          {filteredCategories.length === 0 && (
+            <p className="text-center text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+              No shortcuts match "{search}"
+            </p>
+          )}
         </div>
+
         <button
           onClick={() => setOpen(false)}
           className="mt-4 w-full rounded-md py-2 text-sm"

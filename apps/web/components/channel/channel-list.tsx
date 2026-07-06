@@ -5,8 +5,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Skeleton, useToast } from "@chat/ui";
-import { Trash2, Hash, Lock, GripVertical, Link2, Copy, ExternalLink } from "lucide-react";
+import {
+  Trash2,
+  Hash,
+  Lock,
+  GripVertical,
+  Link2,
+  Copy,
+  ExternalLink,
+  Bookmark,
+  Bell,
+  BellOff,
+  LogOut,
+  CheckCheck,
+} from "lucide-react";
 import type { Channel } from "@chat/db";
+import { useAuth } from "@/components/auth/auth-context";
 
 interface UnreadInfo {
   count: number;
@@ -20,6 +34,8 @@ interface Props {
   showUnreads?: boolean;
   unreadChannels?: Set<string>;
   unreads?: Map<string, UnreadInfo>;
+  categories?: Array<{ id: string; name: string }>;
+  onMoveToCategory?: (channelId: string, categoryId: string) => void;
 }
 
 export function ChannelList({
@@ -29,6 +45,8 @@ export function ChannelList({
   showUnreads,
   unreadChannels,
   unreads,
+  categories,
+  onMoveToCategory,
 }: Props) {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,8 +60,12 @@ export function ChannelList({
     null,
   );
   const contextMenuRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [mutedChannels, setMutedChannels] = useState<Set<string>>(new Set());
+  const [subMenu, setSubMenu] = useState<{ type: "move-category"; channelId: string } | null>(null);
 
   useEffect(() => {
     api
@@ -85,6 +107,67 @@ export function ChannelList({
       addToast({ title: "Error", description: "Failed to delete channel.", variant: "error" });
     } finally {
       setDeleting(false);
+    }
+  }
+
+  function handleMarkAsRead(channelId: string) {
+    document.dispatchEvent(new CustomEvent("chat:mark-read", { detail: { channelId } }));
+    setContextMenu(null);
+  }
+
+  async function handleToggleFavorite(channelId: string) {
+    const isFav = favorites.has(channelId);
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (isFav) next.delete(channelId);
+      else next.add(channelId);
+      return next;
+    });
+    setContextMenu(null);
+    try {
+      await api.patch(`/channels/${channelId}`, { favorite: !isFav });
+    } catch {
+      setFavorites((prev) => {
+        const next = new Set(prev);
+        if (isFav) next.add(channelId);
+        else next.delete(channelId);
+        return next;
+      });
+      console.warn("Favorite API not available. Suggested: PATCH /channels/:id with { favorite: boolean }");
+    }
+  }
+
+  async function handleToggleMute(channelId: string) {
+    const isMuted = mutedChannels.has(channelId);
+    setMutedChannels((prev) => {
+      const next = new Set(prev);
+      if (isMuted) next.delete(channelId);
+      else next.add(channelId);
+      return next;
+    });
+    setContextMenu(null);
+    try {
+      await api.put(`/channels/${channelId}/notification-preference`, { notify: isMuted });
+    } catch {
+      setMutedChannels((prev) => {
+        const next = new Set(prev);
+        if (isMuted) next.add(channelId);
+        else next.delete(channelId);
+        return next;
+      });
+      addToast({ title: "Error", description: "Failed to update mute preference", variant: "error" });
+    }
+  }
+
+  async function handleLeaveChannel(channelId: string) {
+    if (!user) return;
+    setContextMenu(null);
+    try {
+      await api.delete(`/channels/${channelId}/members/${user.id}`);
+      addToast({ title: "Left channel", variant: "success", duration: 2000 });
+      setChannels((prev) => prev.filter((c) => c.id !== channelId));
+    } catch {
+      addToast({ title: "Error", description: "Failed to leave channel", variant: "error" });
     }
   }
 
@@ -253,7 +336,7 @@ export function ChannelList({
         })}
       </ul>
 
-      {contextMenu && (
+      {contextMenu && !subMenu && (
         <div
           ref={contextMenuRef}
           className="fixed z-50 w-48 rounded-lg border py-1 shadow-[var(--elevation-4)]"
@@ -312,6 +395,63 @@ export function ChannelList({
             className="my-1"
             style={{ borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.08)" }}
           />
+          {unreads?.get(contextMenu.channel.id) && unreads.get(contextMenu.channel.id)!.count > 0 && (
+            <button
+              onClick={() => handleMarkAsRead(contextMenu.channel.id)}
+              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+              style={{ color: "var(--center-channel-color)" }}
+            >
+              <CheckCheck size={14} />
+              Mark as read
+            </button>
+          )}
+          <button
+            onClick={() => handleToggleFavorite(contextMenu.channel.id)}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+            style={{
+              color: favorites.has(contextMenu.channel.id)
+                ? "var(--button-bg)"
+                : "var(--center-channel-color)",
+            }}
+          >
+            <Bookmark size={14} fill={favorites.has(contextMenu.channel.id) ? "var(--button-bg)" : "none"} />
+            {favorites.has(contextMenu.channel.id) ? "Unfavorite" : "Favorite"}
+          </button>
+          <button
+            onClick={() => handleToggleMute(contextMenu.channel.id)}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+            style={{ color: "var(--center-channel-color)" }}
+          >
+            {mutedChannels.has(contextMenu.channel.id) ? <Bell size={14} /> : <BellOff size={14} />}
+            {mutedChannels.has(contextMenu.channel.id) ? "Unmute" : "Mute"}
+          </button>
+          {categories && categories.length > 0 && onMoveToCategory && (
+            <button
+              onClick={() => setSubMenu({ type: "move-category", channelId: contextMenu.channel.id })}
+              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+              style={{ color: "var(--center-channel-color)" }}
+            >
+              <ExternalLink size={14} />
+              Move to category
+              <span className="ml-auto" style={{ color: "rgba(var(--center-channel-color-rgb),0.4)" }}>▶</span>
+            </button>
+          )}
+          <div
+            className="my-1"
+            style={{ borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.08)" }}
+          />
+          <button
+            onClick={() => handleLeaveChannel(contextMenu.channel.id)}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+            style={{ color: "var(--center-channel-color)" }}
+          >
+            <LogOut size={14} />
+            Leave channel
+          </button>
+          <div
+            className="my-1"
+            style={{ borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.08)" }}
+          />
           <button
             onClick={() => {
               setDeleteConfirmId(contextMenu.channel.id);
@@ -323,6 +463,45 @@ export function ChannelList({
             <Trash2 size={14} />
             Delete channel
           </button>
+        </div>
+      )}
+
+      {subMenu && subMenu.type === "move-category" && contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-50 w-48 rounded-lg border py-1 shadow-[var(--elevation-4)]"
+          style={{
+            left: contextMenu.x + 192,
+            top: contextMenu.y,
+            background: "var(--center-channel-bg)",
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+          }}
+        >
+          <button
+            onClick={() => setSubMenu(null)}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+            style={{ color: "var(--center-channel-color)" }}
+          >
+            ← Back
+          </button>
+          <div
+            className="my-1"
+            style={{ borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.08)" }}
+          />
+          {(categories ?? []).map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                onMoveToCategory?.(subMenu.channelId, cat.id);
+                setSubMenu(null);
+                setContextMenu(null);
+              }}
+              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+              style={{ color: "var(--center-channel-color)" }}
+            >
+              {cat.name}
+            </button>
+          ))}
         </div>
       )}
 

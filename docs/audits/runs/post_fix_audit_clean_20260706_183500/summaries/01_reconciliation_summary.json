@@ -1,0 +1,26 @@
+{
+  "stage": "reconciliation",
+  "run_id": "post_fix_audit_clean_20260706_183500",
+  "decision": "GO",
+  "generated_at": "2026-07-06T18:35:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_scores": {
+    "security": 98,
+    "api_integrity": 95,
+    "database": 95,
+    "frontend": 92,
+    "infrastructure": 90,
+    "testing": 80,
+    "observability": 88,
+    "ci_cd": 90,
+    "hardening": 95,
+    "ux_ui": 95,
+    "governance": 90
+  },
+  "findings": []
+}

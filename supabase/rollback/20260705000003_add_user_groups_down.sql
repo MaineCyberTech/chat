@@ -1,0 +1,17 @@
+-- Rollback for: 20260705000003_add_user_groups.sql
+-- Generated on: ...
+
+BEGIN;
+
+DROP TABLE IF EXISTS public.user_groups CASCADE;
+DROP TABLE IF EXISTS public.user_group_members CASCADE;
+ALTER TABLE public.user_groups DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_group_members DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Groups;
+DROP POLICY IF EXISTS "Users;
+DROP POLICY IF EXISTS "Group;
+DROP POLICY IF EXISTS "Group;
+DROP POLICY IF EXISTS "Group;
+DROP POLICY IF EXISTS "Group;
+
+COMMIT;

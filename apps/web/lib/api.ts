@@ -1,6 +1,6 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const BFF_BASE = "/api";
 const CSRF_COOKIE_NAME = "csrf_token";
 
 let csrfPromise: Promise<void> | null = null;
@@ -14,13 +14,7 @@ function getCsrfToken(): string | undefined {
 async function ensureCsrfToken(): Promise<void> {
   if (typeof document === "undefined") return;
   if (getCsrfToken()) return;
-  await fetch(`${API_BASE}/healthz`, { method: "GET", credentials: "include" });
-}
-
-async function getToken(): Promise<string | null> {
-  const supabase = getSupabaseBrowserClient();
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token ?? null;
+  await fetch(`${BFF_BASE}/v1/healthz`, { method: "GET", credentials: "include" });
 }
 
 function apiPath(path: string): string {
@@ -28,12 +22,10 @@ function apiPath(path: string): string {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = await getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) ?? {}),
   };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
   if (options.method && options.method !== "GET" && options.method !== "HEAD") {
     if (!csrfPromise) csrfPromise = ensureCsrfToken();
     await csrfPromise;
@@ -41,7 +33,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (csrfToken) headers["x-csrf-token"] = csrfToken;
   }
 
-  const res = await fetch(`${API_BASE}${apiPath(path)}`, { ...options, headers });
+  const res = await fetch(`${BFF_BASE}${apiPath(path)}`, { ...options, headers });
 
   if (res.status === 401) {
     const supabase = getSupabaseBrowserClient();

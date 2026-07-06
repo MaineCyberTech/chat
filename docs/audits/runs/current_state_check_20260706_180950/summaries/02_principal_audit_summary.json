@@ -1,0 +1,54 @@
+{
+  "stage": "principal_audit",
+  "run_id": "current_state_check_20260706_180950",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-06T18:09:50Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 2,
+    "P3": 2
+  },
+  "category_scores": {
+    "security": 95,
+    "api": 92,
+    "database": 90,
+    "frontend": 88,
+    "infrastructure": 85,
+    "testing": 70,
+    "observability": 80,
+    "ci_cd": 85,
+    "supply_chain": 85,
+    "governance": 80
+  },
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "infrastructure",
+      "category": "BFF",
+      "issue": "No BFF layer implemented",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "migrations",
+      "issue": "No rollback (down) scripts for migrations",
+      "file": "supabase/migrations/"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "visual_regression",
+      "issue": "No Playwright visual snapshot tests configured",
+      "file": ""
+    },
+    {
+      "severity": "P3",
+      "domain": "ux",
+      "category": "keyboard_shortcuts",
+      "issue": "Keyboard shortcuts not discoverable",
+      "file": "apps/web/app/(workspace)/layout.tsx"
+    }
+  ]
+}

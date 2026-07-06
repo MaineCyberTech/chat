@@ -1,0 +1,12 @@
+{
+  "run_id": "audit_check_20260706_135053",
+  "decision": "NO-GO",
+  "severity_snapshot": {
+    "P0": 151,
+    "P1": 322,
+    "P2": 359,
+    "P3": 177
+  },
+  "readiness": 48.55,
+  "executed_at": "2026-07-06T17:50:57+00:00"
+}

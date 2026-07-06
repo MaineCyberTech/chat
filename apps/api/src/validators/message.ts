@@ -20,5 +20,6 @@ export const searchQuerySchema = z.object({
   date_to: z.string().datetime().optional(),
   author_id: z.string().uuid().optional(),
   channel_ids: z.string().optional(),
+  type: z.enum(["messages", "files"]).optional().default("messages"),
   offset: z.coerce.number().int().min(0).default(0),
 });

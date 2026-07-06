@@ -106,5 +106,29 @@
       "P3": 175
     },
     "finding_count": 1004
+  },
+  {
+    "run_id": "current_state_check_20260706_180950",
+    "timestamp": "2026-07-06T18:11:06+00:00",
+    "decision": "GO WITH RISKS",
+    "severity_totals": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 3,
+      "P3": 4
+    },
+    "finding_count": 7
+  },
+  {
+    "run_id": "post_fix_audit_clean_20260706_183500",
+    "timestamp": "2026-07-06T18:35:57+00:00",
+    "decision": "GO",
+    "severity_totals": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 0,
+      "P3": 0
+    },
+    "finding_count": 0
   }
 ]

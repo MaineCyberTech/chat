@@ -1,67 +1,173 @@
-# Migration Rollback
+# Migration Rollback Runbook
 
-Supabase CLI does not support automatic rollback of migrations. If a migration needs to be reverted, use the manual process below.
+## Overview
 
-## Manual Rollback Process
+This runbook describes how to roll back Supabase database migrations in
+development, staging, and production environments.
 
-### 1. Identify the Migration to Revert
+## Prerequisites
+
+- Access to the target Supabase project (dashboard or `psql` connection)
+- `supabase` CLI installed and linked to the project
+- Python 3.8+ (for the rollback generator script)
+
+## Rollback Script Generator
+
+Auto-generated rollback scripts live in `supabase/rollback/`. To regenerate
+them after adding new migrations:
+
+```powershell
+python scripts/db-rollback-generator.py
+```
+
+Options:
+
+| Flag         | Description                                   |
+| ------------ | --------------------------------------------- |
+| `--dry-run`  | Preview what would be generated without writing |
+| `--migrations-dir` | Custom path to migrations directory      |
+| `--rollback-dir`   | Custom path for rollback output directory |
+
+The generator parses each migration file and produces a `_down.sql` script
+that reverses supported SQL statements:
+
+| Migration Pattern              | Rollback Action                                 |
+| ------------------------------ | ----------------------------------------------- |
+| `CREATE TABLE`                 | `DROP TABLE ... CASCADE`                        |
+| `CREATE INDEX`                 | `DROP INDEX IF EXISTS`                          |
+| `CREATE TRIGGER`               | `DROP TRIGGER IF EXISTS`                        |
+| `CREATE FUNCTION`              | `DROP FUNCTION IF EXISTS`                       |
+| `ALTER TABLE ADD COLUMN`       | `ALTER TABLE DROP COLUMN IF EXISTS`             |
+| `ALTER TABLE ADD CONSTRAINT`   | `ALTER TABLE DROP CONSTRAINT IF EXISTS`         |
+| `CREATE POLICY`                | `DROP POLICY IF EXISTS`                        |
+| `INSERT INTO` (seed data)      | `DELETE FROM` (placeholder WHERE clause)        |
+| `UPDATE`                       | `# Manual rollback needed` comment              |
+| `ALTER TABLE ENABLE RLS`       | `ALTER TABLE DISABLE ROW LEVEL SECURITY`        |
+| `ALTER TABLE DISABLE RLS`      | `ALTER TABLE ENABLE ROW LEVEL SECURITY`         |
+| `CREATE EXTENSION`             | Comment (extensions cannot be safely dropped)   |
+
+## Rollback Procedure
+
+### Step 1: Identify the migration to roll back
+
+```powershell
+# List applied migrations
+supabase migration list
+```
+
+### Step 2: Generate or locate the rollback script
+
+```powershell
+# Regenerate all rollback scripts
+python scripts/db-rollback-generator.py
+
+# The rollback script for migration 20260625000004_create_messages.sql
+# will be at: supabase/rollback/20260625000004_create_messages_down.sql
+```
+
+### Step 3: Review the rollback script
+
+Always review the generated `_down.sql` for:
+
+- **Manual placeholders**: Lines starting with `-- Manual rollback needed`
+  require you to write the correct reversing SQL before running.
+- **Seed data deletes**: `DELETE FROM` statements have a `WHERE FALSE`
+  placeholder—replace with the actual condition matching the seed insert.
+- **Dependency order**: Tables with foreign keys must be dropped in the
+  reverse order of creation.
+
+### Step 4: Execute the rollback
+
+**Local development (docker)**:
+
+```powershell
+# Source the current rollback directly
+psql $SUPABASE_LOCAL_DB_URL -f supabase/rollback/<migration_name>_down.sql
+
+# Or apply all rollbacks in reverse chronological order
+Get-ChildItem supabase/rollback/*_down.sql | Sort-Object Name -Descending | ForEach-Object {
+    Write-Host "Applying: $_"
+    psql $SUPABASE_LOCAL_DB_URL -f $_.FullName
+}
+```
+
+**Remote (remote/local Supabase project)**:
+
+```powershell
+supabase db execute --file supabase/rollback/<migration_name>_down.sql
+```
+
+**Production (direct psql via bastion)**:
+
+```bash
+# Requires psql connection string with appropriate credentials
+psql "$SUPABASE_DB_URL" -f supabase/rollback/<migration_name>_down.sql
+```
+
+### Step 5: Verify the rollback
+
+Run the following checks:
 
 ```sql
--- Check migration history
+-- Confirm the table/column/constraint no longer exists
+\d <table_name>
+
+-- Check Supabase schema version table (if using migrations)
 SELECT * FROM supabase_migrations.schema_migrations ORDER BY version DESC;
+
+-- Run application smoke tests
 ```
 
-Each row has a `version` column (timestamp like `20260625000001`) and `name`.
+### Step 6: Update the local migration state
 
-### 2. Generate the Rollback SQL
+If using the Supabase CLI locally, mark the migration as not applied:
 
-Review the migration file at `supabase/migrations/<version>_<name>.sql` and write the inverse statements. Common patterns:
-
-| Migration Action                        | Rollback                                                     |
-| --------------------------------------- | ------------------------------------------------------------ |
-| `CREATE TABLE`                          | `DROP TABLE IF EXISTS public.<table> CASCADE;`               |
-| `ALTER TABLE ADD COLUMN`                | `ALTER TABLE public.<table> DROP COLUMN IF EXISTS <column>;` |
-| `CREATE INDEX`                          | `DROP INDEX IF EXISTS <index>;`                              |
-| `ALTER TABLE ENABLE ROW LEVEL SECURITY` | `ALTER TABLE public.<table> DISABLE ROW LEVEL SECURITY;`     |
-| `CREATE POLICY`                         | `DROP POLICY IF EXISTS <policy> ON public.<table>;`          |
-| `ALTER TYPE ... ADD VALUE`              | Cannot be reverted; requires database-level cleanup          |
-
-### 3. Execute Rollback Locally
-
-```bash
-# Connect to local Supabase
-supabase db execute --file rollback.sql
-
-# Verify
-supabase db diff --schema public
+```powershell
+# This will apply migrations up to but not including the rolled-back one
+supabase migration up
 ```
 
-### 4. Execute Rollback on Remote
+## Caveats
 
-```bash
-# Using Supabase connection string
-psql "$SUPABASE_DB_URL" -f rollback.sql
-```
+1. **Destructive operations**: `DROP TABLE ... CASCADE` will remove
+   dependent objects (foreign keys, views, etc.). Ensure no critical data
+   will be lost before running.
 
-Or via the Supabase dashboard SQL editor.
+2. **Data loss**: Rolling back a `CREATE TABLE` drops the table and all its
+   data. If you need to preserve data, back up the table first:
 
-### 5. Remove the Migration Record
+   ```sql
+   CREATE TABLE backup_<name> AS SELECT * FROM <name>;
+   ```
 
-```sql
-DELETE FROM supabase_migrations.schema_migrations
-WHERE version = '<version>';
-```
+3. **Manual intervention**: `UPDATE` statements and complex constraint
+   additions cannot be automatically reversed. Review manual placeholders
+   carefully.
 
-### 6. Commit the Rollback
+4. **Sequential rollback order**: Roll back migrations in **reverse**
+   chronological order (newest first) to avoid dependency issues.
 
-```bash
-git add rollback.sql
-git commit -m "revert: rollback migration <version>_<name>"
-```
+5. **Pending migrations**: After rolling back, ensure no pending migrations
+   depend on the rolled-back schema.
 
-## Safe Migration Practices
+## Emergency Rollback (Production)
 
-- **Always deploy migrations during low-traffic periods**
-- **Test rollback SQL locally before applying to production**
-- **Keep rollback scripts in `supabase/rollbacks/` for future reference**
-- **For destructive operations (DROP TABLE, DROP COLUMN), ensure backups exist first**
+If a bad migration is already applied to production:
+
+1. **Isolate**: Immediately disable the feature flag or route that depends
+   on the new schema.
+2. **Assess**: Determine if the migration can be hotfixed forward (add a
+   new migration) or must be rolled back.
+3. **Back up**: Take a pg_dump of affected tables before any destructive
+   rollback.
+4. **Execute**: Run the rollback during a maintenance window.
+5. **Verify**: Run smoke tests and monitor error rates.
+6. **Communicate**: Notify the team that the rollback is complete.
+
+## Preventing Rollback Pain
+
+- Keep migrations **small and atomic**—one logical change per file.
+- Avoid mixing schema changes with data migrations in the same file.
+- Use `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` so re-runs are safe.
+- Always review generated rollback scripts as part of PR review.
+- Test rollbacks in a local or staging environment before running in production.

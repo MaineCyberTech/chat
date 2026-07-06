@@ -8,7 +8,7 @@ import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { ChannelList } from "@/components/channel/channel-list";
 import { CreateChannelDialog } from "@/components/channel/create-channel-dialog";
 import { InviteMembersModal } from "./invite-members-modal";
-import { Avatar } from "@chat/ui";
+import { Avatar, useToast } from "@chat/ui";
 import {
   Bookmark,
   Clock,
@@ -41,6 +41,7 @@ const SIDEBAR_MAX_WIDTH = 304;
 
 export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose }: Props) {
   const { user, signOut } = useAuth();
+  const { addToast } = useToast();
   const [refreshKey, setRefreshKey] = useState(0);
   const [channelRefreshKey, setChannelRefreshKey] = useState(0);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
@@ -67,6 +68,9 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [renameValue, setRenameValue] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [dragCatId, setDragCatId] = useState<string | null>(null);
+  const [dragCatOverId, setDragCatOverId] = useState<string | null>(null);
+  const dragCatNode = useRef<HTMLElement | null>(null);
   const [showTeamMenu, setShowTeamMenu] = useState(false);
   const teamMenuRef = useRef<HTMLDivElement>(null);
   const statusMenuRef = useRef<HTMLDivElement>(null);
@@ -269,6 +273,56 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       setCategories((prev) => prev.filter((c) => c.id !== id));
     } catch {
       console.warn("Failed to delete category");
+    }
+  }
+
+  function handleCatDragStart(e: React.DragEvent, catId: string) {
+    dragCatNode.current = e.target as HTMLElement;
+    setDragCatId(catId);
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function handleCatDragOver(e: React.DragEvent, catId: string) {
+    e.preventDefault();
+    setDragCatOverId(catId);
+  }
+
+  function handleCatDragEnd() {
+    if (!dragCatId || !dragCatOverId || dragCatId === dragCatOverId) {
+      setDragCatId(null);
+      setDragCatOverId(null);
+      return;
+    }
+    const reordered = [...categories];
+    const fromIdx = reordered.findIndex((c) => c.id === dragCatId);
+    const toIdx = reordered.findIndex((c) => c.id === dragCatOverId);
+    if (fromIdx === -1 || toIdx === -1) {
+      setDragCatId(null);
+      setDragCatOverId(null);
+      return;
+    }
+    const [moved] = reordered.splice(fromIdx, 1);
+    if (!moved) {
+      setDragCatId(null);
+      setDragCatOverId(null);
+      return;
+    }
+    reordered.splice(toIdx, 0, moved);
+    setCategories(reordered);
+    setDragCatId(null);
+    setDragCatOverId(null);
+    const catIds = reordered.map((c) => c.id);
+    api.patch("/sidebar-categories/reorder", { categoryIds: catIds }).catch(() => {
+      console.warn("Failed to reorder categories");
+    });
+  }
+
+  async function moveToCategory(channelId: string, categoryId: string) {
+    try {
+      await api.post(`/sidebar-categories/${categoryId}/assignments`, { channel_id: channelId });
+      addToast({ title: "Moved to category", variant: "success", duration: 2000 });
+    } catch {
+      addToast({ title: "Error", description: "Failed to move channel", variant: "error" });
     }
   }
 
@@ -597,7 +651,19 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                 const isExpanded = expandedCategories.has(cat.id);
                 return (
                   <div key={cat.id} className="mb-1">
-                    <div className="mm-sidebar-group-header group flex w-full items-center gap-1">
+                    <div
+                      className="mm-sidebar-group-header group flex w-full items-center gap-1"
+                      draggable
+                      onDragStart={(e) => handleCatDragStart(e, cat.id)}
+                      onDragOver={(e) => handleCatDragOver(e, cat.id)}
+                      onDragEnd={handleCatDragEnd}
+                      style={{
+                        opacity: dragCatId === cat.id ? 0.5 : 1,
+                        borderTop: dragCatOverId === cat.id
+                          ? "2px solid var(--sidebar-text-active-border)"
+                          : "2px solid transparent",
+                      }}
+                    >
                       <button
                         onClick={() => {
                           const next = new Set(expandedCategories);
@@ -701,6 +767,8 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                                   showUnreads={showUnreads}
                                   unreadChannels={unreadChannelIds}
                                   unreads={unreads}
+                                  categories={categories}
+                                  onMoveToCategory={moveToCategory}
                                 />
                               </div>
                             )}
@@ -1028,6 +1096,16 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                   style={{ color: "rgba(255,255,255,0.6)" }}
                 >
                   Logout
+                </button>
+                <button
+                  onClick={() => {
+                    document.dispatchEvent(new CustomEvent("chat:open-shortcuts"));
+                  }}
+                  className="hover:opacity-80"
+                  style={{ color: "rgba(255,255,255,0.6)" }}
+                  aria-label="Keyboard shortcuts"
+                >
+                  ?
                 </button>
                 {workspaceSlug && (
                   <Link
