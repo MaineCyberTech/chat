@@ -17,15 +17,24 @@ async function ensureCsrfToken(): Promise<void> {
   await fetch(`${BFF_BASE}/v1/healthz`, { method: "GET", credentials: "include" });
 }
 
+async function getToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const supabase = getSupabaseBrowserClient();
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
 function apiPath(path: string): string {
   return path.startsWith("/v1") ? path : `/v1${path}`;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = await getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) ?? {}),
   };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
   if (options.method && options.method !== "GET" && options.method !== "HEAD") {
     if (!csrfPromise) csrfPromise = ensureCsrfToken();
     await csrfPromise;

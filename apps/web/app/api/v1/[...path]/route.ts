@@ -1,30 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 
 const API_ORIGIN = process.env.API_ORIGIN || "http://localhost:4000";
 
-export async function GET(request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  return proxy(request, ctx);
-}
+export const runtime = "nodejs";
 
-export async function POST(request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  return proxy(request, ctx);
-}
-
-export async function PUT(request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  return proxy(request, ctx);
-}
-
-export async function PATCH(request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  return proxy(request, ctx);
-}
-
-export async function DELETE(request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  return proxy(request, ctx);
-}
-
-async function proxy(request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+async function handler(request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   try {
     const { path } = await ctx.params;
     const pathStr = path.join("/");
@@ -32,28 +12,8 @@ async function proxy(request: NextRequest, ctx: { params: Promise<{ path: string
     const qs = searchParams ? `?${searchParams}` : "";
     const targetUrl = `${API_ORIGIN}/v1/${pathStr}${qs}`;
 
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {
-          },
-        },
-      },
-    );
-
-    const { data: { session } } = await supabase.auth.getSession();
-
-    let body: BodyInit | undefined;
     const contentType = request.headers.get("content-type") || "";
-    if (request.method !== "GET" && request.method !== "HEAD") {
-      body = await request.text();
-    }
+    const authHeader = request.headers.get("authorization") || "";
 
     const headers: Record<string, string> = {
       "Content-Type": contentType,
@@ -61,8 +21,13 @@ async function proxy(request: NextRequest, ctx: { params: Promise<{ path: string
       "x-forwarded-proto": request.headers.get("x-forwarded-proto") || "https",
     };
 
-    if (session?.access_token) {
-      headers["Authorization"] = `Bearer ${session.access_token}`;
+    if (authHeader) {
+      headers["Authorization"] = authHeader;
+    }
+
+    let body: BodyInit | undefined;
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      body = await request.text();
     }
 
     const response = await fetch(targetUrl, {
@@ -72,7 +37,6 @@ async function proxy(request: NextRequest, ctx: { params: Promise<{ path: string
     });
 
     const responseBody = await response.text();
-
     const parsedBody = (() => {
       try {
         return JSON.parse(responseBody);
@@ -89,3 +53,9 @@ async function proxy(request: NextRequest, ctx: { params: Promise<{ path: string
     );
   }
 }
+
+export const GET = handler;
+export const POST = handler;
+export const PUT = handler;
+export const PATCH = handler;
+export const DELETE = handler;
