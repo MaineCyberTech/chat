@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { LiveKitRoom, VideoConference, ControlBar } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { api } from "@/lib/api";
