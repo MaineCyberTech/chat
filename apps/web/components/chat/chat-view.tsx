@@ -625,7 +625,6 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         <div className="flex min-h-0 flex-1 flex-col">
           <div
             role="log"
-            aria-live="polite"
             aria-atomic="false"
             aria-label="Messages"
             className="flex min-h-0 flex-1 flex-col"
