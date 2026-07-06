@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { Skeleton } from "@chat/ui";
 import { Shield, Users, Hash, MessageSquare, Globe, Webhook, Search, X } from "lucide-react";
 
 interface Stats {
@@ -44,6 +45,7 @@ type Tab = "overview" | "users" | "channels" | "workspaces" | "integrations";
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [stats, setStats] = useState<Stats | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [channels, setChannels] = useState<AdminChannel[]>([]);
   const [workspaces, setWorkspaces] = useState<AdminWorkspace[]>([]);
@@ -56,6 +58,7 @@ export default function AdminPage() {
   const [channelTotal, setChannelTotal] = useState(0);
 
   const fetchTab = async (t: Tab) => {
+    setError(null);
     setLoading(true);
     try {
       if (t === "overview") {
@@ -80,7 +83,8 @@ export default function AdminPage() {
         const res = await api.get<{ integrations: AdminIntegration[] }>("/admin/integrations");
         setIntegrations(res.integrations);
       }
-    } catch {
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load");
       console.warn("Failed to fetch admin data");
     }
     setLoading(false);
@@ -132,14 +136,25 @@ export default function AdminPage() {
         </h1>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div
-              className="h-6 w-6 animate-spin rounded-full border-2"
-              style={{
-                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                borderTopColor: "var(--button-bg)",
-              }}
-            />
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-lg border p-4" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}>
+                <Skeleton className="mb-2 h-6 w-6" />
+                <Skeleton className="mb-2 h-8 w-20" />
+                <Skeleton className="h-3 w-12" />
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <p className="mb-3 text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{error}</p>
+            <button
+              onClick={() => { setError(null); fetchTab(tab); }}
+              className="rounded-md px-4 py-2 text-xs font-medium text-white"
+              style={{ background: "var(--button-bg)" }}
+            >
+              Retry
+            </button>
           </div>
         ) : tab === "overview" && stats ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

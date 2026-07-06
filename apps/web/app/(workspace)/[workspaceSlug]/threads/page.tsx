@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { Skeleton } from "@chat/ui";
 import { MessageSquare, ChevronRight } from "lucide-react";
 
 interface Thread {
@@ -30,6 +31,7 @@ export default function ThreadsPage() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [channels, setChannels] = useState<ChannelMap>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -53,23 +55,44 @@ export default function ThreadsPage() {
         setThreads(tRes.threads);
         setChannels(chMap);
       })
-      .catch(() => console.warn("Failed to load threads"))
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : "Failed to load threads");
+        console.warn("Failed to load threads");
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
-      <div
-        className="flex h-full items-center justify-center"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-      >
-        <div
-          className="h-6 w-6 animate-spin rounded-full border-2"
-          style={{
-            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-            borderTopColor: "var(--button-bg)",
-          }}
-        />
+      <div className="mx-auto max-w-3xl p-6">
+        <Skeleton className="mb-6 h-8 w-40" />
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-start gap-3 rounded-lg border p-3" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}>
+              <Skeleton className="h-5 w-5 mt-0.5 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3 w-40" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
+        <p className="mb-3 text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{error}</p>
+        <button
+          onClick={() => { setError(null); setLoading(true); window.location.reload(); }}
+          className="rounded-md px-4 py-2 text-xs font-medium text-white"
+          style={{ background: "var(--button-bg)" }}
+        >
+          Retry
+        </button>
       </div>
     );
   }

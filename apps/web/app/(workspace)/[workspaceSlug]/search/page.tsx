@@ -45,6 +45,7 @@ function highlightText(text: string, query: string): React.ReactNode {
 export default function SearchPage() {
   const params = useParams<{ workspaceSlug: string }>();
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<(SearchResult & { channel_name?: string })[]>([]);
   const [loading, setLoading] = useState(false);
@@ -70,7 +71,9 @@ export default function SearchPage() {
         const chRes = await api.get<{ channels: ChannelInfo[] }>(`/workspaces/${ws.id}/channels`);
         setChannels(chRes.channels);
         channelsRef.current = chRes.channels;
-      } catch { /* ignore */ }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load");
+      }
     })();
   }, [params.workspaceSlug]);
 
@@ -166,6 +169,18 @@ export default function SearchPage() {
         )}
       </div>
 
+      {error ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="mb-3 text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{error}</p>
+          <button
+            onClick={() => { setError(null); window.location.reload(); }}
+            className="rounded-md px-4 py-2 text-xs font-medium text-white"
+            style={{ background: "var(--button-bg)" }}
+          >
+            Retry
+          </button>
+        </div>
+      ) : (
       <div className="flex-1 overflow-y-auto">
         {loading && (
           <div className="space-y-3 p-4">
@@ -235,6 +250,7 @@ export default function SearchPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

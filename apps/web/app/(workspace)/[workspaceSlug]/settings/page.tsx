@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
-import { Button, SidebarGroup, useToast } from "@chat/ui";
+import { Button, SidebarGroup, Skeleton, useToast } from "@chat/ui";
 import { Bell, BellOff } from "lucide-react";
 import type { UserPreferences, ThemePreference } from "@chat/db";
 
@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   const [saveMessage, setSaveMessage] = useState("");
@@ -81,6 +82,7 @@ export default function SettingsPage() {
       const res = await api.get<{ preferences: UserPreferences }>("/preferences");
       setPreferences(res.preferences);
     } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch preferences");
       console.error("Failed to fetch preferences:", err);
     } finally {
       setLoading(false);
@@ -136,18 +138,38 @@ export default function SettingsPage() {
 
   if (authLoading || loading) {
     return (
-      <div
-        className="flex h-full flex-col items-center justify-center gap-3"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-      >
-        <div
-          className="h-6 w-6 animate-spin rounded-full border-2"
-          style={{
-            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-            borderTopColor: "var(--button-bg)",
-          }}
-        />
-        <span className="text-sm">Loading preferences...</span>
+      <div className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
+        <Skeleton className="h-8 w-40" />
+        <div className="space-y-4">
+          <Skeleton className="h-4 w-24" />
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
+          </div>
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-48 rounded-md" />
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-6 w-full rounded-md" />
+          <Skeleton className="h-6 w-full rounded-md" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
+        <p className="mb-3 text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{error}</p>
+        <button
+          onClick={() => { setError(null); fetchPreferences(); }}
+          className="rounded-md px-4 py-2 text-xs font-medium text-white"
+          style={{ background: "var(--button-bg)" }}
+        >
+          Retry
+        </button>
       </div>
     );
   }
