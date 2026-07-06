@@ -1,6 +1,6 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const BFF_BASE = "/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 const CSRF_COOKIE_NAME = "csrf_token";
 
 let csrfPromise: Promise<void> | null = null;
@@ -14,7 +14,7 @@ function getCsrfToken(): string | undefined {
 async function ensureCsrfToken(): Promise<void> {
   if (typeof document === "undefined") return;
   if (getCsrfToken()) return;
-  await fetch(`${BFF_BASE}/v1/healthz`, { method: "GET", credentials: "include" });
+  await fetch(`${API_BASE}/healthz`, { method: "GET", credentials: "include" });
 }
 
 async function getToken(): Promise<string | null> {
@@ -42,7 +42,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (csrfToken) headers["x-csrf-token"] = csrfToken;
   }
 
-  const res = await fetch(`${BFF_BASE}${apiPath(path)}`, { ...options, headers });
+  const res = await fetch(`${API_BASE}${apiPath(path)}`, { ...options, headers, credentials: "include" });
 
   if (res.status === 401) {
     const supabase = getSupabaseBrowserClient();
