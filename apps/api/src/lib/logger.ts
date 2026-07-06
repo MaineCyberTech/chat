@@ -2,20 +2,7 @@ import pino from "pino";
 
 const level = process.env.LOG_LEVEL ?? (process.env.NODE_ENV === "production" ? "info" : "debug");
 
-const pinoLogger = pino({
-  level,
-  transport:
-    process.env.NODE_ENV === "development"
-      ? {
-          target: "pino-pretty",
-          options: {
-            colorize: true,
-            singleLine: false,
-            translateTime: "SYS:standard",
-          },
-        }
-      : undefined,
-});
+const pinoLogger = pino({ level });
 
 function createLogger(bindings?: Record<string, unknown>) {
   const base = bindings ? pinoLogger.child(bindings) : pinoLogger;
