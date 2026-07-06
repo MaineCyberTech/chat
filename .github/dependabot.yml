@@ -30,7 +30,7 @@ updates:
       default-days: 15
 
   - package-ecosystem: "docker"
-    directory: "/"
+    directory: "/apps/api"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -39,6 +39,34 @@ updates:
     groups:
       docker-updates:
         patterns:
-          - "*"
+          - "Dockerfile*"
+    cooldown:
+      default-days: 15
+
+  - package-ecosystem: "docker"
+    directory: "/apps/web"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    groups:
+      docker-updates:
+        patterns:
+          - "Dockerfile*"
+    cooldown:
+      default-days: 15
+
+  - package-ecosystem: "docker"
+    directory: "/apps/worker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    groups:
+      docker-updates:
+        patterns:
+          - "Dockerfile*"
     cooldown:
       default-days: 15
