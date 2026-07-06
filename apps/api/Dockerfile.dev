@@ -23,4 +23,4 @@ COPY apps/api/src ./apps/api/src
 RUN pnpm --filter @chat/db build
 
 EXPOSE 4000
-CMD ["pnpm dev
+CMD ["pnpm", "--filter", "@chat/api", "dev"]
