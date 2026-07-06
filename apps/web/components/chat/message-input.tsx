@@ -614,6 +614,7 @@ export function MessageInput({
     <div
       ref={editorRef}
       className="post-create__container"
+      className="post-create__container"
       style={{
         width: "100%",
         flex: "0 0 auto",

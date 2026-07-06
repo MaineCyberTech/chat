@@ -239,6 +239,12 @@
     --bottom-nav-height: 2.5rem;
   }
 }
+
+@media (max-width: 767px) {
+  .post-create__container {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+}
 @supports (height: 100dvh) {
   :root {
     --vh: 100dvh;
