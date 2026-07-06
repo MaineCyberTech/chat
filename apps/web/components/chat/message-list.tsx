@@ -847,15 +847,14 @@ export function MessageList({
   }, [messagesWithMeta.length]);
 
   const lastMessageId = messages[messages.length - 1]?.id;
-  useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [lastMessageId]);
 
   useEffect(() => {
     if (messages.length > 0 && initialLoadRef.current) {
       initialLoadRef.current = false;
       requestAnimationFrame(() => {
-        if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+        if (listRef.current && listRef.current.scrollHeight > listRef.current.clientHeight) {
+          listRef.current.scrollTop = listRef.current.scrollHeight;
+        }
       });
     }
   }, [messages.length]);
