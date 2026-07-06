@@ -1,2 +1,2 @@
-npx lint-staged --verbose
-npx --yes turbo typecheck --affected
+npx lint-staged
+exec npx --yes turbo typecheck --affected --continue

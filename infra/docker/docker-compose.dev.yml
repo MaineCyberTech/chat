@@ -1,0 +1,167 @@
+name: chat-dev
+
+x-common-env: &common-env
+  NODE_ENV: development
+  SUPABASE_URL: ${SUPABASE_URL}
+  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: chat-caddy-dev
+    restart: unless-stopped
+    mem_limit: 64m
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - chat-dev
+    depends_on:
+      - web
+      - api
+
+  web:
+    image: chat-web:dev
+    build:
+      context: ../../
+      dockerfile: apps/web/Dockerfile
+    container_name: chat-web-dev
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      <<: *common-env
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:80}
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://host.docker.internal:54321}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:80}
+    volumes:
+      - ../../apps/web/app:/app/apps/web/app
+      - ../../apps/web/components:/app/apps/web/components
+      - ../../apps/web/lib:/app/apps/web/lib
+      - ../../apps/web/public:/app/apps/web/public
+      - ../../packages/ui/src:/app/packages/ui/src
+      - ../../packages/db/src:/app/packages/db/src
+    ports:
+      - "3000:3000"
+    networks:
+      - chat-dev
+    depends_on:
+      api:
+        condition: service_healthy
+    command: ["pnpm", "--filter", "@chat/web", "dev"]
+
+  api:
+    image: chat-api:dev
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+    container_name: chat-api-dev
+    restart: unless-stopped
+    mem_limit: 192m
+    environment:
+      <<: *common-env
+      PORT: 4000
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-devsecret}
+      LIVEKIT_HOST: http://livekit:7880
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      API_ORIGIN: ${API_ORIGIN:-http://api:4000}
+    volumes:
+      - ../../apps/api/src:/app/apps/api/src
+      - ../../packages/db/src:/app/packages/db/src
+    ports:
+      - "4000:4000"
+      - "9229:9229"
+    networks:
+      - chat-dev
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: ["pnpm", "--filter", "@chat/api", "dev"]
+
+  worker:
+    image: chat-worker:dev
+    build:
+      context: ../../
+      dockerfile: apps/worker/Dockerfile
+    container_name: chat-worker-dev
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      <<: *common-env
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    volumes:
+      - ../../apps/worker/src:/app/apps/worker/src
+      - ../../packages/db/src:/app/packages/db/src
+    networks:
+      - chat-dev
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: ["pnpm", "--filter", "@chat/worker", "dev"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: chat-redis-dev
+    restart: unless-stopped
+    mem_limit: 64m
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    networks:
+      - chat-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data
+
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: chat-livekit-dev
+    restart: unless-stopped
+    mem_limit: 256m
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882-7892:7882-7892/udp"
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-devsecret}"
+      LIVEKIT_RTC_CONFIG: '{"port_range_start": 7882, "port_range_end": 7892}'
+      LIVEKIT_LOG_LEVEL: debug
+    command: >
+      --config-body="
+        port: 7880
+        rtc:
+          port_range_start: 7882
+          port_range_end: 7892
+          use_external_ip: true
+        turn:
+          enabled: false
+      "
+    networks:
+      - chat-dev
+
+networks:
+  chat-dev:
+    driver: bridge
+
+volumes:
+  caddy-data:
+  caddy-config:
+  redis-data:
