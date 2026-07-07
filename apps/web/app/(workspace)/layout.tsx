@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { AppSidebar } from "@/components/workspace/app-sidebar";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { QuickSwitcher } from "@/components/chat/quick-switcher";
+import { OnboardingTour } from "@/components/workspace/onboarding-tour";
 import { useSwipeBack } from "@/lib/use-swipe-back";
 import { api } from "@/lib/api";
 import { register } from "@/lib/keyboard-shortcut-registry";
@@ -324,6 +325,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           onClose={() => setSwitcherOpen(false)}
         />
       )}
+
+      <OnboardingTour />
     </div>
   );
 }

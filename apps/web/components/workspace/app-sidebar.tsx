@@ -51,6 +51,10 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   const [collapsed, setCollapsed] = useState(false);
   const collapsedRef = useRef(true);
   const userToggledRef = useRef(false);
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_WIDTH);
+  const resizingRef = useRef(false);
+  const startXRef = useRef(0);
+  const startWidthRef = useRef(SIDEBAR_WIDTH);
   const [dmChannels, setDmChannels] = useState<Channel[]>([]);
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -437,6 +441,36 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     };
   }, []);
 
+  function handleResizeStart(e: React.MouseEvent) {
+    e.preventDefault();
+    resizingRef.current = true;
+    startXRef.current = e.clientX;
+    startWidthRef.current = sidebarWidth;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    function onMouseMove(ev: MouseEvent) {
+      if (!resizingRef.current) return;
+      const delta = ev.clientX - startXRef.current;
+      const newWidth = Math.max(
+        SIDEBAR_MIN_WIDTH,
+        Math.min(SIDEBAR_MAX_WIDTH, startWidthRef.current + delta),
+      );
+      setSidebarWidth(newWidth);
+    }
+
+    function onMouseUp() {
+      resizingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    }
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }
+
   return (
     <>
       {mobileOpen && (
@@ -456,11 +490,20 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           color: "var(--sidebar-text)",
           minWidth: collapsed ? 60 : SIDEBAR_MIN_WIDTH,
           maxWidth: collapsed ? 60 : SIDEBAR_MAX_WIDTH,
-          width: collapsed ? 60 : SIDEBAR_WIDTH,
+          width: collapsed ? 60 : sidebarWidth,
           gridArea: "team-sidebar",
           overflowX: "visible",
+          position: "relative",
         }}
       >
+        {!collapsed && (
+          <div
+            onMouseDown={handleResizeStart}
+            className="absolute top-0 right-0 bottom-0 z-50 w-1 cursor-col-resize hover:bg-[var(--sidebar-text-active-border)]"
+            style={{ background: "transparent" }}
+            aria-label="Resize sidebar"
+          />
+        )}
         {/* Team/User Header */}
         <div
           className="flex items-center gap-2 px-3 py-3"
@@ -659,9 +702,10 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                       onDragEnd={handleCatDragEnd}
                       style={{
                         opacity: dragCatId === cat.id ? 0.5 : 1,
-                        borderTop: dragCatOverId === cat.id
-                          ? "2px solid var(--sidebar-text-active-border)"
-                          : "2px solid transparent",
+                        borderTop:
+                          dragCatOverId === cat.id
+                            ? "2px solid var(--sidebar-text-active-border)"
+                            : "2px solid transparent",
                       }}
                     >
                       <button

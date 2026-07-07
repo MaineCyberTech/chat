@@ -1,0 +1,234 @@
+"use client";
+
+import React, { useEffect, useState, useCallback } from "react";
+import { X, Check, Sparkles } from "lucide-react";
+
+interface Task {
+  id: string;
+  label: string;
+  description: string;
+  actionLabel: string;
+  actionHref?: string;
+  checkKey: string;
+}
+
+const TASKS: Task[] = [
+  {
+    id: "join-channel",
+    label: "Join a channel",
+    description: "Browse channels from the sidebar and join a conversation.",
+    actionLabel: "Browse channels",
+    checkKey: "onboarding:joined_channel",
+  },
+  {
+    id: "send-message",
+    label: "Send your first message",
+    description: "Type a message in any channel to start collaborating.",
+    actionLabel: "Start typing",
+    checkKey: "onboarding:sent_message",
+  },
+  {
+    id: "invite-members",
+    label: "Invite team members",
+    description: "Bring your team on board by sending them an invite link.",
+    actionLabel: "Invite people",
+    actionHref: "?invite=true",
+    checkKey: "onboarding:invited_members",
+  },
+  {
+    id: "customize-profile",
+    label: "Set up your profile",
+    description: "Add a display name and avatar so people know who you are.",
+    actionLabel: "Edit profile",
+    checkKey: "onboarding:set_profile",
+  },
+  {
+    id: "explore-settings",
+    label: "Configure notifications",
+    description: "Set your notification preferences to stay in the loop.",
+    actionLabel: "Open settings",
+    actionHref: "?settings=true",
+    checkKey: "onboarding:configured_notifications",
+  },
+];
+
+function getCompleted(key: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(key) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function getOnboardingDismissed(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return localStorage.getItem("onboarding:dismissed") === "true";
+  } catch {
+    return true;
+  }
+}
+
+function setOnboardingDismissed() {
+  try {
+    localStorage.setItem("onboarding:dismissed", "true");
+  } catch {
+    /* ignore */
+  }
+}
+
+function getOnboardingCompleted(): boolean {
+  try {
+    return TASKS.every((t) => getCompleted(t.checkKey));
+  } catch {
+    return false;
+  }
+}
+
+export function OnboardingTour() {
+  const [visible, setVisible] = useState(false);
+  const [taskStates, setTaskStates] = useState<Record<string, boolean>>({});
+  const [completedCount, setCompletedCount] = useState(0);
+
+  useEffect(() => {
+    if (getOnboardingCompleted()) return;
+    if (getOnboardingDismissed()) return;
+    const states: Record<string, boolean> = {};
+    let count = 0;
+    for (const t of TASKS) {
+      const done = getCompleted(t.checkKey);
+      states[t.id] = done;
+      if (done) count++;
+    }
+    setTaskStates(states);
+    setCompletedCount(count);
+    setVisible(true);
+  }, []);
+
+  const dismiss = useCallback(() => {
+    setOnboardingDismissed();
+    setVisible(false);
+  }, []);
+
+  const totalTasks = TASKS.length;
+  const allDone = completedCount >= totalTasks;
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className="fixed right-6 bottom-6 z-50 w-80 rounded-lg border shadow-[var(--elevation-5)]"
+      style={{
+        background: "var(--center-channel-bg)",
+        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+      }}
+    >
+      <div
+        className="flex items-center justify-between rounded-t-lg px-4 py-3"
+        style={{
+          background: "var(--sidebar-bg)",
+          color: "var(--sidebar-text)",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles size={16} />
+          <span className="text-sm font-semibold">Getting started</span>
+        </div>
+        <button
+          onClick={dismiss}
+          className="flex h-6 w-6 items-center justify-center rounded hover:bg-[rgba(255,255,255,0.15)]"
+          aria-label="Dismiss onboarding"
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      <div className="px-4 py-3">
+        <div className="mb-3 flex items-center gap-2">
+          <div
+            className="h-2 flex-1 rounded-full"
+            style={{
+              background: "rgba(var(--center-channel-color-rgb), 0.08)",
+            }}
+          >
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${(completedCount / totalTasks) * 100}%`,
+                background: "var(--button-bg)",
+              }}
+            />
+          </div>
+          <span
+            className="text-xs font-medium"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          >
+            {completedCount}/{totalTasks}
+          </span>
+        </div>
+
+        {allDone ? (
+          <div className="py-4 text-center">
+            <Check
+              size={24}
+              className="mx-auto mb-2"
+              style={{ color: "var(--online-indicator)" }}
+            />
+            <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
+              All set!
+            </p>
+            <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+              You&apos;ve completed all onboarding tasks.
+            </p>
+            <button
+              onClick={dismiss}
+              className="mt-3 rounded-md px-4 py-1.5 text-xs font-medium text-white"
+              style={{ background: "var(--button-bg)" }}
+            >
+              Got it
+            </button>
+          </div>
+        ) : (
+          <ul className="space-y-1">
+            {TASKS.map((task) => {
+              const done = taskStates[task.id] ?? false;
+              return (
+                <li
+                  key={task.id}
+                  className={`flex items-start gap-2 rounded-md p-2 ${done ? "opacity-50" : ""}`}
+                >
+                  <span
+                    className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                    style={{
+                      background: done
+                        ? "var(--online-indicator)"
+                        : "rgba(var(--center-channel-color-rgb), 0.16)",
+                      color: "#fff",
+                    }}
+                  >
+                    {done && <Check size={10} />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="text-xs font-medium"
+                      style={{ color: "var(--center-channel-color)" }}
+                    >
+                      {task.label}
+                    </p>
+                    <p
+                      className="mt-0.5 text-[11px]"
+                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    >
+                      {task.description}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
