@@ -7,6 +7,7 @@ export const QUEUE_NAMES = {
   NOTIFICATION: "notification",
   SEARCH_INDEXING: "search-indexing",
   CLEANUP: "cleanup",
+  DATA_RETENTION: "data-retention",
 } as const;
 
 function getRedisClient(): Redis {
@@ -69,6 +70,17 @@ export function createSearchQueue(): Queue {
 
 export function createCleanupQueue(): Queue {
   return new Queue("cleanup", {
+    connection: getRedisClient(),
+    defaultJobOptions: {
+      removeOnComplete: 10,
+      removeOnFail: 5,
+      attempts: 1,
+    },
+  });
+}
+
+export function createDataRetentionQueue(): Queue {
+  return new Queue("data-retention", {
     connection: getRedisClient(),
     defaultJobOptions: {
       removeOnComplete: 10,

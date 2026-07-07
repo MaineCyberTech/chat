@@ -6,6 +6,7 @@ import { registerWebhookProcessor } from "./processors/webhook-delivery.js";
 import { registerNotificationProcessor } from "./processors/notification.js";
 import { registerSearchIndexer } from "./processors/search-indexer.js";
 import { registerCleanupProcessor } from "./processors/cleanup.js";
+import { registerDataRetentionProcessor } from "./processors/data-retention.js";
 
 loadEnv();
 
@@ -51,6 +52,7 @@ async function main() {
   registerNotificationProcessor();
   registerSearchIndexer();
   registerCleanupProcessor();
+  registerDataRetentionProcessor();
 
   // Poll for due reminders every 30 seconds
   const { processReminders } = await import("./processors/reminder.js");
