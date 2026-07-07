@@ -117,7 +117,23 @@ Full 8-phase Mattermost comparative audit (`C:\temp\mattermost-master` vs `C:\te
 | **In-Channel Filter**              | Filter/search messages within current channel view                                                                                                                                                                          | `chat-view.tsx`                                                                                                         |
 | **Reaction Tooltips**              | Hover tooltip showing "You and X others" on reactions                                                                                                                                                                       | `message-list.tsx`                                                                                                      |
 
-## Mattermost Comparison — Remaining Features (July 5, 2026)
+## Mattermost Comparison — Remaining Features (July 7, 2026)
+
+### Already Implemented
+
+| Area          | Feature                                            | Status                                |
+| ------------- | -------------------------------------------------- | ------------------------------------- |
+| Emoji         | Category tabs (11 categories)                      | ✅ Implemented in `emoji-picker.tsx`   |
+| Emoji         | Skin tone selector (5 tones)                       | ✅ Implemented in `emoji-picker.tsx`   |
+| Emoji         | Hover preview + name                               | ✅ Implemented (setPreview state)      |
+| Emoji         | `:` colon autocomplete                             | ✅ Implemented in `message-input.tsx`  |
+| Emoji         | 3000+ emojis + recent tracking                     | ✅ `emoji-data.ts` (3357 emojis)       |
+| Search        | Messages/Files type toggle                         | ✅ Added to search page                |
+| Files         | Multi-file navigation (prev/next)                  | ✅ Implemented in `file-preview.tsx`   |
+| Files         | Zoom in/out/100%/fit-to-window                     | ✅ Implemented in `file-preview.tsx`   |
+| Files         | File metadata panel (name, size, uploader)         | ✅ Implemented in `file-preview.tsx`   |
+| Keyboard      | Ctrl+K quick switcher (full)                       | ✅ Implemented in `quick-switcher.tsx` |
+| Keyboard      | Full shortcut modal with categories                | ✅ Implemented in `keyboard-shortcuts.tsx` |
 
 ### Medium Effort (2-4 days each)
 
@@ -127,22 +143,11 @@ Full 8-phase Mattermost comparative audit (`C:\temp\mattermost-master` vs `C:\te
 | Sidebar       | Channel context menu (right-click)                 | `sidebar_channel_menu/` (favorite, mute, move, copy, leave, delete) |
 | Sidebar       | Sidebar header team menu                           | `sidebar_header/` (team switch, browse channels, create, invite)    |
 | Sidebar       | Resizable sidebar (drag handle)                    | `resizable_sidebar/`                                                |
-| Emoji         | Category tabs (11 categories)                      | `emoji_picker_tabs.tsx`                                             |
-| Emoji         | Skin tone selector (5 tones)                       | `emoji_picker_skin.tsx`                                             |
-| Emoji         | Hover preview + name                               | `emoji_picker_preview.tsx`                                          |
-| Emoji         | `:` colon autocomplete                             | `use_editor_emoji_picker.tsx`                                       |
-| Emoji         | 3000+ emojis + recent tracking                     | `emoji.json` (3301 system emojis)                                   |
-| Search        | Messages/Files type toggle                         | `search_box_type_selector.tsx`                                      |
 | Search        | Operator hints (`from:`, `in:`, etc.)              | `search_box_hints.tsx`                                              |
 | Search        | File extension suggestions                         | `extension_suggestions_provider.tsx`                                |
-| Files         | Multi-file navigation (prev/next)                  | `file_preview_modal_main_nav/`                                      |
-| Files         | Zoom in/out/100%/fit-to-window                     | `image_preview.tsx` with pan/drag                                   |
-| Files         | File metadata panel (name, size, uploader)         | `file_preview_modal_info/`                                          |
 | Notifications | Global notification settings page                  | `user_settings_notifications.tsx` (1300 lines)                      |
 | Notifications | Desktop notification sounds (9 sounds)             | `desktop_notification_sounds_setting/`                              |
 | Notifications | Trigger words + auto-responder                     | `user_settings_notifications.tsx`                                   |
-| Keyboard      | Ctrl+K quick switcher (full)                       | `keyboard_shortcuts_modal.tsx` (35+ shortcuts)                      |
-| Keyboard      | Full shortcut modal with categories                | `keyboard_shortcuts_modal.tsx`                                      |
 
 ### High Effort (1-2 weeks each)
 
