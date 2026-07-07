@@ -182,7 +182,7 @@ jobs:
             docker compose -f infra/docker/docker-compose.devremote.yml up -d --force-recreate --remove-orphans || true
             docker image prune -af
 
-            for i in $(seq 1 12); do
+            for i in $(seq 1 24); do
               LOGS=$(docker compose -f infra/docker/docker-compose.devremote.yml ps 2>&1)
               echo "=== Attempt $i ==="
               echo "$LOGS"
@@ -206,7 +206,7 @@ jobs:
                 exit 0
               fi
 
-              echo "Waiting for containers to become healthy... ($i/12)"
+              echo "Waiting for containers to become healthy... ($i/24)"
               sleep 5
             done
 
@@ -218,14 +218,14 @@ jobs:
       - name: Health check
         run: |
           echo "=== External health check ==="
-          for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://chat-api.${{ env.DOMAIN }}/health --connect-timeout 5 2>/dev/null || echo "000")
+          for i in $(seq 1 24); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://chat-api.${{ env.DOMAIN }}/health --connect-timeout 10 2>/dev/null || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "External API healthy (HTTPS)"
               exit 0
             fi
             echo "Attempt $i: returned $STATUS, retrying..."
-            sleep 5
+            sleep 10
           done
           echo "Health check failed"
           exit 1
