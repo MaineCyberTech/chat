@@ -462,7 +462,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
   if (loading) {
     return (
-      <div className="flex min-h-0 flex-1" id="channel_view">
+      <div className="flex h-full" id="channel_view">
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="mm-channel-header">
             <Skeleton
@@ -501,7 +501,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
   if (error) {
     return (
-      <div className="flex flex-1 flex-col">
+      <div className="flex h-full flex-col">
         <div className="mm-channel-header">
           <h1 className="min-w-0 truncate text-base font-semibold"># {channelName}</h1>
         </div>
@@ -545,7 +545,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   }
 
   return (
-    <div className="flex min-h-0 flex-1" id="channel_view">
+    <div className="flex h-full" id="channel_view">
       <div
         className="flex min-w-0 flex-1 flex-col"
         style={{ background: "var(--center-channel-bg)" }}
@@ -676,13 +676,14 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           </div>
         )}
 
-        {/* Message area - use height:0 + flex-grow:1 for reliable flex sizing */}
-        <div style={{ flex: "1 1 0", minHeight: 0, display: "flex", flexDirection: "column" }}>
+        {/* Message area - flex column with post list and input */}
+        <div className="flex min-h-0 flex-1 flex-col">
           <div
             role="log"
             aria-atomic="false"
             aria-label="Messages"
-            style={{ flex: "1 1 0", minHeight: 0, overflowY: "auto", padding: "14px 0 7px" }}
+            className="flex-1 min-h-0 overflow-y-auto"
+            style={{ padding: "14px 0 7px" }}
           >
             <MessageList
               messages={

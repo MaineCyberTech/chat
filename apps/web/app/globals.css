@@ -215,17 +215,11 @@
   .app__content {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 0;
+    height: 100%;
     background: var(--center-channel-bg);
     border-radius: 12px;
     box-shadow: var(--elevation-1);
   }
-}
-
-/* Force proper flex height propagation in the workspace layout */
-.app__body > div {
-  min-height: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -251,6 +245,12 @@
     padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
   }
 }
+@supports (height: 100dvh) {
+  :root {
+    --vh: 100dvh;
+  }
+}
+
 .vh-fix {
   --vh: 100vh;
 }
@@ -269,8 +269,7 @@
   [role="log"] {
     min-height: 0;
     flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
   }
 
   .group:active .action-overlay,
