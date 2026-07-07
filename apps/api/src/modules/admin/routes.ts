@@ -1,8 +1,10 @@
 import { Router, type Request, type Response } from "express";
 import { getSupabaseAdmin } from "../../lib/supabase";
 import { authenticate } from "../../middleware/authenticate";
+import { logger } from "../../lib/logger";
 
 const router = Router();
+const startTime = Date.now();
 
 router.get("/stats", authenticate, async (_req: Request, res: Response) => {
   try {
@@ -67,6 +69,30 @@ router.get("/integrations", authenticate, async (_req: Request, res: Response) =
     .order("created_at", { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json({ integrations: data });
+});
+
+router.get("/system", authenticate, async (_req: Request, res: Response) => {
+  let dbStatus = "unknown";
+  let dbLatencyMs: number | undefined;
+  try {
+    const dbStart = Date.now();
+    const admin = getSupabaseAdmin();
+    const { error } = await admin.from("workspaces").select("id", { count: "exact", head: true });
+    dbLatencyMs = Date.now() - dbStart;
+    dbStatus = error ? "unreachable" : "connected";
+  } catch (err) {
+    dbStatus = "unreachable";
+    logger.error({ error: String(err) }, "Admin system check DB failure");
+  }
+
+  res.json({
+    version: process.env.npm_package_version ?? "0.0.0",
+    environment: process.env.NODE_ENV ?? "development",
+    uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
+    database: dbStatus,
+    db_latency_ms: dbLatencyMs,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 export default router;

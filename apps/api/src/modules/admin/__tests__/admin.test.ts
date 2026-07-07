@@ -241,7 +241,50 @@ describe("admin routes", () => {
     });
   });
 
-  describe("GET /integrations", () => {
+  describe("GET /system", () => {
+  it("returns system info with db status", async () => {
+    const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+    const chain = createChain({ count: 5, error: null });
+    (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
+
+    const handler = findHandler("get", "/system");
+    const req = mockReq();
+    const res = mockRes();
+
+    await handler(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        version: expect.any(String),
+        environment: expect.any(String),
+        uptime_seconds: expect.any(Number),
+        database: "connected",
+        db_latency_ms: expect.any(Number),
+        timestamp: expect.any(String),
+      }),
+    );
+  });
+
+  it("reports db unreachable on error", async () => {
+    const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+    const chain = createChain({ count: null, error: new Error("DB down") });
+    (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
+
+    const handler = findHandler("get", "/system");
+    const req = mockReq();
+    const res = mockRes();
+
+    await handler(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        database: "unreachable",
+      }),
+    );
+  });
+});
+
+describe("GET /integrations", () => {
     it("lists integrations", async () => {
       const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
       const chain = createChain({
