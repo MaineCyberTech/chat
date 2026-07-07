@@ -1,11 +1,31 @@
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+const CSRF_COOKIE_NAME = "csrf_token";
+
+let csrfPromise: Promise<void> | null = null;
+
+function getCsrfToken(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_COOKIE_NAME}=([^;]*)`));
+  return match?.[1] ? decodeURIComponent(match[1]) : undefined;
+}
+
+async function ensureCsrfToken(): Promise<void> {
+  if (typeof document === "undefined") return;
+  if (getCsrfToken()) return;
+  await fetch(`${API_BASE}/healthz`, { method: "GET", credentials: "include" });
+}
+
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
-
 async function getToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
   const supabase = getSupabaseBrowserClient();
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token ?? null;
+}
+
+function apiPath(path: string): string {
+  return path.startsWith("/v1") ? path : `/v1${path}`;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -15,8 +35,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...((options.headers as Record<string, string>) ?? {}),
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (options.method && options.method !== "GET" && options.method !== "HEAD") {
+    if (!csrfPromise) csrfPromise = ensureCsrfToken();
+    await csrfPromise;
+    const csrfToken = getCsrfToken();
+    if (csrfToken) headers["x-csrf-token"] = csrfToken;
+  }
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const res = await fetch(`${API_BASE}${apiPath(path)}`, { ...options, headers, credentials: "include" });
 
   if (res.status === 401) {
     const supabase = getSupabaseBrowserClient();
@@ -37,6 +63,8 @@ export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+  put: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: "PUT", body: JSON.stringify(body) }),
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
