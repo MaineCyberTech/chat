@@ -1,19 +1,12 @@
 "use client";
 
 import React, { useRef } from "react";
-import {
-  Reply,
-  Pencil,
-  X,
-  Smile,
-  Bookmark,
-  AlertCircle,
-  AlertTriangle,
-} from "lucide-react";
+import { Reply, Pencil, X, Smile, Bookmark, AlertCircle, AlertTriangle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CodeBlock } from "../code-block";
 import { FilePreview } from "../file-preview";
+import { LinkPreview } from "../link-preview";
 import { EmojiPicker } from "../emoji-picker";
 import type { Message, UserProfile } from "@chat/db";
 
@@ -342,14 +335,9 @@ export const MessageItem = React.memo(function MessageItem({
                           if (isAudio)
                             return <FilePreview url={href} type="audio" name={fileName} />;
                           return (
-                            <a
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: "var(--link-color)" }}
-                            >
+                            <LinkPreview href={href} linkColor="var(--link-color)">
                               {children}
-                            </a>
+                            </LinkPreview>
                           );
                         },
                         code: ({ className, children }) => {
