@@ -1,3 +1,19 @@
+/**
+ * Alerting setup:
+ *
+ * Prometheus metrics are exposed at GET /metrics (see server.ts).
+ * For production alerting configure:
+ *
+ *   TODO: Configure alerting channels
+ *   - Prometheus + Alertmanager rules for:
+ *     - chat_http_requests_total{status_code=~"5.."} rate > threshold
+ *     - chat_websocket_connections_active dropping near zero
+ *     - chat_circuit_breaker_status > 0 (open / half-open)
+ *     - Node / process metrics (high CPU, memory, FD count)
+ *   - Sentry (initSentry() in server.ts) captures unhandled errors
+ *   - PagerDuty / OpsGenie webhook for P0/P1 escalations
+ *   - Health check endpoint consumed by DO monitoring (port 3000 TCP)
+ */
 import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from "prom-client";
 
 export const register = new Registry();

@@ -1,7 +1,14 @@
 import { createHmac, randomUUID } from "node:crypto";
 
-const API_KEY = process.env.LIVEKIT_API_KEY ?? "";
-const API_SECRET = process.env.LIVEKIT_API_SECRET ?? "";
+// Expected env vars: LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_HOST (optional, default localhost:7880)
+if (!process.env.LIVEKIT_API_KEY) {
+  throw new Error("LIVEKIT_API_KEY environment variable is required for LiveKit token generation");
+}
+if (!process.env.LIVEKIT_API_SECRET) {
+  throw new Error("LIVEKIT_API_SECRET environment variable is required for LiveKit token generation");
+}
+const API_KEY = process.env.LIVEKIT_API_KEY;
+const API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_HOST = process.env.LIVEKIT_HOST ?? "http://localhost:7880";
 
 function base64UrlEncode(data: string): string {

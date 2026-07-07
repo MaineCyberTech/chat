@@ -110,10 +110,13 @@ export function initSocket(
         const supabase = getSupabase();
         const { data: channel, error } = await supabase
           .from("channels")
-          .select("workspace_id")
+          .select("workspace_id, is_private")
           .eq("id", channelId)
           .single();
-        if (error || !channel) return;
+        if (error || !channel) {
+          socket.emit("channel:join_error", { channelId, error: "Channel not found" });
+          return;
+        }
 
         const { data: member } = await supabase
           .from("workspace_members")
@@ -121,7 +124,23 @@ export function initSocket(
           .eq("workspace_id", channel.workspace_id)
           .eq("user_id", userId)
           .single();
-        if (!member) return;
+        if (!member) {
+          socket.emit("channel:join_error", { channelId, error: "Not a workspace member" });
+          return;
+        }
+
+        if (channel.is_private) {
+          const { data: channelMember } = await supabase
+            .from("channel_members")
+            .select("user_id")
+            .eq("channel_id", channelId)
+            .eq("user_id", userId)
+            .single();
+          if (!channelMember) {
+            socket.emit("channel:join_error", { channelId, error: "Not a member of this private channel" });
+            return;
+          }
+        }
 
         socket.join(`channel:${channelId}`);
 

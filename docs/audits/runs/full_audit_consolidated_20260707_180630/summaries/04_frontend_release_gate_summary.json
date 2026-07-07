@@ -1,0 +1,190 @@
+{
+  "stage": "frontend_release_gate",
+  "run_id": "full_audit_consolidated_20260707_180630",
+  "decision": "GO",
+  "generated_at": "2026-07-07T18:06:30Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 9,
+    "P3": 8
+  },
+  "category_scores": {
+    "ux": 72,
+    "responsive": 68,
+    "accessibility": 70,
+    "onboarding": 65,
+    "feedback_states": 70,
+    "release_blocker": 60,
+    "security": 70,
+    "stability": 65,
+    "error_handling": 60,
+    "performance": 75
+  },
+  "readiness": 67.5,
+  "finding_count": 18,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "responsive",
+      "file": "apps/web/app/(workspace)/layout.tsx:269",
+      "issue": "Mobile bottom navigation bar fixed at bottom with no content padding compensation",
+      "impact": "Last messages and input area partially hidden behind 3.5rem fixed nav bar on mobile screens",
+      "fix": "Add padding-bottom of 3.5rem to the main content scroll container to account for fixed bottom nav"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/chat/message-list.tsx:350",
+      "issue": "Empty channel state lacks actionable guidance or onboarding context for new users",
+      "impact": "New users joining an empty channel may be uncertain how to begin participating",
+      "fix": "Add contextual empty state with channel purpose, onboarding hints, or a clickable 'Say hello!' suggestion"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/chat/message-input.tsx:821",
+      "issue": "No feedback when @mention query matches no channel members",
+      "impact": "Users may be confused why @mention autocomplete is not responding; no indication that the name doesn't exist",
+      "fix": "Show a 'No members found matching query' message below the input when filteredMembers is empty and mentionQuery is active"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:283",
+      "issue": "Sidebar category drag-and-drop lacks drag ghost image and channel-to-category drag support",
+      "impact": "Drag-and-drop feels unpolished; channels cannot be dragged between categories, only via API",
+      "fix": "Add drag ghost image via e.dataTransfer.setDragImage(), show drop zone indicators for channels, and enable channel-to-category drag"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "accessibility",
+      "file": "apps/web/components/chat/message-input.tsx:1109",
+      "issue": "Priority warning and @everyone modals do not restore focus to message input after close",
+      "impact": "Keyboard navigation flow is interrupted after modal confirmations; keyboard users must tab back to input manually",
+      "fix": "After modal close, call tiptapRef.current?.commands.focus() or manually focus the editor element"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/chat/chat-view.tsx:756",
+      "issue": "Mobile thread panel uses ArrowLeft icon for close \u2014 ambiguous UX pattern",
+      "impact": "Users may expect ArrowLeft to navigate back in browser history rather than close the thread panel",
+      "fix": "Use X icon consistently for closing mobile RHS panels, or add close label text alongside ArrowLeft"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "responsive",
+      "file": "apps/web/components/chat/chat-view.tsx:636",
+      "issue": "Search bar placeholder text may overflow on narrow mobile screens",
+      "impact": "Minor visual overflow on very narrow viewports where search bar max-width is constrained",
+      "fix": "Use shorter placeholder on mobile (e.g., 'Search...') or remove max-width constraint on small screens"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:1099",
+      "issue": "Status picker positioned with hardcoded bottom:48px offset relative to sidebar container",
+      "impact": "Status picker may render at wrong position if sidebar footer layout height changes",
+      "fix": "Position status picker relative to the avatar button using dynamic top calculation or portal-based positioning"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/chat/message-list/message-item.tsx:447",
+      "issue": "Reaction tooltip uses native HTML title attribute \u2014 not keyboard accessible, no user names shown",
+      "impact": "Reaction tooltips cannot be triggered by keyboard and do not display names of who reacted",
+      "fix": "Add proper tooltip component listing names of users who reacted on hover/focus, or use aria-label with aggregated count"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx:1",
+      "issue": "Settings and admin page content unknown \u2014 may lack loading states or permission checks",
+      "impact": "Unknown UX quality for settings and admin flows; potential missing loading/error states",
+      "fix": "Verify settings and admin pages have loading skeletons, permission checks, and consistent layout with workspace shell"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/app/(workspace)/layout.tsx:329",
+      "issue": "OnboardingTour component always rendered but trigger logic unclear \u2014 may not activate for new users",
+      "impact": "New users may miss guided onboarding if tour trigger condition is not properly configured",
+      "fix": "Verify onboarding tour trigger is functional and appears for newly created user accounts on first workspace visit"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "security",
+      "file": "apps/web/components/chat/message-list/message-item.tsx:322",
+      "issue": "User-generated markdown content rendered via ReactMarkdown without href sanitization on link renderer",
+      "impact": "Potential XSS vector through crafted markdown links using javascript: or other dangerous URI schemes in the custom 'a' component override",
+      "fix": "Add href sanitization to the link renderer validating against dangerous URI schemes, and consider DOMPurify as additional defense layer"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "stability",
+      "file": "apps/web/components/chat/chat-view.tsx:321",
+      "issue": "Socket connection listener cleanup may not execute if getSocket() promise is pending during unmount",
+      "impact": "Potential socket event listener leak on rapid channel switches causing duplicate message handlers or memory leaks",
+      "fix": "Use cancellable promise pattern or ref to track cancellation state ensuring cleanup runs regardless of socket connection status"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "error_handling",
+      "file": "apps/web/app/(workspace)/layout.tsx:158",
+      "issue": "Workspace layout returns null on missing user without error UI for workspace fetch failures",
+      "impact": "Blank screen if workspace API fails after authentication succeeds; no retry mechanism or error messaging",
+      "fix": "Add error state for workspace fetch failures with retry button, clear messaging, and fallback UI instead of returning null"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "security",
+      "file": "apps/web/components/chat/chat-view.tsx:401",
+      "issue": "File upload handler lacks client-side file size, type, and extension validation",
+      "impact": "Users may upload oversized files or disallowed file types (scripts, executables) wasting bandwidth and creating security risk",
+      "fix": "Add client-side file validation: max file size check (50MB), allowed MIME type whitelist, and reject executable extensions before upload"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "stability",
+      "file": "apps/web/lib/socket.ts:1",
+      "issue": "Socket.io client missing explicit heartbeat (ping/pong) configuration for unreliable networks",
+      "impact": "Silent disconnections on unreliable mobile networks where client thinks it's connected but server timed out",
+      "fix": "Configure Socket.io client with explicit pingTimeout (20000) and pingInterval (25000) for mobile-friendly reconnection"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "performance",
+      "file": "apps/web/app/layout.tsx:33",
+      "issue": "Reduced motion handled via inline script instead of CSS media query in stylesheet",
+      "impact": "Minor; inline script increases root layout size and runs on every page load unnecessarily",
+      "fix": "Move reduced motion handling to CSS: @media (prefers-reduced-motion: reduce) setting animation-duration: 0.01ms !important"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "performance",
+      "file": "apps/web/components/chat/message-list/message-item.tsx:186",
+      "issue": "Avatar images rendered with unoptimized img tag instead of Next/Image component",
+      "impact": "Larger than necessary image bytes on the wire; no automatic lazy loading, responsive sizing, or format optimization",
+      "fix": "Replace <img> with Next.js Image component with explicit width/height and remotePatterns in next.config.ts"
+    }
+  ]
+}

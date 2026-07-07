@@ -30,6 +30,7 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
       );
       setIsSubscribed(res.subscriptions.length > 0);
     } catch {
+      console.warn("Failed to check subscription");
       /* ignore */
     }
   }
@@ -68,6 +69,7 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
       setIsSubscribed(false);
       onClose();
     } catch {
+      console.warn("Failed to disable notifications");
       /* ignore */
     } finally {
       setIsSubscribing(false);

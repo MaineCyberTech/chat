@@ -1,0 +1,40 @@
+{
+  "run_id": "full_pipeline_batch_20260707_074237",
+  "generated_at": "2026-07-07T07:43:03+00:00",
+  "decision": "GO",
+  "severity_totals": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_health_scores": {
+    "repo_structure": 88.0,
+    "code_quality": 88.0,
+    "monorepo": 85.0,
+    "ci_cd": 88.0,
+    "docs": 85.0,
+    "tooling": 88.0,
+    "auth": 95.0,
+    "secrets": 92.0,
+    "headers": 95.0,
+    "input_validation": 95.0,
+    "rate_limiting": 90.0,
+    "dependencies": 88.0,
+    "database_rls": 95.0,
+    "audit_logging": 90.0,
+    "error_handling": 92.0,
+    "lockfile": 92.0,
+    "dependabot": 90.0,
+    "trivy": 85.0,
+    "sbom": 85.0,
+    "image_vuln_scan": 85.0,
+    "peer_deps": 90.0,
+    "feature_completeness": 90.0,
+    "regression_risk": 88.0,
+    "test_coverage": 85.0,
+    "performance": 88.0
+  },
+  "finding_count": 0,
+  "findings": []
+}

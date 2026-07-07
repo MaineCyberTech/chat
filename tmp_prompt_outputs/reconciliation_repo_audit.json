@@ -1,0 +1,23 @@
+{
+  "prompt_name": "reconciliation_repo_audit",
+  "domain": "reconciliation",
+  "stage": "reconciliation",
+  "decision": "GO",
+  "generated_at": "2026-07-07T07:42:28Z",
+  "readiness": 87.0,
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_scores": {
+    "repo_structure": 88,
+    "code_quality": 88,
+    "monorepo": 85,
+    "ci_cd": 88,
+    "docs": 85,
+    "tooling": 88
+  },
+  "findings": []
+}

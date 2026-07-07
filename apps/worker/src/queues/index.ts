@@ -10,82 +10,83 @@ export const QUEUE_NAMES = {
   DATA_RETENTION: "data-retention",
 } as const;
 
-function getRedisClient(): Redis {
+function getRedisClient(): Redis | null {
   const env = loadEnv();
   if (!env.REDIS_URL) {
-    throw new Error("REDIS_URL not configured");
+    return null;
   }
-  return new Redis(env.REDIS_URL, {
-    maxRetriesPerRequest: null,
-    retryStrategy: (times) => Math.min(times * 100, 3000),
-    enableReadyCheck: true,
-    lazyConnect: false,
-  });
+  try {
+    return new Redis(env.REDIS_URL, {
+      maxRetriesPerRequest: null,
+      retryStrategy: (times) => Math.min(times * 100, 3000),
+      enableReadyCheck: true,
+      lazyConnect: false,
+    });
+  } catch {
+    return null;
+  }
 }
 
-export function createWebhookQueue(): Queue {
-  return new Queue("webhook-delivery", {
-    connection: getRedisClient(),
-    defaultJobOptions: {
-      removeOnComplete: 100,
-      removeOnFail: 50,
-      attempts: 5,
-      backoff: {
-        type: "exponential",
-        delay: 60000,
-      },
+function createQueue(name: string, defaultJobOptions: Record<string, unknown>): Queue | null {
+  const connection = getRedisClient();
+  if (!connection) {
+    return null;
+  }
+  try {
+    return new Queue(name, { connection, defaultJobOptions } as never);
+  } catch {
+    return null;
+  }
+}
+
+export function createWebhookQueue(): Queue | null {
+  return createQueue("webhook-delivery", {
+    removeOnComplete: 100,
+    removeOnFail: 50,
+    attempts: 5,
+    backoff: {
+      type: "exponential",
+      delay: 60000,
     },
   });
 }
 
-export function createNotificationQueue(): Queue {
-  return new Queue("notification", {
-    connection: getRedisClient(),
-    defaultJobOptions: {
-      removeOnComplete: 100,
-      removeOnFail: 50,
-      attempts: 3,
-      backoff: {
-        type: "exponential",
-        delay: 30000,
-      },
+export function createNotificationQueue(): Queue | null {
+  return createQueue("notification", {
+    removeOnComplete: 100,
+    removeOnFail: 50,
+    attempts: 3,
+    backoff: {
+      type: "exponential",
+      delay: 30000,
     },
   });
 }
 
-export function createSearchQueue(): Queue {
-  return new Queue("search-indexing", {
-    connection: getRedisClient(),
-    defaultJobOptions: {
-      removeOnComplete: 50,
-      removeOnFail: 25,
-      attempts: 3,
-      backoff: {
-        type: "exponential",
-        delay: 10000,
-      },
+export function createSearchQueue(): Queue | null {
+  return createQueue("search-indexing", {
+    removeOnComplete: 50,
+    removeOnFail: 25,
+    attempts: 3,
+    backoff: {
+      type: "exponential",
+      delay: 10000,
     },
   });
 }
 
-export function createCleanupQueue(): Queue {
-  return new Queue("cleanup", {
-    connection: getRedisClient(),
-    defaultJobOptions: {
-      removeOnComplete: 10,
-      removeOnFail: 5,
-      attempts: 1,
-    },
+export function createCleanupQueue(): Queue | null {
+  return createQueue("cleanup", {
+    removeOnComplete: 10,
+    removeOnFail: 5,
+    attempts: 1,
   });
 }
 
-export function createDataRetentionQueue(): Queue {
-  return new Queue("data-retention", {
-    connection: getRedisClient(),
-    defaultJobOptions: {
-      removeOnComplete: 10,
-      removeOnFail: 5,
-      attempts: 1,
-    },
+export function createDataRetentionQueue(): Queue | null {
+  return createQueue("data-retention", {
+    removeOnComplete: 10,
+    removeOnFail: 5,
+    attempts: 1,
   });
 }

@@ -1,0 +1,238 @@
+{
+  "stage": "quality_confirmation",
+  "prompt_name": "api_realtime_contract_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T12:00:00Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 5,
+    "P2": 8,
+    "P3": 6
+  },
+  "category_scores": {
+    "routing": 85,
+    "validation": 80,
+    "error_handling": 70,
+    "idempotency": 40,
+    "realtime": 45,
+    "security_middleware": 75,
+    "pagination": 65,
+    "response_consistency": 55,
+    "performance": 70,
+    "contract_drift": 60
+  },
+  "readiness": 64.5,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "api",
+      "category": "realtime",
+      "file": "apps/web/lib/socket.ts",
+      "issue": "Socket.io client tear-down on every getSocket() call destroys all listeners and reconnects, causing duplicate message delivery and lost presence state",
+      "impact": "Each getSocket() call removes all listeners, disconnects, and reconnects. Multiple React components calling getSocket() simultaneously will create connection storms. Messages sent during reconnection are lost. Presence state is reset on every reconnect.",
+      "fix": "Implement singleton socket with reconnect buffer (queue messages during disconnect, replay on connect). Add message deduplication by idempotency-key. Initialize socket once at app mount, not per-component.",
+      "endpoint": "N/A (Socket.io client)"
+    },
+    {
+      "severity": "P0",
+      "domain": "api",
+      "category": "realtime",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "Socket channel:join only checks workspace membership, not private channel membership, allowing unauthorized channel access",
+      "impact": "Any workspace member can join any private channel's real-time room via socket, bypassing private channel access controls enforced in REST API.",
+      "fix": "Add channel membership check (channel.is_private => channel_members lookup) in the channel:join handler, matching requireChannelAccess middleware logic.",
+      "endpoint": "Socket event: channel:join"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime",
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "issue": "Reactions (add/remove) do not broadcast via Socket.io; frontend never receives real-time reaction updates",
+      "impact": "Users won't see reactions appear/ disappear in real time. Requires manual re-fetch or page reload, breaking the chat real-time experience. Frontend teams may add polling workarounds.",
+      "fix": "Emit reaction:added and reaction:removed events via Socket.io (getIO().to(channelRoom).emit(...)) in ReactionService.add and ReactionService.remove.",
+      "endpoint": "POST /v1/messages/:id/reactions, DELETE /v1/messages/:id/reactions/:emoji"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime",
+      "file": "apps/api/src/modules/channels/service.ts",
+      "issue": "Channel mutations (create, update, delete, member add/remove) do not broadcast via Socket.io",
+      "impact": "Frontend won't see new channels, renamed channels, or member changes in real-time unless polling. Users remain in deleted channels. Sidebar doesn't update.",
+      "fix": "Emit channel:created, channel:updated, channel:deleted, channel:member_added, channel:member_removed events via Socket.io in ChannelService.",
+      "endpoint": "POST/PATCH/DELETE /v1/channels/*, /v1/workspaces/:id/channels"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "response_consistency",
+      "file": "apps/api/src/middleware/error-handler.ts",
+      "issue": "Dual response format: AppError.toJSON() returns { error: { code, message } } while failure() envelope returns { success: false, error: { code, message, status } } causing client contract confusion",
+      "impact": "Frontend code must handle two different error response shapes based on ?envelope=true query param that most clients never send. This creates fragile error handling and potential uncaught errors.",
+      "fix": "Standardize on a single error response format. Remove the ?envelope flag. Make error-handler always use the AppError.toJSON() format or always use the failure() format.",
+      "endpoint": "Global error-handler middleware"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "response_consistency",
+      "file": "apps/api/src/modules",
+      "issue": "Inconsistent success response shapes: some endpoints return { success: true }, others return the resource directly, others return { message }, { messages }, { channel }, etc.",
+      "impact": "Frontend SDK and client code must handle multiple response shapes. Adding new endpoints requires checking which shape to use. Swagger/OpenAPI spec becomes inaccurate.",
+      "fix": "Adopt a single response envelope: either always wrap in { data: <resource> } or always return the resource directly. Audit all 21 route modules for consistency.",
+      "endpoint": "All /v1/* endpoints"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "idempotency",
+      "file": "apps/api/src/lib/idempotency.ts",
+      "issue": "Idempotency only implemented for message creation; all other state-changing POST/PATCH/DELETE endpoints lack idempotency support",
+      "impact": "Network retries can cause duplicate channel creates, webhook creates, reaction adds, workspace creates, etc. No safe retry mechanism exists.",
+      "fix": "Implement idempotency middleware that checks Idempotency-Key header globally for all mutating endpoints. In-memory fallback is not suitable for multi-instance deployments.",
+      "endpoint": "All POST/PATCH/DELETE /v1/* except POST /channels/:channelId/messages"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "security_middleware",
+      "file": "apps/api/src/middleware/csrf.ts",
+      "issue": "Double-submit cookie CSRF uses timingSafeEqual with two user-controlled values, but the cookie token is stored without httpOnly flag, making it readable via JS",
+      "impact": "The CSRF cookie is accessible to JavaScript (httpOnly: false), weakening CSRF protection. An XSS vulnerability would give full access to CSRF tokens.",
+      "fix": "Set httpOnly: true on the CSRF cookie. Use a separate non-httpOnly cookie or header-based approach for the client-side token value.",
+      "endpoint": "Global CSRF middleware"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "validation",
+      "file": "apps/api/src/validators",
+      "issue": "Several route modules use inline validation (manual checks) instead of Zod schemas, bypassing the centralized validation layer",
+      "impact": "Inconsistent validation across endpoints. Missing schema documentation. Some endpoints accept raw input without type checking (e.g., sidebar routes, groups routes, livekit routes).",
+      "fix": "Create Zod schemas for all remaining endpoints (sidebar-categories, groups, scheduled-posts, consent, status, etc.) and use safeParse uniformly.",
+      "endpoint": "POST/PATCH /v1/sidebar-categories/*, /v1/groups/*, /v1/scheduled-posts/*, etc."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "authorization",
+      "file": "apps/api/src/modules/threads/routes.ts",
+      "issue": "Thread join/leave/participants endpoints lack membership checks; any authenticated user can access any thread's participant list or join any thread",
+      "impact": "User could enumerate thread participants across the entire platform. Could join threads in channels they don't have access to.",
+      "fix": "Add requireChannelAccess middleware to thread endpoints (resolve channel from thread parent message).",
+      "endpoint": "GET /v1/threads/:id/participants, POST /v1/threads/:id/join, POST /v1/threads/:id/leave"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "authorization",
+      "file": "apps/api/src/modules/groups/routes.ts",
+      "issue": "User group routes lack workspace membership checks; any authenticated user can create/modify groups in any workspace",
+      "impact": "Authenticated user could create user groups in workspaces they don't belong to, or add/remove members from groups in any workspace.",
+      "fix": "Add requireWorkspaceMembership middleware to all group routes. Validate workspace ownership.",
+      "endpoint": "POST /v1/groups/workspaces/:workspaceId/groups, POST /v1/groups/groups/:id/members"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "pagination",
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "issue": "GET /workspaces/:workspaceId/channels and GET /channels/:id/members have no pagination, risking memory exhaustion on large workspaces",
+      "impact": "Workspace with thousands of channels or millions of members will cause out-of-memory errors or slow responses. No way to progressively load.",
+      "fix": "Add cursor-based or offset-based pagination to channel listing and member listing endpoints. Add default limit with max cap.",
+      "endpoint": "GET /v1/workspaces/:workspaceId/channels, GET /v1/channels/:id/members"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "performance",
+      "file": "apps/api/src/lib/db-timeout.ts",
+      "issue": "queryWithTimeout uses Promise.race which doesn't abort the underlying operation, causing resource leaks on timeout",
+      "impact": "When a query times out, the underlying Supabase fetch and database query continue executing. For long-running queries this wastes database connections and API server memory.",
+      "fix": "Pass AbortSignal to Supabase queries via the fetch implementation's Signal. Use AbortController to actually terminate in-flight requests on timeout.",
+      "endpoint": "All endpoints using queryWithTimeout"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/web/lib/api.ts",
+      "issue": "Frontend has its own HTTP client (api.ts) that duplicates SDK logic, with different error handling, CSRF management, and response parsing than the @chat/sdk package",
+      "impact": "Two code paths for API calls that can diverge. SDK adds /v1 prefix automatically but api.ts also does. Error handling differs (SDK throws structured errors, api.ts throws plain Errors). OpenAPI spec may match neither.",
+      "fix": "Consolidate all API client usage into @chat/sdk. Remove duplicate api.ts or make it a thin wrapper around the SDK client.",
+      "endpoint": "All frontend API calls"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/openapi/routes.ts",
+      "issue": "OpenAPI spec loaded from static JSON file with no automated sync; likely out of date with actual routes and schemas",
+      "impact": "API consumers relying on OpenAPI spec will encounter undocumented endpoints, incorrect schemas, and wrong response shapes. Spec falls back to empty paths if file missing in production.",
+      "fix": "Generate OpenAPI spec dynamically from route registry and Zod schemas (e.g., using zod-to-openapi). Add CI check that verifies spec matches routes.",
+      "endpoint": "GET /v1/openapi.json"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "error_handling",
+      "file": "apps/api/src/middleware/error-handler.ts",
+      "issue": "Error handler exposes stack traces in development mode via NODE_ENV check, but stack traces may contain file paths or internal structure",
+      "impact": "Internal file paths and code structure may leak in development environments. Minor info disclosure risk.",
+      "fix": "Use a configuration flag rather than NODE_ENV check for stack trace exposure. Never expose stack traces in error responses.",
+      "endpoint": "Global error-handler"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "api_versioning",
+      "file": "apps/api/src/route-registry.ts",
+      "issue": "No API version negotiation or version pinning strategy beyond a single /v1 prefix; no sunset/deprecation headers",
+      "impact": "Breaking API changes cannot be rolled out gracefully. Consumers have no way to pin versions or get deprecation warnings.",
+      "fix": "Add Accept-Version header support or URL-based versioning (v2). Add Sunset and Deprecation response headers. Create a version migration guide.",
+      "endpoint": "All /v1/* endpoints"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "resilience",
+      "file": "apps/api/src/server.ts",
+      "issue": "Graceful shutdown destroys all sockets immediately without draining in-flight requests first",
+      "impact": "In-flight HTTP requests and WebSocket messages are terminated mid-processing. Users may see partial updates or failed message sends during deployment.",
+      "fix": "Add draining phase: stop accepting new requests, wait for active requests to complete (with timeout), then destroy idle sockets. Use httpServer.close() callback properly.",
+      "endpoint": "Server lifecycle"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "monitoring",
+      "file": "apps/api/src/modules/health/service.ts",
+      "issue": "Basic health endpoint (GET /) returns hardcoded status without checking database or Redis connectivity",
+      "impact": "Health check passes even when database is unreachable. Load balancer/ orchestrator won't detect degraded state.",
+      "fix": "Remove basic health endpoint or add dependency health checks. Use getFullHealth() as the primary health endpoint. Add Redis ping check.",
+      "endpoint": "GET /"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "webhook_security",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "Webhook create schema allows optional secret field but stores it in plaintext in the database",
+      "impact": "Webhook secrets are stored as plaintext in the webhook_endpoints table. Database compromise would expose all webhook signing secrets.",
+      "fix": "Hash webhook secrets at rest using a KDF (e.g., bcrypt/argon2). Only return masked versions in API responses.",
+      "endpoint": "POST /v1/webhooks, PATCH /v1/webhooks/:id"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "maintenance",
+      "file": "apps/web/lib/socket.ts",
+      "issue": "Socket.io client library installed but frontend has no app-level socket lifecycle management; socket only initialized lazily in use-presence hook",
+      "impact": "Real-time features like typing indicators, new message notifications, and channel updates don't work via Socket.io. The library exists but is effectively dead code for the main chat experience.",
+      "fix": "Create a SocketProvider context that initializes the socket at app root. Connect socket lifecycle to auth state (connect on login, disconnect on logout).",
+      "endpoint": "N/A (Socket.io client lifecycle)"
+    }
+  ],
+  "run_id": "api_realtime_contract_audit_20260707_074815"
+}

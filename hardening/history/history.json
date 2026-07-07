@@ -130,5 +130,41 @@
       "P3": 0
     },
     "finding_count": 0
+  },
+  {
+    "run_id": "full_pipeline_batch_20260707_074237",
+    "timestamp": "2026-07-07T07:43:34+00:00",
+    "decision": "GO",
+    "severity_totals": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 0,
+      "P3": 0
+    },
+    "finding_count": 0
+  },
+  {
+    "run_id": "full_audit_consolidated_20260707_075407",
+    "timestamp": "2026-07-07T07:54:30+00:00",
+    "decision": "GO WITH RISKS",
+    "severity_totals": {
+      "P0": 3,
+      "P1": 31,
+      "P2": 74,
+      "P3": 57
+    },
+    "finding_count": 165
+  },
+  {
+    "run_id": "full_audit_consolidated_20260707_182139",
+    "timestamp": "2026-07-07T18:23:03+00:00",
+    "decision": "GO WITH RISKS",
+    "severity_totals": {
+      "P0": 0,
+      "P1": 5,
+      "P2": 73,
+      "P3": 57
+    },
+    "finding_count": 135
   }
 ]

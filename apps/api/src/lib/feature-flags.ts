@@ -29,6 +29,8 @@ class FeatureFlagService {
       return Array.from(this.cache.values());
     }
 
+    // Admin client required: feature flags are global app config evaluated
+    // across all users; user-scoped client would see zero rows via RLS.
     const admin = getSupabaseAdmin();
     const { data, error } = await admin.from("feature_flags").select("*").order("key");
 
@@ -107,6 +109,8 @@ class FeatureFlagService {
   async createFlag(
     input: Omit<FeatureFlag, "createdAt" | "updatedAt">,
   ): Promise<FeatureFlag | null> {
+    // Admin client required: write operations are guarded at the route level
+    // by authenticate + requirePermission middleware — not by RLS.
     const admin = getSupabaseAdmin();
     const now = new Date().toISOString();
     const { data, error } = await admin

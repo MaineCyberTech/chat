@@ -1,0 +1,161 @@
+{
+  "prompt_name": "frontend_audit_deep_dive",
+  "domain": "frontend",
+  "stage": "principal_audit",
+  "decision": "GO",
+  "generated_at": "2026-07-07T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 8,
+    "P3": 6
+  },
+  "category_scores": {
+    "accessibility": 75,
+    "performance": 65,
+    "component_architecture": 70,
+    "design_system": 60,
+    "error_handling": 55,
+    "state_management": 80,
+    "form_validation": 70,
+    "observability": 50
+  },
+  "readiness": 65,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "design_system",
+      "file": "apps/web/components/chat/chat-view.tsx:60",
+      "issue": "Raw CSS variables used inline instead of Tailwind classes \u2014 inconsistent theming across 40+ components",
+      "impact": "Theming is scattered across inline styles making dark mode and accessibility overrides brittle; Tailwind's dark mode support is bypassed",
+      "fix": "Centralize CSS variable usage into Tailwind theme extensions and use utility classes instead of inline styles throughout all components"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "performance",
+      "file": "apps/web/components/chat/message-list.tsx:144",
+      "issue": "Reaction fetch triggered on every message render without batching or caching for large channel loads",
+      "impact": "High API call volume in channels with many messages causing unnecessary network churn and slow reaction display",
+      "fix": "Batch reaction fetch calls into a single endpoint request, cache results in a persistent ref, and only fetch for newly visible messages using IntersectionObserver"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "state_management",
+      "file": "apps/web/components/chat/chat-view.tsx:346",
+      "issue": "Optimistic update callback may rely on stale closure in rapid-send edge cases",
+      "impact": "Potential race conditions under rapid message sending where confirmOptimistic or rollbackOptimistic may capture stale state",
+      "fix": "Verify all optimistic callbacks use functional updaters (setItems(prev => ...)) rather than depending on closure-captured state values"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "performance",
+      "file": "apps/web/components/chat/message-list.tsx:386",
+      "issue": "No virtualization for long message lists \u2014 all messages rendered as DOM nodes",
+      "impact": "Severe performance degradation in channels with 1000+ messages, especially on low-power mobile devices with high memory usage",
+      "fix": "Integrate @tanstack/react-virtual for windowed rendering of message items, keeping only visible + buffer items in DOM"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "component_architecture",
+      "file": "apps/web/components/chat/message-input.tsx:150",
+      "issue": "Duplicate click-outside and Escape handling patterns repeated across 6+ components",
+      "impact": "Maintenance burden and potential for inconsistent dismiss behavior across emoji picker, priority picker, schedule picker, status menu, team menu, and user picker",
+      "fix": "Extract a shared useClickOutside and useEscape hook (or Popover/Dropdown wrapper component) to consolidate dismiss logic"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "design_system",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:334",
+      "issue": "Hardcoded hex color values for status indicators instead of CSS custom properties",
+      "impact": "Theme color changes require updates in multiple files; inconsistency risk when status colors are updated",
+      "fix": "Define status colors as CSS custom properties (--status-online, --status-away, --status-dnd) and reference them consistently"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "ux",
+      "file": "apps/web/app/(workspace)/layout.tsx:21",
+      "issue": "Mobile sidebar open state resets on client-side navigation",
+      "impact": "Users navigating between channels on mobile lose sidebar context and must re-open it",
+      "fix": "Persist sidebar open state in URL param or context that survives client-side navigation"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "form_validation",
+      "file": "apps/web/components/auth/login-form.tsx:130",
+      "issue": "Login form missing email format validation and inline error messaging for invalid inputs",
+      "impact": "Users may submit invalid emails without clear feedback; HTML5 required attribute alone is insufficient for accessibility",
+      "fix": "Add email format regex validation, provide inline validation messages with aria-describedby, and ensure form submission is disabled until valid"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "component_architecture",
+      "file": "apps/web/components/chat/chat-view.tsx:718",
+      "issue": "RHS panel responsive rendering duplicated for ThreadPanel and ChannelInfo with same desktop/mobile pattern",
+      "impact": "Significant code duplication across panels; risk of mobile vs desktop behavior divergence",
+      "fix": "Create a shared RHS panel component handling responsive rendering (overlay vs sidebar) once, accepting panel content via children or slots"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "accessibility",
+      "file": "apps/web/components/chat/message-list/message-item.tsx:389",
+      "issue": "Post-menu action buttons and floating timestamps have small touch targets on mobile",
+      "impact": "Users on small touch screens may struggle to tap 14px icon buttons; violates WCAG 2.5.5 minimum 44px target size",
+      "fix": "Add min-width/min-height of 44px to post-menu buttons on touch devices and increase padding"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "ux",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:986",
+      "issue": "No loading skeleton for DM channel list or member list while API fetches",
+      "impact": "Flash of 'No direct messages yet' before list populates degrades perceived performance",
+      "fix": "Add skeleton loading states while DM channels and member lists are being fetched via API"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "performance",
+      "file": "apps/web/components/chat/tiptap-editor.tsx:76",
+      "issue": "TipTap editor content set via useEffect causes brief flash and cursor position loss on external content updates",
+      "impact": "Minor edit flash when external state syncs content; cursor position may be lost",
+      "fix": "Use editor.commands.setContent only when content differs meaningfully and avoid calling on mount when editor already has content"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "accessibility",
+      "file": "apps/web/components/chat/chat-view.tsx:746",
+      "issue": "Mobile RHS panel slide-in animation not disabled when prefers-reduced-motion is set",
+      "impact": "Users with vestibular disorders may experience discomfort from forced slide-in animations",
+      "fix": "Add CSS that disables animations when [data-reduced-motion='true'] is present on the document element"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "performance",
+      "file": "apps/web/app/layout.tsx:40",
+      "issue": "Sentry session replay enabled in development environment at 0.1 sample rate",
+      "impact": "Unnecessary session replay recordings and bandwidth usage in local development",
+      "fix": "Set replaysSessionSampleRate to 0.0 in non-production environments by checking NODE_ENV"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "observability",
+      "file": "apps/web/components/chat/message-input.tsx:211",
+      "issue": "Vague console.warn messages lack error context, request IDs, and component names",
+      "impact": "Reduced debuggability of production errors; no way to correlate warnings to specific operations",
+      "fix": "Include error details and component name in console.warn calls, or route through structured logging service"
+    }
+  ]
+}

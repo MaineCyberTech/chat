@@ -133,6 +133,76 @@ async function retainSoftDeletedChannels(
   return ids.length;
 }
 
+async function retainConsentLogs(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  olderThanDays: number,
+) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - olderThanDays);
+
+  const { data: logs, error: selectError } = await supabase
+    .from("consent_logs")
+    .select("id")
+    .lt("created_at", cutoff.toISOString())
+    .limit(1000);
+
+  if (selectError) {
+    logger.error({ error: selectError }, "Failed to select old consent logs for retention");
+    return 0;
+  }
+
+  if (!logs || logs.length === 0) return 0;
+
+  const ids = logs.map((l: { id: string }) => l.id);
+  const { error: deleteError } = await supabase.from("consent_logs").delete().in("id", ids);
+
+  if (deleteError) {
+    logger.error({ error: deleteError }, "Failed to delete old consent logs");
+    return 0;
+  }
+
+  logger.info(
+    { count: ids.length, olderThanDays },
+    "Data retention: cleaned up old consent logs",
+  );
+  return ids.length;
+}
+
+async function retainNotifications(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  olderThanDays: number,
+) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - olderThanDays);
+
+  const { data: notifs, error: selectError } = await supabase
+    .from("notifications")
+    .select("id")
+    .lt("created_at", cutoff.toISOString())
+    .limit(1000);
+
+  if (selectError) {
+    logger.error({ error: selectError }, "Failed to select old notifications for retention");
+    return 0;
+  }
+
+  if (!notifs || notifs.length === 0) return 0;
+
+  const ids = notifs.map((n: { id: string }) => n.id);
+  const { error: deleteError } = await supabase.from("notifications").delete().in("id", ids);
+
+  if (deleteError) {
+    logger.error({ error: deleteError }, "Failed to delete old notifications");
+    return 0;
+  }
+
+  logger.info(
+    { count: ids.length, olderThanDays },
+    "Data retention: cleaned up old notifications",
+  );
+  return ids.length;
+}
+
 async function retainSoftDeletedWorkspaces(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
@@ -194,6 +264,12 @@ export function registerDataRetentionProcessor() {
           break;
         case "soft_deleted_channels":
           cleaned = await retainSoftDeletedChannels(supabase, olderThanDays);
+          break;
+        case "consent_logs":
+          cleaned = await retainConsentLogs(supabase, olderThanDays);
+          break;
+        case "notifications":
+          cleaned = await retainNotifications(supabase, olderThanDays);
           break;
         case "soft_deleted_workspaces":
           cleaned = await retainSoftDeletedWorkspaces(supabase, olderThanDays);

@@ -12,6 +12,12 @@ router.get("/", asyncHandler(async (req: Request, res: Response) => {
   if (!workspaceId) {
     throw new BadRequestError("workspace_id required");
   }
+  const { data: membership } = await req.supabase!.from("workspace_members").select("role").eq("workspace_id", workspaceId).eq("user_id", req.userId).maybeSingle();
+  if (!membership) {
+    res.status(403).json({ error: { code: "FORBIDDEN", message: "Not a member of this workspace" } });
+    return;
+  }
+  (req as Request & { workspaceRole?: string }).workspaceRole = membership.role;
   const { data, error } = await req
     .supabase!.from("user_groups")
     .select("*, user_group_members(count)")
@@ -29,6 +35,12 @@ router.post("/", asyncHandler(async (req: Request, res: Response) => {
   if (!workspace_id || !name) {
     throw new BadRequestError("workspace_id and name required");
   }
+  const { data: membership } = await req.supabase!.from("workspace_members").select("role").eq("workspace_id", workspace_id).eq("user_id", req.userId).maybeSingle();
+  if (!membership) {
+    res.status(403).json({ error: { code: "FORBIDDEN", message: "Not a member of this workspace" } });
+    return;
+  }
+  (req as Request & { workspaceRole?: string }).workspaceRole = membership.role;
   const { data: group, error: gErr } = await req
     .supabase!.from("user_groups")
     .insert({
@@ -73,6 +85,15 @@ router.patch("/:id", asyncHandler(async (req: Request, res: Response) => {
 
 // DELETE /v1/groups/:id
 router.delete("/:id", asyncHandler(async (req: Request, res: Response) => {
+  // Verify workspace membership before allowing group deletion
+  const { data: group } = await req.supabase!.from("user_groups").select("workspace_id").eq("id", req.params.id).single();
+  if (group) {
+    const { data: membership } = await req.supabase!.from("workspace_members").select("role").eq("workspace_id", group.workspace_id).eq("user_id", req.userId).maybeSingle();
+    if (!membership) {
+      res.status(403).json({ error: { code: "FORBIDDEN", message: "Not a member of this workspace" } });
+      return;
+    }
+  }
   const { error } = await req
     .supabase!.from("user_groups")
     .delete()

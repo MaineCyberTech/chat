@@ -7,6 +7,7 @@ function extractDomain(url: string): string {
     const u = new URL(url);
     return u.hostname.replace(/^www\./, "");
   } catch {
+    console.warn("Failed to extract domain from URL", url);
     return url;
   }
 }

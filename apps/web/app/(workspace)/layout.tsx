@@ -238,6 +238,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}
         >
           <ErrorBoundary>{children}</ErrorBoundary>
+          <div className="md:hidden" style={{ height: "var(--bottom-nav-height)" }} />
         </div>
 
         {/* Mobile sidebar overlay */}

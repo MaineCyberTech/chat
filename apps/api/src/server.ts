@@ -8,6 +8,13 @@ import { logger } from "./lib/logger.js";
 import { initializeCache, shutdownCache } from "./middleware/cache.js";
 import type { Socket } from "node:net";
 
+// TODO: Configure alerting channels:
+//   - Prometheus / Alertmanager rules (see metrics.ts)
+//   - Sentry (initialized below via initSentry())
+//   - DO monitoring alerts (CPU > 80 %, memory > 80 %)
+//   - PagerDuty webhook for P0/P1 escalations
+//   - Health check at GET /health (for LB / DO monitoring)
+
 const env = loadEnv();
 initSentry();
 if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {

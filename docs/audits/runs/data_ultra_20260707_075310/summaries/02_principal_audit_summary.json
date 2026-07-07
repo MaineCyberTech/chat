@@ -1,0 +1,105 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "data_ultra",
+  "decision": "GO",
+  "generated_at": "2026-07-07T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 5,
+    "P3": 3
+  },
+  "category_scores": {
+    "data_retention_architecture": 65,
+    "soft_delete_implementation": 80,
+    "data_integrity": 85,
+    "seed_data_safety": 60,
+    "audit_logging": 75,
+    "storage_cleanup": 50
+  },
+  "readiness": 69,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "Data Retention Architecture",
+      "file": "apps/worker/src/processors/data-retention.ts",
+      "issue": "Data retention worker does not process consent_logs or notifications despite including them in the job type definition",
+      "impact": "The DataRetentionJobData type includes 'consent_logs' and 'notifications' types but the worker switch statement has no matching case blocks. Scheduled jobs for these types would silently complete without doing any work. Consent logs have GDPR/regulatory retention requirements.",
+      "fix": "Implement retainConsentLogs (purge after 1 year) and retainNotifications (purge read notifications after 30 days) functions, or remove the unused types from the job data union."
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "Data Integrity",
+      "file": "supabase/migrations/20260707000001_add_channel_member_history.sql",
+      "issue": "channel_member_history INSERT policy allows any authenticated user to forge audit records",
+      "impact": "Line 30: CREATE POLICY ... WITH CHECK (true) permits any authenticated user to insert arbitrary join/leave events into the channel member history. This is an audit integrity vulnerability \u2014 users could inject false history records.",
+      "fix": "Change WITH CHECK (true) to WITH CHECK (false) so only the SECURITY DEFINER trigger function can insert records."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "Data Retention Architecture",
+      "file": "apps/worker/src/processors/data-retention.ts, supabase/migrations/20260625000015_data_retention.sql, supabase/migrations/20260627000002_enforce_data_retention.sql",
+      "issue": "Dual-path data retention with overlapping and inconsistent coverage",
+      "impact": "Data retention is split across a BullMQ worker (hard-deletes soft-deleted rows) and SQL functions (purge_old_*, archive_old_messages). The SQL functions are never called (pg_cron commented out). The worker handles 4 of the 6 purge types. This fragmentation risks inconsistent retention behavior.",
+      "fix": "Consolidate all retention into the BullMQ worker: add consent_logs, notifications, and archival jobs. Remove or clearly separate the SQL-only purge functions. Activate one scheduling mechanism (worker preferred for observability)."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "Data Integrity",
+      "file": "supabase/migrations/20260625000015_data_retention.sql",
+      "issue": "archive_old_messages channel_id filter always evaluates to true due to parameter/column name collision",
+      "impact": "The function parameter is named channel_id (same as the column), so the WHERE clause (channel_id = channel_id OR channel_id IS NULL) is always true for the first condition. The function cannot scope archival to a specific channel.",
+      "fix": "Rename the parameter to target_channel_id so the WHERE clause correctly reads: AND (target_channel_id IS NULL OR m.channel_id = target_channel_id)."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "Data Retention Architecture",
+      "file": "supabase/migrations/20260625000013_audit_log_pruning.sql, supabase/migrations/20260625000015_data_retention.sql, supabase/migrations/20260627000002_enforce_data_retention.sql",
+      "issue": "All pg_cron scheduling is commented out, DB-level retention functions are never invoked automatically",
+      "impact": "Three migrations define purge SQL functions (purge_old_audit_logs, archive_old_messages, purge_archived_messages) with commented-out pg_cron schedules. The BullMQ worker does not call these functions. Data grows unbounded unless manually triggered.",
+      "fix": "Either activate pg_cron schedules in production, or have the BullMQ worker call the SQL functions via supabase.rpc(). Do not leave both paths dormant."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "Seed Data Safety",
+      "file": "supabase/seeds/01_workspaces.sql, supabase/seeds/02_channels.sql, supabase/seeds/03_messages.sql, supabase/seeds/04_threads.sql, supabase/seeds/05_reactions.sql, supabase/seeds/06_notifications.sql, supabase/seeds/07_webhooks.sql",
+      "issue": "Seed scripts can overwrite production data with no safety guards",
+      "impact": "All seed scripts use ON CONFLICT DO UPDATE pattern. If accidentally run against production, they silently overwrite live workspaces, channels, and messages with test data. Only 00_local_test_users.sql has a LOCAL DEV ONLY comment; the other seeds have no warnings.",
+      "fix": "Add runtime guards: DO $$ BEGIN IF EXISTS (SELECT 1 FROM public.workspaces LIMIT 1) THEN RAISE EXCEPTION 'Seed scripts must not run against production'; END IF; END $$;"
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "Data Integrity",
+      "file": "supabase/migrations/20260625000004_create_messages.sql",
+      "issue": "No cross-channel validation for messages.parent_id",
+      "impact": "The self-referential FK only validates the parent message exists. A client could set parent_id to a message in a different channel, causing thread replies to appear under a message from another conversation.",
+      "fix": "Add a trigger to validate parent_id references a message with the same channel_id, or add application-layer validation in the message store."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "Data Integrity",
+      "file": "supabase/migrations/20260705000002_add_scheduled_posts.sql",
+      "issue": "scheduled_posts CHECK constraint prevents same-second scheduling",
+      "impact": "CONSTRAINT future_schedule CHECK (scheduled_at > created_at) uses strict greater-than, preventing scheduling a post with the same timestamp as creation. This blocks scheduling within the same transaction or sub-second interval.",
+      "fix": "Change to CHECK (scheduled_at >= created_at) to allow same-timestamp scheduling."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "Storage Cleanup",
+      "file": "apps/worker/src/processors/data-retention.ts",
+      "issue": "Soft-delete and data retention cleanup does not handle orphaned storage objects",
+      "impact": "When messages or channels are hard-deleted by the data retention worker, associated file uploads in Supabase Storage are not cleaned up. Orphaned storage objects accumulate, consuming bucket capacity and potentially exposing deleted file URLs.",
+      "fix": "Add storage cleanup steps that list and delete objects in the chat-uploads bucket for deleted message/channel IDs. Filter objects by path prefix matching the deleted IDs."
+    }
+  ],
+  "run_id": "data_ultra_20260707_075310"
+}

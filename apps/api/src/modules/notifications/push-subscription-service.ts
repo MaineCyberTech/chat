@@ -36,7 +36,7 @@ export class PushSubscriptionService {
   private vapidKeys: { publicKey: string; privateKey: string } | null = null;
 
   constructor() {
-    // Read VAPID keys directly from process.env to avoid loadEnv() crash at module scope
+    // Expected env vars: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (for push notifications), EMAIL_FROM (optional, for VAPID mailto)
     const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
     const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
     const emailFrom = process.env.EMAIL_FROM;

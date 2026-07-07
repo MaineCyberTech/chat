@@ -42,6 +42,7 @@ export function CreateWorkspaceDialog({ onCreated, children }: Props) {
         router.push(`/${res.workspace.slug}`);
       }
     } catch {
+      console.warn("Failed to create workspace");
       setLoading(false);
     }
   }

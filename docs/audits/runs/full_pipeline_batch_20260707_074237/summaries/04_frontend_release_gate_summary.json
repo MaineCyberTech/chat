@@ -1,0 +1,22 @@
+{
+  "stage": "frontend_release_gate",
+  "prompt_name": "feature_release_gate",
+  "decision": "GO",
+  "generated_at": "2026-07-07T07:42:28Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_scores": {
+    "feature_completeness": 90,
+    "regression_risk": 88,
+    "test_coverage": 85,
+    "docs": 85,
+    "performance": 88
+  },
+  "readiness": 87.2,
+  "findings": [],
+  "run_id": "full_pipeline_batch_20260707_074237"
+}

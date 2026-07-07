@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { WorkspaceList } from "./workspace-list";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
@@ -40,6 +41,7 @@ const SIDEBAR_MIN_WIDTH = 200;
 const SIDEBAR_MAX_WIDTH = 304;
 
 export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose }: Props) {
+  const router = useRouter();
   const { user, signOut } = useAuth();
   const { addToast } = useToast();
   const [refreshKey, setRefreshKey] = useState(0);
@@ -187,7 +189,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
         return [res.channel, ...prev];
       });
       setShowUserPicker(false);
-      window.location.href = `/${workspaceSlug}/${res.channel.slug}`;
+      router.push(`/${workspaceSlug}/${res.channel.slug}`);
     } catch {
       console.warn("Failed to create DM channel");
     }
@@ -206,7 +208,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
       });
       setShowUserPicker(false);
       setSelectedUserIds(new Set());
-      window.location.href = `/${workspaceSlug}/${res.channel.slug}`;
+      router.push(`/${workspaceSlug}/${res.channel.slug}`);
     } catch {
       console.warn("Failed to create group chat");
     }

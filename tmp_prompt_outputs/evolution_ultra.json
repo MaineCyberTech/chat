@@ -1,0 +1,23 @@
+{
+  "prompt_name": "evolution_ultra",
+  "domain": "evolution",
+  "stage": "reconciliation",
+  "decision": "GO",
+  "generated_at": "2026-07-07T07:42:28Z",
+  "readiness": 85.17,
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_scores": {
+    "architecture": 88,
+    "tech_debt": 85,
+    "extensibility": 80,
+    "documentation": 85,
+    "testing": 85,
+    "ci_cd": 88
+  },
+  "findings": []
+}

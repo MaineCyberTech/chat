@@ -1,0 +1,115 @@
+{
+  "stage": "reconciliation",
+  "run_id": "full_audit_consolidated_20260707_175926",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T17:59:26Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 4,
+    "P3": 3
+  },
+  "category_scores": {
+    "env_validation": 75,
+    "deployment_parity": 65,
+    "secrets_management": 70,
+    "config_consistency": 60,
+    "env_tooling": 50,
+    "architecture": 88,
+    "tech_debt": 85,
+    "extensibility": 80,
+    "documentation": 85,
+    "testing": 85,
+    "ci_cd": 88,
+    "repo_structure": 88,
+    "code_quality": 88,
+    "monorepo": 85,
+    "docs": 85,
+    "tooling": 88
+  },
+  "readiness": 79.06,
+  "finding_count": 9,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "secrets_management",
+      "file": "apps/api/src/modules/livekit/service.ts",
+      "issue": "LiveKit API keys read directly from process.env instead of validated env schema",
+      "impact": "LiveKit credentials (API_KEY, API_SECRET, HOST) bypass Zod validation. A missing or malformed key will fail silently at runtime with empty strings, causing cryptic connection failures.",
+      "fix": "Add LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_HOST to the env schema in apps/api/src/config/env.ts with appropriate validation. Import via loadEnv() instead of process.env."
+    },
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "secrets_management",
+      "file": "apps/api/src/modules/notifications/push-subscription-service.ts",
+      "issue": "VAPID keys and SMTP credentials read from process.env bypassing environment validation schema",
+      "impact": "The push notification service reads VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, EMAIL_FROM via process.env directly. Missing values default to undefined without schema-level validation or clear error messaging.",
+      "fix": "Add VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, EMAIL_FROM to the shared env schema. Import validated values from loadEnv() in all consumers."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "config_consistency",
+      "file": "apps/api/src/config/env.ts",
+      "issue": "API env schema uses .optional() for SUPABASE_URL and SUPABASE_ANON_KEY while worker schema requires them",
+      "impact": "Drift between environments: API starts without Supabase (degraded mode), worker crashes without Supabase. This inconsistency makes deployment expectations unclear and leads to different behavior per service.",
+      "fix": "Align API env schema with worker schema: make SUPABASE_URL and SUPABASE_ANON_KEY required. Remove the degraded-mode path or add explicit env flag for running without database."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "health_port",
+      "file": "apps/worker/src/main.ts",
+      "issue": "HEALTH_PORT not defined in any environment schema; read directly from process.env with fallback to 4100",
+      "impact": "The worker health port is not validated or documented in the shared environment schema. Deployments that set a non-numeric HEALTH_PORT will silently use the fallback.",
+      "fix": "Add HEALTH_PORT to packages/config/env-schema.ts with number coercion. Default to 4100 in schema, not in code."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "deployment_parity",
+      "file": "infra/docker/",
+      "issue": "No deployment preview environments exist for testing infrastructure changes before production",
+      "impact": "Infrastructure changes (Docker Compose, Caddyfile, env vars) cannot be validated in an isolated environment before reaching production, risking breaking changes to the live deployment.",
+      "fix": "Add a staging environment with a separate Docker Compose file and Caddy config. Use Terraform workspaces or separate tfvars files for staging. Wire into CI/CD for auto-deploy on PR."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "env_tooling",
+      "file": "apps/api/src/config/env.ts",
+      "issue": "No .env.example file or env template committed to repository for onboarding",
+      "impact": "New developers must guess required environment variables by reading code. This slows onboarding and creates risk of missing required config in new environments.",
+      "fix": "Create .env.example at repo root documenting every environment variable, its type, default, and which service uses it. Add a pre-start check comparing against the schema."
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "env_tooling",
+      "file": "packages/config/env-schema.ts",
+      "issue": "No environment drift detection tooling to compare dev vs staging vs production env configurations",
+      "impact": "Configuration drift between environments goes undetected until a runtime failure occurs in production that cannot be reproduced locally.",
+      "fix": "Add a script (scripts/audit/env-drift-check.ts) that compares expected environment variables against actual in each deployment. Integrate into CI/CD as a pre-deploy check."
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "deployment_parity",
+      "file": "apps/web/lib/pwa/push-client.ts",
+      "issue": "Console.warn/error used directly in PWA push client instead of structured logging through the application logger",
+      "impact": "PWA push notification errors in production are not captured in structured logs or Sentry, making debugging push delivery failures difficult.",
+      "fix": "Replace console.warn/console.error with proper logger calls or Sentry capture. Ensure push notification errors are visible in production observability tooling."
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "env_tooling",
+      "file": "",
+      "issue": "Environment variable documentation does not specify which variables are required per service (api, worker, web)",
+      "impact": "Operators setting up a new deployment must reverse-engineer which env vars each service needs, increasing setup time and misconfiguration risk.",
+      "fix": "Annotate each env var in .env.example with a service tag: [api], [worker], [web], [all]. Generate per-service .env.example files from the schema."
+    }
+  ]
+}

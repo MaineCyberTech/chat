@@ -1,0 +1,7 @@
+{
+  "run_id": "feature_release_gate_20260707_074854",
+  "created_at": "2026-07-07T07:48:54+00:00",
+  "prompt_name": "feature_release_gate",
+  "domain": "release",
+  "status": "initialized"
+}

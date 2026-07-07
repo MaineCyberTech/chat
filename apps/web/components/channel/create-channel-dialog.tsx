@@ -41,6 +41,7 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
       });
       onCreated();
     } catch {
+      console.warn("Failed to create channel");
       setLoading(false);
     }
   }

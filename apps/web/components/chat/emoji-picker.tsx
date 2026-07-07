@@ -18,6 +18,7 @@ function loadRecent(): string[] {
   try {
     return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
   } catch {
+    console.warn("Failed to load recent emojis");
     return [];
   }
 }
@@ -26,6 +27,7 @@ function saveRecent(emojis: string[]) {
   try {
     localStorage.setItem(RECENT_KEY, JSON.stringify(emojis.slice(0, MAX_RECENT)));
   } catch {
+    console.warn("Failed to save recent emojis");
     /* ignore */
   }
 }
@@ -35,6 +37,7 @@ function loadSkinTone(): number {
   try {
     return parseInt(localStorage.getItem(SKIN_KEY) ?? "0", 10);
   } catch {
+    console.warn("Failed to load skin tone");
     return 0;
   }
 }
@@ -43,6 +46,7 @@ function saveSkinTone(idx: number) {
   try {
     localStorage.setItem(SKIN_KEY, String(idx));
   } catch {
+    console.warn("Failed to save skin tone");
     /* ignore */
   }
 }

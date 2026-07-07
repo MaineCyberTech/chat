@@ -148,8 +148,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         res.profiles.forEach((p) => next.set(p.id, p));
         return next;
       });
-    } catch {
-      /* ignore */
+    } catch (error) {
+      console.warn("Failed to load user profiles", error);
     }
   }, []);
 
@@ -673,6 +673,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         <div className="flex min-h-0 flex-1 flex-col">
           <div
             role="log"
+            aria-live="polite"
+            aria-relevant="additions"
             aria-atomic="false"
             aria-label="Messages"
             className="flex-1 min-h-0 overflow-y-auto"

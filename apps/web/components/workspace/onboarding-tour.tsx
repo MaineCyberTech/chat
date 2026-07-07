@@ -57,6 +57,7 @@ function getCompleted(key: string): boolean {
   try {
     return localStorage.getItem(key) === "true";
   } catch {
+    console.warn("Failed to read onboarding state");
     return false;
   }
 }
@@ -66,6 +67,7 @@ function getOnboardingDismissed(): boolean {
   try {
     return localStorage.getItem("onboarding:dismissed") === "true";
   } catch {
+    console.warn("Failed to read onboarding dismissed state");
     return true;
   }
 }
@@ -74,6 +76,7 @@ function setOnboardingDismissed() {
   try {
     localStorage.setItem("onboarding:dismissed", "true");
   } catch {
+    console.warn("Failed to save onboarding dismissed state");
     /* ignore */
   }
 }
@@ -82,6 +85,7 @@ function getOnboardingCompleted(): boolean {
   try {
     return TASKS.every((t) => getCompleted(t.checkKey));
   } catch {
+    console.warn("Failed to check onboarding completion");
     return false;
   }
 }

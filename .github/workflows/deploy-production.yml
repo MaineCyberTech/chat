@@ -10,6 +10,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: deploy-prod-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   ENVIRONMENT: production
   DOMAIN: mainecybertech.com
@@ -184,7 +188,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    name: Deploy to Droplet
+    name: Deploy to Production
     needs: [build-images, provision]
     runs-on: ubuntu-latest
     timeout-minutes: 15

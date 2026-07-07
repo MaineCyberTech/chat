@@ -8,7 +8,7 @@ DROP INDEX IF EXISTS idx_channel_role_overrides_channel;
 DROP INDEX IF EXISTS idx_channel_role_overrides_user;
 ALTER TABLE public.channel_role_overrides DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "channel_role_overrides_manage_admin";
-DROP FUNCTION IF EXISTS public.channel_workspace(channel_id;
+DROP FUNCTION IF EXISTS public.channel_workspace(channel_id UUID);
 DROP POLICY IF EXISTS "channel_role_overrides_select_member";
 DROP POLICY IF EXISTS channels_select_member;
 DROP POLICY IF EXISTS messages_select_member;

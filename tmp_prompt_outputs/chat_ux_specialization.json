@@ -1,0 +1,113 @@
+{
+  "prompt_name": "chat_ux_specialization",
+  "domain": "uxui",
+  "stage": "frontend_release_gate",
+  "decision": "GO",
+  "generated_at": "2026-07-07T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 5,
+    "P3": 5
+  },
+  "category_scores": {
+    "ux": 72,
+    "responsive": 68,
+    "accessibility": 70,
+    "onboarding": 65,
+    "feedback_states": 70
+  },
+  "readiness": 69,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/chat/message-list.tsx:350",
+      "issue": "Empty channel state lacks actionable guidance or onboarding context for new users",
+      "impact": "New users joining an empty channel may be uncertain how to begin participating",
+      "fix": "Add contextual empty state with channel purpose, onboarding hints, or a clickable 'Say hello!' suggestion"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/chat/message-input.tsx:821",
+      "issue": "No feedback when @mention query matches no channel members",
+      "impact": "Users may be confused why @mention autocomplete is not responding; no indication that the name doesn't exist",
+      "fix": "Show a 'No members found matching query' message below the input when filteredMembers is empty and mentionQuery is active"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:283",
+      "issue": "Sidebar category drag-and-drop lacks drag ghost image and channel-to-category drag support",
+      "impact": "Drag-and-drop feels unpolished; channels cannot be dragged between categories, only via API",
+      "fix": "Add drag ghost image via e.dataTransfer.setDragImage(), show drop zone indicators for channels, and enable channel-to-category drag"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "accessibility",
+      "file": "apps/web/components/chat/message-input.tsx:1109",
+      "issue": "Priority warning and @everyone modals do not restore focus to message input after close",
+      "impact": "Keyboard navigation flow is interrupted after modal confirmations; keyboard users must tab back to input manually",
+      "fix": "After modal close, call tiptapRef.current?.commands.focus() or manually focus the editor element"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/chat/chat-view.tsx:756",
+      "issue": "Mobile thread panel uses ArrowLeft icon for close \u2014 ambiguous UX pattern",
+      "impact": "Users may expect ArrowLeft to navigate back in browser history rather than close the thread panel",
+      "fix": "Use X icon consistently for closing mobile RHS panels, or add close label text alongside ArrowLeft"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "responsive",
+      "file": "apps/web/components/chat/chat-view.tsx:636",
+      "issue": "Search bar placeholder text may overflow on narrow mobile screens",
+      "impact": "Minor visual overflow on very narrow viewports where search bar max-width is constrained",
+      "fix": "Use shorter placeholder on mobile (e.g., 'Search...') or remove max-width constraint on small screens"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:1099",
+      "issue": "Status picker positioned with hardcoded bottom:48px offset relative to sidebar container",
+      "impact": "Status picker may render at wrong position if sidebar footer layout height changes",
+      "fix": "Position status picker relative to the avatar button using dynamic top calculation or portal-based positioning"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/chat/message-list/message-item.tsx:447",
+      "issue": "Reaction tooltip uses native HTML title attribute \u2014 not keyboard accessible, no user names shown",
+      "impact": "Reaction tooltips cannot be triggered by keyboard and do not display names of who reacted",
+      "fix": "Add proper tooltip component listing names of users who reacted on hover/focus, or use aria-label with aggregated count"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx:1",
+      "issue": "Settings and admin page content unknown \u2014 may lack loading states or permission checks",
+      "impact": "Unknown UX quality for settings and admin flows; potential missing loading/error states",
+      "fix": "Verify settings and admin pages have loading skeletons, permission checks, and consistent layout with workspace shell"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/app/(workspace)/layout.tsx:329",
+      "issue": "OnboardingTour component always rendered but trigger logic unclear \u2014 may not activate for new users",
+      "impact": "New users may miss guided onboarding if tour trigger condition is not properly configured",
+      "fix": "Verify onboarding tour trigger is functional and appears for newly created user accounts on first workspace visit"
+    }
+  ]
+}

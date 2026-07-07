@@ -1,0 +1,77 @@
+{
+  "stage": "quality_confirmation",
+  "prompt_name": "environment_promotion_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T03:42:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 3,
+    "P3": 2
+  },
+  "category_scores": {
+    "promotion_workflow": 70,
+    "env_parity": 60,
+    "rollback_readiness": 65,
+    "ci_cd_alignment": 75,
+    "approval_gates": 55
+  },
+  "readiness": 65,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "approval_gates",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "Production deployment workflow lacks mandatory manual approval step before deployment to production",
+      "impact": "Any push to main or manual trigger deploys to production without human oversight. A malicious or buggy commit reaches users with no opportunity for review or rollback decision.",
+      "fix": "Add an 'environment: production' deployment protection rule with required reviewers in GitHub. Add a 'wait-for-approval' step before the deploy job that blocks until an authorized user approves."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "rollback_readiness",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "CI/CD uses `:latest` image tags which overwrite previous production images, preventing rapid rollback to a known-good version",
+      "impact": "If a broken deployment is promoted to production, rolling back requires rebuilding the old image instead of redeploying a tagged version. The previous `:latest` image is lost.",
+      "fix": "Tag production images with both `:latest` and a specific SHA-based tag (e.g., `:git-sha-${GITHUB_SHA}`). Add a rollback workflow that accepts a SHA tag and deploys that version."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "env_parity",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Production Docker Compose uses Caddy for TLS while development uses raw ports \u2014 no parity on reverse proxy configuration",
+      "impact": "CORS, cookie security settings, and CSP headers behave differently between environments. A bug in Caddy config only manifests in production, and production TLS issues cannot be reproduced locally.",
+      "fix": "Add a local Caddyfile.dev for development that mirrors production Caddy configuration but with self-signed certs. Add a docker-compose.override.yml for local TLS testing."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "promotion_workflow",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "Development deployment to DigitalOcean uses same Docker Compose as production with only minor env var differences",
+      "impact": "A breaking change in Docker Compose that only manifests on the remote environment cannot be detected before promoting to production. Dev and prod should run independently as isolated stacks.",
+      "fix": "Use separate Docker Compose project names (--project-name) to isolate stacks. Add environment prefix to container names. Ensure dev and prod can coexist on the same host without conflict."
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "promotion_workflow",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No smoke test or health check validation step after production deployment completes",
+      "impact": "A deployment that starts but immediately fails health checks goes undetected by CI/CD. Operators only learn about failures through user reports.",
+      "fix": "Add a post-deploy smoke test step that: (1) hits the /health endpoint, (2) verifies 200 response, (3) checks database connectivity, (4) sends a test WebSocket message. Rollback automatically if smoke tests fail."
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "env_parity",
+      "file": "infra/terraform/main.tf",
+      "issue": "Terraform IaC only provisions a single droplet shared between dev and prod environments",
+      "impact": "Development and production share the same compute resources. A load test or memory leak in dev can impact production performance and vice versa.",
+      "fix": "Separate Terraform workspaces for dev and prod with isolated droplets. Add environment variable to Terraform to select target. Increase resource allocation for prod."
+    }
+  ],
+  "run_id": "20260707_ops_privacy_resilience_governance"
+}

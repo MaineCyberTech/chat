@@ -1,21 +1,4 @@
-CREATE TABLE IF NOT EXISTS public.user_groups (
-  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  workspace_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
-  name         text NOT NULL,
-  description  text DEFAULT '',
-  created_by   uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  created_at   timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(workspace_id, name)
-);
-
-CREATE TABLE IF NOT EXISTS public.user_group_members (
-  id        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  group_id  uuid NOT NULL REFERENCES public.user_groups(id) ON DELETE CASCADE,
-  user_id   uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(group_id, user_id)
-);
-
+-- Tables already created by 20260704000007 — only add new policies here.
 ALTER TABLE public.user_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_group_members ENABLE ROW LEVEL SECURITY;
 

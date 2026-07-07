@@ -30,6 +30,7 @@ export function NotificationBell() {
       const res = await api.get<{ unread: number }>("/notifications/unread");
       setUnread(res.unread);
     } catch {
+      console.warn("Failed to fetch unread count");
       /* ignore */
     }
   }, []);
@@ -42,6 +43,7 @@ export function NotificationBell() {
       setNotifications(res.notifications);
       setUnread(res.unread);
     } catch {
+      console.warn("Failed to fetch notifications");
       /* ignore */
     }
   }, []);

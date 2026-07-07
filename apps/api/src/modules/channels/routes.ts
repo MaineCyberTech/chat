@@ -16,6 +16,7 @@ import { logger } from "../../lib/logger.js";
 import { responseCache } from "../../middleware/cache.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, NotFoundError, ConflictError, InternalServerError } from "../../lib/app-error.js";
+import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -39,6 +40,14 @@ router.post(
   validateUuidParam("workspaceId"),
   requireWorkspaceMembership("workspaceId"),
   asyncHandler(async (req, res) => {
+    const idempotencyKey = req.headers["idempotency-key"] as string | undefined;
+    if (idempotencyKey) {
+      const existingId = await checkIdempotencyKey(idempotencyKey);
+      if (existingId) {
+        throw new ConflictError("Idempotent request — channel already created");
+      }
+    }
+
     const parsed = createChannelSchema.safeParse(req.body);
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.issues[0].message);
@@ -56,6 +65,12 @@ router.post(
     if (!channel) {
       throw new InternalServerError("Could not create channel");
     }
+
+    if (idempotencyKey) {
+      await storeIdempotencyKey(idempotencyKey, channel.id);
+      res.set("Idempotency-Key", idempotencyKey);
+    }
+
     res.status(201).json({ channel });
     logAuditEvent({
       actorUserId: req.userId,

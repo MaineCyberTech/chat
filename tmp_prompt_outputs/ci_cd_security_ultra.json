@@ -1,0 +1,136 @@
+{
+  "prompt_name": "ci_cd_security_ultra",
+  "domain": "ci_cd",
+  "stage": "quality_confirmation",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T12:00:00Z",
+  "readiness": 79.0,
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 4,
+    "P3": 5
+  },
+  "category_scores": {
+    "workflow_coverage": 88,
+    "secrets_handling": 85,
+    "workflow_correctness": 72,
+    "deployment": 82,
+    "testing_in_ci": 65,
+    "branch_protection": 75,
+    "artifact_management": 78,
+    "ci_security": 80
+  },
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "workflow_correctness",
+      "file": ".github/workflows/validate.yml",
+      "issue": "test job runs before build via turbo dependency chain (turbo test depends on build), but the test job in validate.yml runs before the build job without building first",
+      "impact": "pnpm test may fail in CI because it depends on build artifacts that don't exist yet. The test step runs in parallel with build rather than sequentially.",
+      "fix": "Add a build step before pnpm test, or configure turbo.json test task to not depend on build, or restructure validate.yml jobs in proper dependency order."
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "workflow_correctness",
+      "file": ".github/workflows/validate.yml",
+      "issue": "diff-coverage job uses pnpm test -- --changed --coverage but the --changed flag runs tests for changed files only; coverage thresholds apply to total project, not diff",
+      "impact": "False sense of coverage compliance: 40% line coverage on the entire project does not protect against untested new code in a PR.",
+      "fix": "Replace with a proper diff-coverage tool (e.g., istanbul ignore patterns) that checks coverage on only the lines changed in the PR. Consider using codecov or coveralls."
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "secrets_handling",
+      "file": ".github/workflows/validate.yml",
+      "issue": "Supabase anon key hardcoded as fallback in workflow YAML: 'NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'eyJ...' }}'",
+      "impact": "The plaintext fallback key is visible to anyone with read access to the repo. Exposes anon key in CI logs and YAML.",
+      "fix": "Remove hardcoded fallback. Fail CI if SUPABASE_ANON_KEY secret is not set."
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "workflow_correctness",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "Database migrations run before the droplet SSH setup; if supabase link fails, migration runs but droplet may not exist yet",
+      "impact": "Race condition: migrations could fail on non-existent project while deploy proceeds, or migrations succeed but deploy fails, leaving state inconsistent.",
+      "fix": "Move database migrations after droplet setup, or add supabase link verification before migration."
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "workflow_duplication",
+      "file": ".github/workflows/",
+      "issue": "Redundant workflows: hardening.yml and hardening-automation-runner.yml both run the same hardening pipeline. governance.yml and platform.yml both call run_full.ps1.",
+      "impact": "Workflow sprawl (20 files) increases maintenance burden. Operators unsure which workflow to trigger.",
+      "fix": "Consolidate: keep hardening-automation-runner.yml, remove hardening.yml. Consolidate governance and platform into one."
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "audit_workflows",
+      "file": ".github/workflows/audit-badges-autocommit.yml",
+      "issue": "audit-badges-autocommit and audit-ci-autocommit both auto-commit changes on push to develop/main, potentially causing commit loops with CI re-triggers",
+      "impact": "Auto-commits trigger new CI runs, creating cascading pipeline executions. Wastes compute and pollutes git history.",
+      "fix": "Use [skip ci] in auto-commit messages, or reduce scope to workflow_dispatch only. Add path filters to avoid triggering deploy on badge changes."
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "branch_protection",
+      "file": ".github/workflows/validate.yml",
+      "issue": "branch-protection check runs on every PR from any actor, but the check doesn't enforce anything \u2014 it only reports",
+      "impact": "Informational only; no actual enforcement of branch protection rules. Provides false confidence in CI output.",
+      "fix": "Either enforce by failing the job on missing protection, or remove the job and rely on GitHub's native branch protection settings."
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "deployment",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "Deploy workflow writes secrets to .env file via inline shell script in SSH \u2014 secrets appear in plaintext in workflow run logs if script execution is verbose",
+      "impact": "Potential secret leakage in CI logs. Secrets are interpolated by GitHub Actions before SSH execution.",
+      "fix": "Use environment files (.env) passed as GitHub Actions env context, or use the droplet's secrets manager. Set set -x only where needed."
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "ci_efficiency",
+      "file": ".github/workflows/validate.yml",
+      "issue": "Each job re-installs dependencies independently (pnpm install per lint, typecheck, test, build, e2e) \u2014 no caching across jobs",
+      "impact": "CI pipeline takes 5-8 minutes per job for dependency install on cache miss. 5+ jobs = 25-40 minutes total.",
+      "fix": "Use pnpm workspace-level caching with GitHub Actions cache action to share node_modules across jobs. Or use a single job for all checks."
+    }
+  ],
+  "remediation_plan": {
+    "immediate_1_week": [
+      "P1: Fix Dockerfile.dev tag collision in build-push.yml",
+      "P2: Remove hardcoded Supabase anon key fallback from validate.yml",
+      "P2: Fix test job dependency ordering in validate.yml (build before test)"
+    ],
+    "short_term_2_weeks": [
+      "P2: Implement proper diff-coverage checking (not total project)",
+      "P2: Fix migration/deploy ordering in deploy-development.yml",
+      "P3: Consolidate duplicate workflows (hardening, governance)"
+    ],
+    "medium_term_1_month": [
+      "P3: Fix auto-commit loop risk in audit-badges/audit-ci workflows",
+      "P3: Address secret exposure risk in deploy .env generation",
+      "P3: Add dependency caching across CI jobs to reduce pipeline time"
+    ]
+  },
+  "operator_handoff": {
+    "critical_actions": [
+      "Review build-push.yml tags \u2014 Dockerfile.dev should not overwrite production tags",
+      "Remove hardcoded SUPABASE_ANON_KEY from validate.yml and ensure secret is configured",
+      "Reorder validate.yml jobs: build must complete before test"
+    ],
+    "recommended_review": [
+      "Consolidate workflow files from 20 to ~15 by merging duplicates",
+      "Add proper branch protection enforcement to main branch",
+      "Evaluate whether auto-commit workflows (audit-badges, audit-ci) should be manual only"
+    ]
+  }
+}

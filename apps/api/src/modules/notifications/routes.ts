@@ -4,7 +4,8 @@ import { requireChannelAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { getSupabase } from "../../lib/supabase.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { InternalServerError } from "../../lib/app-error.js";
+import { InternalServerError, ConflictError } from "../../lib/app-error.js";
+import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -32,6 +33,14 @@ router.put(
   validateUuidParam("id"),
   requireChannelAccess("id"),
   asyncHandler(async (req, res) => {
+    const idempotencyKey = req.headers["idempotency-key"] as string | undefined;
+    if (idempotencyKey) {
+      const existingId = await checkIdempotencyKey(idempotencyKey);
+      if (existingId) {
+        throw new ConflictError("Idempotent request — preference already updated");
+      }
+    }
+
     const { notify, notify_sound } = req.body as { notify?: boolean; notify_sound?: boolean };
     const supabase = getSupabase();
     const { data, error } = await supabase
@@ -50,6 +59,12 @@ router.put(
     if (error) {
       throw new InternalServerError(error.message);
     }
+
+    if (idempotencyKey) {
+      await storeIdempotencyKey(idempotencyKey, `pref:${req.params.id}`);
+      res.set("Idempotency-Key", idempotencyKey);
+    }
+
     res.json({ preference: data });
   }),
 );

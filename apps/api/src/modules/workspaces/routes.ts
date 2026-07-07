@@ -21,7 +21,8 @@ import {
 } from "../../config/validators.js";
 import { responseCache } from "../../middleware/cache.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, ForbiddenError, InternalServerError } from "../../lib/app-error.js";
+import { BadRequestError, NotFoundError, ForbiddenError, InternalServerError, ConflictError } from "../../lib/app-error.js";
+import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -46,6 +47,14 @@ router.get("/bootstrap", responseCache(30), asyncHandler(async (req, res) => {
 }));
 
 router.post("/", asyncHandler(async (req, res) => {
+  const idempotencyKey = req.headers["idempotency-key"] as string | undefined;
+  if (idempotencyKey) {
+    const existingId = await checkIdempotencyKey(idempotencyKey);
+    if (existingId) {
+      throw new ConflictError("Idempotent request — workspace already created");
+    }
+  }
+
   const parsed = createWorkspaceSchema.safeParse(req.body);
   if (!parsed.success) {
     throw new BadRequestError(parsed.error.issues[0].message);
@@ -57,6 +66,11 @@ router.post("/", asyncHandler(async (req, res) => {
   });
   if (!workspace) {
     throw new InternalServerError("Could not create workspace. Check server logs for details.");
+  }
+
+  if (idempotencyKey) {
+    await storeIdempotencyKey(idempotencyKey, workspace.id);
+    res.set("Idempotency-Key", idempotencyKey);
   }
 
   res.status(201).json({ workspace });

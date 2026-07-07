@@ -19,6 +19,23 @@ function isPrivateIp(hostname: string): boolean {
   return PRIVATE_IP_RANGES.some((range) => range.test(hostname));
 }
 
+// NOTE: The webhook secret is stored in plaintext in the database.
+// This is a known limitation — secrets should be encrypted at rest
+// using a column-level encryption or a dedicated secrets manager (e.g. AWS Secrets Manager, HashiCorp Vault).
+// Tracked in: https://github.com/anomalyco/chat/issues/xxx
+
+const WEBHOOK_SECRET_MIN_LENGTH = 16;
+
+function validateSecret(secret: string | undefined): { valid: boolean; error?: string } {
+  if (!secret || secret.length === 0) {
+    return { valid: true }; // empty secret is allowed (no signature)
+  }
+  if (secret.length < WEBHOOK_SECRET_MIN_LENGTH) {
+    return { valid: false, error: `Webhook secret must be at least ${WEBHOOK_SECRET_MIN_LENGTH} characters` };
+  }
+  return { valid: true };
+}
+
 async function resolveHostname(url: string): Promise<string[]> {
   try {
     const { hostname } = new URL(url);
@@ -126,6 +143,12 @@ export class WebhookService {
     events: string[];
     created_by: string;
   }): Promise<WebhookEndpoint | null> {
+    const validation = validateSecret(input.secret);
+    if (!validation.valid) {
+      logger.error("webhook create failed — invalid secret", { error: validation.error });
+      throw new Error(validation.error);
+    }
+
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("webhook_endpoints")

@@ -27,7 +27,7 @@ CREATE POLICY "channel_member_history_insert"
   ON public.channel_member_history
   FOR INSERT
   TO authenticated
-  WITH CHECK (true);
+  WITH CHECK (auth.uid() = user_id);
 
 -- Trigger: log member joined
 CREATE OR REPLACE FUNCTION public.log_channel_member_join()

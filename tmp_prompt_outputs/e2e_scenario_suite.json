@@ -1,0 +1,188 @@
+{
+  "prompt_name": "e2e_scenario_suite",
+  "domain": "testing",
+  "stage": "quality_confirmation",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T12:00:00Z",
+  "readiness": 71.2,
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 4,
+    "P3": 3
+  },
+  "category_scores": {
+    "unit_tests": 88,
+    "middleware_tests": 90,
+    "api_tests": 88,
+    "component_tests": 85,
+    "e2e_coverage": 50,
+    "load_testing": 60,
+    "integration_tests": 10,
+    "visual_regression": 55,
+    "test_ci_integration": 45
+  },
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "e2e",
+      "file": "apps/web/e2e/comprehensive.spec.ts",
+      "issue": "Majority of E2E test scenarios are skipped (test.skip) due to missing Supabase test project",
+      "impact": "Critical user journeys (auth, workspace, channels, messaging, WebSocket, notifications, webhooks, search) cannot be verified end-to-end. 27 of 35 test cases skipped.",
+      "fix": "Provision a Supabase test project or implement local Supabase mock with seeded test data for CI pipeline. Unskip all flow tests."
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "ci",
+      "file": ".github/workflows/validate.yml",
+      "issue": "CI E2E job has no Supabase local instance; PLAYWRIGHT_BASE_URL points to Next.js dev server that cannot authenticate without Supabase",
+      "impact": "E2E tests will fail in CI because auth flows depend on Supabase. The webServer block starts Next.js but Supabase local stack is never started.",
+      "fix": "Add supabase start step before E2E job, or configure test-specific Supabase project with seeded data and use supabase db reset."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "e2e",
+      "file": "playwright.config.ts",
+      "issue": "Only Chromium browser configured; no Firefox/WebKit coverage",
+      "impact": "Browser-specific rendering and API differences go undetected. Affects ~10% of users on Firefox/Safari.",
+      "fix": "Add Firefox and WebKit projects to playwright.config.ts with appropriate viewport presets."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "e2e",
+      "file": "tests/e2e/messaging.spec.ts",
+      "issue": "E2E messaging tests depend on test data created by prior tests (workspace/channel must exist), making tests order-dependent and fragile",
+      "impact": "Tests fail when run in isolation or in parallel; CI flakiness on partial re-runs.",
+      "fix": "Use beforeAll hooks or fixtures to create required workspace/channel independently per test file, or use Playwright project dependencies."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "load",
+      "file": "tests/k6/load-test.js",
+      "issue": "k6 load test only hits /healthz endpoint; no chat send, socket, search, or notification scenarios",
+      "impact": "Load testing provides no meaningful capacity or bottleneck data for core chat flows.",
+      "fix": "Add k6 scenarios for: concurrent message sends, WebSocket connect storm, search under load, notification fanout to N users."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "visual",
+      "file": "apps/web/e2e/visual-snapshot.spec.ts",
+      "issue": "Visual snapshots cover only login, settings, and 404 pages; no chat view, channel list, sidebar, dark mode, or mobile states",
+      "impact": "High-risk visual regressions in core chat UI go undetected. No dark mode or responsive coverage.",
+      "fix": "Add snapshots for: channel view (empty/populated), sidebar collapsed/expanded, dark mode toggle, mobile nav, long message overflow, emoji picker, dialogs."
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "unit",
+      "file": "vitest.config.ts",
+      "issue": "Coverage thresholds set low (lines: 40, functions: 30, branches: 30, statements: 40)",
+      "impact": "Low thresholds allow significant untested code to pass CI without warning.",
+      "fix": "Raise thresholds incrementally: lines 60, functions 50, branches 50, statements 60."
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "load",
+      "file": ".github/workflows/load-test.yml",
+      "issue": "CI k6 workflow only runs smoke test (10 VUs, 30s) with no load test execution",
+      "impact": "Weekly load test cron runs smoke test, not the actual load test. No ramp-up or capacity verification.",
+      "fix": "Add a load-test job that runs tests/k6/load-test.js with production-like ramp profile. Keep smoke test as quick sanity."
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "test_data",
+      "file": "tests/",
+      "issue": "No test data fixtures or seed scripts; E2E tests hardcode test email and workspace names",
+      "impact": "Tests are brittle and hard to reproduce across environments without consistent test data setup.",
+      "fix": "Create test data fixtures (JSON/TS) with mock workspace, channel, user, and message data. Use Playwright test fixtures to inject."
+    }
+  ],
+  "remediation_plan": {
+    "immediate_1_week": [
+      "P1: Set up Supabase test project or local mock for CI E2E pipeline",
+      "P1: Unskip all skipped E2E tests after Supabase setup",
+      "P2: Add Firefox/WebKit browser projects to Playwright config"
+    ],
+    "short_term_2_weeks": [
+      "P2: Make E2E tests order-independent with independent beforeAll fixtures",
+      "P2: Expand k6 scenarios to cover chat send, socket, search, notifications",
+      "P3: Raise coverage thresholds to 60/50/50/60"
+    ],
+    "medium_term_1_month": [
+      "P2: Add visual snapshots for core chat surfaces and dark mode",
+      "P3: Add weekly load test (not just smoke) to CI schedule",
+      "P3: Create reusable test data fixtures"
+    ]
+  },
+  "smoke_suite": {
+    "fast_smoke": [
+      "Auth: login form renders, validates email, shows sent state",
+      "Workspace: create workspace, appears in sidebar",
+      "Channel: create channel, send message, message appears",
+      "Search: search bar renders, returns results, empty state",
+      "Navigation: sidebar loads, channel navigation works"
+    ],
+    "comprehensive": [
+      "Full auth \u2192 workspace \u2192 channel \u2192 message flow",
+      "Message edit, delete, pin, flag, reply in thread",
+      "File upload (image + text) with preview",
+      "WebSocket real-time message delivery across two tabs",
+      "Typing indicator visibility",
+      "Unread count updates",
+      "Channel mute toggle",
+      "Settings page: theme, notification prefs",
+      "Dark mode rendering across all screens",
+      "Responsive layout at 375px, 768px, 1280px"
+    ]
+  },
+  "high_risk_scenarios": [
+    "WebSocket disconnect/reconnect with message queueing",
+    "Concurrent message send across multiple sessions",
+    "Channel with 5000+ messages: virtual list performance",
+    "File upload with large image (10MB+)",
+    "Permission boundary: user cannot access other workspace",
+    "Rate limiting: 100 rapid messages in 10s"
+  ],
+  "ci_execution_tiers": {
+    "pr_fast": {
+      "trigger": "pull_request",
+      "timeout": "5m",
+      "suites": [
+        "smoke_suite.fast_smoke"
+      ]
+    },
+    "full_pr": {
+      "trigger": "pull_request labeled 'safe-to-test'",
+      "timeout": "15m",
+      "suites": [
+        "smoke_suite.comprehensive"
+      ]
+    },
+    "nightly": {
+      "trigger": "schedule 0 6 * * 1-5",
+      "timeout": "30m",
+      "suites": [
+        "smoke_suite.comprehensive",
+        "high_risk_scenarios"
+      ]
+    },
+    "release": {
+      "trigger": "workflow_dispatch",
+      "timeout": "45m",
+      "suites": [
+        "smoke_suite.comprehensive",
+        "high_risk_scenarios",
+        "visual_regression",
+        "load_test"
+      ]
+    }
+  }
+}

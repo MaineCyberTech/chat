@@ -58,6 +58,7 @@ function formatDate(iso?: string): string {
       minute: "2-digit",
     });
   } catch {
+    console.warn("Failed to format date");
     return "";
   }
 }

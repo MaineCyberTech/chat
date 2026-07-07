@@ -1,14 +1,37 @@
-import { Router, type Request, type Response } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { getSupabaseAdmin } from "../../lib/supabase";
 import { authenticate } from "../../middleware/authenticate";
 import { logger } from "../../lib/logger";
 import { asyncHandler } from "../../lib/async-handler";
-import { InternalServerError } from "../../lib/app-error";
+import { InternalServerError, ForbiddenError } from "../../lib/app-error";
 
 const router = Router();
 const startTime = Date.now();
 
-router.get("/stats", authenticate, asyncHandler(async (_req: Request, res: Response) => {
+async function requireAdmin(req: Request, _res: Response, next: NextFunction) {
+  try {
+    const supabase = req.supabase;
+    if (!supabase) {
+      next(new ForbiddenError("Auth context missing"));
+      return;
+    }
+    const { data, error } = await supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("user_id", req.userId)
+      .in("role", ["owner", "admin"])
+      .limit(1);
+    if (error || !data || data.length === 0) {
+      next(new ForbiddenError("Admin access required"));
+      return;
+    }
+    next();
+  } catch (err) {
+    next(new ForbiddenError("Admin access check failed"));
+  }
+}
+
+router.get("/stats", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
   const admin = getSupabaseAdmin();
   const [{ count: users }, { count: workspaces }, { count: channels }, { count: messages }] =
     await Promise.all([
@@ -20,7 +43,7 @@ router.get("/stats", authenticate, asyncHandler(async (_req: Request, res: Respo
   res.json({ stats: { users, workspaces, channels, messages } });
 }));
 
-router.get("/users", authenticate, asyncHandler(async (req: Request, res: Response) => {
+router.get("/users", authenticate, requireAdmin, asyncHandler(async (req: Request, res: Response) => {
   const admin = getSupabaseAdmin();
   const search = req.query.search as string;
   const page = parseInt(req.query.page as string) || 0;
@@ -36,7 +59,7 @@ router.get("/users", authenticate, asyncHandler(async (req: Request, res: Respon
   res.json({ users: data, total: count ?? 0, page, limit });
 }));
 
-router.get("/channels", authenticate, asyncHandler(async (req: Request, res: Response) => {
+router.get("/channels", authenticate, requireAdmin, asyncHandler(async (req: Request, res: Response) => {
   const admin = getSupabaseAdmin();
   const page = parseInt(req.query.page as string) || 0;
   const limit = 20;
@@ -49,7 +72,7 @@ router.get("/channels", authenticate, asyncHandler(async (req: Request, res: Res
   res.json({ channels: data, total: count ?? 0, page, limit });
 }));
 
-router.get("/workspaces", authenticate, asyncHandler(async (_req: Request, res: Response) => {
+router.get("/workspaces", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("workspaces")
@@ -59,7 +82,7 @@ router.get("/workspaces", authenticate, asyncHandler(async (_req: Request, res: 
   res.json({ workspaces: data });
 }));
 
-router.get("/integrations", authenticate, asyncHandler(async (_req: Request, res: Response) => {
+router.get("/integrations", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("webhook_endpoints")
@@ -69,7 +92,7 @@ router.get("/integrations", authenticate, asyncHandler(async (_req: Request, res
   res.json({ integrations: data });
 }));
 
-router.get("/system", authenticate, asyncHandler(async (_req: Request, res: Response) => {
+router.get("/system", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
   let dbStatus = "unknown";
   let dbLatencyMs: number | undefined;
   try {
@@ -93,7 +116,7 @@ router.get("/system", authenticate, asyncHandler(async (_req: Request, res: Resp
   });
 }));
 
-router.get("/webhooks/deliveries", authenticate, asyncHandler(async (req: Request, res: Response) => {
+router.get("/webhooks/deliveries", authenticate, requireAdmin, asyncHandler(async (req: Request, res: Response) => {
   const admin = getSupabaseAdmin();
   const page = parseInt(req.query.page as string) || 0;
   const limit = 20;
@@ -109,7 +132,7 @@ router.get("/webhooks/deliveries", authenticate, asyncHandler(async (req: Reques
   res.json({ deliveries: data, total: count ?? 0, page, limit });
 }));
 
-router.get("/webhooks/dead-letters", authenticate, asyncHandler(async (_req: Request, res: Response) => {
+router.get("/webhooks/dead-letters", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("webhook_dead_letters")
@@ -120,14 +143,14 @@ router.get("/webhooks/dead-letters", authenticate, asyncHandler(async (_req: Req
   res.json({ deadLetters: data ?? [] });
 }));
 
-router.post("/webhooks/dead-letters/:id/retry", authenticate, asyncHandler(async (req: Request, res: Response) => {
+router.post("/webhooks/dead-letters/:id/retry", authenticate, requireAdmin, asyncHandler(async (req: Request, res: Response) => {
   const { webhookService } = await import("../../modules/webhooks/service.js");
   const success = await webhookService.retryDeadLetter(req.params.id as string);
   if (!success) res.status(404).json({ error: "Dead letter not found or webhook inactive" });
   else res.json({ success: true });
 }));
 
-router.get("/export/compliance", authenticate, asyncHandler(async (req: Request, res: Response) => {
+router.get("/export/compliance", authenticate, requireAdmin, asyncHandler(async (req: Request, res: Response) => {
   const admin = getSupabaseAdmin();
   const workspaceId = req.query.workspace_id as string | undefined;
 

@@ -1,0 +1,544 @@
+{
+  "stage": "principal_audit",
+  "run_id": "full_audit_consolidated_20260707_181734",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T18:17:34Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 29,
+    "P3": 22
+  },
+  "category_scores": {
+    "data_retention_architecture": 65,
+    "soft_delete_implementation": 80,
+    "data_integrity": 85,
+    "seed_data_safety": 60,
+    "audit_logging": 85,
+    "storage_cleanup": 50,
+    "migration_correctness": 75,
+    "rollback_coverage": 70,
+    "rls_posture": 85,
+    "index_coverage": 90,
+    "type_coverage": 65,
+    "data_retention": 80,
+    "accessibility": 75,
+    "performance": 65,
+    "component_architecture": 70,
+    "design_system": 60,
+    "error_handling": 55,
+    "state_management": 80,
+    "form_validation": 70,
+    "observability": 50,
+    "structured_logging": 90,
+    "distributed_tracing": 35,
+    "health_checks": 85,
+    "metrics": 80,
+    "alerting": 20,
+    "incident_response": 40,
+    "consent_management": 75,
+    "pii_handling": 70,
+    "compliance_export": 85,
+    "cookie_compliance": 60,
+    "data_subject_rights": 50,
+    "authentication": 90,
+    "authorization": 45,
+    "secret_handling": 55,
+    "cors_csrf": 80,
+    "input_validation": 85,
+    "dependency_posture": 90,
+    "logging_audit": 85,
+    "rate_limiting": 85,
+    "cross_tenant_isolation": 70,
+    "admin_surface": 20,
+    "auth": 98
+  },
+  "readiness": 69.24,
+  "finding_count": 53,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "Data Retention Architecture",
+      "file": "apps/worker/src/processors/data-retention.ts, supabase/migrations/20260625000015_data_retention.sql, supabase/migrations/20260627000002_enforce_data_retention.sql",
+      "issue": "Dual-path data retention with overlapping and inconsistent coverage",
+      "impact": "Data retention is split across a BullMQ worker (hard-deletes soft-deleted rows) and SQL functions (purge_old_*, archive_old_messages). The SQL functions are never called (pg_cron commented out). The worker handles 4 of the 6 purge types. This fragmentation risks inconsistent retention behavior.",
+      "fix": "Consolidate all retention into the BullMQ worker: add consent_logs, notifications, and archival jobs. Remove or clearly separate the SQL-only purge functions. Activate one scheduling mechanism (worker preferred for observability)."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "Data Integrity",
+      "file": "supabase/migrations/20260625000015_data_retention.sql",
+      "issue": "archive_old_messages channel_id filter always evaluates to true due to parameter/column name collision",
+      "impact": "The function parameter is named channel_id (same as the column), so the WHERE clause (channel_id = channel_id OR channel_id IS NULL) is always true for the first condition. The function cannot scope archival to a specific channel.",
+      "fix": "Rename the parameter to target_channel_id so the WHERE clause correctly reads: AND (target_channel_id IS NULL OR m.channel_id = target_channel_id)."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "Data Retention Architecture",
+      "file": "supabase/migrations/20260625000013_audit_log_pruning.sql, supabase/migrations/20260625000015_data_retention.sql, supabase/migrations/20260627000002_enforce_data_retention.sql",
+      "issue": "All pg_cron scheduling is commented out, DB-level retention functions are never invoked automatically",
+      "impact": "Three migrations define purge SQL functions (purge_old_audit_logs, archive_old_messages, purge_archived_messages) with commented-out pg_cron schedules. The BullMQ worker does not call these functions. Data grows unbounded unless manually triggered.",
+      "fix": "Either activate pg_cron schedules in production, or have the BullMQ worker call the SQL functions via supabase.rpc(). Do not leave both paths dormant."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "Seed Data Safety",
+      "file": "supabase/seeds/01_workspaces.sql, supabase/seeds/02_channels.sql, supabase/seeds/03_messages.sql, supabase/seeds/04_threads.sql, supabase/seeds/05_reactions.sql, supabase/seeds/06_notifications.sql, supabase/seeds/07_webhooks.sql",
+      "issue": "Seed scripts can overwrite production data with no safety guards",
+      "impact": "All seed scripts use ON CONFLICT DO UPDATE pattern. If accidentally run against production, they silently overwrite live workspaces, channels, and messages with test data. Only 00_local_test_users.sql has a LOCAL DEV ONLY comment; the other seeds have no warnings.",
+      "fix": "Add runtime guards: DO $$ BEGIN IF EXISTS (SELECT 1 FROM public.workspaces LIMIT 1) THEN RAISE EXCEPTION 'Seed scripts must not run against production'; END IF; END $$;"
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "Data Integrity",
+      "file": "supabase/migrations/20260625000004_create_messages.sql",
+      "issue": "No cross-channel validation for messages.parent_id",
+      "impact": "The self-referential FK only validates the parent message exists. A client could set parent_id to a message in a different channel, causing thread replies to appear under a message from another conversation.",
+      "fix": "Add a trigger to validate parent_id references a message with the same channel_id, or add application-layer validation in the message store."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "Data Integrity",
+      "file": "supabase/migrations/20260705000002_add_scheduled_posts.sql",
+      "issue": "scheduled_posts CHECK constraint prevents same-second scheduling",
+      "impact": "CONSTRAINT future_schedule CHECK (scheduled_at > created_at) uses strict greater-than, preventing scheduling a post with the same timestamp as creation. This blocks scheduling within the same transaction or sub-second interval.",
+      "fix": "Change to CHECK (scheduled_at >= created_at) to allow same-timestamp scheduling."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "Storage Cleanup",
+      "file": "apps/worker/src/processors/data-retention.ts",
+      "issue": "Soft-delete and data retention cleanup does not handle orphaned storage objects",
+      "impact": "When messages or channels are hard-deleted by the data retention worker, associated file uploads in Supabase Storage are not cleaned up. Orphaned storage objects accumulate, consuming bucket capacity and potentially exposing deleted file URLs.",
+      "fix": "Add storage cleanup steps that list and delete objects in the chat-uploads bucket for deleted message/channel IDs. Filter objects by path prefix matching the deleted IDs."
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "TypeScript Types",
+      "file": "packages/db/src/types.ts",
+      "issue": "Missing TypeScript type definitions for 16 database tables",
+      "impact": "Tables created since the original type definitions (thread_metadata, thread_participants, channel_role_overrides, dm_channels, dm_members, user_presence, channel_bookmarks, sidebar_categories, sidebar_channel_assignments, channel_notification_preferences, custom_emoji, message_reminders, notification_preferences, user_statuses, channel_member_history, webhook_dead_letters) have no client-side types. SDK consumers must use raw any-typed queries.",
+      "fix": "Add TypeScript interfaces for all untabled tables in types.ts and export from index.ts."
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "RLS Policies",
+      "file": "supabase/policies/11_feature_flags.sql",
+      "issue": "feature_flags RLS not scoped to a specific workspace",
+      "impact": "The feature_flags RLS policy checks workspace_members.role across ANY workspace, allowing an admin in any workspace to read/manage feature flags that apply globally. If feature flags are meant to be global, the workspace_members join is unnecessary and misleading.",
+      "fix": "Add workspace_id FK to feature_flags table and scope RLS to that workspace, or remove the workspace_members join and document that feature_flags are a global system table."
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "Data Lifecycle",
+      "file": "apps/worker/src/processors/data-retention.ts",
+      "issue": "Data retention worker has unimplemented consent_logs and notifications types",
+      "impact": "DataRetentionJobData includes 'consent_logs' and 'notifications' types in the union but the worker switch statement only handles messages, audit_logs, soft_deleted_channels, and soft_deleted_workspaces. Sending these jobs silently does nothing. Consent logs have GDPR compliance implications.",
+      "fix": "Implement retainConsentLogs and retainNotifications functions following the SQL purge functions in enforce_data_retention.sql."
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "Data Lifecycle",
+      "file": "supabase/migrations/20260625000015_data_retention.sql",
+      "issue": "archive_old_messages channel_id filter is always true due to parameter/column name collision",
+      "impact": "Line 28: AND (channel_id = channel_id OR channel_id IS NULL) \u2014 the parameter name shadows the column name, making this always true. Archive operations cannot be scoped to a specific channel.",
+      "fix": "Rename the function parameter to target_channel_id to disambiguate from the column reference."
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "Migration Correctness",
+      "file": "supabase/migrations/20260625000013_audit_log_pruning.sql, supabase/migrations/20260625000014_soft_delete.sql, supabase/migrations/20260625000015_data_retention.sql, supabase/migrations/20260625000017_audit_logs_org_fk.sql",
+      "issue": "Migration comments reference old sequential filenames instead of actual timestamp-based names",
+      "impact": "Comments like 'Run after 006_user_preferences.sql' refer to the old sequential naming scheme. With the YYYYMMDDHHMMSS naming convention, these references are ambiguous and make dependency tracing confusing.",
+      "fix": "Update all migration comments to reference actual timestamp-based filenames or remove sequential references entirely."
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "RLS Policies",
+      "file": "supabase/migrations/20260627000006_channel_role_overrides.sql",
+      "issue": "channel_role_overrides has no INSERT/DELETE policy for non-admin users",
+      "impact": "The table only has manage_admin (FOR ALL for admins) and select_member (FOR SELECT for members) policies. Regular members cannot create or delete overrides through the API, but the overrides control channel-level deny rules that members might need to request.",
+      "fix": "Document the access model. Consider adding a request_override flow at the app level if needed. By design for now."
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "Schema",
+      "file": "supabase/migrations/20260625000010_create_audit_logs.sql",
+      "issue": "audit_logs.organization_id column name is misleading",
+      "impact": "The column is named organization_id but its FK constraint references public.workspaces(id). Developers reading the schema will assume it references an organizations table that does not exist.",
+      "fix": "Rename the column to workspace_id via a new migration, or add documentation clarifying the workspace mapping."
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "Seed Data",
+      "file": "supabase/seeds/00_local_test_users.sql, supabase/seeds/01_workspaces.sql, supabase/seeds/02_channels.sql, supabase/seeds/03_messages.sql, supabase/seeds/04_threads.sql, supabase/seeds/05_reactions.sql, supabase/seeds/06_notifications.sql",
+      "issue": "Seed scripts can overwrite production data due to ON CONFLICT DO UPDATE pattern and no runtime guard",
+      "impact": "All seed scripts use ON CONFLICT DO UPDATE which overwrites existing rows with matching IDs. Only 00_local_test_users.sql has a 'LOCAL / DEV ONLY' comment. Running these against production would silently overwrite data.",
+      "fix": "Add runtime guards at the top of each seed file: DO $$ BEGIN IF EXISTS (SELECT 1 FROM public.workspaces LIMIT 1) THEN RAISE EXCEPTION 'Seeds not for production'; END IF; END $$;"
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "Rollback Scripts",
+      "file": "supabase/rollback/20260625000001_create_users_down.sql, supabase/rollback/20260627000004_threads_down.sql",
+      "issue": "Rollback scripts contain auto-generation placeholder comments",
+      "impact": "Files contain 'Manual rollback needed: UPDATE on ON/SET' comment artifacts that appear to be stubs from auto-generation. These suggest incomplete rollback coverage for trigger functions.",
+      "fix": "Remove placeholder comments after verifying the DROP FUNCTION and DROP TRIGGER statements correctly handle the rollback. Add manual steps if triggers truly need custom rollback."
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "Indexes",
+      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
+      "issue": "No index on channels.channel_type for type-based filtering",
+      "impact": "channel_type column was added for DM/GM/public/private filtering but has no dedicated index. Queries filtering by type (e.g., list all DM channels) will perform sequential scans as channel count grows.",
+      "fix": "Add CREATE INDEX IF NOT EXISTS idx_channels_channel_type ON public.channels(channel_type) as a new migration."
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "design_system",
+      "file": "apps/web/components/chat/chat-view.tsx:60",
+      "issue": "Raw CSS variables used inline instead of Tailwind classes \u2014 inconsistent theming across 40+ components",
+      "impact": "Theming is scattered across inline styles making dark mode and accessibility overrides brittle; Tailwind's dark mode support is bypassed",
+      "fix": "Centralize CSS variable usage into Tailwind theme extensions and use utility classes instead of inline styles throughout all components"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "performance",
+      "file": "apps/web/components/chat/message-list.tsx:144",
+      "issue": "Reaction fetch triggered on every message render without batching or caching for large channel loads",
+      "impact": "High API call volume in channels with many messages causing unnecessary network churn and slow reaction display",
+      "fix": "Batch reaction fetch calls into a single endpoint request, cache results in a persistent ref, and only fetch for newly visible messages using IntersectionObserver"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "state_management",
+      "file": "apps/web/components/chat/chat-view.tsx:346",
+      "issue": "Optimistic update callback may rely on stale closure in rapid-send edge cases",
+      "impact": "Potential race conditions under rapid message sending where confirmOptimistic or rollbackOptimistic may capture stale state",
+      "fix": "Verify all optimistic callbacks use functional updaters (setItems(prev => ...)) rather than depending on closure-captured state values"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "performance",
+      "file": "apps/web/components/chat/message-list.tsx:386",
+      "issue": "No virtualization for long message lists \u2014 all messages rendered as DOM nodes",
+      "impact": "Severe performance degradation in channels with 1000+ messages, especially on low-power mobile devices with high memory usage",
+      "fix": "Integrate @tanstack/react-virtual for windowed rendering of message items, keeping only visible + buffer items in DOM"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "component_architecture",
+      "file": "apps/web/components/chat/message-input.tsx:150",
+      "issue": "Duplicate click-outside and Escape handling patterns repeated across 6+ components",
+      "impact": "Maintenance burden and potential for inconsistent dismiss behavior across emoji picker, priority picker, schedule picker, status menu, team menu, and user picker",
+      "fix": "Extract a shared useClickOutside and useEscape hook (or Popover/Dropdown wrapper component) to consolidate dismiss logic"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "design_system",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:334",
+      "issue": "Hardcoded hex color values for status indicators instead of CSS custom properties",
+      "impact": "Theme color changes require updates in multiple files; inconsistency risk when status colors are updated",
+      "fix": "Define status colors as CSS custom properties (--status-online, --status-away, --status-dnd) and reference them consistently"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "ux",
+      "file": "apps/web/app/(workspace)/layout.tsx:21",
+      "issue": "Mobile sidebar open state resets on client-side navigation",
+      "impact": "Users navigating between channels on mobile lose sidebar context and must re-open it",
+      "fix": "Persist sidebar open state in URL param or context that survives client-side navigation"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "form_validation",
+      "file": "apps/web/components/auth/login-form.tsx:130",
+      "issue": "Login form missing email format validation and inline error messaging for invalid inputs",
+      "impact": "Users may submit invalid emails without clear feedback; HTML5 required attribute alone is insufficient for accessibility",
+      "fix": "Add email format regex validation, provide inline validation messages with aria-describedby, and ensure form submission is disabled until valid"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "component_architecture",
+      "file": "apps/web/components/chat/chat-view.tsx:718",
+      "issue": "RHS panel responsive rendering duplicated for ThreadPanel and ChannelInfo with same desktop/mobile pattern",
+      "impact": "Significant code duplication across panels; risk of mobile vs desktop behavior divergence",
+      "fix": "Create a shared RHS panel component handling responsive rendering (overlay vs sidebar) once, accepting panel content via children or slots"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "accessibility",
+      "file": "apps/web/components/chat/message-list/message-item.tsx:389",
+      "issue": "Post-menu action buttons and floating timestamps have small touch targets on mobile",
+      "impact": "Users on small touch screens may struggle to tap 14px icon buttons; violates WCAG 2.5.5 minimum 44px target size",
+      "fix": "Add min-width/min-height of 44px to post-menu buttons on touch devices and increase padding"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "ux",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:986",
+      "issue": "No loading skeleton for DM channel list or member list while API fetches",
+      "impact": "Flash of 'No direct messages yet' before list populates degrades perceived performance",
+      "fix": "Add skeleton loading states while DM channels and member lists are being fetched via API"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "performance",
+      "file": "apps/web/components/chat/tiptap-editor.tsx:76",
+      "issue": "TipTap editor content set via useEffect causes brief flash and cursor position loss on external content updates",
+      "impact": "Minor edit flash when external state syncs content; cursor position may be lost",
+      "fix": "Use editor.commands.setContent only when content differs meaningfully and avoid calling on mount when editor already has content"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "accessibility",
+      "file": "apps/web/components/chat/chat-view.tsx:746",
+      "issue": "Mobile RHS panel slide-in animation not disabled when prefers-reduced-motion is set",
+      "impact": "Users with vestibular disorders may experience discomfort from forced slide-in animations",
+      "fix": "Add CSS that disables animations when [data-reduced-motion='true'] is present on the document element"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "performance",
+      "file": "apps/web/app/layout.tsx:40",
+      "issue": "Sentry session replay enabled in development environment at 0.1 sample rate",
+      "impact": "Unnecessary session replay recordings and bandwidth usage in local development",
+      "fix": "Set replaysSessionSampleRate to 0.0 in non-production environments by checking NODE_ENV"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "observability",
+      "file": "apps/web/components/chat/message-input.tsx:211",
+      "issue": "Vague console.warn messages lack error context, request IDs, and component names",
+      "impact": "Reduced debuggability of production errors; no way to correlate warnings to specific operations",
+      "fix": "Include error details and component name in console.warn calls, or route through structured logging service"
+    },
+    {
+      "severity": "P1",
+      "domain": "observability",
+      "category": "alerting",
+      "file": "apps/api/src/server.ts",
+      "issue": "No alerting mechanism configured (PagerDuty, OpsGenie, email alerts absent)",
+      "impact": "Operators are not proactively notified of failures. Incidents are detected only through user reports or manual dashboard checks, increasing MTTR.",
+      "fix": "Integrate alerting via Sentry issue alerts, Prometheus AlertManager, or a notification channel. Configure alerts for P0/P1 conditions (auth failures, circuit breaker open, queue backlogs)."
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "distributed_tracing",
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "No trace/correlation ID propagation across API, worker, and database tiers",
+      "impact": "Cannot trace a request end-to-end across service boundaries. Correlating logs from API \u2192 Worker \u2192 DB requires manual grep, slowing root cause analysis.",
+      "fix": "Implement OpenTelemetry instrumentation or inject a requestId header through all service calls. Add traceId/spanId to all structured log entries."
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "structured_logging",
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "Logger does not automatically include request context (requestId, userId, route) in structured metadata",
+      "impact": "Log entries lack correlation context, making it difficult to filter or aggregate per-request during incident triage.",
+      "fix": "Add a middleware that creates a child logger with requestId, userId, and route bound automatically, and make it available via req.log."
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "health_checks",
+      "file": "apps/api/src/modules/health/service.ts",
+      "issue": "Health endpoint does not check Redis, queue, or external dependency health",
+      "impact": "Health check can report 'healthy' while critical dependencies (Redis, BullMQ) are down, giving false confidence for deployment decisions.",
+      "fix": "Add Redis ping, queue health (BullMQ), and LiveKit connectivity checks to getFullHealth(). Report unhealthy status when any critical dependency fails."
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "metrics",
+      "file": "apps/api/src/lib/sentry.ts",
+      "issue": "Sentry tracesSampleRate set to 1.0 in development environment, risking excessive event volume",
+      "impact": "In shared dev/staging environments with traffic, 100% tracing generates unnecessary cost and noise, potentially masking real issues.",
+      "fix": "Set tracesSampleRate to 0.1 for development and 0.2 for production. Use a separate DSN or disable Sentry in non-production unless explicitly enabled."
+    },
+    {
+      "severity": "P3",
+      "domain": "observability",
+      "category": "metrics",
+      "file": "apps/api/src/lib/metrics.ts",
+      "issue": "Metrics endpoint (/metrics) not exposed or documented in routes",
+      "impact": "Prometheus cannot scrape metrics because no /metrics route is registered in the route registry.",
+      "fix": "Add a GET /metrics route registered in route-registry.ts that serves register.metrics(). Protect behind authentication or firewall."
+    },
+    {
+      "severity": "P3",
+      "domain": "observability",
+      "category": "incident_response",
+      "file": "apps/worker/src/main.ts",
+      "issue": "Worker health check on separate port (4100) not documented in runbook or deployment config",
+      "impact": "Operators and load balancers may not know the worker exposes a health endpoint, leading to undetected worker failures.",
+      "fix": "Document HEALTH_PORT in environment schema and add to the deployment health check configuration. Standardize worker health to use a known path rather than a separate port."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "Cookie banner offers only binary choice (Accept all / Essential only) with no granular per-category opt-in",
+      "impact": "Users cannot individually control analytics vs. marketing vs. functional cookies, which may violate GDPR ePrivacy Directive requirements for granular consent.",
+      "fix": "Implement a tiered consent dialog allowing separate toggles for 'essential', 'analytics', and 'marketing' categories. Store each consent_type independently."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Marketing consent type is accepted and stored but no marketing functionality exists to honor the preference",
+      "impact": "Consent is collected for 'marketing' purposes without any marketing feature (emails, ads) to respect that preference, creating an audit gap if marketing features are added later without consent re-collection.",
+      "fix": "Either remove the 'marketing' consent_type until marketing features exist, or add a consent usage audit that maps consent types to actual data processing activities."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "data_subject_rights",
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "issue": "No data subject access request (DSAR) workflow for individual user data export or deletion",
+      "impact": "Users cannot request a copy of their personal data or request deletion under GDPR Article 15/17. The compliance export is admin-only and workspace-scoped.",
+      "fix": "Implement a user-facing 'Export my data' and 'Delete my account' flow in the settings page. Add a DSAR queue endpoint that collects user data across all tables."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_handling",
+      "file": "apps/worker/src/processors/data-retention.ts",
+      "issue": "Consent log data retention deletes records but does not anonymize them first for audit chain integrity",
+      "impact": "Hard-deleting consent logs destroys the audit trail proving consent was given, which may be required by GDPR Article 7(1).",
+      "fix": "Implement anonymization (nullify IP, user_agent, user_id) before hard-deleting consent logs. Retain a minimal anonymized record permanently."
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "pii_handling",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "IP address and user agent stored in plain text in consent_logs without anonymization",
+      "impact": "PII (IP address, user-agent string) is stored in the database. While useful for security audits, it creates additional GDPR data minimization risk.",
+      "fix": "Hash or truncate the IP address (e.g., store /24 prefix only). User agent can be stored but should be flagged as PII in data inventory."
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "cookie_compliance",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "No consent revocation UI \u2014 once accepted, users cannot change or withdraw consent",
+      "impact": "GDPR requires that withdrawing consent be as easy as giving it. Users have no way to revoke analytics or cookies consent after initial acceptance.",
+      "fix": "Add a 'Privacy settings' link in the sidebar or settings page that re-opens the consent dialog. Also clear server-side consent when revoked."
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "Consent acceptance silently fails on network error; user sees banner dismissed even if server-side record fails",
+      "impact": "If the POST to /consent fails, the banner disappears but the server has no record of consent. User believes consent was recorded when it was not.",
+      "fix": "Show an error state or retry mechanism if consent persistence fails. Only dismiss the banner after server confirms the consent record."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "issue": "Reactions batch endpoint skips message access control check",
+      "impact": "GET /v1/reactions/batch?message_ids=... (line 23) does not use `requireMessageAccess` middleware. While `requireMessageAccess` is applied to single-message reaction endpoints, the batch endpoint blindly fetches reactions for any message IDs provided. Combined with the RLS policy `reactions_select` which allows ANY authenticated user to read all reactions (`using (true)`), this enables enumeration of reactions on messages in private channels the user doesn't have access to.",
+      "fix": "Add an access check to the batch endpoint. For each message_id, verify the user has access to the message's channel before returning reactions. Alternatively, require a workspace_id parameter and verify membership.",
+      "exploit_chain": "Attacker obtains message IDs (e.g., from public channel messages or by ID enumeration) \u00e2\u2020\u2019 calls GET /v1/reactions/batch?message_ids=id1,id2,id3 \u00e2\u2020\u2019 learns user reaction patterns including users who reacted, which can reveal user relationships and interests."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Message forwarding does not verify target channel access",
+      "impact": "POST /messages/:id/forward (line 271) checks access to the source message via `requireMessageAccess` but does not validate that the user has access to `targetChannelId`. A user could forward messages to channels they cannot read or write to, potentially exfiltrating data to restricted channels or causing notifications in spaces the user shouldn't interact with.",
+      "fix": "Add a channel access check for `targetChannelId` before creating the forwarded message. Use `requireChannelAccess('targetChannelId')` or a manual check against workspace_members and channel_members tables.",
+      "exploit_chain": "User in workspace A finds a targetChannelId for a restricted channel (e.g., from a colleague's browser devtools) \u00e2\u2020\u2019 forwards sensitive messages to that channel \u00e2\u2020\u2019 contents become visible to channel members."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "cors_csrf",
+      "file": "apps/api/src/app.ts",
+      "issue": "CORS configuration allows null-origin requests",
+      "impact": "The CORS middleware at line 47 (`if (!origin) return callback(null, true)`) allows requests with no `Origin` header, which is typical of server-side scripts, curl, and non-browser HTTP clients. While not exploitable via browsers (which always send Origin), this means any server-side script can call the API without CORS restrictions if it omits the Origin header. Combined with the credentialless nature of server-side requests, this weakens the defense-in-depth posture.",
+      "fix": "Remove the null-origin pass-through. Change the handler to return an error when origin is missing unless the method is GET/HEAD/OPTIONS. For server-side clients, require proper authentication which is already enforced via the Bearer token.",
+      "exploit_chain": "Less relevant for browser-based attacks but enables easier automated scanning and abuse from non-browser clients since CORS doesn't block them."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Message upload endpoint has no channel or workspace validation",
+      "impact": "POST /messages/upload (line 344) creates an upload URL and file path without any channel or workspace context. Any authenticated user can upload arbitrary files of any type (the SST policy on the storage bucket is the only guard). This could allow filling storage quotas, uploading malicious files, or bypassing content moderation.",
+      "fix": "Require a `channel_id` or `workspace_id` parameter in the upload request. Verify the user has access to the channel/workspace before generating the upload URL. Apply file type restrictions on the server side before generating the signed URL.",
+      "exploit_chain": "Authenticated user calls POST /messages/upload with a large executable file \u00e2\u2020\u2019 storage fills up \u00e2\u2020\u2019 service degradation for legitimate users. Attacker uploads a malicious file \u00e2\u2020\u2019 references it in a message \u00e2\u2020\u2019 other users download infected content."
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "logging_audit",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Consent GET endpoint queries all records without explicit user_id filter",
+      "impact": "GET /v1/consent (line 9-20) queries `supabase.from(\"consent_logs\").select(\"*\")` without appending `.eq(\"user_id\", req.userId)`. The RLS policy (`auth.uid() = user_id`) prevents actual data leakage, but the API code is misleading and could be broken if RLS policies are ever relaxed. Future maintainers might see this pattern and replicate it in other endpoints.",
+      "fix": "Add an explicit `.eq(\"user_id\", req.userId)` filter to the query. This makes the authorization intent clear at the code level and follows the principal of defense in depth.",
+      "exploit_chain": "No direct exploit path due to RLS protection. Code quality and maintainability risk."
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "issue": "Webhook service uses getSupabase() (anon client) instead of user-authenticated client",
+      "impact": "Multiple methods in webhook service (listByWorkspace, getById, create, update, remove) use `getSupabase()` which creates a client with no user session context (only anon key). When RLS policies check `auth.uid()`, they see null, potentially causing queries to return empty results or fail silently. This masks authorization failures and makes the service unreliable \u00e2\u20ac\u201d a workspace member verified by middleware may get empty results from the service.",
+      "fix": "Refactor service methods to accept and use the user-authenticated Supabase client (`SupabaseClient`) passed from the route handler via `req.supabase`, consistent with how channelService and messageService handle it.",
+      "exploit_chain": "Not a direct security exploit path. Reliability and correctness issue that could lead to unexpected authorization gaps if RLS policies change."
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "issue": "Channel delete and member management missing admin role check",
+      "impact": "DELETE /channels/:id (line 111), POST /channels/:id/members (line 141), DELETE /channels/:id/members/:userId (line 335) only use `requireChannelAccess` middleware which checks workspace membership + private channel membership but does not verify admin/owner role. Any workspace member can delete channels or manage channel membership, even without administrative privileges.",
+      "fix": "Add an admin role check (e.g., `requirePermission('manage_channels')` or a custom middleware checking `workspaceRole` for 'admin' or 'owner') to channel delete and member management endpoints.",
+      "exploit_chain": "Workspace member deletes a critical public channel \u00e2\u2020\u2019 all messages lost. Member adds unauthorized users to a private channel \u00e2\u2020\u2019 data disclosure."
+    }
+  ]
+}

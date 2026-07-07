@@ -19,19 +19,21 @@ export function CookieBanner() {
 
   async function acceptAll() {
     try {
-      await api.post("/consent", { consent_type: "cookies", granted: true });
-      await api.post("/consent", { consent_type: "analytics", granted: true });
+      await api.post("/consent/log", { consent_type: "cookies", granted: true });
+      await api.post("/consent/log", { consent_type: "analytics", granted: true });
     } catch {
+      console.warn("Consent recording failed");
       // Consent recording is best-effort
     }
     localStorage.setItem(COOKIE_CONSENT_KEY, "true");
     setVisible(false);
   }
 
-  function acceptEssential() {
+  async function acceptEssential() {
     try {
-      api.post("/consent", { consent_type: "cookies", granted: true }).catch(() => {});
+      await api.post("/consent/log", { consent_type: "cookies", granted: true });
     } catch {
+      console.warn("Essential consent recording failed");
       // best-effort
     }
     localStorage.setItem(COOKIE_CONSENT_KEY, "true");

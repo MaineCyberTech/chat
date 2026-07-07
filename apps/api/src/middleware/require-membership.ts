@@ -1,6 +1,22 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { getSupabaseForUser, getSupabase } from "../lib/supabase.js";
 
+/**
+ * Permission model:
+ *
+ * Roles: owner > admin > member
+ * Permissions are additive — each level inherits all permissions below it.
+ *
+ * - "owner" can do everything including deleting the workspace
+ * - "admin" can manage members, channels, and settings
+ * - "member" can read/write within their channel access
+ *
+ * requireWorkspaceMembership() uses a "deny" model:
+ *   If the user has NO row in workspace_members → denied (403).
+ *   Any role (owner/admin/member) → allowed.
+ *
+ * For granular role checks use requireWorkspaceRole() after membership.
+ */
 export function requireWorkspaceMembership(paramName = "workspaceId") {
   return async (req: Request, res: Response, next: NextFunction) => {
     const workspaceId = req.params[paramName];
@@ -30,6 +46,23 @@ export function requireWorkspaceMembership(paramName = "workspaceId") {
     }
 
     (req as Request & { workspaceRole?: string }).workspaceRole = data.role;
+    next();
+  };
+}
+
+/** Require a minimum workspace role for the current request. */
+export function requireWorkspaceRole(minRole: "admin" | "owner") {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const role = (req as unknown as { workspaceRole?: string }).workspaceRole;
+    if (!role) {
+      res.status(403).json({ error: { code: "FORBIDDEN", message: "Workship role missing" } });
+      return;
+    }
+    const hierarchy: Record<string, number> = { member: 0, admin: 1, owner: 2 };
+    if ((hierarchy[role] ?? 0) < hierarchy[minRole]) {
+      res.status(403).json({ error: { code: "FORBIDDEN", message: `${minRole} role required` } });
+      return;
+    }
     next();
   };
 }

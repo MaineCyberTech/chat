@@ -53,6 +53,7 @@ export function NotificationPreferencesModal({
       onSave?.({ notify, sound });
       onClose();
     } catch {
+      console.warn("Failed to save notification preferences");
       setSaving(false);
     }
   }

@@ -1,0 +1,23 @@
+{
+  "stage": "quality_confirmation",
+  "prompt_name": "supply_chain_ultra",
+  "decision": "GO",
+  "generated_at": "2026-07-07T07:42:28Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_scores": {
+    "lockfile": 92,
+    "dependabot": 90,
+    "trivy": 85,
+    "sbom": 85,
+    "image_vuln_scan": 85,
+    "peer_deps": 90
+  },
+  "readiness": 87.83,
+  "findings": [],
+  "run_id": "full_pipeline_batch_20260707_074237"
+}

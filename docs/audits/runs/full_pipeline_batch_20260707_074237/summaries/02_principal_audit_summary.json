@@ -1,0 +1,26 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "security_principal_audit",
+  "decision": "GO",
+  "generated_at": "2026-07-07T07:42:28Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "category_scores": {
+    "auth": 95,
+    "secrets": 92,
+    "headers": 95,
+    "input_validation": 95,
+    "rate_limiting": 90,
+    "dependencies": 88,
+    "database_rls": 95,
+    "audit_logging": 90,
+    "error_handling": 92
+  },
+  "readiness": 92.44,
+  "findings": [],
+  "run_id": "full_pipeline_batch_20260707_074237"
+}
