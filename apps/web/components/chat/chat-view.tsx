@@ -333,6 +333,14 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     };
   }, [channelId, user?.id, loadProfiles]);
 
+  // Force layout recalculation after loading completes
+  const [layoutTick, setLayoutTick] = useState(0);
+  useEffect(() => {
+    if (!loading && !error) {
+      requestAnimationFrame(() => setLayoutTick((t) => t + 1));
+    }
+  }, [loading, error]);
+
   // Prevent body scroll when mobile RHS is open
   useEffect(() => {
     const isMobile = window.innerWidth < 768;
@@ -668,13 +676,13 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           </div>
         )}
 
-        {/* Message area - absolute positioning to avoid flex height calc issues */}
-        <div style={{ flex: 1, minHeight: 0, position: "relative", display: "flex", flexDirection: "column" }}>
+        {/* Message area - use height:0 + flex-grow:1 for reliable flex sizing */}
+        <div style={{ flex: "1 1 0", minHeight: 0, display: "flex", flexDirection: "column" }}>
           <div
             role="log"
             aria-atomic="false"
             aria-label="Messages"
-            style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "14px 0 7px" }}
+            style={{ flex: "1 1 0", minHeight: 0, overflowY: "auto", padding: "14px 0 7px" }}
           >
             <MessageList
               messages={
