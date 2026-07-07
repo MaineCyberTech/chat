@@ -67,6 +67,7 @@ describe("errorHandler middleware", () => {
     expect(logger.error).toHaveBeenCalledWith("Unhandled error", {
       requestId: "req-123",
       message: "Something broke",
+      name: "Error",
       stack: undefined,
     });
   });
@@ -86,6 +87,7 @@ describe("errorHandler middleware", () => {
     expect(logger.error).toHaveBeenCalledWith("Unhandled error", {
       requestId: "req-123",
       message: "dev error",
+      name: "Error",
       stack: expect.any(String),
     });
 
