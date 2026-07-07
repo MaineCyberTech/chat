@@ -127,4 +127,63 @@ router.post("/webhooks/dead-letters/:id/retry", authenticate, asyncHandler(async
   else res.json({ success: true });
 }));
 
+router.get("/export/compliance", authenticate, asyncHandler(async (req: Request, res: Response) => {
+  const admin = getSupabaseAdmin();
+  const workspaceId = req.query.workspace_id as string | undefined;
+
+  async function fetchAll(query: any) {
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  }
+
+  const exportMeta = {
+    exported_at: new Date().toISOString(),
+    workspace_id: workspaceId ?? "all",
+    format_version: "1.0",
+  };
+
+  type ExportTask = { key: string; fn: () => Promise<unknown> };
+  const tasks: ExportTask[] = [
+    { key: "export_meta", fn: async () => exportMeta },
+  ];
+
+  if (!workspaceId || workspaceId === "all") {
+    tasks.push({ key: "users", fn: () => fetchAll(admin.from("users").select("*").order("created_at", { ascending: true })) });
+  }
+
+  tasks.push(
+    { key: "workspaces", fn: () => fetchAll(admin.from("workspaces").select("*").order("created_at", { ascending: true })) },
+    { key: "channels", fn: () => fetchAll(admin.from("channels").select("*").order("created_at", { ascending: true })) },
+    { key: "messages", fn: () => fetchAll(
+      admin.from("messages").select("id, channel_id, user_id, content, parent_id, is_pinned, priority, created_at, edited_at, deleted_at")
+        .order("created_at", { ascending: true })
+    )},
+    { key: "audit_logs", fn: () => fetchAll(admin.from("audit_logs").select("*").order("created_at", { ascending: true })) },
+  );
+
+  const results = await Promise.allSettled(tasks.map((t) => t.fn()));
+
+  const data: Record<string, unknown> = {};
+  const errs: string[] = [];
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r.status === "fulfilled") {
+      data[tasks[i].key] = r.value;
+    } else {
+      errs.push(`${tasks[i].key}: ${r.reason?.message ?? String(r.reason)}`);
+    }
+  }
+
+  if (errs.length > 0) {
+    logger.warn("Compliance export completed with errors", { errors: errs });
+    data.errors = errs;
+  }
+
+  const timestamp = Date.now();
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Content-Disposition", `attachment; filename="compliance-export-${timestamp}.json"`);
+  res.json(data);
+}));
+
 export default router;
