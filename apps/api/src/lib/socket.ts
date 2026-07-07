@@ -194,6 +194,11 @@ export function initSocket(
       }
     });
 
+    // Respond to client health check pings
+    socket.on("ping", (ack: () => void) => {
+      if (typeof ack === "function") ack();
+    });
+
     socket.on("typing:start", (channelId: string) => {
       socket.to(`channel:${channelId}`).emit("typing:start", { userId, channelId });
     });

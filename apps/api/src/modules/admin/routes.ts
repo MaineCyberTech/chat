@@ -1,9 +1,11 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
+import * as Sentry from "@sentry/node";
 import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { logger } from "../../lib/logger.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { InternalServerError, ForbiddenError } from "../../lib/app-error.js";
+import { loadEnv } from "../../config/env.js";
 
 const router = Router();
 const startTime = Date.now();
@@ -92,15 +94,101 @@ router.get("/integrations", authenticate, requireAdmin, asyncHandler(async (_req
   res.json({ integrations: data });
 }));
 
+router.get("/health", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
+  const env = loadEnv();
+  const checks: Record<string, { status: string; latencyMs?: number; message?: string; queueCounts?: Record<string, number> }> = {
+    server: { status: "healthy" },
+  };
+
+  try {
+    const dbStart = Date.now();
+    const admin = getSupabaseAdmin();
+    const { error } = await admin.from("workspaces").select("id", { count: "exact", head: true });
+    checks.database = {
+      status: error ? "unhealthy" : "healthy",
+      latencyMs: Date.now() - dbStart,
+      message: error?.message,
+    };
+  } catch (err) {
+    checks.database = { status: "unhealthy", message: String(err) };
+  }
+
+  if (env.REDIS_URL) {
+    try {
+      const { default: Redis } = await import("ioredis");
+      const redis = new Redis(env.REDIS_URL, {
+        maxRetriesPerRequest: 1,
+        retryStrategy: null,
+        lazyConnect: true,
+        connectTimeout: 3000,
+      });
+      await redis.connect();
+      await redis.ping();
+      checks.redis = { status: "healthy" };
+      await redis.quit().catch(() => {});
+    } catch (err) {
+      checks.redis = { status: "unhealthy", message: String(err) };
+    }
+  } else {
+    checks.redis = { status: "degraded", message: "REDIS_URL not configured" };
+  }
+
+  const queueNames = ["webhook-delivery", "notification", "search-indexing", "cleanup", "data-retention"];
+  const queueCounts: Record<string, number> = {};
+  let workersOk = true;
+
+  if (env.REDIS_URL) {
+    for (const name of queueNames) {
+      queueCounts[name] = 0;
+    }
+    try {
+      const { default: Redis } = await import("ioredis");
+      const redis = new Redis(env.REDIS_URL, {
+        maxRetriesPerRequest: 1,
+        retryStrategy: null,
+        lazyConnect: true,
+        connectTimeout: 3000,
+      });
+      await redis.connect();
+      for (const name of queueNames) {
+        const count = await redis.llen(`bull:${name}:wait`).catch(() => 0);
+        queueCounts[name] = (queueCounts[name] ?? 0) + count;
+      }
+      await redis.quit().catch(() => {});
+    } catch {
+      workersOk = false;
+    }
+  } else {
+    workersOk = false;
+  }
+
+  checks.workers = {
+    status: workersOk ? "healthy" : "degraded",
+    queueCounts,
+  };
+
+  const hasUnhealthy = Object.values(checks).some((c) => c.status === "unhealthy");
+  const hasDegraded = Object.values(checks).some((c) => c.status === "degraded");
+
+  res.json({
+    service: "api",
+    status: hasUnhealthy ? "unhealthy" : hasDegraded ? "degraded" : "healthy",
+    uptime: Math.floor((Date.now() - startTime) / 1000),
+    checks,
+  });
+}));
+
 router.get("/system", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
   let dbStatus = "unknown";
   let dbLatencyMs: number | undefined;
   try {
+    const dbSpan = Sentry.startInactiveSpan({ op: "db.query", name: "admin health check", onlyIfParent: true });
     const dbStart = Date.now();
     const admin = getSupabaseAdmin();
     const { error } = await admin.from("workspaces").select("id", { count: "exact", head: true });
     dbLatencyMs = Date.now() - dbStart;
     dbStatus = error ? "unreachable" : "connected";
+    if (dbSpan) { dbSpan.setAttribute("db.latency_ms", dbLatencyMs); dbSpan.end(); }
   } catch (err) {
     dbStatus = "unreachable";
     logger.error("Admin system check DB failure", { error: String(err) });
