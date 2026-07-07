@@ -1,9 +1,9 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { getSupabaseAdmin } from "../../lib/supabase.js";
-import { authenticate } from "../../middleware/authenticate";
-import { logger } from "../../lib/logger";
-import { asyncHandler } from "../../lib/async-handler";
-import { InternalServerError, ForbiddenError } from "../../lib/app-error";
+import { authenticate } from "../../middleware/authenticate.js";
+import { logger } from "../../lib/logger.js";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { InternalServerError, ForbiddenError } from "../../lib/app-error.js";
 
 const router = Router();
 const startTime = Date.now();
