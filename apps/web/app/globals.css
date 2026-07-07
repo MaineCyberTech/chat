@@ -215,7 +215,7 @@
   .app__content {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    min-height: 0;
     background: var(--center-channel-bg);
     border-radius: 12px;
     box-shadow: var(--elevation-1);
@@ -269,7 +269,8 @@
   [role="log"] {
     min-height: 0;
     flex: 1;
-    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .group:active .action-overlay,
