@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef, useLayoutEffect } from "react";
 import { getSocket, onReconnect, offReconnect } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
@@ -339,6 +339,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     const isOpen = showChannelInfo !== false || threadMessage !== null;
     document.body.classList.toggle("rhs-mobile-open", isMobile && isOpen);
   }, [showChannelInfo, threadMessage]);
+
+
 
   const handleSend = useCallback(
     async (content: string, priority: string = "standard") => {
