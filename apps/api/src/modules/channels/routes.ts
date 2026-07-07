@@ -358,4 +358,21 @@ router.delete(
   }),
 );
 
+router.get(
+  "/channels/:id/members/history",
+  validateUuidParam("id"),
+  requireChannelAccess("id"),
+  asyncHandler(async (req, res) => {
+    const { data, error } = await req
+      .supabase!.from("channel_member_history")
+      .select("*, users!inner(display_name, email)")
+      .eq("channel_id", req.params.id as string)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) throw new InternalServerError(error.message);
+    res.json({ history: data ?? [] });
+  }),
+);
+
 export default router;
