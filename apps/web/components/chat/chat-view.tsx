@@ -452,7 +452,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
   if (loading) {
     return (
-      <div className="flex h-full" id="channel_view">
+      <div className="flex min-h-0 flex-1" id="channel_view">
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="mm-channel-header">
             <Skeleton
@@ -491,7 +491,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
 
   if (error) {
     return (
-      <div className="flex h-full flex-col">
+      <div className="flex flex-1 flex-col">
         <div className="mm-channel-header">
           <h1 className="min-w-0 truncate text-base font-semibold"># {channelName}</h1>
         </div>
@@ -535,7 +535,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   }
 
   return (
-    <div className="flex h-full" id="channel_view">
+    <div className="flex min-h-0 flex-1" id="channel_view">
       <div
         className="flex min-w-0 flex-1 flex-col"
         style={{ background: "var(--center-channel-bg)" }}
