@@ -198,8 +198,7 @@ describe("errorHandler middleware", () => {
     errorHandler(err, req, res, next);
 
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      error: { code: "NOT_FOUND", message: "Not found", status: 404 },
+      error: { code: "NOT_FOUND", message: "Not found" },
     });
   });
 
@@ -212,8 +211,7 @@ describe("errorHandler middleware", () => {
     errorHandler(err, req, res, next);
 
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred", status: 500 },
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
     });
   });
 });

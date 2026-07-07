@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import userGroupsRouter from "../routes.js";
+import { errorHandler } from "../../../middleware/error-handler.js";
 
 vi.mock("../../../middleware/authenticate.js", () => ({
   authenticate: vi.fn((req: any, _res: any, next: any) => {
@@ -18,7 +19,7 @@ type MockChain = { [key: string]: any; then: (fn: (v: unknown) => unknown) => Pr
 function createChain(result: unknown): MockChain {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "in", "order", "limit", "single",
+    "select", "eq", "in", "order", "limit", "single", "maybeSingle",
     "insert", "update", "delete", "is", "or", "gt", "lt", "contains", "lte",
     "range",
   ]) {
@@ -54,7 +55,15 @@ function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (userGroupsRouter as any).stack) {
     if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
-      return layer.route.stack[layer.route.stack.length - 1].handle;
+      const handle = layer.route.stack[layer.route.stack.length - 1].handle;
+      return async (req: any, res: any) => {
+        const next = vi.fn();
+        await handle(req, res, next);
+        if (next.mock.calls.length > 0) {
+          const err = next.mock.calls[0][0];
+          errorHandler(err, req, res, vi.fn());
+        }
+      };
     }
   }
   return null;
@@ -92,7 +101,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: "workspace_id required" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "BAD_REQUEST" }),
+        }),
+      );
     });
 
     it("returns empty array when no groups exist", async () => {
@@ -109,8 +122,9 @@ describe("user-groups routes", () => {
     });
 
     it("returns 500 when query fails", async () => {
-      const chain = createChain({ data: null, error: { message: "DB error" } });
-      const from = vi.fn(() => chain);
+      const memberChain = createChain({ data: { role: "admin" }, error: null });
+      const queryChain = createChain({ data: null, error: { message: "DB error" } });
+      const from = vi.fn().mockReturnValueOnce(memberChain).mockReturnValueOnce(queryChain);
 
       const handler = findHandler("get", "/");
       const req = mockReq({ query: { workspace_id: "ws-1" }, supabase: { from } });
@@ -119,7 +133,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "DB error" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }),
+        }),
+      );
     });
   });
 
@@ -161,12 +179,16 @@ describe("user-groups routes", () => {
     });
 
     it("creates a group with member_ids", async () => {
+      const membershipChain = createChain({ data: { role: "admin" }, error: null });
       const insertChain = createChain({
         data: { id: "g-new", workspace_id: "ws-1", name: "Engineering", created_by: "user-1" },
         error: null,
       });
-      const memberChain = createChain({ error: null });
-      const from = vi.fn().mockReturnValueOnce(insertChain).mockReturnValueOnce(memberChain);
+      const memberInsertChain = createChain({ error: null });
+      const from = vi.fn()
+        .mockReturnValueOnce(membershipChain)
+        .mockReturnValueOnce(insertChain)
+        .mockReturnValueOnce(memberInsertChain);
 
       const handler = findHandler("post", "/");
       const req = mockReq({
@@ -178,7 +200,7 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
-      expect(from).toHaveBeenCalledTimes(2);
+      expect(from).toHaveBeenCalledTimes(3);
     });
 
     it("returns 400 when workspace_id missing", async () => {
@@ -189,7 +211,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: "workspace_id and name required" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "BAD_REQUEST" }),
+        }),
+      );
     });
 
     it("returns 400 when name missing", async () => {
@@ -200,12 +226,17 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: "workspace_id and name required" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "BAD_REQUEST" }),
+        }),
+      );
     });
 
     it("returns 500 when insert fails", async () => {
-      const chain = createChain({ data: null, error: { message: "Duplicate name" } });
-      const from = vi.fn(() => chain);
+      const memberChain = createChain({ data: { role: "admin" }, error: null });
+      const insertChain = createChain({ data: null, error: { message: "Duplicate name" } });
+      const from = vi.fn().mockReturnValueOnce(memberChain).mockReturnValueOnce(insertChain);
 
       const handler = findHandler("post", "/");
       const req = mockReq({
@@ -217,7 +248,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Duplicate name" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }),
+        }),
+      );
     });
   });
 
@@ -273,7 +308,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Not found" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }),
+        }),
+      );
     });
   });
 
@@ -302,7 +341,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Not found" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }),
+        }),
+      );
     });
   });
 
@@ -336,7 +379,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "DB error" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }),
+        }),
+      );
     });
   });
 
@@ -374,7 +421,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: "user_ids array required" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "BAD_REQUEST" }),
+        }),
+      );
     });
 
     it("returns 400 when user_ids is not an array", async () => {
@@ -388,7 +439,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: "user_ids array required" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "BAD_REQUEST" }),
+        }),
+      );
     });
 
     it("returns 500 when insert fails", async () => {
@@ -406,7 +461,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Duplicate member" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }),
+        }),
+      );
     });
   });
 
@@ -435,7 +494,11 @@ describe("user-groups routes", () => {
       await handler(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Not found" });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }),
+        }),
+      );
     });
   });
 });

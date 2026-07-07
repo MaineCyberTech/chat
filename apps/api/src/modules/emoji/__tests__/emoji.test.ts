@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import emojiRouter from "../routes.js";
+import { errorHandler } from "../../../middleware/error-handler.js";
 
 vi.mock("../../../lib/supabase.js", () => ({
   getSupabase: vi.fn(),
@@ -50,7 +51,15 @@ function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (emojiRouter as any).stack) {
     if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
-      return layer.route.stack[layer.route.stack.length - 1].handle;
+      const handle = layer.route.stack[layer.route.stack.length - 1].handle;
+      return async (req: any, res: any) => {
+        const next = vi.fn();
+        await handle(req, res, next);
+        if (next.mock.calls.length > 0) {
+          const err = next.mock.calls[0][0];
+          errorHandler(err, req, res, vi.fn());
+        }
+      };
     }
   }
   return null;
@@ -142,7 +151,7 @@ describe("emoji routes", () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: expect.objectContaining({ code: "INVALID_INPUT" }),
+          error: expect.objectContaining({ code: "BAD_REQUEST" }),
         }),
       );
     });
@@ -160,7 +169,7 @@ describe("emoji routes", () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: expect.objectContaining({ code: "INVALID_INPUT" }),
+          error: expect.objectContaining({ code: "BAD_REQUEST" }),
         }),
       );
     });
@@ -211,7 +220,7 @@ describe("emoji routes", () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: expect.objectContaining({ code: "CREATE_FAILED" }),
+          error: expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }),
         }),
       );
     });
@@ -249,7 +258,7 @@ describe("emoji routes", () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: expect.objectContaining({ code: "DELETE_FAILED" }),
+          error: expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }),
         }),
       );
     });

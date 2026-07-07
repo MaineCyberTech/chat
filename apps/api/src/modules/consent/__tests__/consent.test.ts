@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import consentRouter from "../routes.js";
+import { errorHandler } from "../../../middleware/error-handler.js";
 
 vi.mock("../../../lib/supabase.js", () => ({
   getSupabase: vi.fn(),
@@ -50,7 +51,15 @@ function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (consentRouter as any).stack) {
     if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
-      return layer.route.stack[layer.route.stack.length - 1].handle;
+      const handle = layer.route.stack[layer.route.stack.length - 1].handle;
+      return async (req: any, res: any) => {
+        const next = vi.fn();
+        await handle(req, res, next);
+        if (next.mock.calls.length > 0) {
+          const err = next.mock.calls[0][0];
+          errorHandler(err, req, res, vi.fn());
+        }
+      };
     }
   }
   return null;
