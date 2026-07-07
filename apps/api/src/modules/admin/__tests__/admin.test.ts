@@ -92,8 +92,9 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/stats");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
       expect(res.json).toHaveBeenCalledWith({
         stats: { users: 10, workspaces: 3, channels: 15, messages: 200 },
@@ -112,11 +113,11 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/stats");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Failed to fetch stats" });
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
     });
   });
 
@@ -133,8 +134,9 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/users");
       const req = mockReq({ query: { page: "1" } });
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -154,8 +156,9 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/users");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ page: 0 }));
     });
@@ -172,8 +175,9 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/users");
       const req = mockReq({ query: { search: "bob" } });
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
       expect(chain.or).toHaveBeenCalledWith(expect.stringContaining("bob"));
       expect(res.json).toHaveBeenCalledWith(
@@ -197,8 +201,9 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/channels");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -216,11 +221,13 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/channels");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "fail" });
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({ statusCode: 500, code: "INTERNAL_SERVER_ERROR" }),
+      );
     });
   });
 
@@ -236,8 +243,9 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/workspaces");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -254,11 +262,13 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/workspaces");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "fail" });
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({ statusCode: 500, code: "INTERNAL_SERVER_ERROR" }),
+      );
     });
   });
 
@@ -271,8 +281,9 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/system");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -294,8 +305,9 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/system");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -323,8 +335,9 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/integrations");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -341,11 +354,13 @@ describe("admin routes", () => {
       const handler = findHandler("get", "/integrations");
       const req = mockReq();
       const res = mockRes();
+      const next = vi.fn();
 
-      await handler(req, res);
+      await handler(req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "fail" });
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({ statusCode: 500, code: "INTERNAL_SERVER_ERROR" }),
+      );
     });
   });
 });

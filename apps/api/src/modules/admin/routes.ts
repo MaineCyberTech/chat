@@ -93,4 +93,38 @@ router.get("/system", authenticate, asyncHandler(async (_req: Request, res: Resp
   });
 }));
 
+router.get("/webhooks/deliveries", authenticate, asyncHandler(async (req: Request, res: Response) => {
+  const admin = getSupabaseAdmin();
+  const page = parseInt(req.query.page as string) || 0;
+  const limit = 20;
+  const webhookId = req.query.webhook_id as string | undefined;
+  let query = admin
+    .from("webhook_deliveries")
+    .select("*, webhook_endpoints!inner(name, workspace_id)", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(page * limit, (page + 1) * limit - 1);
+  if (webhookId) query = query.eq("webhook_id", webhookId);
+  const { data, error, count } = await query;
+  if (error) throw new InternalServerError(error.message);
+  res.json({ deliveries: data, total: count ?? 0, page, limit });
+}));
+
+router.get("/webhooks/dead-letters", authenticate, asyncHandler(async (_req: Request, res: Response) => {
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin
+    .from("webhook_dead_letters")
+    .select("*, webhook_endpoints!inner(name, workspace_id)")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw new InternalServerError(error.message);
+  res.json({ deadLetters: data ?? [] });
+}));
+
+router.post("/webhooks/dead-letters/:id/retry", authenticate, asyncHandler(async (req: Request, res: Response) => {
+  const { webhookService } = await import("../../modules/webhooks/service.js");
+  const success = await webhookService.retryDeadLetter(req.params.id as string);
+  if (!success) res.status(404).json({ error: "Dead letter not found or webhook inactive" });
+  else res.json({ success: true });
+}));
+
 export default router;
