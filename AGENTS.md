@@ -360,5 +360,6 @@ Detailed change logs for all completed work can be found in the git history:
 - **All 7 Remaining Findings Fixed (July 6)** — BFF layer, migration rollback scripts, diff coverage enforcement, Playwright visual snapshots, keyboard shortcuts discoverability, E2E scaffolds, reduced-motion check
 - **Prompt Pipeline Buildout (July 1)** — 58 prompts executed across 8 batches, 68 stage summaries, 624 findings aggregated, all resolved
 - **Round 2 Hardening Fixes (June 30-July 1)** — CSP removal of unsafe-inline/eval, test creds removal, query length guard, console.error→logger, rate limit logging, socket auth logging, config throw, pnpm audit threshold, --force-recreate, consent routes TS fix
+- **Full Comparative Audit Quick Wins (July 7)** — 8 quick wins applied: down migration script for performance indexes, AGENTS.md updated with audit findings, CI/CD consolidation (e2e-daily merged into ci.yml), structured error subclasses (BadRequestError, UnauthorizedError, etc.), test coverage for AppError + OpenAPI routes, centralized route registry (route-registry.ts), data retention enforcement job processor, LinkPreview component for URL unfurling
 
 Run `git log --oneline --since="2026-06-20"` for the full commit history or see `CHANGELOG.md`.
