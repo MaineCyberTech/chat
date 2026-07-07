@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "clean": "rimraf .next",
-    "generate:version": "node scripts/generate-version.js"
+    "generate:version": "node scripts/generate-version.js",
+    "i18n:extract": "pwsh -File ../../scripts/local/extract-i18n.ps1"
   },
   "dependencies": {
     "@chat/db": "workspace:*",
