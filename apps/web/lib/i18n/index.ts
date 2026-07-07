@@ -52,7 +52,7 @@ export function getLocale(): string {
 }
 
 export function getLocaleInfo(locale: string): LocaleInfo {
-  return localeMap[locale] ?? localeMap.en;
+  return (localeMap[locale] ?? localeMap.en) as LocaleInfo;
 }
 
 export function getAvailableLocales(): LocaleInfo[] {

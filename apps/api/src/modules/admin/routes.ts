@@ -82,7 +82,7 @@ router.get("/system", authenticate, async (_req: Request, res: Response) => {
     dbStatus = error ? "unreachable" : "connected";
   } catch (err) {
     dbStatus = "unreachable";
-    logger.error({ error: String(err) }, "Admin system check DB failure");
+    logger.error("Admin system check DB failure", { error: String(err) });
   }
 
   res.json({
