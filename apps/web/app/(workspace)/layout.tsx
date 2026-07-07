@@ -162,15 +162,16 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     <div
       className="app__body"
       style={{
-        flex: 1,
+        flex: "1 1 0",
         display: "flex",
         flexDirection: "column",
         background: "var(--sidebar-bg)",
-        minHeight: "100vh",
+        minHeight: 0,
+        height: "1px",
       }}
     >
       {/* Flex row for sidebar + content */}
-      <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
+      <div style={{ flex: "1 1 0", minHeight: 0, display: "flex", overflow: "hidden", height: "1px" }}>
         {/* Mobile header */}
         <div
           id="global-header"
