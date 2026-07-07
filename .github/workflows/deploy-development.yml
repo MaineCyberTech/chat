@@ -167,16 +167,24 @@ jobs:
             echo "=== Disk usage after cleanup ==="
             df -h /
 
-            # Pull images with retries
+            # Pull images with retries (use commit SHA to avoid race with build-push)
+            COMMIT_SHA=${{ github.sha }}
             for img in api worker web; do
-              for attempt in 1 2 3; do
-                if docker pull ghcr.io/${{ env.REPO_LC }}/$img:dev; then
-                  echo "Successfully pulled $img:dev"
-                  break
-                fi
-                echo "Attempt $attempt failed for $img:dev, retrying in 5s..."
-                sleep 5
-              done
+              # Try SHA-specific tag first (race-condition-safe)
+              if docker pull ghcr.io/${{ env.REPO_LC }}/$img:$COMMIT_SHA; then
+                docker tag ghcr.io/${{ env.REPO_LC }}/$img:$COMMIT_SHA ghcr.io/${{ env.REPO_LC }}/$img:dev
+                echo "Successfully pulled $img:$COMMIT_SHA and tagged as $img:dev"
+              else
+                # Fallback to :dev tag
+                for attempt in 1 2 3; do
+                  if docker pull ghcr.io/${{ env.REPO_LC }}/$img:dev; then
+                    echo "Successfully pulled $img:dev"
+                    break
+                  fi
+                  echo "Attempt $attempt failed for $img:dev, retrying in 5s..."
+                  sleep 5
+                done
+              fi
             done
 
             docker compose -f infra/docker/docker-compose.devremote.yml up -d --force-recreate --remove-orphans || true
