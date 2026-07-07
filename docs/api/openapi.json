@@ -1,0 +1,886 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Chat API",
+    "version": "1.0.0",
+    "description": "REST API for the real-time messaging platform. All API requests (except health) require Bearer authentication."
+  },
+  "servers": [
+    { "url": "http://localhost:4000", "description": "Local development" },
+    { "url": "https://chat.mainecybertech.us", "description": "Development" },
+    { "url": "https://chat.mainecybertech.com", "description": "Production" }
+  ],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/v1/auth/session": {
+      "get": {
+        "summary": "Get current session profile",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Current user profile", "content": { "application/json": { "schema": { "type": "object", "properties": { "user": { "$ref": "#/components/schemas/User" } } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      }
+    },
+    "/v1/auth/profile": {
+      "patch": {
+        "summary": "Update user profile",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "display_name": { "type": "string" }, "email": { "type": "string", "format": "email" }, "avatar_url": { "type": "string", "format": "uri" } } } } }
+        },
+        "responses": { "200": { "description": "Updated profile", "content": { "application/json": { "schema": { "type": "object", "properties": { "user": { "$ref": "#/components/schemas/User" } } } } } }, "400": { "$ref": "#/components/responses/BadRequest" } }
+      }
+    },
+    "/v1/auth/online": {
+      "get": {
+        "summary": "Get online users",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "List of online user IDs", "content": { "application/json": { "schema": { "type": "object", "properties": { "online": { "type": "array", "items": { "type": "string", "format": "uuid" } } } } } } } }
+      }
+    },
+    "/v1/auth/profiles": {
+      "post": {
+        "summary": "Batch fetch user profiles",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["userIds"], "properties": { "userIds": { "type": "array", "items": { "type": "string", "format": "uuid" } } } } } }
+        },
+        "responses": { "200": { "description": "Batch profiles", "content": { "application/json": { "schema": { "type": "object", "properties": { "profiles": { "type": "array", "items": { "$ref": "#/components/schemas/User" } } } } } } } }
+      }
+    },
+    "/v1/auth/search": {
+      "get": {
+        "summary": "Search users by query",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string", "minLength": 2, "maxLength": 100 } }
+        ],
+        "responses": { "200": { "description": "Matching user profiles", "content": { "application/json": { "schema": { "type": "object", "properties": { "profiles": { "type": "array", "items": { "$ref": "#/components/schemas/User" } } } } } } } }
+      }
+    },
+    "/v1/auth/avatar": {
+      "post": {
+        "summary": "Upload avatar",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["contentType"], "properties": { "contentType": { "type": "string", "example": "image/png" } } } } }
+        },
+        "responses": { "200": { "description": "Upload URL and updated profile" }, "400": { "$ref": "#/components/responses/BadRequest" } }
+      }
+    },
+    "/v1/auth/avatar/{userId}": {
+      "get": {
+        "summary": "Get avatar URL",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Avatar signed URL" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/v1/auth/status": {
+      "get": {
+        "summary": "Get user presence status",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "User presence status", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "$ref": "#/components/schemas/Presence" } } } } } } }
+      },
+      "patch": {
+        "summary": "Update user presence status",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["online", "away", "dnd"] }, "customStatus": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "Status updated" } }
+      }
+    },
+    "/v1/auth/export": {
+      "get": {
+        "summary": "Export user data (GDPR)",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "JSON file download of all user data" } }
+      }
+    },
+    "/v1/auth/account": {
+      "delete": {
+        "summary": "Delete user account (GDPR)",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "204": { "description": "Account deleted" } }
+      }
+    },
+    "/v1/workspaces": {
+      "get": {
+        "summary": "List user workspaces",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Workspace list", "content": { "application/json": { "schema": { "type": "object", "properties": { "workspaces": { "type": "array", "items": { "$ref": "#/components/schemas/Workspace" } } } } } } } }
+      },
+      "post": {
+        "summary": "Create workspace",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 100 } } } } }
+        },
+        "responses": { "201": { "description": "Workspace created", "content": { "application/json": { "schema": { "type": "object", "properties": { "workspace": { "$ref": "#/components/schemas/Workspace" } } } } } }, "400": { "$ref": "#/components/responses/BadRequest" } }
+      }
+    },
+    "/v1/workspaces/bootstrap": {
+      "get": {
+        "summary": "Bootstrap workspaces with channels",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Workspaces with nested channels" } }
+      }
+    },
+    "/v1/workspaces/{id}": {
+      "get": {
+        "summary": "Get workspace by ID",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Workspace details", "content": { "application/json": { "schema": { "type": "object", "properties": { "workspace": { "$ref": "#/components/schemas/Workspace" } } } } } }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "patch": {
+        "summary": "Update workspace",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "name": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "Updated workspace" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "delete": {
+        "summary": "Delete workspace",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "204": { "description": "Workspace deleted" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/v1/workspaces/{id}/members": {
+      "get": {
+        "summary": "List workspace members",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Member list", "content": { "application/json": { "schema": { "type": "object", "properties": { "members": { "type": "array", "items": { "$ref": "#/components/schemas/WorkspaceMember" } } } } } } } }
+      },
+      "post": {
+        "summary": "Add workspace member",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["user_id"], "properties": { "user_id": { "type": "string", "format": "uuid" }, "role": { "type": "string", "enum": ["admin", "member"] } } } } }
+        },
+        "responses": { "201": { "description": "Member added" }, "400": { "$ref": "#/components/responses/BadRequest" } }
+      }
+    },
+    "/v1/workspaces/{id}/members/{userId}": {
+      "patch": {
+        "summary": "Update workspace member role",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["role"], "properties": { "role": { "type": "string", "enum": ["admin", "member"] } } } } }
+        },
+        "responses": { "200": { "description": "Role updated" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "delete": {
+        "summary": "Remove workspace member",
+        "tags": ["Workspaces"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "204": { "description": "Member removed" } }
+      }
+    },
+    "/v1/channels/{id}": {
+      "get": {
+        "summary": "Get channel by ID",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Channel details", "content": { "application/json": { "schema": { "type": "object", "properties": { "channel": { "$ref": "#/components/schemas/Channel" } } } } } }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "patch": {
+        "summary": "Update channel",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "name": { "type": "string" }, "topic": { "type": "string" }, "version": { "type": "integer" } } } } }
+        },
+        "responses": { "200": { "description": "Updated channel" }, "409": { "description": "Version conflict" } }
+      },
+      "delete": {
+        "summary": "Delete channel",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "204": { "description": "Channel deleted" } }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/channels": {
+      "get": {
+        "summary": "List workspace channels",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Channel list", "content": { "application/json": { "schema": { "type": "object", "properties": { "channels": { "type": "array", "items": { "$ref": "#/components/schemas/Channel" } } } } } } } }
+      },
+      "post": {
+        "summary": "Create channel",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" }, "topic": { "type": "string" }, "is_private": { "type": "boolean" } } } } }
+        },
+        "responses": { "201": { "description": "Channel created" }, "400": { "$ref": "#/components/responses/BadRequest" } }
+      }
+    },
+    "/v1/channels/{id}/members": {
+      "get": {
+        "summary": "List channel members",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Member list" } }
+      },
+      "post": {
+        "summary": "Add channel member",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["user_id"], "properties": { "user_id": { "type": "string", "format": "uuid" } } } } }
+        },
+        "responses": { "201": { "description": "Member added" } }
+      }
+    },
+    "/v1/channels/{id}/members/{userId}": {
+      "delete": {
+        "summary": "Remove channel member",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "204": { "description": "Member removed" } }
+      }
+    },
+    "/v1/channels/{id}/bookmarks": {
+      "get": {
+        "summary": "List channel bookmarks",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Bookmark list" } }
+      },
+      "post": {
+        "summary": "Create channel bookmark",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["title"], "properties": { "title": { "type": "string" }, "messageId": { "type": "string", "format": "uuid" }, "url": { "type": "string", "format": "uri" }, "emoji": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Bookmark created" } }
+      }
+    },
+    "/v1/channels/{id}/bookmarks/{bookmarkId}": {
+      "patch": {
+        "summary": "Update channel bookmark",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "bookmarkId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Bookmark updated" } }
+      },
+      "delete": {
+        "summary": "Delete channel bookmark",
+        "tags": ["Channels"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "bookmarkId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "204": { "description": "Bookmark deleted" } }
+      }
+    },
+    "/v1/channels/{channelId}/messages": {
+      "get": {
+        "summary": "List channel messages (cursor-based)",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "channelId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Paginated messages", "content": { "application/json": { "schema": { "type": "object", "properties": { "messages": { "type": "array", "items": { "$ref": "#/components/schemas/Message" } }, "nextCursor": { "type": "string" } } } } } } }
+      },
+      "post": {
+        "summary": "Send a message",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "channelId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "Idempotency-Key", "in": "header", "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["content"], "properties": { "content": { "type": "string" }, "parent_id": { "type": "string", "format": "uuid" }, "priority": { "type": "string", "enum": ["normal", "urgent"] } } } } }
+        },
+        "responses": { "201": { "description": "Message sent", "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "$ref": "#/components/schemas/Message" } } } } } }, "400": { "$ref": "#/components/responses/BadRequest" } }
+      }
+    },
+    "/v1/messages/{id}": {
+      "get": {
+        "summary": "Get message by ID",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Message details" } }
+      },
+      "patch": {
+        "summary": "Edit a message",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["content"], "properties": { "content": { "type": "string" }, "version": { "type": "integer" } } } } }
+        },
+        "responses": { "200": { "description": "Message updated" }, "409": { "description": "Version conflict" } }
+      },
+      "delete": {
+        "summary": "Delete message (soft-delete)",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "204": { "description": "Message deleted" } }
+      }
+    },
+    "/v1/messages/{id}/pin": {
+      "post": {
+        "summary": "Pin a message",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Message pinned" } }
+      },
+      "delete": {
+        "summary": "Unpin a message",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Message unpinned" } }
+      }
+    },
+    "/v1/messages/{id}/flag": {
+      "post": {
+        "summary": "Flag a message",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Message flagged" } }
+      },
+      "delete": {
+        "summary": "Unflag a message",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Message unflagged" } }
+      }
+    },
+    "/v1/messages/{id}/forward": {
+      "post": {
+        "summary": "Forward message to another channel",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["targetChannelId"], "properties": { "targetChannelId": { "type": "string", "format": "uuid" } } } } }
+        },
+        "responses": { "201": { "description": "Message forwarded" } }
+      }
+    },
+    "/v1/messages/{id}/history": {
+      "get": {
+        "summary": "Get message edit history",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Edit history list" } }
+      }
+    },
+    "/v1/messages/search": {
+      "get": {
+        "summary": "Search messages across workspace",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "workspace_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "channel_ids", "in": "query", "schema": { "type": "string", "description": "Comma-separated channel IDs" } },
+          { "name": "author_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "date_from", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "date_to", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["messages", "files"] } }
+        ],
+        "responses": { "200": { "description": "Search results", "content": { "application/json": { "schema": { "type": "object", "properties": { "messages": { "type": "array", "items": { "$ref": "#/components/schemas/Message" } }, "hasMore": { "type": "boolean" }, "offset": { "type": "integer" } } } } } } }
+      }
+    },
+    "/v1/messages/flagged": {
+      "get": {
+        "summary": "Get flagged messages",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Flagged messages list" } }
+      }
+    },
+    "/v1/channels/{channelId}/pinned": {
+      "get": {
+        "summary": "Get pinned messages in channel",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "channelId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Pinned messages list" } }
+      }
+    },
+    "/v1/messages/upload": {
+      "post": {
+        "summary": "Request upload URL for file attachment",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["fileName", "contentType", "fileSize"], "properties": { "fileName": { "type": "string" }, "contentType": { "type": "string" }, "fileSize": { "type": "integer" } } } } }
+        },
+        "responses": { "200": { "description": "Signed upload URL" } }
+      }
+    },
+    "/v1/channels/{channelId}/export": {
+      "get": {
+        "summary": "Export channel messages (JSON/CSV)",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "channelId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "format", "in": "query", "schema": { "type": "string", "enum": ["json", "csv"], "default": "json" } }
+        ],
+        "responses": { "200": { "description": "File download" } }
+      }
+    },
+    "/v1/channels/{id}/notification-preference": {
+      "get": {
+        "summary": "Get channel notification preference",
+        "tags": ["Notifications"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Notification preference" } }
+      },
+      "put": {
+        "summary": "Set channel notification preference",
+        "tags": ["Notifications"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "notify": { "type": "boolean" }, "notify_sound": { "type": "boolean" } } } } }
+        },
+        "responses": { "200": { "description": "Preference updated" } }
+      },
+      "delete": {
+        "summary": "Reset channel notification preference to defaults",
+        "tags": ["Notifications"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "204": { "description": "Preference reset" } }
+      }
+    },
+    "/v1/webhooks": {
+      "get": {
+        "summary": "List workspace webhooks",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "workspace_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Webhook list" } }
+      },
+      "post": {
+        "summary": "Create webhook",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["workspace_id", "name", "url", "events"], "properties": { "workspace_id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "url": { "type": "string", "format": "uri" }, "secret": { "type": "string" }, "events": { "type": "array", "items": { "type": "string" } } } } } }
+        },
+        "responses": { "201": { "description": "Webhook created" } }
+      }
+    },
+    "/v1/webhooks/{id}": {
+      "get": {
+        "summary": "Get webhook by ID",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Webhook details" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "patch": {
+        "summary": "Update webhook",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "name": { "type": "string" }, "url": { "type": "string", "format": "uri" }, "secret": { "type": "string" }, "events": { "type": "array", "items": { "type": "string" } }, "is_active": { "type": "boolean" } } } } }
+        },
+        "responses": { "200": { "description": "Webhook updated" } }
+      },
+      "delete": {
+        "summary": "Delete webhook",
+        "tags": ["Webhooks"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "204": { "description": "Webhook deleted" } }
+      }
+    },
+    "/v1/groups": {
+      "get": {
+        "summary": "List user groups",
+        "tags": ["User Groups"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "User group list" } }
+      }
+    },
+    "/v1/sidebar-categories": {
+      "get": {
+        "summary": "List sidebar categories",
+        "tags": ["Sidebar"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Sidebar categories" } }
+      }
+    },
+    "/v1/scheduled-posts": {
+      "get": {
+        "summary": "List scheduled posts",
+        "tags": ["Scheduled Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Scheduled posts" } }
+      }
+    },
+    "/v1/admin/stats": {
+      "get": {
+        "summary": "Get platform stats",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Platform statistics" } }
+      }
+    },
+    "/v1/admin/users": {
+      "get": {
+        "summary": "List all users (admin)",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": { "200": { "description": "Paginated user list" } }
+      }
+    },
+    "/v1/admin/channels": {
+      "get": {
+        "summary": "List all channels (admin)",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": { "200": { "description": "Paginated channel list" } }
+      }
+    },
+    "/v1/admin/workspaces": {
+      "get": {
+        "summary": "List all workspaces (admin)",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Workspace list with member counts" } }
+      }
+    },
+    "/v1/admin/integrations": {
+      "get": {
+        "summary": "List all webhook integrations (admin)",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Integration list" } }
+      }
+    },
+    "/v1/audit/logs": {
+      "get": {
+        "summary": "Query audit logs",
+        "tags": ["Audit"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "workspaceId", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "actorUserId", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "action", "in": "query", "schema": { "type": "string" } },
+          { "name": "entityType", "in": "query", "schema": { "type": "string" } },
+          { "name": "dateFrom", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "dateTo", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": { "200": { "description": "Audit log entries" } }
+      }
+    },
+    "/v1/audit/logs/{id}": {
+      "get": {
+        "summary": "Get audit log entry by ID",
+        "tags": ["Audit"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "Audit log details" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Readiness check",
+        "tags": ["Health"],
+        "security": [],
+        "responses": { "200": { "description": "Service is ready" } }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "summary": "Full health check with dependencies",
+        "tags": ["Health"],
+        "security": [],
+        "responses": { "200": { "description": "Service is healthy or degraded" }, "503": { "description": "Service is unhealthy" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Supabase JWT token from authentication"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": { "type": "string", "example": "NOT_FOUND" },
+              "message": { "type": "string", "example": "Resource not found" }
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "display_name": { "type": "string" },
+          "avatar_url": { "type": "string", "format": "uri" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Workspace": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "owner_id": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WorkspaceMember": {
+        "type": "object",
+        "properties": {
+          "user_id": { "type": "string", "format": "uuid" },
+          "workspace_id": { "type": "string", "format": "uuid" },
+          "role": { "type": "string", "enum": ["owner", "admin", "member"] },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Channel": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "workspace_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "topic": { "type": "string" },
+          "is_private": { "type": "boolean" },
+          "is_read_only": { "type": "boolean" },
+          "created_by": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "channel_id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "content": { "type": "string" },
+          "parent_id": { "type": "string", "format": "uuid", "nullable": true },
+          "is_pinned": { "type": "boolean" },
+          "priority": { "type": "string", "enum": ["normal", "urgent"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "edited_at": { "type": "string", "format": "date-time", "nullable": true },
+          "deleted_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "type": { "type": "string" },
+          "message_id": { "type": "string", "format": "uuid" },
+          "channel_id": { "type": "string", "format": "uuid" },
+          "read": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Presence": {
+        "type": "object",
+        "properties": {
+          "user_id": { "type": "string", "format": "uuid" },
+          "status": { "type": "string", "enum": ["online", "away", "dnd"] },
+          "last_seen_at": { "type": "string", "format": "date-time" },
+          "custom_status": { "type": "string", "nullable": true }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid input",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid authentication",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,7 +1,0 @@
-{
-  "run_id": "observability_incident_readiness_20260703_054839",
-  "created_at": "2026-07-03T05:48:39+00:00",
-  "prompt_name": "observability_incident_readiness",
-  "domain": "ops",
-  "status": "initialized"
-}
