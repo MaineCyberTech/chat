@@ -52,18 +52,19 @@ function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (scheduledPostsRouter as any).stack) {
     if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
-      const handle = layer.route.stack[layer.route.stack.length - 1].handle;
-      return async (req: any, res: any) => {
-        const next = vi.fn();
-        await handle(req, res, next);
-        if (next.mock.calls.length > 0) {
-          const err = next.mock.calls[0][0];
-          errorHandler(err, req, res, vi.fn());
-        }
-      };
+      return layer.route.stack[layer.route.stack.length - 1].handle;
     }
   }
   return null;
+}
+
+async function callHandler(handler: any, req: any, res: any) {
+  const next = vi.fn();
+  await handler(req, res, next);
+  if (next.mock.calls.length > 0) {
+    const err = next.mock.calls[0][0];
+    errorHandler(err, req, res, vi.fn());
+  }
 }
 
 describe("scheduled-posts routes", () => {
@@ -87,7 +88,7 @@ describe("scheduled-posts routes", () => {
       const req = mockReq({ supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({
         posts: expect.arrayContaining([
@@ -106,7 +107,7 @@ describe("scheduled-posts routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
@@ -123,7 +124,7 @@ describe("scheduled-posts routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -133,7 +134,7 @@ describe("scheduled-posts routes", () => {
       const req = mockReq({ body: { channel_id: "ch-1", content: "Hello" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -145,7 +146,7 @@ describe("scheduled-posts routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
@@ -170,7 +171,7 @@ describe("scheduled-posts routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(
@@ -189,7 +190,7 @@ describe("scheduled-posts routes", () => {
       const req = mockReq({ params: { id: "p-1" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ success: true });
     });

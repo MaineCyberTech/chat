@@ -52,18 +52,19 @@ function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (statusRouter as any).stack) {
     if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
-      const handle = layer.route.stack[layer.route.stack.length - 1].handle;
-      return async (req: any, res: any) => {
-        const next = vi.fn();
-        await handle(req, res, next);
-        if (next.mock.calls.length > 0) {
-          const err = next.mock.calls[0][0];
-          errorHandler(err, req, res, vi.fn());
-        }
-      };
+      return layer.route.stack[layer.route.stack.length - 1].handle;
     }
   }
   return null;
+}
+
+async function callHandler(handler: any, req: any, res: any) {
+  const next = vi.fn();
+  await handler(req, res, next);
+  if (next.mock.calls.length > 0) {
+    const err = next.mock.calls[0][0];
+    errorHandler(err, req, res, vi.fn());
+  }
 }
 
 describe("status routes", () => {
@@ -81,7 +82,7 @@ describe("status routes", () => {
       const req = mockReq();
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ status: null });
     });
@@ -101,7 +102,7 @@ describe("status routes", () => {
       const req = mockReq({ body: { emoji: "smile", text: "Happy" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -115,7 +116,7 @@ describe("status routes", () => {
       const req = mockReq({ body: { text: "x".repeat(101) } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
@@ -138,7 +139,7 @@ describe("status routes", () => {
       const req = mockReq({ body: { duration: "1h" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -159,7 +160,7 @@ describe("status routes", () => {
       const req = mockReq();
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(204);
       expect(res.send).toHaveBeenCalled();
@@ -183,7 +184,7 @@ describe("status routes", () => {
       const req = mockReq({ body: { userIds: ["user-1", "user-2"] } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -199,7 +200,7 @@ describe("status routes", () => {
       const req = mockReq({ body: { userIds: [] } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ statuses: {} });
     });

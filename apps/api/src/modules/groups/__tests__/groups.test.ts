@@ -52,18 +52,19 @@ function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (groupsRouter as any).stack) {
     if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
-      const handle = layer.route.stack[layer.route.stack.length - 1].handle;
-      return async (req: any, res: any) => {
-        const next = vi.fn();
-        await handle(req, res, next);
-        if (next.mock.calls.length > 0) {
-          const err = next.mock.calls[0][0];
-          errorHandler(err, req, res, vi.fn());
-        }
-      };
+      return layer.route.stack[layer.route.stack.length - 1].handle;
     }
   }
   return null;
+}
+
+async function callHandler(handler: any, req: any, res: any) {
+  const next = vi.fn();
+  await handler(req, res, next);
+  if (next.mock.calls.length > 0) {
+    const err = next.mock.calls[0][0];
+    errorHandler(err, req, res, vi.fn());
+  }
 }
 
 describe("groups routes", () => {
@@ -86,7 +87,7 @@ describe("groups routes", () => {
       const req = mockReq({ params: { workspaceId: "ws-1" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(from).toHaveBeenCalledWith("user_groups");
       expect(res.json).toHaveBeenCalledWith({
@@ -105,7 +106,7 @@ describe("groups routes", () => {
       const req = mockReq({ params: { workspaceId: "ws-1" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ groups: [] });
     });
@@ -117,7 +118,7 @@ describe("groups routes", () => {
       const req = mockReq({ body: { displayName: "Engineering" }, params: { workspaceId: "ws-1" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
@@ -130,7 +131,7 @@ describe("groups routes", () => {
       const req = mockReq({ body: { name: "Engineering" }, params: { workspaceId: "ws-1" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -150,7 +151,7 @@ describe("groups routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(
@@ -176,7 +177,7 @@ describe("groups routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(from).toHaveBeenCalledTimes(2);
@@ -197,7 +198,7 @@ describe("groups routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(from).toHaveBeenCalledTimes(1);
@@ -210,7 +211,7 @@ describe("groups routes", () => {
       const req = mockReq({ body: {}, params: { id: "g-1" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
@@ -229,7 +230,7 @@ describe("groups routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({ success: true });
@@ -244,7 +245,7 @@ describe("groups routes", () => {
       const req = mockReq({ params: { id: "g-1", userId: "user-2" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(204);
       expect(res.send).toHaveBeenCalled();
@@ -259,7 +260,7 @@ describe("groups routes", () => {
       const req = mockReq({ params: { id: "g-1" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(204);
       expect(res.send).toHaveBeenCalled();

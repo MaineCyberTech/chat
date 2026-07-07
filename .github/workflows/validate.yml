@@ -191,7 +191,7 @@ jobs:
 
       - name: Run SQL lint
         run: |
-          supabase db lint --level warn || echo "Lint warnings found (non-blocking)"
+          supabase db lint --level warning || echo "Lint warnings found (non-blocking)"
 
       - name: Run database tests (if any)
         run: |

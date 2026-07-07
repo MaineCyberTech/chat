@@ -51,18 +51,19 @@ function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (emojiRouter as any).stack) {
     if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
-      const handle = layer.route.stack[layer.route.stack.length - 1].handle;
-      return async (req: any, res: any) => {
-        const next = vi.fn();
-        await handle(req, res, next);
-        if (next.mock.calls.length > 0) {
-          const err = next.mock.calls[0][0];
-          errorHandler(err, req, res, vi.fn());
-        }
-      };
+      return layer.route.stack[layer.route.stack.length - 1].handle;
     }
   }
   return null;
+}
+
+async function callHandler(handler: any, req: any, res: any) {
+  const next = vi.fn();
+  await handler(req, res, next);
+  if (next.mock.calls.length > 0) {
+    const err = next.mock.calls[0][0];
+    errorHandler(err, req, res, vi.fn());
+  }
 }
 
 describe("emoji routes", () => {
@@ -86,7 +87,7 @@ describe("emoji routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -107,7 +108,7 @@ describe("emoji routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ emoji: [] });
     });
@@ -128,7 +129,7 @@ describe("emoji routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(
@@ -146,7 +147,7 @@ describe("emoji routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
@@ -164,7 +165,7 @@ describe("emoji routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
@@ -199,7 +200,7 @@ describe("emoji routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(insertedName).toBe("myemoji");
     });
@@ -215,7 +216,7 @@ describe("emoji routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
@@ -237,7 +238,7 @@ describe("emoji routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(204);
       expect(res.send).toHaveBeenCalled();
@@ -253,7 +254,7 @@ describe("emoji routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(

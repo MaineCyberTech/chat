@@ -50,18 +50,19 @@ function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (ffRouter as any).stack) {
     if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
-      const handle = layer.route.stack[layer.route.stack.length - 1].handle;
-      return async (req: any, res: any) => {
-        const next = vi.fn();
-        await handle(req, res, next);
-        if (next.mock.calls.length > 0) {
-          const err = next.mock.calls[0][0];
-          errorHandler(err, req, res, vi.fn());
-        }
-      };
+      return layer.route.stack[layer.route.stack.length - 1].handle;
     }
   }
   return null;
+}
+
+async function callHandler(handler: any, req: any, res: any) {
+  const next = vi.fn();
+  await handler(req, res, next);
+  if (next.mock.calls.length > 0) {
+    const err = next.mock.calls[0][0];
+    errorHandler(err, req, res, vi.fn());
+  }
 }
 
 const testFlag = {
@@ -89,7 +90,7 @@ describe("feature-flags routes", () => {
       const req = mockReq();
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ flags: expect.arrayContaining([expect.objectContaining({ key: "new-ui" })]) });
     });
@@ -101,7 +102,7 @@ describe("feature-flags routes", () => {
       const req = mockReq();
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ flags: [] });
     });
@@ -115,7 +116,7 @@ describe("feature-flags routes", () => {
       const req = mockReq({ params: { key: "new-ui" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ flag: expect.objectContaining({ key: "new-ui" }) });
     });
@@ -127,7 +128,7 @@ describe("feature-flags routes", () => {
       const req = mockReq({ params: { key: "unknown" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith(
@@ -148,7 +149,7 @@ describe("feature-flags routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({ flag: expect.objectContaining({ key: "new-ui" }) });
@@ -162,7 +163,7 @@ describe("feature-flags routes", () => {
       const req = mockReq({ body: { name: "New UI" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
@@ -177,7 +178,7 @@ describe("feature-flags routes", () => {
       const req = mockReq({ body: { key: "new-ui" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
@@ -192,7 +193,7 @@ describe("feature-flags routes", () => {
       const req = mockReq({ body: { key: "INVALID_KEY", name: "New UI" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -204,7 +205,7 @@ describe("feature-flags routes", () => {
       const req = mockReq({ body: { key: "new-ui", name: "New UI" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
@@ -226,7 +227,7 @@ describe("feature-flags routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({
         flag: expect.objectContaining({ key: "new-ui", enabled: true }),
@@ -243,7 +244,7 @@ describe("feature-flags routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith(
@@ -261,7 +262,7 @@ describe("feature-flags routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -275,7 +276,7 @@ describe("feature-flags routes", () => {
       const req = mockReq({ params: { key: "new-ui" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(204);
       expect(res.send).toHaveBeenCalled();
@@ -288,7 +289,7 @@ describe("feature-flags routes", () => {
       const req = mockReq({ params: { key: "unknown" } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith(
@@ -307,7 +308,7 @@ describe("feature-flags routes", () => {
       const req = mockReq({ params: { key: "new-ui" }, body: {} });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(mockService.evaluateFlag).toHaveBeenCalledWith("new-ui", {
         userId: "user-1",
@@ -328,7 +329,7 @@ describe("feature-flags routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(mockService.evaluateFlag).toHaveBeenCalledWith("new-ui", {
         userId: "22222222-2222-2222-2222-222222222222",
@@ -347,7 +348,7 @@ describe("feature-flags routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(

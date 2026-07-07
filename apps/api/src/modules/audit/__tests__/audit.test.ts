@@ -59,18 +59,19 @@ function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (auditRouter as any).stack) {
     if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
-      const handle = layer.route.stack[layer.route.stack.length - 1].handle;
-      return async (req: any, res: any) => {
-        const next = vi.fn();
-        await handle(req, res, next);
-        if (next.mock.calls.length > 0) {
-          const err = next.mock.calls[0][0];
-          errorHandler(err, req, res, vi.fn());
-        }
-      };
+      return layer.route.stack[layer.route.stack.length - 1].handle;
     }
   }
   return null;
+}
+
+async function callHandler(handler: any, req: any, res: any) {
+  const next = vi.fn();
+  await handler(req, res, next);
+  if (next.mock.calls.length > 0) {
+    const err = next.mock.calls[0][0];
+    errorHandler(err, req, res, vi.fn());
+  }
 }
 
 describe("audit routes", () => {
@@ -92,7 +93,7 @@ describe("audit routes", () => {
       const req = mockReq({ supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(from).toHaveBeenCalledWith("audit_logs");
       expect(res.json).toHaveBeenCalledWith({ logs: sampleLogs, total: 2 });
@@ -106,7 +107,7 @@ describe("audit routes", () => {
       const req = mockReq({ query: { workspaceId: "ws-1" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(from).toHaveBeenCalledWith("audit_logs");
       expect(res.json).toHaveBeenCalledWith({ logs: [sampleLogs[0]], total: 1 });
@@ -120,7 +121,7 @@ describe("audit routes", () => {
       const req = mockReq({ query: { actorUserId: "user-2" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ logs: [sampleLogs[1]], total: 1 });
     });
@@ -133,7 +134,7 @@ describe("audit routes", () => {
       const req = mockReq({ query: { action: "workspace.created" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ logs: [sampleLogs[0]], total: 1 });
     });
@@ -146,7 +147,7 @@ describe("audit routes", () => {
       const req = mockReq({ query: { entityType: "channel" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ logs: [sampleLogs[1]], total: 1 });
     });
@@ -159,7 +160,7 @@ describe("audit routes", () => {
       const req = mockReq({ query: { dateFrom: "2026-07-01T00:00:00Z", dateTo: "2026-07-01T23:59:59Z" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ logs: [sampleLogs[0]], total: 1 });
     });
@@ -172,7 +173,7 @@ describe("audit routes", () => {
       const req = mockReq({ query: { limit: "10", offset: "20" }, supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ logs: [sampleLogs[0]], total: 1 });
     });
@@ -185,7 +186,7 @@ describe("audit routes", () => {
       const req = mockReq({ supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ logs: [], total: 0 });
     });
@@ -198,7 +199,7 @@ describe("audit routes", () => {
       const req = mockReq({ supabase: { from } });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
@@ -213,7 +214,7 @@ describe("audit routes", () => {
       const req = mockReq({ supabase: undefined });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
@@ -238,7 +239,7 @@ describe("audit routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.json).toHaveBeenCalledWith({ log: sampleLog });
     });
@@ -254,7 +255,7 @@ describe("audit routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith(
@@ -272,7 +273,7 @@ describe("audit routes", () => {
       });
       const res = mockRes();
 
-      await handler(req, res);
+      await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
