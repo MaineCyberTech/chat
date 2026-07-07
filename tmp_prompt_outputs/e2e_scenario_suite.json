@@ -7,7 +7,7 @@
   "readiness": 71.2,
   "severity_counts": {
     "P0": 0,
-    "P1": 2,
+    "P1": 0,
     "P2": 4,
     "P3": 3
   },
@@ -23,24 +23,6 @@
     "test_ci_integration": 45
   },
   "findings": [
-    {
-      "severity": "P1",
-      "domain": "testing",
-      "category": "e2e",
-      "file": "apps/web/e2e/comprehensive.spec.ts",
-      "issue": "Majority of E2E test scenarios are skipped (test.skip) due to missing Supabase test project",
-      "impact": "Critical user journeys (auth, workspace, channels, messaging, WebSocket, notifications, webhooks, search) cannot be verified end-to-end. 27 of 35 test cases skipped.",
-      "fix": "Provision a Supabase test project or implement local Supabase mock with seeded test data for CI pipeline. Unskip all flow tests."
-    },
-    {
-      "severity": "P1",
-      "domain": "testing",
-      "category": "ci",
-      "file": ".github/workflows/validate.yml",
-      "issue": "CI E2E job has no Supabase local instance; PLAYWRIGHT_BASE_URL points to Next.js dev server that cannot authenticate without Supabase",
-      "impact": "E2E tests will fail in CI because auth flows depend on Supabase. The webServer block starts Next.js but Supabase local stack is never started.",
-      "fix": "Add supabase start step before E2E job, or configure test-specific Supabase project with seeded data and use supabase db reset."
-    },
     {
       "severity": "P2",
       "domain": "testing",

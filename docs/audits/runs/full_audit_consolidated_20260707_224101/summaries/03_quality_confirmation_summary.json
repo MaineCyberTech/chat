@@ -1,0 +1,581 @@
+{
+  "stage": "quality_confirmation",
+  "run_id": "full_audit_consolidated_20260707_224101",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T22:41:01Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 31,
+    "P3": 24
+  },
+  "category_scores": {
+    "routing": 85,
+    "validation": 80,
+    "error_handling": 70,
+    "idempotency": 75,
+    "realtime": 45,
+    "security_middleware": 75,
+    "pagination": 65,
+    "response_consistency": 55,
+    "performance": 70,
+    "contract_drift": 60,
+    "workflow_coverage": 88,
+    "secrets_handling": 85,
+    "workflow_correctness": 72,
+    "deployment": 82,
+    "testing_in_ci": 65,
+    "branch_protection": 75,
+    "artifact_management": 78,
+    "ci_security": 80,
+    "unit_tests": 88,
+    "middleware_tests": 90,
+    "api_tests": 88,
+    "component_tests": 85,
+    "e2e_coverage": 50,
+    "load_testing": 60,
+    "integration_tests": 10,
+    "visual_regression": 55,
+    "test_ci_integration": 45,
+    "promotion_workflow": 70,
+    "env_parity": 60,
+    "rollback_readiness": 65,
+    "ci_cd_alignment": 75,
+    "approval_gates": 55,
+    "rbac": 85,
+    "permission_enforcement": 75,
+    "audit_logging": 80,
+    "policy_tiers": 40,
+    "hotfix_governance": 30,
+    "admin_access_control": 50,
+    "circuit_breaker": 85,
+    "retry_logic": 80,
+    "timeout_handling": 85,
+    "graceful_degradation": 70,
+    "bulkhead_isolation": 45,
+    "chaos_testing": 10,
+    "lockfile": 92,
+    "dependabot": 90,
+    "trivy_fs_scan": 85,
+    "trivy_image_scan": 80,
+    "sbom": 80,
+    "image_signatures": 30,
+    "supply_chain_levels": 20,
+    "peer_deps": 90,
+    "docker_hygiene": 72,
+    "npm_audit": 85
+  },
+  "readiness": 67.78,
+  "finding_count": 55,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "security_middleware",
+      "file": "apps/api/src/middleware/csrf.ts",
+      "issue": "Double-submit cookie CSRF uses timingSafeEqual with two user-controlled values, but the cookie token is stored without httpOnly flag, making it readable via JS",
+      "impact": "The CSRF cookie is accessible to JavaScript (httpOnly: false), weakening CSRF protection. An XSS vulnerability would give full access to CSRF tokens.",
+      "fix": "Set httpOnly: true on the CSRF cookie. Use a separate non-httpOnly cookie or header-based approach for the client-side token value.",
+      "endpoint": "Global CSRF middleware"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "validation",
+      "file": "apps/api/src/validators",
+      "issue": "Several route modules use inline validation (manual checks) instead of Zod schemas, bypassing the centralized validation layer",
+      "impact": "Inconsistent validation across endpoints. Missing schema documentation. Some endpoints accept raw input without type checking (e.g., sidebar routes, groups routes, livekit routes).",
+      "fix": "Create Zod schemas for all remaining endpoints (sidebar-categories, groups, scheduled-posts, consent, status, etc.) and use safeParse uniformly.",
+      "endpoint": "POST/PATCH /v1/sidebar-categories/*, /v1/groups/*, /v1/scheduled-posts/*, etc."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "authorization",
+      "file": "apps/api/src/modules/threads/routes.ts",
+      "issue": "Thread join/leave/participants endpoints lack membership checks; any authenticated user can access any thread's participant list or join any thread",
+      "impact": "User could enumerate thread participants across the entire platform. Could join threads in channels they don't have access to.",
+      "fix": "Add requireChannelAccess middleware to thread endpoints (resolve channel from thread parent message).",
+      "endpoint": "GET /v1/threads/:id/participants, POST /v1/threads/:id/join, POST /v1/threads/:id/leave"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "authorization",
+      "file": "apps/api/src/modules/groups/routes.ts",
+      "issue": "User group routes lack workspace membership checks; any authenticated user can create/modify groups in any workspace",
+      "impact": "Authenticated user could create user groups in workspaces they don't belong to, or add/remove members from groups in any workspace.",
+      "fix": "Add requireWorkspaceMembership middleware to all group routes. Validate workspace ownership.",
+      "endpoint": "POST /v1/groups/workspaces/:workspaceId/groups, POST /v1/groups/groups/:id/members"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "pagination",
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "issue": "GET /workspaces/:workspaceId/channels and GET /channels/:id/members have no pagination, risking memory exhaustion on large workspaces",
+      "impact": "Workspace with thousands of channels or millions of members will cause out-of-memory errors or slow responses. No way to progressively load.",
+      "fix": "Add cursor-based or offset-based pagination to channel listing and member listing endpoints. Add default limit with max cap.",
+      "endpoint": "GET /v1/workspaces/:workspaceId/channels, GET /v1/channels/:id/members"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "performance",
+      "file": "apps/api/src/lib/db-timeout.ts",
+      "issue": "queryWithTimeout uses Promise.race which doesn't abort the underlying operation, causing resource leaks on timeout",
+      "impact": "When a query times out, the underlying Supabase fetch and database query continue executing. For long-running queries this wastes database connections and API server memory.",
+      "fix": "Pass AbortSignal to Supabase queries via the fetch implementation's Signal. Use AbortController to actually terminate in-flight requests on timeout.",
+      "endpoint": "All endpoints using queryWithTimeout"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/web/lib/api.ts",
+      "issue": "Frontend has its own HTTP client (api.ts) that duplicates SDK logic, with different error handling, CSRF management, and response parsing than the @chat/sdk package",
+      "impact": "Two code paths for API calls that can diverge. SDK adds /v1 prefix automatically but api.ts also does. Error handling differs (SDK throws structured errors, api.ts throws plain Errors). OpenAPI spec may match neither.",
+      "fix": "Consolidate all API client usage into @chat/sdk. Remove duplicate api.ts or make it a thin wrapper around the SDK client.",
+      "endpoint": "All frontend API calls"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "contract_drift",
+      "file": "apps/api/src/modules/openapi/routes.ts",
+      "issue": "OpenAPI spec loaded from static JSON file with no automated sync; likely out of date with actual routes and schemas",
+      "impact": "API consumers relying on OpenAPI spec will encounter undocumented endpoints, incorrect schemas, and wrong response shapes. Spec falls back to empty paths if file missing in production.",
+      "fix": "Generate OpenAPI spec dynamically from route registry and Zod schemas (e.g., using zod-to-openapi). Add CI check that verifies spec matches routes.",
+      "endpoint": "GET /v1/openapi.json"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "error_handling",
+      "file": "apps/api/src/middleware/error-handler.ts",
+      "issue": "Error handler exposes stack traces in development mode via NODE_ENV check, but stack traces may contain file paths or internal structure",
+      "impact": "Internal file paths and code structure may leak in development environments. Minor info disclosure risk.",
+      "fix": "Use a configuration flag rather than NODE_ENV check for stack trace exposure. Never expose stack traces in error responses.",
+      "endpoint": "Global error-handler"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "api_versioning",
+      "file": "apps/api/src/route-registry.ts",
+      "issue": "No API version negotiation or version pinning strategy beyond a single /v1 prefix; no sunset/deprecation headers",
+      "impact": "Breaking API changes cannot be rolled out gracefully. Consumers have no way to pin versions or get deprecation warnings.",
+      "fix": "Add Accept-Version header support or URL-based versioning (v2). Add Sunset and Deprecation response headers. Create a version migration guide.",
+      "endpoint": "All /v1/* endpoints"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "resilience",
+      "file": "apps/api/src/server.ts",
+      "issue": "Graceful shutdown destroys all sockets immediately without draining in-flight requests first",
+      "impact": "In-flight HTTP requests and WebSocket messages are terminated mid-processing. Users may see partial updates or failed message sends during deployment.",
+      "fix": "Add draining phase: stop accepting new requests, wait for active requests to complete (with timeout), then destroy idle sockets. Use httpServer.close() callback properly.",
+      "endpoint": "Server lifecycle"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "monitoring",
+      "file": "apps/api/src/modules/health/service.ts",
+      "issue": "Basic health endpoint (GET /) returns hardcoded status without checking database or Redis connectivity",
+      "impact": "Health check passes even when database is unreachable. Load balancer/ orchestrator won't detect degraded state.",
+      "fix": "Remove basic health endpoint or add dependency health checks. Use getFullHealth() as the primary health endpoint. Add Redis ping check.",
+      "endpoint": "GET /"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "webhook_security",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "Webhook create schema allows optional secret field but stores it in plaintext in the database",
+      "impact": "Webhook secrets are stored as plaintext in the webhook_endpoints table. Database compromise would expose all webhook signing secrets.",
+      "fix": "Hash webhook secrets at rest using a KDF (e.g., bcrypt/argon2). Only return masked versions in API responses.",
+      "endpoint": "POST /v1/webhooks, PATCH /v1/webhooks/:id"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "maintenance",
+      "file": "apps/web/lib/socket.ts",
+      "issue": "Socket.io client library installed but frontend has no app-level socket lifecycle management; socket only initialized lazily in use-presence hook",
+      "impact": "Real-time features like typing indicators, new message notifications, and channel updates don't work via Socket.io. The library exists but is effectively dead code for the main chat experience.",
+      "fix": "Create a SocketProvider context that initializes the socket at app root. Connect socket lifecycle to auth state (connect on login, disconnect on logout).",
+      "endpoint": "N/A (Socket.io client lifecycle)"
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "workflow_correctness",
+      "file": ".github/workflows/validate.yml",
+      "issue": "test job runs before build via turbo dependency chain (turbo test depends on build), but the test job in validate.yml runs before the build job without building first",
+      "impact": "pnpm test may fail in CI because it depends on build artifacts that don't exist yet. The test step runs in parallel with build rather than sequentially.",
+      "fix": "Add a build step before pnpm test, or configure turbo.json test task to not depend on build, or restructure validate.yml jobs in proper dependency order."
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "workflow_correctness",
+      "file": ".github/workflows/validate.yml",
+      "issue": "diff-coverage job uses pnpm test -- --changed --coverage but the --changed flag runs tests for changed files only; coverage thresholds apply to total project, not diff",
+      "impact": "False sense of coverage compliance: 40% line coverage on the entire project does not protect against untested new code in a PR.",
+      "fix": "Replace with a proper diff-coverage tool (e.g., istanbul ignore patterns) that checks coverage on only the lines changed in the PR. Consider using codecov or coveralls."
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "secrets_handling",
+      "file": ".github/workflows/validate.yml",
+      "issue": "Supabase anon key hardcoded as fallback in workflow YAML: 'NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'eyJ...' }}'",
+      "impact": "The plaintext fallback key is visible to anyone with read access to the repo. Exposes anon key in CI logs and YAML.",
+      "fix": "Remove hardcoded fallback. Fail CI if SUPABASE_ANON_KEY secret is not set."
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "workflow_correctness",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "Database migrations run before the droplet SSH setup; if supabase link fails, migration runs but droplet may not exist yet",
+      "impact": "Race condition: migrations could fail on non-existent project while deploy proceeds, or migrations succeed but deploy fails, leaving state inconsistent.",
+      "fix": "Move database migrations after droplet setup, or add supabase link verification before migration."
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "workflow_duplication",
+      "file": ".github/workflows/",
+      "issue": "Redundant workflows: hardening.yml and hardening-automation-runner.yml both run the same hardening pipeline. governance.yml and platform.yml both call run_full.ps1.",
+      "impact": "Workflow sprawl (20 files) increases maintenance burden. Operators unsure which workflow to trigger.",
+      "fix": "Consolidate: keep hardening-automation-runner.yml, remove hardening.yml. Consolidate governance and platform into one."
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "audit_workflows",
+      "file": ".github/workflows/audit-badges-autocommit.yml",
+      "issue": "audit-badges-autocommit and audit-ci-autocommit both auto-commit changes on push to develop/main, potentially causing commit loops with CI re-triggers",
+      "impact": "Auto-commits trigger new CI runs, creating cascading pipeline executions. Wastes compute and pollutes git history.",
+      "fix": "Use [skip ci] in auto-commit messages, or reduce scope to workflow_dispatch only. Add path filters to avoid triggering deploy on badge changes."
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "branch_protection",
+      "file": ".github/workflows/validate.yml",
+      "issue": "branch-protection check runs on every PR from any actor, but the check doesn't enforce anything \u2014 it only reports",
+      "impact": "Informational only; no actual enforcement of branch protection rules. Provides false confidence in CI output.",
+      "fix": "Either enforce by failing the job on missing protection, or remove the job and rely on GitHub's native branch protection settings."
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "deployment",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "Deploy workflow writes secrets to .env file via inline shell script in SSH \u2014 secrets appear in plaintext in workflow run logs if script execution is verbose",
+      "impact": "Potential secret leakage in CI logs. Secrets are interpolated by GitHub Actions before SSH execution.",
+      "fix": "Use environment files (.env) passed as GitHub Actions env context, or use the droplet's secrets manager. Set set -x only where needed."
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "ci_efficiency",
+      "file": ".github/workflows/validate.yml",
+      "issue": "Each job re-installs dependencies independently (pnpm install per lint, typecheck, test, build, e2e) \u2014 no caching across jobs",
+      "impact": "CI pipeline takes 5-8 minutes per job for dependency install on cache miss. 5+ jobs = 25-40 minutes total.",
+      "fix": "Use pnpm workspace-level caching with GitHub Actions cache action to share node_modules across jobs. Or use a single job for all checks."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "e2e",
+      "file": "playwright.config.ts",
+      "issue": "Only Chromium browser configured; no Firefox/WebKit coverage",
+      "impact": "Browser-specific rendering and API differences go undetected. Affects ~10% of users on Firefox/Safari.",
+      "fix": "Add Firefox and WebKit projects to playwright.config.ts with appropriate viewport presets."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "e2e",
+      "file": "tests/e2e/messaging.spec.ts",
+      "issue": "E2E messaging tests depend on test data created by prior tests (workspace/channel must exist), making tests order-dependent and fragile",
+      "impact": "Tests fail when run in isolation or in parallel; CI flakiness on partial re-runs.",
+      "fix": "Use beforeAll hooks or fixtures to create required workspace/channel independently per test file, or use Playwright project dependencies."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "load",
+      "file": "tests/k6/load-test.js",
+      "issue": "k6 load test only hits /healthz endpoint; no chat send, socket, search, or notification scenarios",
+      "impact": "Load testing provides no meaningful capacity or bottleneck data for core chat flows.",
+      "fix": "Add k6 scenarios for: concurrent message sends, WebSocket connect storm, search under load, notification fanout to N users."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "visual",
+      "file": "apps/web/e2e/visual-snapshot.spec.ts",
+      "issue": "Visual snapshots cover only login, settings, and 404 pages; no chat view, channel list, sidebar, dark mode, or mobile states",
+      "impact": "High-risk visual regressions in core chat UI go undetected. No dark mode or responsive coverage.",
+      "fix": "Add snapshots for: channel view (empty/populated), sidebar collapsed/expanded, dark mode toggle, mobile nav, long message overflow, emoji picker, dialogs."
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "unit",
+      "file": "vitest.config.ts",
+      "issue": "Coverage thresholds set low (lines: 40, functions: 30, branches: 30, statements: 40)",
+      "impact": "Low thresholds allow significant untested code to pass CI without warning.",
+      "fix": "Raise thresholds incrementally: lines 60, functions 50, branches 50, statements 60."
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "load",
+      "file": ".github/workflows/load-test.yml",
+      "issue": "CI k6 workflow only runs smoke test (10 VUs, 30s) with no load test execution",
+      "impact": "Weekly load test cron runs smoke test, not the actual load test. No ramp-up or capacity verification.",
+      "fix": "Add a load-test job that runs tests/k6/load-test.js with production-like ramp profile. Keep smoke test as quick sanity."
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "test_data",
+      "file": "tests/",
+      "issue": "No test data fixtures or seed scripts; E2E tests hardcode test email and workspace names",
+      "impact": "Tests are brittle and hard to reproduce across environments without consistent test data setup.",
+      "fix": "Create test data fixtures (JSON/TS) with mock workspace, channel, user, and message data. Use Playwright test fixtures to inject."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "rollback_readiness",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "CI/CD uses `:latest` image tags which overwrite previous production images, preventing rapid rollback to a known-good version",
+      "impact": "If a broken deployment is promoted to production, rolling back requires rebuilding the old image instead of redeploying a tagged version. The previous `:latest` image is lost.",
+      "fix": "Tag production images with both `:latest` and a specific SHA-based tag (e.g., `:git-sha-${GITHUB_SHA}`). Add a rollback workflow that accepts a SHA tag and deploys that version."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "env_parity",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Production Docker Compose uses Caddy for TLS while development uses raw ports \u2014 no parity on reverse proxy configuration",
+      "impact": "CORS, cookie security settings, and CSP headers behave differently between environments. A bug in Caddy config only manifests in production, and production TLS issues cannot be reproduced locally.",
+      "fix": "Add a local Caddyfile.dev for development that mirrors production Caddy configuration but with self-signed certs. Add a docker-compose.override.yml for local TLS testing."
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "promotion_workflow",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "Development deployment to DigitalOcean uses same Docker Compose as production with only minor env var differences",
+      "impact": "A breaking change in Docker Compose that only manifests on the remote environment cannot be detected before promoting to production. Dev and prod should run independently as isolated stacks.",
+      "fix": "Use separate Docker Compose project names (--project-name) to isolate stacks. Add environment prefix to container names. Ensure dev and prod can coexist on the same host without conflict."
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "promotion_workflow",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No smoke test or health check validation step after production deployment completes",
+      "impact": "A deployment that starts but immediately fails health checks goes undetected by CI/CD. Operators only learn about failures through user reports.",
+      "fix": "Add a post-deploy smoke test step that: (1) hits the /health endpoint, (2) verifies 200 response, (3) checks database connectivity, (4) sends a test WebSocket message. Rollback automatically if smoke tests fail."
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "env_parity",
+      "file": "infra/terraform/main.tf",
+      "issue": "Terraform IaC only provisions a single droplet shared between dev and prod environments",
+      "impact": "Development and production share the same compute resources. A load test or memory leak in dev can impact production performance and vice versa.",
+      "fix": "Separate Terraform workspaces for dev and prod with isolated droplets. Add environment variable to Terraform to select target. Increase resource allocation for prod."
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "policy_tiers",
+      "file": "hardening/policies/governance.json",
+      "issue": "Policy structure is flat with no distinction between dev, RC, production, and hotfix release tiers",
+      "impact": "All releases are subject to the same policy thresholds, making it impossible to grant temporary exceptions for hotfixes or allow faster iteration in dev branches.",
+      "fix": "Implement tiered policy files: governance.dev.json, governance.rc.json, governance.prod.json, governance.hotfix.json. Each tier inherits from the base but can override thresholds with explicit approval gates."
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "policy_tiers",
+      "file": "hardening/policies/governance.json",
+      "issue": "No hotfix exception procedure defined; hotfixes would either be blocked by standard gates or bypass them without compensating controls",
+      "impact": "During a production incident requiring a rapid fix, operators have no documented procedure for granting policy exceptions with mandatory post-incident review.",
+      "fix": "Add a 'hotfix' policy tier that relaxes gating thresholds but requires: (1) documented severity justification, (2) at least one peer review, (3) post-deploy audit within 24h, (4) mandatory follow-up to re-apply standard gates."
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "audit_logging",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit logging uses in-memory retry queue that can lose entries and has no mechanism to detect missed audit events",
+      "impact": "A restart during audit log processing can silently lose audit entries for sensitive actions (permission changes, workspace deletion), breaking the audit chain.",
+      "fix": "Add a database audit_log_retry table for persistent queuing. Implement a periodic reconciliation job that detects gaps in audit log sequences. Add an alert for audit logging failures."
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "policy_tiers",
+      "file": ".github/workflows/audit-pr-gate.yml",
+      "issue": "CI/CD audit gates use a single threshold regardless of branch (develop vs main vs hotfix)",
+      "impact": "A PR with P2 findings to develop is blocked with the same severity as a production release, slowing iteration velocity without proportional risk assessment.",
+      "fix": "Map CI/CD gates to policy tiers: PRs to develop allow P2/P3 with warnings, PRs to main/staging block P1+, hotfix releases allow P1 with documented exceptions."
+    },
+    {
+      "severity": "P3",
+      "domain": "governance",
+      "category": "policy_tiers",
+      "file": "hardening/policies/governance.json",
+      "issue": "Policy file lacks versioning or change history; modifications to thresholds are not auditable",
+      "impact": "Policy drift is undetectable. There is no record of when or why thresholds were changed, making governance reviews difficult.",
+      "fix": "Add a version field to policy JSON files. Enforce that policy changes go through a PR with audit trail. Consider storing policy versions alongside run artifacts."
+    },
+    {
+      "severity": "P3",
+      "domain": "governance",
+      "category": "rbac",
+      "file": "packages/db/src/permissions.ts",
+      "issue": "Permission 'workspace:delete' granted to admin role but workspace deletion should require owner-only",
+      "impact": "A workspace admin can delete a workspace, potentially causing data loss without owner consent. Admins have the same destructive permissions as owners.",
+      "fix": "Remove 'workspace:delete' from the admin role permissions list. Only 'owner' should have workspace deletion capability."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "bulkhead_isolation",
+      "file": "apps/worker/src/main.ts",
+      "issue": "No bulkhead or isolation pattern between different queue processors sharing the same Redis connection",
+      "impact": "A single misbehaving queue processor (e.g., blocked webhook delivery) can exhaust the Redis connection pool and starve other processors (notifications, search indexing).",
+      "fix": "Use separate Redis connection pools per queue processor, or configure max concurrency per processor independently. Monitor Redis connection usage per processor."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "circuit_breaker",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker metrics are tracked but not exposed via the /metrics endpoint for monitoring",
+      "impact": "Operators cannot monitor circuit breaker state (open/closed/half-open) in dashboards or alert on cascading circuit breaker failures.",
+      "fix": "Integrate circuit breaker stats into the Prometheus metrics endpoint. Expose breaker status, failure rate, and request volume as gauges."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "graceful_degradation",
+      "file": "apps/api/src/lib/supabase.ts",
+      "issue": "No database connection pool health monitoring; Supabase client retries internally but application has no visibility into pool exhaustion",
+      "impact": "If Supabase connection pool is exhausted, requests silently hang until timeout with no operator visibility into the pool utilization.",
+      "fix": "Add a database pool health gauge metric. Implement a connection pool timeout alert. Consider adding a readiness check that verifies database connection pool availability."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "idempotency",
+      "file": "apps/api/src/lib/idempotency.ts",
+      "issue": "In-memory idempotency fallback limited to single process \u2014 resets on restart, not shared across instances",
+      "impact": "In a multi-instance deployment, idempotency keys stored in-memory on one instance are invisible to another. A restart loses all idempotency state, potentially allowing duplicate message processing.",
+      "fix": "Add a database-backed idempotency store as a secondary fallback. Document that in-memory fallback is single-instance-only and provide a migration path to Redis."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "chaos_testing",
+      "file": "docs/prompts/testing/failure_injection_chaos_pack_prompt.md",
+      "issue": "Chaos engineering prompt exists but no actual chaos tests are executed or integrated into CI/CD",
+      "impact": "Resilience characteristics (circuit breaker behavior, graceful degradation, fallback paths) are untested. Failures in production may behave differently than expected.",
+      "fix": "Implement chaos testing scenarios: Redis failure, database latency injection, queue worker crash, and API service restart. Add a scheduled chaos test workflow."
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "idempotency",
+      "file": "apps/worker/src/processors/webhook-delivery.ts",
+      "issue": "Webhook delivery uses randomUUID as idempotency key instead of deterministic hash of payload",
+      "impact": "Random idempotency keys do not prevent duplicate deliveries for identical payloads because each retry generates a new key.",
+      "fix": "Generate idempotency key as SHA-256 hash of (event + payload + webhookId) to ensure identical payloads produce identical keys. Use the delivery.id for tracking."
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "retry_logic",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit log retry queue is purely in-memory with no persistence \u2014 lost on process restart",
+      "impact": "If the API process restarts while audit entries are queued for retry, those entries are lost permanently with no record.",
+      "fix": "Persist failed audit entries to a database table (audit_log_retry_queue) or use BullMQ for the audit queue. Add a startup recovery job that retries unprocessed entries."
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "image_integrity",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Docker images pushed to GHCR are not signed/attested; no cosign, notation, or SLSA provenance",
+      "impact": "No cryptographic verification that images were built from trusted CI. Compromised CI could inject malicious images without detection at deploy time.",
+      "fix": "Integrate cosign for image signing + keyless signing via GitHub OIDC. Add SLSA generator workflow for provenance attestation."
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "docker_hygiene",
+      "file": "apps/api/Dockerfile",
+      "issue": "No multi-stage build verification; package installation may include dev dependencies in production image if not properly staged",
+      "impact": "Production images may contain unnecessary binaries and packages, increasing attack surface and image size.",
+      "fix": "Audit Dockerfiles to confirm multi-stage build separation. Add .dockerignore entry for dev dependencies. Run `docker scout` or `trivy` on final stage only."
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "dependency_audit",
+      "file": "pnpm-lock.yaml",
+      "issue": "No automated license compliance check; open-source dependency licenses are not reviewed or tracked",
+      "impact": "Risk of GPL/AGPL viral license contamination or incompatible license terms in production distribution.",
+      "fix": "Add pnpm-licenses or license-checker to CI. Fail build on prohibited licenses (AGPL, non-commercial). Add license report to SBOM."
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "trivy",
+      "file": ".github/workflows/validate.yml",
+      "issue": "Trivy fs scan runs on every PR but vulnerability database is not updated; stale DB misses recent CVEs",
+      "impact": "Scans may miss vulnerabilities discovered between cached DB updates. False sense of security.",
+      "fix": "Add trivy DB update step before scanning: `trivy image --download-db-only` or use `--cache-dir` with scheduled refresh."
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "trivy",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Trivy image scan runs with continue-on-error: true, so vulnerabilities do not block the build",
+      "impact": "HIGH/CRITICAL vulnerabilities in Docker images are reported but do not prevent deployment. No enforcement.",
+      "fix": "Set continue-on-error: false for production builds, or add a post-scan step that fails if CRITICAL vulnerabilities exceed threshold (e.g., > 0)."
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "sbom",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "SBOM generation only runs on push to develop, not on main/release builds",
+      "impact": "Production releases lack SBOM artifacts for vulnerability tracking and compliance.",
+      "fix": "Enable SBOM generation for all pushes to main/release branches. Upload SBOM as release asset."
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "dependabot",
+      "file": ".github/dependabot.yml",
+      "issue": "Dependabot batch groups (minor-patch) may cause delayed patch updates for critical security fixes",
+      "impact": "Critical security patches bundled with non-urgent changes may be delayed by cooldown period (15 days).",
+      "fix": "Exempt 'security' update type from batch grouping so critical patches are opened immediately. Add `ignored_updates` only for non-security."
+    }
+  ]
+}

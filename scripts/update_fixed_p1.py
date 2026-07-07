@@ -33,6 +33,11 @@ fixed_patterns = [
     "Workspace membership middleware",
     "BullMQ queues require Redis and have no fallback",
     "No alerting mechanism configured",
+    "Reactions (add/remove) do not broadcast via Socket.io",
+    "Channel mutations (create, update, delete, member add/remove) do not broadcast via Socket.io",
+    "Majority of E2E test scenarios are skipped",
+    "CI E2E job has no Supabase local instance",
+    "Raw CSS variables used inline instead of Tailwind classes",
 ]
 
 outputs_dir = Path("tmp_prompt_outputs")

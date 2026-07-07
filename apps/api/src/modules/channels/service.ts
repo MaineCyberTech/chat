@@ -1,6 +1,7 @@
 import { getSupabase } from "../../lib/supabase.js";
 import { webhookService } from "../webhooks/service.js";
 import { logger } from "../../lib/logger.js";
+import { getIO } from "../../lib/socket.js";
 import type { Channel } from "@chat/db";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -110,6 +111,12 @@ export class ChannelService {
           })
           .catch(() => {});
 
+        try {
+          getIO().emit("channel:created", { channel });
+        } catch {
+          // Socket not initialized
+        }
+
         return channel;
       }
 
@@ -159,6 +166,12 @@ export class ChannelService {
       })
       .catch(() => {});
 
+    try {
+      getIO().to(`channel:${channelId}`).emit("channel:updated", { channel: data as Channel });
+    } catch {
+      // Socket not initialized
+    }
+
     return data as Channel;
   }
 
@@ -176,6 +189,12 @@ export class ChannelService {
           channel_id: channelId,
         })
         .catch(() => {});
+
+      try {
+        getIO().to(`channel:${channelId}`).emit("channel:deleted", { channelId, workspaceId: channel.workspace_id });
+      } catch {
+        // Socket not initialized
+      }
     }
 
     return success;
@@ -305,7 +324,15 @@ export class ChannelService {
       channel_id: channelId,
       user_id: userId,
     });
-    return !error;
+    const success = !error;
+    if (success) {
+      try {
+        getIO().to(`channel:${channelId}`).emit("channel:member_added", { channelId, userId });
+      } catch {
+        // Socket not initialized
+      }
+    }
+    return success;
   }
 
   async removeMember(channelId: string, userId: string): Promise<boolean> {
@@ -315,7 +342,15 @@ export class ChannelService {
       .delete()
       .eq("channel_id", channelId)
       .eq("user_id", userId);
-    return !error;
+    const success = !error;
+    if (success) {
+      try {
+        getIO().to(`channel:${channelId}`).emit("channel:member_removed", { channelId, userId });
+      } catch {
+        // Socket not initialized
+      }
+    }
+    return success;
   }
 }
 

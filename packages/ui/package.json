@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css",
-    "./components/toast": "./src/components/toast.tsx"
+    "./components/toast": "./src/components/toast.tsx",
+    "./tokens/tailwind-theme.css": "./src/tokens/tailwind-theme.css"
   },
   "scripts": {
     "build": "tsc",

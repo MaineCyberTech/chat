@@ -6,7 +6,7 @@
   "generated_at": "2026-07-07T12:00:00Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 2,
+    "P1": 0,
     "P2": 8,
     "P3": 6
   },
@@ -24,26 +24,6 @@
   },
   "readiness": 64.5,
   "findings": [
-    {
-      "severity": "P1",
-      "domain": "api",
-      "category": "realtime",
-      "file": "apps/api/src/modules/reactions/routes.ts",
-      "issue": "Reactions (add/remove) do not broadcast via Socket.io; frontend never receives real-time reaction updates",
-      "impact": "Users won't see reactions appear/ disappear in real time. Requires manual re-fetch or page reload, breaking the chat real-time experience. Frontend teams may add polling workarounds.",
-      "fix": "Emit reaction:added and reaction:removed events via Socket.io (getIO().to(channelRoom).emit(...)) in ReactionService.add and ReactionService.remove.",
-      "endpoint": "POST /v1/messages/:id/reactions, DELETE /v1/messages/:id/reactions/:emoji"
-    },
-    {
-      "severity": "P1",
-      "domain": "api",
-      "category": "realtime",
-      "file": "apps/api/src/modules/channels/service.ts",
-      "issue": "Channel mutations (create, update, delete, member add/remove) do not broadcast via Socket.io",
-      "impact": "Frontend won't see new channels, renamed channels, or member changes in real-time unless polling. Users remain in deleted channels. Sidebar doesn't update.",
-      "fix": "Emit channel:created, channel:updated, channel:deleted, channel:member_added, channel:member_removed events via Socket.io in ChannelService.",
-      "endpoint": "POST/PATCH/DELETE /v1/channels/*, /v1/workspaces/:id/channels"
-    },
     {
       "severity": "P2",
       "domain": "api",

@@ -64,6 +64,9 @@ export {
   type FocusRing,
 };
 
+export { themeExtension } from "./tailwind-theme";
+export type { ThemeExtension } from "./tailwind-theme";
+
 export const theme = {
   colors: {
     light: semanticColors,

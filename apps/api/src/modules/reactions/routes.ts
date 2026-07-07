@@ -5,6 +5,7 @@ import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { reactionService } from "./service.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
+import { getIO } from "../../lib/socket.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -57,6 +58,17 @@ router.post(
     }
 
     res.status(201).json({ reaction });
+
+    (async () => {
+      try {
+        const { data: msg } = await req.supabase!.from("messages").select("channel_id").eq("id", req.params.id as string).single();
+        if (msg) {
+          getIO().to(`channel:${msg.channel_id}`).emit("reaction:added", { messageId: req.params.id as string, reaction });
+        }
+      } catch {
+        // Socket broadcast best-effort
+      }
+    })();
   }),
 );
 
@@ -76,6 +88,17 @@ router.delete(
       throw new NotFoundError("Reaction not found");
     }
     res.status(204).send();
+
+    (async () => {
+      try {
+        const { data: msg } = await req.supabase!.from("messages").select("channel_id").eq("id", req.params.id as string).single();
+        if (msg) {
+          getIO().to(`channel:${msg.channel_id}`).emit("reaction:removed", { messageId: req.params.id as string, reactionId: emoji });
+        }
+      } catch {
+        // Socket broadcast best-effort
+      }
+    })();
   }),
 );
 

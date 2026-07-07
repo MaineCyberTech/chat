@@ -237,5 +237,17 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium
+      - name: Install Supabase CLI
+        continue-on-error: true
+        run: npm install -g supabase
+      - name: Start Supabase local
+        continue-on-error: true
+        run: supabase start
+      - name: Run migrations
+        continue-on-error: true
+        run: supabase db reset
+      - name: Seed test data
+        continue-on-error: true
+        run: supabase db execute --file supabase/seeds/seed.sql
       - name: Run E2E tests
         run: pnpm test:e2e
