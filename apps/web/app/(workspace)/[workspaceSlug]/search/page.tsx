@@ -47,6 +47,7 @@ export default function SearchPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [searchType, setSearchType] = useState<"messages" | "files">("messages");
   const [results, setResults] = useState<(SearchResult & { channel_name?: string })[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -91,7 +92,7 @@ export default function SearchPage() {
       else setLoading(true);
 
       try {
-        let url = `/messages/search?q=${encodeURIComponent(q)}&workspace_id=${workspaceId}&offset=${append ? currentOffset : 0}`;
+        let url = `/messages/search?q=${encodeURIComponent(q)}&workspace_id=${workspaceId}&offset=${append ? currentOffset : 0}&type=${searchType}`;
         if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
         if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
         const res = await api.get<SearchResponse>(url);
@@ -154,6 +155,23 @@ export default function SearchPage() {
             aria-label="Toggle filters"
           >
             <Filter size={16} />
+          </button>
+        </div>
+
+        <div className="mt-3 flex gap-1 rounded-lg p-0.5" style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}>
+          <button
+            onClick={() => { setSearchType("messages"); setResults([]); if (query.length >= 2) search(query); }}
+            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${searchType === "messages" ? "shadow-sm" : ""}`}
+            style={{ background: searchType === "messages" ? "var(--center-channel-bg)" : "transparent", color: "var(--center-channel-color)" }}
+          >
+            Messages
+          </button>
+          <button
+            onClick={() => { setSearchType("files"); setResults([]); if (query.length >= 2) search(query); }}
+            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${searchType === "files" ? "shadow-sm" : ""}`}
+            style={{ background: searchType === "files" ? "var(--center-channel-bg)" : "transparent", color: "var(--center-channel-color)" }}
+          >
+            Files
           </button>
         </div>
 
