@@ -80,6 +80,7 @@ interface Props {
 
 export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }: Props) {
   const { user } = useAuth();
+
   const {
     items: messages,
     setItems: setMessages,
