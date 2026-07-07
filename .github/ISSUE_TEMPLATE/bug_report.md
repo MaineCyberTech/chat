@@ -1,10 +1,9 @@
 ﻿---
 name: Bug Report
 about: Report a bug to help us improve
-title: ''
+title: ""
 labels: bug
-assignees: ''
-
+assignees: ""
 ---
 
 **Describe the bug**
@@ -23,9 +22,10 @@ What actually happened.
 If applicable.
 
 **Environment**
-- URL: 
-- Browser: 
-- OS: 
+
+- URL:
+- Browser:
+- OS:
 - Device:
 
 **Additional context**

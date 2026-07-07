@@ -179,27 +179,40 @@ jobs:
               done
             done
 
-            docker compose -f infra/docker/docker-compose.devremote.yml up -d --force-recreate --remove-orphans
+            docker compose -f infra/docker/docker-compose.devremote.yml up -d --force-recreate --remove-orphans || true
             docker image prune -af
 
             for i in $(seq 1 12); do
-              if docker compose -f infra/docker/docker-compose.devremote.yml ps | grep -q "Unhealthy"; then
-                echo "ERROR: Container unhealthy"
+              LOGS=$(docker compose -f infra/docker/docker-compose.devremote.yml ps 2>&1)
+              echo "=== Attempt $i ==="
+              echo "$LOGS"
+
+              # Check for any exited containers (crash on startup)
+              if echo "$LOGS" | grep -q "Exit "; then
+                echo "ERROR: Container exited - showing logs"
+                docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100
+                exit 1
+              fi
+
+              if echo "$LOGS" | grep -q "Unhealthy"; then
+                echo "ERROR: Container unhealthy - showing logs"
                 docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 50
                 exit 1
               fi
-              if docker compose -f infra/docker/docker-compose.devremote.yml ps | grep -q "(healthy)"; then
+
+              if echo "$LOGS" | grep -q "(healthy)"; then
                 echo "All containers healthy"
                 docker compose -f infra/docker/docker-compose.devremote.yml ps
                 exit 0
               fi
+
               echo "Waiting for containers to become healthy... ($i/12)"
               sleep 5
             done
 
             echo "ERROR: Containers did not become healthy"
             docker compose -f infra/docker/docker-compose.devremote.yml ps
-            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 50
+            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100
             exit 1
 
       - name: Health check

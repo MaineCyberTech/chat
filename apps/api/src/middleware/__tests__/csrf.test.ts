@@ -11,7 +11,11 @@ vi.mock("node:crypto", () => ({
   }),
 }));
 
-function mockReq(method = "GET", headers: Record<string, string> = {}, cookies: Record<string, string> = {}) {
+function mockReq(
+  method = "GET",
+  headers: Record<string, string> = {},
+  cookies: Record<string, string> = {},
+) {
   return {
     method,
     headers,

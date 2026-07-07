@@ -33,9 +33,6 @@ services:
       PORT: 3000
     networks:
       - chat-dev
-    depends_on:
-      api:
-        condition: service_healthy
 
   livekit:
     image: livekit/livekit-server:latest

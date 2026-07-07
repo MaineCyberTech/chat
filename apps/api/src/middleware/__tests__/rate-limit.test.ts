@@ -63,7 +63,10 @@ describe("rate-limit middleware", () => {
     const req = { ip: "127.0.0.1", path: "/api/test", userId: undefined };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
-    handler(req, res, vi.fn(), { statusCode: 429, message: { error: { code: "RATE_LIMITED", message: "Too many" } } });
+    handler(req, res, vi.fn(), {
+      statusCode: 429,
+      message: { error: { code: "RATE_LIMITED", message: "Too many" } },
+    });
 
     expect(logger.warn).toHaveBeenCalledWith("Rate limit hit", {
       ip: "127.0.0.1",

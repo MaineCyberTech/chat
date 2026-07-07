@@ -3,7 +3,7 @@ name: Load Test
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 6 * * 1'  # Every Monday at 6am UTC
+    - cron: "0 6 * * 1" # Every Monday at 6am UTC
 
 jobs:
   k6-smoke-test:
