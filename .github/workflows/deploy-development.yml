@@ -200,9 +200,13 @@ jobs:
                 exit 1
               fi
 
-              if echo "$LOGS" | grep -q "(healthy)"; then
-                echo "All containers healthy"
-                docker compose -f infra/docker/docker-compose.devremote.yml ps
+              # Check ALL critical containers are healthy (not just one)
+              API_HEALTHY=$(echo "$LOGS" | grep "chat-api-dev" | grep -c "(healthy)")
+              WEB_HEALTHY=$(echo "$LOGS" | grep "chat-web-dev" | grep -c "(healthy)")
+              REDIS_HEALTHY=$(echo "$LOGS" | grep "chat-redis-dev" | grep -c "(healthy)")
+              if [ "$API_HEALTHY" -gt 0 ] && [ "$WEB_HEALTHY" -gt 0 ] && [ "$REDIS_HEALTHY" -gt 0 ]; then
+                echo "All critical containers healthy"
+                echo "$LOGS"
                 exit 0
               fi
 
