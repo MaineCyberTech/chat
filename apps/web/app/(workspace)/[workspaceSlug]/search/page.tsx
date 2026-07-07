@@ -233,7 +233,7 @@ export default function SearchPage() {
                   className="flex items-center gap-1 rounded-lg px-4 py-2 text-xs font-medium transition-colors hover:bg-[rgba(var(--button-bg-rgb),0.08)]"
                   style={{ color: "var(--button-bg)" }}
                 >
-                  {loadingMore ? "Loading..." : "Show more results"}
+                  {loadingMore ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.3)", borderTopColor: "transparent" }} /> : "Show more results"}
                   <ChevronDown size={14} />
                 </button>
               </div>

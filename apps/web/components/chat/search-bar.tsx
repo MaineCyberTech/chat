@@ -759,7 +759,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               aria-label="Load more search results"
             >
               <ChevronDown size={14} />
-              {loadingMore ? "Loading..." : "Show more"}
+              {loadingMore ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.3)", borderTopColor: "transparent" }} /> : "Show more"}
             </button>
           )}
         </div>
