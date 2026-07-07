@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
@@ -166,7 +166,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         display: "flex",
         flexDirection: "column",
         background: "var(--sidebar-bg)",
-        minHeight: 0,
+        minHeight: "100vh",
       }}
     >
       {/* Flex row for sidebar + content */}

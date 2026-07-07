@@ -333,14 +333,6 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     };
   }, [channelId, user?.id, loadProfiles]);
 
-  // Force layout recalculation after loading completes
-  const [layoutTick, setLayoutTick] = useState(0);
-  useEffect(() => {
-    if (!loading && !error) {
-      requestAnimationFrame(() => setLayoutTick((t) => t + 1));
-    }
-  }, [loading, error]);
-
   // Prevent body scroll when mobile RHS is open
   useEffect(() => {
     const isMobile = window.innerWidth < 768;
