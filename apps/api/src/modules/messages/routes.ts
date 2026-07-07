@@ -5,6 +5,8 @@ import { requireChannelAccess, requireMessageAccess } from "../../middleware/req
 import { messageService } from "./service.js";
 import { logger } from "../../lib/logger.js";
 import { logAuditEvent } from "../../services/audit.js";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { BadRequestError, NotFoundError, ConflictError, InternalServerError } from "../../lib/app-error.js";
 import {
   createMessageSchema,
   updateMessageSchema,
@@ -26,18 +28,14 @@ function sanitizeContent(content: string): string {
 const router: RouterType = Router();
 router.use(authenticate);
 
-router.get("/messages/search", responseCache(30), async (req, res) => {
+router.get("/messages/search", responseCache(30), asyncHandler(async (req, res) => {
   const parsed = searchQuerySchema.safeParse(req.query);
   if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
+    throw new BadRequestError(parsed.error.issues[0].message);
   }
 
   if (!req.supabase) {
-    res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
-    return;
+    throw new InternalServerError("Auth context missing");
   }
   const channelIds = parsed.data.channel_ids
     ? parsed.data.channel_ids.split(",").filter(Boolean)
@@ -55,8 +53,7 @@ router.get("/messages/search", responseCache(30), async (req, res) => {
   });
 
   if (error) {
-    res.status(500).json({ error: { code: "SEARCH_FAILED", message: error.message } });
-    return;
+    throw new InternalServerError(error.message);
   }
 
   let messages = data ?? [];
@@ -73,14 +70,14 @@ router.get("/messages/search", responseCache(30), async (req, res) => {
 
   const hasMore = messages.length === resultLimit;
   res.json({ messages, hasMore, offset: parsed.data.offset });
-});
+}));
 
 router.get(
   "/channels/:channelId/messages",
   validateUuidParam("channelId"),
   requireChannelAccess("channelId"),
   responseCache(15),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const { cursor } = req.query;
     const result = await messageService.listByChannel(
       req.params.channelId as string,
@@ -90,14 +87,14 @@ router.get(
     );
     res.setHeader("Cache-Control", "private, max-age=15");
     res.json({ messages: result.messages, nextCursor: result.nextCursor });
-  },
+  }),
 );
 
 router.post(
   "/channels/:channelId/messages",
   validateUuidParam("channelId"),
   requireChannelAccess("channelId"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const idempotencyKey = req.headers["idempotency-key"] as string | undefined;
 
     if (idempotencyKey) {
@@ -106,17 +103,15 @@ router.post(
         const existingMessage = await messageService.getById(existingMessageId, req.supabase);
         if (existingMessage) {
           res.set("Idempotency-Key", idempotencyKey);
-          return res.status(200).json({ message: existingMessage, idempotent: true });
+          res.status(200).json({ message: existingMessage, idempotent: true });
+          return;
         }
       }
     }
 
     const parsed = createMessageSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-      return;
+      throw new BadRequestError(parsed.error.issues[0].message);
     }
 
     const sanitizedContent = sanitizeContent(parsed.data.content);
@@ -133,10 +128,7 @@ router.post(
     );
 
     if (!message) {
-      res
-        .status(500)
-        .json({ error: { code: "CREATE_FAILED", message: "Could not create message" } });
-      return;
+      throw new InternalServerError("Could not create message");
     }
 
     if (idempotencyKey) {
@@ -152,20 +144,17 @@ router.post(
       entityId: message.id,
       metadata: { channel_id: message.channel_id },
     });
-  },
+  }),
 );
 
 router.patch(
   "/messages/:id",
   validateUuidParam("id"),
   requireMessageAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const parsed = updateMessageSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-      return;
+      throw new BadRequestError(parsed.error.issues[0].message);
     }
 
     const sanitizedContent = sanitizeContent(parsed.data.content);
@@ -180,13 +169,9 @@ router.patch(
     );
     if (!message) {
       if (version !== undefined) {
-        res
-          .status(409)
-          .json({ error: { code: "CONFLICT", message: "Message was modified by another user" } });
-        return;
+        throw new ConflictError("Message was modified by another user");
       }
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
-      return;
+      throw new NotFoundError("Message not found");
     }
 
     res.json({ message });
@@ -197,7 +182,7 @@ router.patch(
       entityId: message.id,
       metadata: { channel_id: message.channel_id },
     });
-  },
+  }),
 );
 
 // Pin/unpin messages
@@ -205,11 +190,10 @@ router.post(
   "/messages/:id/pin",
   validateUuidParam("id"),
   requireMessageAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const success = await messageService.pin(req.params.id as string, req.supabase!);
     if (!success) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
-      return;
+      throw new NotFoundError("Message not found");
     }
     logAuditEvent({
       actorUserId: req.userId,
@@ -218,18 +202,17 @@ router.post(
       entityId: req.params.id as string,
     });
     res.json({ success: true });
-  },
+  }),
 );
 
 router.delete(
   "/messages/:id/pin",
   validateUuidParam("id"),
   requireMessageAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const success = await messageService.unpin(req.params.id as string, req.supabase!);
     if (!success) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
-      return;
+      throw new NotFoundError("Message not found");
     }
     logAuditEvent({
       actorUserId: req.userId,
@@ -238,7 +221,7 @@ router.delete(
       entityId: req.params.id as string,
     });
     res.json({ success: true });
-  },
+  }),
 );
 
 // Get pinned messages for a channel
@@ -247,10 +230,10 @@ router.get(
   validateUuidParam("channelId"),
   requireChannelAccess("channelId"),
   responseCache(30),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const messages = await messageService.getPinned(req.params.channelId as string, req.supabase!);
     res.json({ messages });
-  },
+  }),
 );
 
 // Flag/unflag messages
@@ -258,50 +241,46 @@ router.post(
   "/messages/:id/flag",
   validateUuidParam("id"),
   requireMessageAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const success = await messageService.flag(req.params.id as string, req.userId!, req.supabase!);
     res.json({ success });
-  },
+  }),
 );
 
 router.delete(
   "/messages/:id/flag",
   validateUuidParam("id"),
   requireMessageAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const success = await messageService.unflag(
       req.params.id as string,
       req.userId!,
       req.supabase!,
     );
     res.json({ success });
-  },
+  }),
 );
 
 // Get flagged messages
-router.get("/messages/flagged", responseCache(15), async (req, res) => {
+router.get("/messages/flagged", responseCache(15), asyncHandler(async (req, res) => {
   const messages = await messageService.getFlagged(req.userId!, req.supabase!);
   res.json({ messages });
-});
+}));
 
 // Forward message to another channel
 router.post(
   "/messages/:id/forward",
   validateUuidParam("id"),
   requireMessageAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const { targetChannelId } = req.body;
     if (!targetChannelId) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: "targetChannelId required" } });
-      return;
+      throw new BadRequestError("targetChannelId required");
     }
 
     const original = await messageService.getById(req.params.id as string, req.supabase!);
     if (!original) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
-      return;
+      throw new NotFoundError("Message not found");
     }
 
     const forwardContent = `> ${original.content.replace(/\n/g, "\n> ")}\n\n*Forwarded from ${req.params.id.slice(0, 8)}*`;
@@ -316,10 +295,7 @@ router.post(
     );
 
     if (!message) {
-      res
-        .status(500)
-        .json({ error: { code: "CREATE_FAILED", message: "Could not forward message" } });
-      return;
+      throw new InternalServerError("Could not forward message");
     }
 
     logAuditEvent({
@@ -331,7 +307,7 @@ router.post(
     });
 
     res.status(201).json({ message });
-  },
+  }),
 );
 
 // Get message edit history
@@ -339,21 +315,20 @@ router.get(
   "/messages/:id/history",
   validateUuidParam("id"),
   requireMessageAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const history = await messageService.getEditHistory(req.params.id as string, req.supabase!);
     res.json({ history });
-  },
+  }),
 );
 
 router.delete(
   "/messages/:id",
   validateUuidParam("id"),
   requireMessageAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const result = await messageService.remove(req.params.id as string, req.supabase);
     if (!result) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Message not found" } });
-      return;
+      throw new NotFoundError("Message not found");
     }
 
     logAuditEvent({
@@ -363,58 +338,42 @@ router.delete(
       entityId: req.params.id as string,
     });
     res.status(204).send();
-  },
+  }),
 );
 
-router.post("/messages/upload", async (req, res) => {
+router.post("/messages/upload", asyncHandler(async (req, res) => {
   const parsed = uploadRequestSchema.safeParse(req.body);
   if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
+    throw new BadRequestError(parsed.error.issues[0].message);
   }
 
-  try {
-    if (!req.supabase) {
-      res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
-      return;
-    }
-
-    const safeFileName = parsed.data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const filePath = `${req.userId}/${Date.now()}-${safeFileName}`;
-
-    const { data, error } = await req.supabase.storage
-      .from("chat-uploads")
-      .createSignedUploadUrl(filePath);
-
-    if (error || !data) {
-      res.status(500).json({
-        error: {
-          code: "UPLOAD_FAILED",
-          message: error?.message ?? "Could not create upload URL",
-        },
-      });
-      return;
-    }
-
-    res.json({
-      uploadUrl: data.signedUrl,
-      filePath,
-      publicUrl: req.supabase.storage.from("chat-uploads").getPublicUrl(filePath).data.publicUrl,
-    });
-  } catch (err) {
-    logger.error("Upload URL generation failed", { error: String(err) });
-    res.status(500).json({ error: { code: "UPLOAD_FAILED", message: "Upload failed" } });
+  if (!req.supabase) {
+    throw new InternalServerError("Auth context missing");
   }
-});
+
+  const safeFileName = parsed.data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const filePath = `${req.userId}/${Date.now()}-${safeFileName}`;
+
+  const { data, error } = await req.supabase.storage
+    .from("chat-uploads")
+    .createSignedUploadUrl(filePath);
+
+  if (error || !data) {
+    throw new InternalServerError(error?.message ?? "Could not create upload URL");
+  }
+
+  res.json({
+    uploadUrl: data.signedUrl,
+    filePath,
+    publicUrl: req.supabase.storage.from("chat-uploads").getPublicUrl(filePath).data.publicUrl,
+  });
+}));
 
 // Reminder endpoints
-router.post("/messages/:id/remind", authenticate, validateUuidParam("id"), async (req, res) => {
+router.post("/messages/:id/remind", authenticate, validateUuidParam("id"), asyncHandler(async (req, res) => {
   const { remindAt } = req.body;
   if (!remindAt) {
-    res.status(400).json({ error: { code: "INVALID_INPUT", message: "remindAt required" } });
-    return;
+    throw new BadRequestError("remindAt required");
   }
   const { data, error } = await req
     .supabase!.from("message_reminders")
@@ -426,13 +385,12 @@ router.post("/messages/:id/remind", authenticate, validateUuidParam("id"), async
     .select("*")
     .single();
   if (error) {
-    res.status(500).json({ error: { code: "CREATE_FAILED", message: error.message } });
-    return;
+    throw new InternalServerError(error.message);
   }
   res.status(201).json({ reminder: data });
-});
+}));
 
-router.get("/reminders", authenticate, async (req, res) => {
+router.get("/reminders", authenticate, asyncHandler(async (req, res) => {
   const { data } = await req
     .supabase!.from("message_reminders")
     .select("*, messages!inner(content, channel_id)")
@@ -440,26 +398,25 @@ router.get("/reminders", authenticate, async (req, res) => {
     .eq("notified", false)
     .order("remind_at", { ascending: true });
   res.json({ reminders: data ?? [] });
-});
+}));
 
-router.delete("/reminders/:id", authenticate, async (req, res) => {
+router.delete("/reminders/:id", authenticate, asyncHandler(async (req, res) => {
   const { error } = await req
     .supabase!.from("message_reminders")
     .delete()
     .eq("id", req.params.id as string)
     .eq("user_id", req.userId);
   if (error) {
-    res.status(500).json({ error: { code: "DELETE_FAILED", message: error.message } });
-    return;
+    throw new InternalServerError(error.message);
   }
   res.status(204).send();
-});
+}));
 
 router.get(
   "/channels/:channelId/export",
   validateUuidParam("channelId"),
   requireChannelAccess("channelId"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const format = (req.query.format as string) ?? "json";
     const { data: messages } = await req
       .supabase!.from("messages")
@@ -469,10 +426,7 @@ router.get(
       .order("created_at", { ascending: true });
 
     if (!messages) {
-      res
-        .status(500)
-        .json({ error: { code: "QUERY_FAILED", message: "Failed to fetch messages" } });
-      return;
+      throw new InternalServerError("Failed to fetch messages");
     }
 
     const rows = messages.map((m: Record<string, unknown>) => ({
@@ -509,7 +463,7 @@ router.get(
       );
       res.json({ messages: rows });
     }
-  },
+  }),
 );
 
 export default router;

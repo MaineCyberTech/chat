@@ -1,10 +1,12 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { BadRequestError, InternalServerError } from "../../lib/app-error.js";
 
 const router = Router();
 
-router.get("/consent", authenticate, async (req: Request, res: Response) => {
+router.get("/consent", authenticate, asyncHandler(async (req: Request, res: Response) => {
   const supabase = req.supabase!;
   const { data, error } = await supabase
     .from("consent_logs")
@@ -12,21 +14,18 @@ router.get("/consent", authenticate, async (req: Request, res: Response) => {
     .order("created_at", { ascending: false });
 
   if (error) {
-    res.status(500).json({ error: { message: "Failed to fetch consent records" } });
-    return;
+    throw new InternalServerError("Failed to fetch consent records");
   }
   res.json({ consents: data ?? [] });
-});
+}));
 
-router.post("/consent", authenticate, async (req: Request, res: Response) => {
+router.post("/consent", authenticate, asyncHandler(async (req: Request, res: Response) => {
   const { consent_type, granted } = req.body;
   if (!consent_type || typeof granted !== "boolean") {
-    res.status(400).json({ error: { message: "consent_type and granted are required" } });
-    return;
+    throw new BadRequestError("consent_type and granted are required");
   }
   if (!["analytics", "marketing", "cookies"].includes(consent_type)) {
-    res.status(400).json({ error: { message: "Invalid consent_type" } });
-    return;
+    throw new BadRequestError("Invalid consent_type");
   }
 
   const supabase = req.supabase!;
@@ -43,10 +42,9 @@ router.post("/consent", authenticate, async (req: Request, res: Response) => {
     .single();
 
   if (error) {
-    res.status(500).json({ error: { message: "Failed to record consent" } });
-    return;
+    throw new InternalServerError("Failed to record consent");
   }
   res.status(201).json({ consent: data });
-});
+}));
 
 export default router;

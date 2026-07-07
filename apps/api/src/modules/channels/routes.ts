@@ -14,6 +14,8 @@ import {
 import { logAuditEvent } from "../../services/audit.js";
 import { logger } from "../../lib/logger.js";
 import { responseCache } from "../../middleware/cache.js";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { BadRequestError, NotFoundError, ConflictError, InternalServerError } from "../../lib/app-error.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -23,58 +25,46 @@ router.get(
   validateUuidParam("workspaceId"),
   requireWorkspaceMembership("workspaceId"),
   responseCache(30),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const channels = await channelService.listByWorkspace(
       req.params.workspaceId as string,
       req.supabase,
     );
     res.json({ channels });
-  },
+  }),
 );
 
 router.post(
   "/workspaces/:workspaceId/channels",
   validateUuidParam("workspaceId"),
   requireWorkspaceMembership("workspaceId"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const parsed = createChannelSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-      return;
+      throw new BadRequestError(parsed.error.issues[0].message);
     }
-    try {
-      const channel = await channelService.create(
-        {
-          name: parsed.data.name,
-          workspace_id: req.params.workspaceId as string,
-          created_by: req.userId!,
-          topic: parsed.data.topic,
-          is_private: parsed.data.is_private,
-        },
-        req.supabase,
-      );
-      if (!channel) {
-        res.status(500).json({
-          error: { code: "CREATE_FAILED", message: "Could not create channel" },
-        });
-        return;
-      }
-      res.status(201).json({ channel });
-      logAuditEvent({
-        actorUserId: req.userId,
-        action: "channel.create",
-        entityType: "channel",
-        entityId: channel.id,
-        metadata: { name: channel.name, workspace_id: channel.workspace_id },
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      logger.error("Channel creation error", { error: message, userId: req.userId });
-      res.status(500).json({ error: { code: "CREATE_FAILED", message } });
+    const channel = await channelService.create(
+      {
+        name: parsed.data.name,
+        workspace_id: req.params.workspaceId as string,
+        created_by: req.userId!,
+        topic: parsed.data.topic,
+        is_private: parsed.data.is_private,
+      },
+      req.supabase,
+    );
+    if (!channel) {
+      throw new InternalServerError("Could not create channel");
     }
-  },
+    res.status(201).json({ channel });
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "channel.create",
+      entityType: "channel",
+      entityId: channel.id,
+      metadata: { name: channel.name, workspace_id: channel.workspace_id },
+    });
+  }),
 );
 
 router.get(
@@ -82,38 +72,30 @@ router.get(
   validateUuidParam("id"),
   requireChannelAccess("id"),
   responseCache(30),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const channel = await channelService.getById(req.params.id as string, req.supabase);
     if (!channel) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Channel not found" } });
-      return;
+      throw new NotFoundError("Channel not found");
     }
     res.json({ channel });
-  },
+  }),
 );
 
 router.patch(
   "/channels/:id",
   validateUuidParam("id"),
   requireChannelAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const parsed = updateChannelSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-      return;
+      throw new BadRequestError(parsed.error.issues[0].message);
     }
     const channel = await channelService.update(req.params.id as string, parsed.data);
     if (!channel) {
       if (parsed.data.version !== undefined) {
-        res
-          .status(409)
-          .json({ error: { code: "CONFLICT", message: "Channel was modified by another user" } });
-        return;
+        throw new ConflictError("Channel was modified by another user");
       }
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Channel not found" } });
-      return;
+      throw new NotFoundError("Channel not found");
     }
     res.json({ channel });
     logAuditEvent({
@@ -123,18 +105,17 @@ router.patch(
       entityId: channel.id,
       metadata: { name: channel.name },
     });
-  },
+  }),
 );
 
 router.delete(
   "/channels/:id",
   validateUuidParam("id"),
   requireChannelAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const deleted = await channelService.remove(req.params.id as string);
     if (!deleted) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Channel not found" } });
-      return;
+      throw new NotFoundError("Channel not found");
     }
     logAuditEvent({
       actorUserId: req.userId,
@@ -143,7 +124,7 @@ router.delete(
       entityId: req.params.id as string,
     });
     res.status(204).send();
-  },
+  }),
 );
 
 router.get(
@@ -151,29 +132,25 @@ router.get(
   validateUuidParam("id"),
   requireChannelAccess("id"),
   responseCache(30),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const members = await channelService.getMembers(req.params.id as string);
     res.json({ members });
-  },
+  }),
 );
 
 router.post(
   "/channels/:id/members",
   validateUuidParam("id"),
   requireChannelAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const parsed = addChannelMemberSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-      return;
+      throw new BadRequestError(parsed.error.issues[0].message);
     }
 
     const success = await channelService.addMember(req.params.id as string, parsed.data.user_id);
     if (!success) {
-      res.status(500).json({ error: { code: "CREATE_FAILED", message: "Could not add member" } });
-      return;
+      throw new InternalServerError("Could not add member");
     }
 
     logAuditEvent({
@@ -185,7 +162,7 @@ router.post(
     });
 
     res.status(201).json({ success: true });
-  },
+  }),
 );
 
 // DM/GM channel endpoints
@@ -193,11 +170,10 @@ router.post(
   "/workspaces/:workspaceId/dm",
   validateUuidParam("workspaceId"),
   requireWorkspaceMembership("workspaceId"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const { targetUserId } = req.body;
     if (!targetUserId) {
-      res.status(400).json({ error: { code: "INVALID_INPUT", message: "targetUserId required" } });
-      return;
+      throw new BadRequestError("targetUserId required");
     }
     const channel = await channelService.createDmChannel(
       req.params.workspaceId as string,
@@ -206,26 +182,20 @@ router.post(
       req.supabase,
     );
     if (!channel) {
-      res
-        .status(500)
-        .json({ error: { code: "CREATE_FAILED", message: "Could not create DM channel" } });
-      return;
+      throw new InternalServerError("Could not create DM channel");
     }
     res.status(201).json({ channel });
-  },
+  }),
 );
 
 router.post(
   "/workspaces/:workspaceId/gm",
   validateUuidParam("workspaceId"),
   requireWorkspaceMembership("workspaceId"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const { targetUserIds } = req.body;
     if (!targetUserIds || !Array.isArray(targetUserIds) || targetUserIds.length < 1) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: "targetUserIds array required" } });
-      return;
+      throw new BadRequestError("targetUserIds array required");
     }
     const channel = await channelService.createGroupChannel(
       req.params.workspaceId as string,
@@ -234,43 +204,34 @@ router.post(
       req.supabase,
     );
     if (!channel) {
-      res
-        .status(500)
-        .json({ error: { code: "CREATE_FAILED", message: "Could not create group channel" } });
-      return;
+      throw new InternalServerError("Could not create group channel");
     }
     res.status(201).json({ channel });
-  },
+  }),
 );
 
 // Get DM channels for current user
-router.get("/dm-channels", responseCache(30), async (req, res) => {
+router.get("/dm-channels", responseCache(30), asyncHandler(async (req, res) => {
   const channels = await channelService.listDmChannels(req.userId!, req.supabase);
   res.json({ channels });
-});
+}));
 
 // Reorder channels in a workspace
 router.patch(
   "/workspaces/:workspaceId/channels/reorder",
   validateUuidParam("workspaceId"),
   requireWorkspaceMembership("workspaceId"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const { channelIds } = req.body;
     if (!Array.isArray(channelIds)) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: "channelIds array required" } });
-      return;
+      throw new BadRequestError("channelIds array required");
     }
     const ok = await channelService.reorderChannel(req.params.workspaceId as string, channelIds);
     if (!ok) {
-      res
-        .status(500)
-        .json({ error: { code: "REORDER_FAILED", message: "Could not reorder channels" } });
-      return;
+      throw new InternalServerError("Could not reorder channels");
     }
     res.json({ success: true });
-  },
+  }),
 );
 
 // Get workspace channel IDs (for sidebar categorization)
@@ -278,10 +239,10 @@ router.get(
   "/workspaces/:workspaceId/channel-ids",
   validateUuidParam("workspaceId"),
   requireWorkspaceMembership("workspaceId"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const ids = await channelService.listWorkspaceChannelIds(req.params.workspaceId as string);
     res.json({ channelIds: ids });
-  },
+  }),
 );
 
 // Channel bookmarks
@@ -290,25 +251,24 @@ router.get(
   validateUuidParam("id"),
   requireChannelAccess("id"),
   responseCache(30),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const { data: bookmarks } = await req
       .supabase!.from("channel_bookmarks")
       .select("*")
       .eq("channel_id", req.params.id as string)
       .order("sort_order", { ascending: true });
     res.json({ bookmarks: bookmarks ?? [] });
-  },
+  }),
 );
 
 router.post(
   "/channels/:id/bookmarks",
   validateUuidParam("id"),
   requireChannelAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const { title, messageId, url, emoji } = req.body;
     if (!title) {
-      res.status(400).json({ error: { code: "INVALID_INPUT", message: "title required" } });
-      return;
+      throw new BadRequestError("title required");
     }
     const { data: bookmark, error } = await req
       .supabase!.from("channel_bookmarks")
@@ -324,13 +284,10 @@ router.post(
       .single();
 
     if (error || !bookmark) {
-      res
-        .status(500)
-        .json({ error: { code: "CREATE_FAILED", message: "Could not create bookmark" } });
-      return;
+      throw new InternalServerError("Could not create bookmark");
     }
     res.status(201).json({ bookmark });
-  },
+  }),
 );
 
 router.patch(
@@ -338,7 +295,7 @@ router.patch(
   validateUuidParam("id"),
   validateUuidParam("bookmarkId"),
   requireChannelAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const { sort_order, title, url, emoji } = req.body;
     const updates: Record<string, unknown> = {};
     if (sort_order !== undefined) updates.sort_order = sort_order;
@@ -352,13 +309,10 @@ router.patch(
       .update(updates)
       .eq("id", req.params.bookmarkId as string);
     if (error) {
-      res
-        .status(500)
-        .json({ error: { code: "UPDATE_FAILED", message: "Could not update bookmark" } });
-      return;
+      throw new InternalServerError("Could not update bookmark");
     }
     res.status(200).json({ success: true });
-  },
+  }),
 );
 
 router.delete(
@@ -366,17 +320,16 @@ router.delete(
   validateUuidParam("id"),
   validateUuidParam("bookmarkId"),
   requireChannelAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const { error } = await req
       .supabase!.from("channel_bookmarks")
       .delete()
       .eq("id", req.params.bookmarkId as string);
     if (error) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Bookmark not found" } });
-      return;
+      throw new NotFoundError("Bookmark not found");
     }
     res.status(204).send();
-  },
+  }),
 );
 
 router.delete(
@@ -384,14 +337,13 @@ router.delete(
   validateUuidParam("id"),
   validateUuidParam("userId"),
   requireChannelAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const success = await channelService.removeMember(
       req.params.id as string,
       req.params.userId as string,
     );
     if (!success) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Member not found" } });
-      return;
+      throw new NotFoundError("Member not found");
     }
 
     logAuditEvent({
@@ -403,7 +355,7 @@ router.delete(
     });
 
     res.status(204).send();
-  },
+  }),
 );
 
 export default router;

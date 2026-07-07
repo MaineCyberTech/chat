@@ -3,6 +3,8 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { validateStringKeyParam } from "../../middleware/validate-string-key.js";
 import { featureFlagService } from "../../lib/feature-flags.js";
 import { z } from "zod";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -35,79 +37,64 @@ const evaluateFlagSchema = z.object({
   userRole: z.string().optional(),
 });
 
-router.get("/feature-flags", async (req, res) => {
+router.get("/feature-flags", asyncHandler(async (req, res) => {
   const flags = await featureFlagService.getAllFlags();
   res.json({ flags });
-});
+}));
 
-router.get("/feature-flags/:key", async (req, res) => {
-  const flag = await featureFlagService.getFlag(req.params.key);
+router.get("/feature-flags/:key", asyncHandler(async (req, res) => {
+  const flag = await featureFlagService.getFlag(req.params.key as string);
   if (!flag) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Feature flag not found" } });
-    return;
+    throw new NotFoundError("Feature flag not found");
   }
   res.json({ flag });
-});
+}));
 
-router.post("/feature-flags", async (req, res) => {
+router.post("/feature-flags", asyncHandler(async (req, res) => {
   const parsed = createFlagSchema.safeParse(req.body);
   if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
+    throw new BadRequestError(parsed.error.issues[0].message);
   }
   const flag = await featureFlagService.createFlag({
     ...parsed.data,
     description: parsed.data.description ?? "",
   });
   if (!flag) {
-    res
-      .status(500)
-      .json({ error: { code: "CREATE_FAILED", message: "Could not create feature flag" } });
-    return;
+    throw new InternalServerError("Could not create feature flag");
   }
   res.status(201).json({ flag });
-});
+}));
 
-router.patch("/feature-flags/:key", validateStringKeyParam("key"), async (req, res) => {
+router.patch("/feature-flags/:key", validateStringKeyParam("key"), asyncHandler(async (req, res) => {
   const parsed = updateFlagSchema.safeParse(req.body);
   if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
+    throw new BadRequestError(parsed.error.issues[0].message);
   }
   const flag = await featureFlagService.updateFlag(req.params.key as string, parsed.data);
   if (!flag) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Feature flag not found" } });
-    return;
+    throw new NotFoundError("Feature flag not found");
   }
   res.json({ flag });
-});
+}));
 
-router.delete("/feature-flags/:key", validateStringKeyParam("key"), async (req, res) => {
+router.delete("/feature-flags/:key", validateStringKeyParam("key"), asyncHandler(async (req, res) => {
   const deleted = await featureFlagService.deleteFlag(req.params.key as string);
   if (!deleted) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Feature flag not found" } });
-    return;
+    throw new NotFoundError("Feature flag not found");
   }
   res.status(204).send();
-});
+}));
 
-router.post("/feature-flags/:key/evaluate", async (req, res) => {
+router.post("/feature-flags/:key/evaluate", asyncHandler(async (req, res) => {
   const parsed = evaluateFlagSchema.safeParse(req.body);
   if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
+    throw new BadRequestError(parsed.error.issues[0].message);
   }
-  const result = await featureFlagService.evaluateFlag(req.params.key, {
+  const result = await featureFlagService.evaluateFlag(req.params.key as string, {
     userId: parsed.data.userId ?? req.userId,
     userRole: parsed.data.userRole ?? (req as { workspaceRole?: string }).workspaceRole,
   });
   res.json({ evaluation: result });
-});
+}));
 
 export default router;

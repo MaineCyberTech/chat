@@ -2,6 +2,8 @@ import { Router, type Request, type Response } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { NotFoundError, InternalServerError } from "../../lib/app-error.js";
 
 const router = Router();
 router.use(authenticate);
@@ -48,14 +50,13 @@ async function queryAuditLogs(
   return dbQuery;
 }
 
-router.get("/audit/logs", async (req: Request, res: Response) => {
+router.get("/audit/logs", asyncHandler(async (req: Request, res: Response) => {
   const supabase = req.supabase!;
   const { workspaceId, actorUserId, action, entityType, dateFrom, dateTo, limit, offset } =
     req.query;
 
   if (!supabase) {
-    res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
-    return;
+    throw new InternalServerError("Auth context missing");
   }
 
   const { data, error, count } = await queryAuditLogs(supabase, {
@@ -70,18 +71,16 @@ router.get("/audit/logs", async (req: Request, res: Response) => {
   });
 
   if (error) {
-    res.status(500).json({ error: { code: "QUERY_FAILED", message: error.message } });
-    return;
+    throw new InternalServerError(error.message);
   }
 
   res.json({ logs: data ?? [], total: count ?? 0 });
-});
+}));
 
-router.get("/audit/logs/:id", validateUuidParam("id"), async (req: Request, res: Response) => {
+router.get("/audit/logs/:id", validateUuidParam("id"), asyncHandler(async (req: Request, res: Response) => {
   const supabase = req.supabase!;
   if (!supabase) {
-    res.status(500).json({ error: { code: "AUTH_ERROR", message: "Auth context missing" } });
-    return;
+    throw new InternalServerError("Auth context missing");
   }
 
   const { data, error } = await supabase
@@ -91,11 +90,10 @@ router.get("/audit/logs/:id", validateUuidParam("id"), async (req: Request, res:
     .single();
 
   if (error || !data) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Audit log not found" } });
-    return;
+    throw new NotFoundError("Audit log not found");
   }
 
   res.json({ log: data });
-});
+}));
 
 export default router;

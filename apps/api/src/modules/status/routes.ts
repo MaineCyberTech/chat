@@ -1,6 +1,8 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { getSupabase } from "../../lib/supabase.js";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { BadRequestError, InternalServerError } from "../../lib/app-error.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -36,7 +38,7 @@ function calcExpiry(duration: string): string | null {
   }
 }
 
-router.get("/status", async (req, res) => {
+router.get("/status", asyncHandler(async (req, res) => {
   const supabase = getSupabase();
   const { data } = await supabase
     .from("user_statuses")
@@ -44,15 +46,12 @@ router.get("/status", async (req, res) => {
     .eq("user_id", req.userId)
     .single();
   res.json({ status: data ?? null });
-});
+}));
 
-router.put("/status", async (req, res) => {
+router.put("/status", asyncHandler(async (req, res) => {
   const { emoji = "speech_balloon", text = "", duration } = req.body as StatusBody;
   if (text.length > 100) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: "Status text max 100 chars" } });
-    return;
+    throw new BadRequestError("Status text max 100 chars");
   }
   const supabase = getSupabase();
   const expiresAt = duration ? calcExpiry(duration) : null;
@@ -71,20 +70,19 @@ router.put("/status", async (req, res) => {
     .select("*")
     .single();
   if (error) {
-    res.status(500).json({ error: { code: "UPDATE_FAILED", message: error.message } });
-    return;
+    throw new InternalServerError(error.message);
   }
   res.json({ status: data });
-});
+}));
 
-router.delete("/status", async (req, res) => {
+router.delete("/status", asyncHandler(async (req, res) => {
   const supabase = getSupabase();
   await supabase.from("user_statuses").delete().eq("user_id", req.userId);
   res.status(204).send();
-});
+}));
 
 // Get statuses for multiple users (used for display)
-router.post("/status/batch", async (req, res) => {
+router.post("/status/batch", asyncHandler(async (req, res) => {
   const { userIds } = req.body as { userIds: string[] };
   if (!Array.isArray(userIds) || userIds.length === 0) {
     res.json({ statuses: {} });
@@ -104,6 +102,6 @@ router.post("/status/batch", async (req, res) => {
     }
   }
   res.json({ statuses: map });
-});
+}));
 
 export default router;

@@ -2,13 +2,15 @@ import { Router, type Request, type Response } from "express";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { authenticate as requireAuth } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
 
 const router = Router();
 
 // GET /v1/sidebar-categories?workspace_id=xxx - list categories with channel assignments
-router.get("/", requireAuth, async (req: Request, res: Response) => {
+router.get("/", requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const workspaceId = req.query.workspace_id as string;
-  if (!workspaceId) return res.status(400).json({ error: "workspace_id required" });
+  if (!workspaceId) throw new BadRequestError("workspace_id required");
 
   const supabase = req.supabase as SupabaseClient;
 
@@ -19,7 +21,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
     .eq("user_id", req.userId)
     .order("sort_order");
 
-  if (catErr) return res.status(500).json({ error: catErr.message });
+  if (catErr) throw new InternalServerError(catErr.message);
 
   const categoryIds = categories.map((c) => c.id);
 
@@ -32,7 +34,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
     )
     .order("sort_order");
 
-  if (asgnErr) return res.status(500).json({ error: asgnErr.message });
+  if (asgnErr) throw new InternalServerError(asgnErr.message);
 
   const grouped = categories.map((cat) => ({
     ...cat,
@@ -40,13 +42,13 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
   }));
 
   res.json({ categories: grouped });
-});
+}));
 
 // POST /v1/sidebar-categories - create a category
-router.post("/", requireAuth, async (req: Request, res: Response) => {
+router.post("/", requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { workspace_id, name } = req.body;
   if (!workspace_id || !name)
-    return res.status(400).json({ error: "workspace_id and name required" });
+    throw new BadRequestError("workspace_id and name required");
 
   const supabase = req.supabase as SupabaseClient;
 
@@ -66,12 +68,12 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
     .select()
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw new InternalServerError(error.message);
   res.status(201).json({ category: data });
-});
+}));
 
 // PATCH /v1/sidebar-categories/:id - rename
-router.patch("/:id", requireAuth, validateUuidParam("id"), async (req: Request, res: Response) => {
+router.patch("/:id", requireAuth, validateUuidParam("id"), asyncHandler(async (req: Request, res: Response) => {
   const { name, sort_order } = req.body;
   const supabase = req.supabase as SupabaseClient;
 
@@ -87,12 +89,12 @@ router.patch("/:id", requireAuth, validateUuidParam("id"), async (req: Request, 
     .select()
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw new InternalServerError(error.message);
   res.json({ category: data });
-});
+}));
 
 // DELETE /v1/sidebar-categories/:id
-router.delete("/:id", requireAuth, validateUuidParam("id"), async (req: Request, res: Response) => {
+router.delete("/:id", requireAuth, validateUuidParam("id"), asyncHandler(async (req: Request, res: Response) => {
   const supabase = req.supabase as SupabaseClient;
 
   const { error } = await supabase
@@ -101,18 +103,18 @@ router.delete("/:id", requireAuth, validateUuidParam("id"), async (req: Request,
     .eq("id", req.params.id)
     .eq("user_id", req.userId);
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw new InternalServerError(error.message);
   res.json({ success: true });
-});
+}));
 
 // POST /v1/sidebar-categories/:id/assignments - add channel to category
 router.post(
   "/:id/assignments",
   requireAuth,
   validateUuidParam("id"),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { channel_id } = req.body;
-    if (!channel_id) return res.status(400).json({ error: "channel_id required" });
+    if (!channel_id) throw new BadRequestError("channel_id required");
 
     const supabase = req.supabase as SupabaseClient;
 
@@ -123,7 +125,7 @@ router.post(
       .eq("user_id", req.userId)
       .single();
 
-    if (!cat) return res.status(404).json({ error: "Category not found" });
+    if (!cat) throw new NotFoundError("Category not found");
 
     const { data: existing } = await supabase
       .from("sidebar_channel_assignments")
@@ -140,9 +142,9 @@ router.post(
       .select()
       .single();
 
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) throw new InternalServerError(error.message);
     res.status(201).json({ assignment: data });
-  },
+  }),
 );
 
 // DELETE /v1/sidebar-categories/:id/assignments/:channelId - remove channel from category
@@ -151,7 +153,7 @@ router.delete(
   requireAuth,
   validateUuidParam("id"),
   validateUuidParam("channelId"),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const supabase = req.supabase as SupabaseClient;
 
     const { error } = await supabase
@@ -160,19 +162,19 @@ router.delete(
       .eq("category_id", req.params.id)
       .eq("channel_id", req.params.channelId);
 
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) throw new InternalServerError(error.message);
     res.json({ success: true });
-  },
+  }),
 );
 
 // PATCH /v1/sidebar-categories/reorder - reorder all categories
-router.patch("/reorder", requireAuth, async (req: Request, res: Response) => {
+router.patch("/reorder", requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { categoryIds } = req.body as { categoryIds: string[] };
   if (!Array.isArray(categoryIds))
-    return res.status(400).json({ error: "categoryIds array required" });
+    throw new BadRequestError("categoryIds array required");
 
   const supabase = req.supabase as SupabaseClient;
-  const errors: string[] = [];
+  const errs: string[] = [];
 
   for (let i = 0; i < categoryIds.length; i++) {
     const { error } = await supabase
@@ -180,25 +182,25 @@ router.patch("/reorder", requireAuth, async (req: Request, res: Response) => {
       .update({ sort_order: i })
       .eq("id", categoryIds[i])
       .eq("user_id", req.userId);
-    if (error) errors.push(error.message);
+    if (error) errs.push(error.message);
   }
 
-  if (errors.length > 0) return res.status(500).json({ error: errors.join("; ") });
+  if (errs.length > 0) throw new InternalServerError(errs.join("; "));
   res.json({ success: true });
-});
+}));
 
 // PATCH /v1/sidebar-categories/:id/assignments/reorder - reorder channels in a category
 router.patch(
   "/:id/assignments/reorder",
   requireAuth,
   validateUuidParam("id"),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { channelIds } = req.body as { channelIds: string[] };
     if (!Array.isArray(channelIds))
-      return res.status(400).json({ error: "channelIds array required" });
+      throw new BadRequestError("channelIds array required");
 
     const supabase = req.supabase as SupabaseClient;
-    const errors: string[] = [];
+    const errs: string[] = [];
 
     for (let i = 0; i < channelIds.length; i++) {
       const { error } = await supabase
@@ -206,12 +208,12 @@ router.patch(
         .update({ sort_order: i })
         .eq("category_id", req.params.id)
         .eq("channel_id", channelIds[i]);
-      if (error) errors.push(error.message);
+      if (error) errs.push(error.message);
     }
 
-    if (errors.length > 0) return res.status(500).json({ error: errors.join("; ") });
+    if (errs.length > 0) throw new InternalServerError(errs.join("; "));
     res.json({ success: true });
-  },
+  }),
 );
 
 export default router;

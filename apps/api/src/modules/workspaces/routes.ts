@@ -20,19 +20,21 @@ import {
   updateWorkspaceMemberSchema,
 } from "../../config/validators.js";
 import { responseCache } from "../../middleware/cache.js";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { BadRequestError, NotFoundError, ForbiddenError, InternalServerError } from "../../lib/app-error.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
 
-router.get("/", responseCache(30), async (req, res) => {
+router.get("/", responseCache(30), asyncHandler(async (req, res) => {
   logger.info("GET /v1/workspaces", { userId: req.userId });
   const workspaces = await workspaceService.listByUser(req.supabase);
   logger.info("Workspaces list result", { userId: req.userId, count: workspaces.length });
   res.json({ workspaces });
-});
+}));
 
 // Consolidated bootstrap endpoint: returns workspaces with their channels in one call
-router.get("/bootstrap", responseCache(30), async (req, res) => {
+router.get("/bootstrap", responseCache(30), asyncHandler(async (req, res) => {
   const workspaces = await workspaceService.listByUser(req.supabase);
   const workspaceChannels = await Promise.all(
     workspaces.map(async (ws) => {
@@ -41,67 +43,48 @@ router.get("/bootstrap", responseCache(30), async (req, res) => {
     }),
   );
   res.json({ workspaces: workspaceChannels });
-});
+}));
 
-router.post("/", async (req, res) => {
+router.post("/", asyncHandler(async (req, res) => {
   const parsed = createWorkspaceSchema.safeParse(req.body);
   if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-    return;
+    throw new BadRequestError(parsed.error.issues[0].message);
   }
 
-  try {
-    const workspace = await workspaceService.create({
-      name: parsed.data.name,
-      owner_id: req.userId!,
-    });
-    if (!workspace) {
-      res.status(500).json({
-        error: {
-          code: "CREATE_FAILED",
-          message: "Could not create workspace. Check server logs for details.",
-        },
-      });
-      return;
-    }
-
-    res.status(201).json({ workspace });
-    logAuditEvent({
-      actorUserId: req.userId,
-      action: "workspace.create",
-      entityType: "workspace",
-      entityId: workspace.id,
-      metadata: { name: workspace.name },
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("Workspace creation error", { userId: req.userId, error: String(err) });
-    res.status(500).json({ error: { code: "CREATE_FAILED", message } });
+  const workspace = await workspaceService.create({
+    name: parsed.data.name,
+    owner_id: req.userId!,
+  });
+  if (!workspace) {
+    throw new InternalServerError("Could not create workspace. Check server logs for details.");
   }
-});
 
-router.get("/:id", validateUuidParam("id"), requireWorkspaceMembership("id"), responseCache(30), async (req, res) => {
+  res.status(201).json({ workspace });
+  logAuditEvent({
+    actorUserId: req.userId,
+    action: "workspace.create",
+    entityType: "workspace",
+    entityId: workspace.id,
+    metadata: { name: workspace.name },
+  });
+}));
+
+router.get("/:id", validateUuidParam("id"), requireWorkspaceMembership("id"), responseCache(30), asyncHandler(async (req, res) => {
   const workspace = await workspaceService.getById(req.params.id as string, req.supabase);
   if (!workspace) {
-    res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
-    return;
+    throw new NotFoundError("Workspace not found");
   }
   res.json({ workspace });
-});
+}));
 
 router.patch(
   "/:id",
   validateUuidParam("id"),
   requireWorkspaceMembership("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const parsed = updateWorkspaceSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-      return;
+      throw new BadRequestError(parsed.error.issues[0].message);
     }
 
     const workspace = await workspaceService.update(
@@ -110,8 +93,7 @@ router.patch(
       req.supabase,
     );
     if (!workspace) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
-      return;
+      throw new NotFoundError("Workspace not found");
     }
 
     const updatedWorkspace: Workspace = workspace;
@@ -123,7 +105,7 @@ router.patch(
       entityId: updatedWorkspace.id,
       metadata: { name: updatedWorkspace.name },
     });
-  },
+  }),
 );
 
 router.get(
@@ -131,10 +113,10 @@ router.get(
   validateUuidParam("id"),
   requireWorkspaceMembership("id"),
   responseCache(30),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const members = await workspaceService.getMembers(req.params.id as string, req.supabase);
     res.json({ members });
-  },
+  }),
 );
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -151,13 +133,10 @@ router.post(
   validateUuidParam("id"),
   requireWorkspaceMembership("id"),
   requireAdmin,
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const parsed = addWorkspaceMemberSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-      return;
+      throw new BadRequestError(parsed.error.issues[0].message);
     }
 
     const success = await workspaceService.addMember(
@@ -167,8 +146,7 @@ router.post(
       req.supabase,
     );
     if (!success) {
-      res.status(500).json({ error: { code: "CREATE_FAILED", message: "Could not add member" } });
-      return;
+      throw new InternalServerError("Could not add member");
     }
 
     logAuditEvent({
@@ -180,7 +158,7 @@ router.post(
     });
 
     res.status(201).json({ success: true });
-  },
+  }),
 );
 
 router.patch(
@@ -189,13 +167,10 @@ router.patch(
   validateUuidParam("userId"),
   requireWorkspaceMembership("id"),
   requireAdmin,
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const parsed = updateWorkspaceMemberSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: { code: "INVALID_INPUT", message: parsed.error.issues[0].message } });
-      return;
+      throw new BadRequestError(parsed.error.issues[0].message);
     }
 
     const success = await workspaceService.updateMemberRole(
@@ -205,8 +180,7 @@ router.patch(
       req.supabase,
     );
     if (!success) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Member not found" } });
-      return;
+      throw new NotFoundError("Member not found");
     }
 
     logAuditEvent({
@@ -218,7 +192,7 @@ router.patch(
     });
 
     res.json({ success: true });
-  },
+  }),
 );
 
 router.delete(
@@ -227,15 +201,14 @@ router.delete(
   validateUuidParam("userId"),
   requireWorkspaceMembership("id"),
   requireAdmin,
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const success = await workspaceService.removeMember(
       req.params.id as string,
       req.params.userId as string,
       req.supabase,
     );
     if (!success) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Member not found" } });
-      return;
+      throw new NotFoundError("Member not found");
     }
 
     logAuditEvent({
@@ -247,18 +220,17 @@ router.delete(
     });
 
     res.status(204).send();
-  },
+  }),
 );
 
 router.delete(
   "/:id",
   validateUuidParam("id"),
   requireWorkspaceMembership("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const deleted = await workspaceService.remove(req.params.id as string, req.supabase);
     if (!deleted) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Workspace not found" } });
-      return;
+      throw new NotFoundError("Workspace not found");
     }
     logAuditEvent({
       actorUserId: req.userId,
@@ -267,7 +239,7 @@ router.delete(
       entityId: req.params.id as string,
     });
     res.status(204).send();
-  },
+  }),
 );
 
 export default router;

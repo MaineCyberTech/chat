@@ -3,12 +3,14 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { requireChannelAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { threadService } from "./service.js";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { NotFoundError, InternalServerError } from "../../lib/app-error.js";
 
 const router = Router();
 router.use(authenticate);
 
 // List all threads for current user
-router.get("/threads", async (req: Request, res: Response) => {
+router.get("/threads", asyncHandler(async (req: Request, res: Response) => {
   const { data, error } = await req
     .supabase!.from("thread_participants")
     .select(
@@ -16,66 +18,64 @@ router.get("/threads", async (req: Request, res: Response) => {
     )
     .eq("user_id", req.userId)
     .order("last_reply_at", { ascending: false });
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw new InternalServerError(error.message);
   res.json({ threads: data });
-});
+}));
 
 // Get thread metadata and replies for a message
 router.get(
   "/messages/:id/thread",
   validateUuidParam("id"),
   requireChannelAccess("id"),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const thread = await threadService.getThread(req.params.id as string, req.supabase!);
     if (!thread) {
-      res.status(404).json({ error: { code: "NOT_FOUND", message: "Thread not found" } });
-      return;
+      throw new NotFoundError("Thread not found");
     }
     res.json({ thread });
-  },
+  }),
 );
 
 // Get thread participants
 router.get(
   "/threads/:id/participants",
   validateUuidParam("id"),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const participants = await threadService.getParticipants(
       req.params.id as string,
       req.supabase!,
     );
     res.json({ participants });
-  },
+  }),
 );
 
 // Join a thread
-router.post("/threads/:id/join", validateUuidParam("id"), async (req: Request, res: Response) => {
+router.post("/threads/:id/join", validateUuidParam("id"), asyncHandler(async (req: Request, res: Response) => {
   const success = await threadService.joinThread(
     req.params.id as string,
     req.userId!,
     req.supabase!,
   );
   if (!success) {
-    res.status(500).json({ error: { code: "ADD_FAILED", message: "Could not join thread" } });
-    return;
+    throw new InternalServerError("Could not join thread");
   }
   res.json({ success: true });
-});
+}));
 
 // Leave a thread
-router.post("/threads/:id/leave", validateUuidParam("id"), async (req: Request, res: Response) => {
+router.post("/threads/:id/leave", validateUuidParam("id"), asyncHandler(async (req: Request, res: Response) => {
   await threadService.leaveThread(req.params.id as string, req.userId!, req.supabase!);
   res.json({ success: true });
-});
+}));
 
 // Get thread unread count
-router.get("/threads/:id/unread", validateUuidParam("id"), async (req: Request, res: Response) => {
+router.get("/threads/:id/unread", validateUuidParam("id"), asyncHandler(async (req: Request, res: Response) => {
   const count = await threadService.getUnreadCount(
     req.params.id as string,
     req.userId!,
     req.supabase!,
   );
   res.json({ unread: count });
-});
+}));
 
 export default router;

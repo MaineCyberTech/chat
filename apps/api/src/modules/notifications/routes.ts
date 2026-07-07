@@ -3,6 +3,8 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { requireChannelAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { getSupabase } from "../../lib/supabase.js";
+import { asyncHandler } from "../../lib/async-handler.js";
+import { InternalServerError } from "../../lib/app-error.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
@@ -12,7 +14,7 @@ router.get(
   "/channels/:id/notification-preference",
   validateUuidParam("id"),
   requireChannelAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const supabase = getSupabase();
     const { data } = await supabase
       .from("channel_notification_preferences")
@@ -21,7 +23,7 @@ router.get(
       .eq("user_id", req.userId)
       .single();
     res.json({ preference: data ?? { notify: true, notify_sound: true } });
-  },
+  }),
 );
 
 // Upsert notification preference
@@ -29,7 +31,7 @@ router.put(
   "/channels/:id/notification-preference",
   validateUuidParam("id"),
   requireChannelAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const { notify, notify_sound } = req.body as { notify?: boolean; notify_sound?: boolean };
     const supabase = getSupabase();
     const { data, error } = await supabase
@@ -46,11 +48,10 @@ router.put(
       .select("*")
       .single();
     if (error) {
-      res.status(500).json({ error: { code: "UPDATE_FAILED", message: error.message } });
-      return;
+      throw new InternalServerError(error.message);
     }
     res.json({ preference: data });
-  },
+  }),
 );
 
 // Delete notification preference (reset to defaults)
@@ -58,7 +59,7 @@ router.delete(
   "/channels/:id/notification-preference",
   validateUuidParam("id"),
   requireChannelAccess("id"),
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const supabase = getSupabase();
     await supabase
       .from("channel_notification_preferences")
@@ -66,7 +67,7 @@ router.delete(
       .eq("channel_id", req.params.id)
       .eq("user_id", req.userId);
     res.status(204).send();
-  },
+  }),
 );
 
 export default router;
