@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { getSupabaseAdmin } from "../../lib/supabase";
+import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { authenticate } from "../../middleware/authenticate";
 import { logger } from "../../lib/logger";
 import { asyncHandler } from "../../lib/async-handler";
