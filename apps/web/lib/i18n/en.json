@@ -1,32 +1,83 @@
-﻿{
-    "":  {
-             "":  "TODO: ."
-         },
-    "calls api":  {
-                      "get with correct room parameter":  "TODO: calls api.get with correct room parameter"
-                  },
-    "calls Sentry":  {
-                         "captureException when Sentry DSN is set":  "TODO: calls Sentry.captureException when Sentry DSN is set"
-                     },
-    "login-desktop":  {
-                          "png":  "TODO: login-desktop.png"
-                      },
-    "login-mobile":  {
-                         "png":  "TODO: login-mobile.png"
-                     },
-    "not-found-desktop":  {
-                              "png":  "TODO: not-found-desktop.png"
-                          },
-    "Real-time workspace communication, inspired by the best":  {
-                                                                    "":  "TODO: Real-time workspace communication, inspired by the best."
-                                                                },
-    "Search emojis":  {
-                          "..":  "TODO: Search emojis..."
-                      },
-    "settings-desktop":  {
-                             "png":  "TODO: settings-desktop.png"
-                         },
-    "settings-mobile":  {
-                            "png":  "TODO: settings-mobile.png"
-                        }
+{
+  "": {
+    "": "TODO: ."
+  },
+  "calls api": {
+    "get with correct room parameter": "TODO: calls api.get with correct room parameter"
+  },
+  "calls Sentry": {
+    "captureException when Sentry DSN is set": "TODO: calls Sentry.captureException when Sentry DSN is set"
+  },
+  "login-desktop": {
+    "png": "TODO: login-desktop.png"
+  },
+  "login-mobile": {
+    "png": "TODO: login-mobile.png"
+  },
+  "not-found-desktop": {
+    "png": "TODO: not-found-desktop.png"
+  },
+  "Real-time workspace communication, inspired by the best": {
+    "": "TODO: Real-time workspace communication, inspired by the best."
+  },
+  "Search emojis": {
+    "..": "TODO: Search emojis..."
+  },
+  "settings-desktop": {
+    "png": "TODO: settings-desktop.png"
+  },
+  "settings-mobile": {
+    "png": "TODO: settings-mobile.png"
+  },
+  "chat:search-open": {
+    "": "TODO: chat:search-open"
+  },
+  "@": {
+    "": "TODO: @"
+  },
+  ",": {
+    "": "TODO: ,"
+  },
+  "code": {
+    "": "TODO: code"
+  },
+  "access_token": {
+    "": "TODO: access_token"
+  },
+  "refresh_token": {
+    "": "TODO: refresh_token"
+  },
+  "Enter URL:": {
+    "": "TODO: Enter URL:"
+  },
+  " ": {
+    "": "TODO:  "
+  },
+  "/": {
+    "": "TODO: /"
+  },
+  "@/lib/socket": {
+    "": "TODO: @/lib/socket"
+  },
+  "chat:open-shortcuts": {
+    "": "TODO: chat:open-shortcuts"
+  },
+  "Send magic link": {
+    "": "TODO: Send magic link"
+  },
+  "Name": {
+    "": "TODO: Name"
+  },
+  "Create": {
+    "": "TODO: Create"
+  },
+  "http://localhost:4000": {
+    "": "TODO: http://localhost:4000"
+  },
+  "http://localhost:3000": {
+    "": "TODO: http://localhost:3000"
+  },
+  "|": {
+    "": "TODO: |"
+  }
 }

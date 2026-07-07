@@ -11,7 +11,8 @@
     "test": "vitest run",
     "clean": "rimraf .next",
     "generate:version": "node scripts/generate-version.js",
-    "i18n:extract": "pwsh -File ../../scripts/local/extract-i18n.ps1"
+    "i18n:extract": "node scripts/local/extract-i18n.mjs .",
+    "i18n:verify": "node scripts/local/verify-i18n.mjs ."
   },
   "dependencies": {
     "@chat/db": "workspace:*",
