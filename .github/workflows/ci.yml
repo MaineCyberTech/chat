@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 7 * * 1-5'
   workflow_dispatch:
 
 concurrency:

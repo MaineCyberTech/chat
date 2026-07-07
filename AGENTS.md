@@ -217,27 +217,29 @@ Detailed per-item tables for all hardening findings (P0-P3, Round 1 and Round 2)
 
 ## GitHub Actions Workflows
 
-| Workflow                          | Trigger                  | Purpose                                                                   |
-| --------------------------------- | ------------------------ | ------------------------------------------------------------------------- |
-| `ci.yml`                          | push main/develop, PR    | Calls reusable validate.yml (test, lint, typecheck, build)                |
-| `validate.yml`                    | workflow_call            | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache     |
-| `build-push.yml`                  | push develop             | Build Docker images → push to GHCR `:dev` tag (path-filtered)             |
-| `deploy-development.yml`          | push develop             | SSH to droplet, transfer files, pipe images, compose up, health check     |
-| `infra-development.yml`           | push infra/\*\* changes  | Terraform provision droplet + DNS + firewall + SSH key registration       |
-| `deploy-production.yml`           | push main, manual        | Build + push `:latest` images, deploy to production droplet, health check |
-| `supabase-migrations.yml`         | push develop, infra/\*\* | Supabase link + db push (runs before deploy)                              |
-| `audit-ci.yml`                    | workflow_dispatch        | CI audit badge generation                                                 |
-| `audit-ci-autocommit.yml`         | workflow_dispatch        | Auto-commit audit CI results                                              |
-| `audit-badges-autocommit.yml`     | workflow_dispatch        | Auto-commit audit badge updates                                           |
-| `audit-pr-gate.yml`               | PR                       | Audit-based PR gate checks                                                |
-| `audit-release-certification.yml` | release                  | Release certification audit                                               |
-| `environment-promotion-audit.yml` | workflow_dispatch        | Environment promotion audit                                               |
-| `executive-stakeholder-pack.yml`  | workflow_dispatch        | Generate executive/stakeholder report pack                                |
-| `feature-rollout-checkpoint.yml`  | workflow_dispatch        | Feature rollout checkpoint audit                                          |
-| `governance.yml`                  | workflow_dispatch        | Governance policy enforcement                                             |
-| `hardening-automation-runner.yml` | workflow_dispatch        | Automated hardening analysis runner                                       |
-| `hardening.yml`                   | workflow_dispatch        | Runs hardening pipeline via `run_hardening_pipeline.py`                   |
-| `platform.yml`                    | workflow_dispatch        | Platform-level CI/CD orchestration                                        |
+| Workflow                          | Trigger                                    | Purpose                                                                   |
+| --------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------- |
+| `ci.yml`                          | push main/develop, PR, schedule (weekdays) | Calls reusable validate.yml (test, lint, typecheck, build, E2E)           |
+| `validate.yml`                    | workflow_call                              | Reusable: test, lint, typecheck, build jobs with Node 22 + pnpm cache     |
+| `build-push.yml`                  | push develop                               | Build Docker images → push to GHCR `:dev` tag (path-filtered)             |
+| `deploy-development.yml`          | push develop                               | SSH to droplet, transfer files, pipe images, compose up, health check     |
+| `infra-development.yml`           | push infra/\*\* changes                    | Terraform provision droplet + DNS + firewall + SSH key registration       |
+| `deploy-production.yml`           | push main, manual                          | Build + push `:latest` images, deploy to production droplet, health check |
+| `supabase-migrations.yml`         | push develop, infra/\*\*                   | Supabase link + db push (runs before deploy)                              |
+| `e2e-daily.yml` (removed)         | schedule (consolidated into ci.yml)        | E2E health check now part of ci.yml schedule trigger                      |
+| `load-test.yml`                   | schedule, manual                           | Weekly k6 smoke test against production                                   |
+| `audit-ci.yml`                    | workflow_dispatch                          | CI audit badge generation                                                 |
+| `audit-ci-autocommit.yml`         | workflow_dispatch                          | Auto-commit audit CI results                                              |
+| `audit-badges-autocommit.yml`     | workflow_dispatch                          | Auto-commit audit badge updates                                           |
+| `audit-pr-gate.yml`               | PR                                         | Audit-based PR gate checks                                                |
+| `audit-release-certification.yml` | release                                    | Release certification audit                                               |
+| `environment-promotion-audit.yml` | workflow_dispatch                          | Environment promotion audit                                               |
+| `executive-stakeholder-pack.yml`  | workflow_dispatch                          | Generate executive/stakeholder report pack                                |
+| `feature-rollout-checkpoint.yml`  | workflow_dispatch                          | Feature rollout checkpoint audit                                          |
+| `governance.yml`                  | workflow_dispatch                          | Governance policy enforcement                                             |
+| `hardening-automation-runner.yml` | workflow_dispatch                          | Automated hardening analysis runner                                       |
+| `hardening.yml`                   | workflow_dispatch                          | Runs hardening pipeline via `run_hardening_pipeline.py`                   |
+| `platform.yml`                    | workflow_dispatch                          | Platform-level CI/CD orchestration                                        |
 
 ## Environments
 
