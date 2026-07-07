@@ -18,27 +18,7 @@ import { register, httpRequestsTotal, httpRequestDuration } from "./lib/metrics.
 import { sentryErrorMiddleware } from "./lib/sentry.js";
 import { authenticate } from "./middleware/authenticate.js";
 import { inputSanitizer } from "./middleware/input-sanitizer.js";
-import healthRoutes from "./modules/health/routes.js";
-import authRoutes from "./modules/auth/routes.js";
-import workspaceRoutes from "./modules/workspaces/routes.js";
-import channelRoutes from "./modules/channels/routes.js";
-import messageRoutes from "./modules/messages/routes.js";
-import webhookRoutes from "./modules/webhooks/routes.js";
-import notificationRoutes from "./modules/notifications/routes.js";
-import preferencesRoutes from "./modules/preferences/routes.js";
-import reactionRoutes from "./modules/reactions/routes.js";
-import featureFlagRoutes from "./modules/feature-flags/routes.js";
-import consentRoutes from "./modules/consent/routes.js";
-import threadRoutes from "./modules/threads/routes.js";
-import liveKitRoutes from "./modules/livekit/routes.js";
-import auditRoutes from "./modules/audit/routes.js";
-import statusRoutes from "./modules/status/routes.js";
-import emojiRoutes from "./modules/emoji/routes.js";
-import userGroupRoutes from "./modules/user-groups/routes.js";
-import sidebarRoutes from "./modules/sidebar/routes.js";
-import scheduledRoutes from "./modules/scheduled-posts/routes.js";
-import adminRoutes from "./modules/admin/routes.js";
-import openApiRoutes from "./modules/openapi/routes.js";
+import { routeRegistry } from "./route-registry.js";
 
 function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = process.hrtime.bigint();
@@ -64,7 +44,6 @@ export function createApp(frontendUrl: string): Express {
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, curl, etc.)
         if (!origin) return callback(null, true);
         if (origin === frontendUrl) return callback(null, true);
         callback(new Error("Not allowed by CORS"));
@@ -86,27 +65,9 @@ export function createApp(frontendUrl: string): Express {
   app.use(metricsMiddleware);
   app.use(deprecationMiddleware);
 
-  app.use(healthRoutes);
-  app.use("/v1/auth", authRoutes);
-  app.use("/v1/workspaces", workspaceRoutes);
-  app.use("/v1", channelRoutes);
-  app.use("/v1", messageRoutes);
-  app.use("/v1", webhookRoutes);
-  app.use("/v1", notificationRoutes);
-  app.use("/v1/auth", preferencesRoutes);
-  app.use("/v1", reactionRoutes);
-  app.use("/v1", featureFlagRoutes);
-  app.use("/v1", consentRoutes);
-  app.use("/v1", threadRoutes);
-  app.use("/v1", liveKitRoutes);
-  app.use("/v1", auditRoutes);
-  app.use("/v1", statusRoutes);
-  app.use("/v1", emojiRoutes);
-  app.use("/v1/groups", userGroupRoutes);
-  app.use("/v1/sidebar-categories", sidebarRoutes);
-  app.use("/v1/scheduled-posts", scheduledRoutes);
-  app.use("/v1", openApiRoutes);
-  app.use("/v1/admin", adminRoutes);
+  for (const { path, router } of routeRegistry) {
+    app.use(path, router);
+  }
 
   app.get("/", (_req, res) => {
     res.json({ name: "chat-api", status: "running" });
