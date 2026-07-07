@@ -251,12 +251,6 @@
     padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
   }
 }
-@supports (height: 100dvh) {
-  :root {
-    --vh: 100dvh;
-  }
-}
-
 .vh-fix {
   --vh: 100vh;
 }

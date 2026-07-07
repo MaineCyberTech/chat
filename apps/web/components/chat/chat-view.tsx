@@ -668,14 +668,13 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
           </div>
         )}
 
-        {/* Message area - flex column with post list and input */}
-        <div className="flex min-h-0 flex-1 flex-col">
+        {/* Message area - absolute positioning to avoid flex height calc issues */}
+        <div style={{ flex: 1, minHeight: 0, position: "relative", display: "flex", flexDirection: "column" }}>
           <div
             role="log"
             aria-atomic="false"
             aria-label="Messages"
-            className="flex-1 min-h-0 overflow-y-auto"
-            style={{ padding: "14px 0 7px" }}
+            style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "14px 0 7px" }}
           >
             <MessageList
               messages={
