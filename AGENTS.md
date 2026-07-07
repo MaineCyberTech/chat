@@ -162,12 +162,12 @@ Full 8-phase Mattermost comparative audit (`C:\temp\mattermost-master` vs `C:\te
 
 Full hardening prompt pack executed (10 prompts, 176 unique findings across 8 domains). Global risk score was 0/100 CRITICAL. **All findings resolved as of July 6, 2026.**
 
-| Priority | Count | Summary |
-| -------- | ----- | ------- |
-| **P0**   | 20    | consent routes, webhook secret leak, reaction access control, /metrics auth, SECURITY DEFINER search_path, request/query timeout, graceful shutdown, socket re-auth, rate limiter, slug dedup, anon client usage, GDPR violations, trivy @master pins |
+| Priority | Count | Summary                                                                                                                                                                                                                                                               |
+| -------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0**   | 20    | consent routes, webhook secret leak, reaction access control, /metrics auth, SECURITY DEFINER search_path, request/query timeout, graceful shutdown, socket re-auth, rate limiter, slug dedup, anon client usage, GDPR violations, trivy @master pins                 |
 | **P1**   | 39    | webhook secret plaintext, SSRF gaps, CSP nonces, email enumeration, test creds, admin client abuse, audit_logs orgId, CI/CD secret exposure, GITHUB_TOKEN persistence, concurrency, PostCSS XSS, PII in logs, GDPR delete, missing RLS, resilience/observability gaps |
 | **P2**   | 79    | rate limiter, request ID, CSRF, notification links, role auth, soft-delete cascade, 404/loading states, error boundaries, pnpm audit, API versioning, BFF layer, migration rollback, chaos testing, domain templating, deprecation policy, TypeScript `any`, and more |
-| **P3**   | 38    | nonce CSP, wget in Docker, avatar URL validation, feature flag hash, health endpoint CSRF, channel member error handling, thread textarea auto-resize, and more |
+| **P3**   | 38    | nonce CSP, wget in Docker, avatar URL validation, feature flag hash, health endpoint CSRF, channel member error handling, thread textarea auto-resize, and more                                                                                                       |
 
 ### Hardening Findings Tracker Reference
 
@@ -175,21 +175,24 @@ Detailed per-item tables for all hardening findings (P0-P3, Round 1 and Round 2)
 
 - **Manual setup needed**: `pg_cron` for data retention (`docs/runbooks/pg_cron_setup.md`)
 - **BFF layer**: Added as Next.js route handler (`apps/web/app/api/v1/[...path]/route.ts`)
-- **Migration rollback**: 48 `_down.sql` scripts in `supabase/rollback/` + runbook (`docs/runbooks/migration-rollback.md`)
+- **Migration rollback**: 49 `_down.sql` scripts in `supabase/rollback/` + runbook (`docs/runbooks/migration-rollback.md`)
 
 ### Remaining Work
 
 **Frontend Release Gate Findings** — 9 P3 items remain: raw opacity values, "Loading..." text instead of skeletons, unused CSS classes.
 
 **Database/Schema Improvements:**
+
 - Unify migration directory structure
 
 **Infra/Deployment:**
+
 - Implement rollback strategy (preserve compose, use SHA tags)
 - Add DO monitoring alerts (CPU > 80%, memory > 80%)
 - Add fallback `docker pull` in dev deploy
 
 **Testing/QA:**
+
 - Add messaging E2E flow (WebSocket connect → send → receive → edit → delete)
 - Add file upload E2E flow
 - Test remaining API route files (auth, workspaces, channels, messages)
@@ -233,7 +236,7 @@ Detailed per-item tables for all hardening findings (P0-P3, Round 1 and Round 2)
 | `feature-rollout-checkpoint.yml`  | workflow_dispatch        | Feature rollout checkpoint audit                                          |
 | `governance.yml`                  | workflow_dispatch        | Governance policy enforcement                                             |
 | `hardening-automation-runner.yml` | workflow_dispatch        | Automated hardening analysis runner                                       |
-| `hardening.yml`                   | workflow_dispatch        | Runs hardening pipeline via `run_hardening_pipeline.py`                    |
+| `hardening.yml`                   | workflow_dispatch        | Runs hardening pipeline via `run_hardening_pipeline.py`                   |
 | `platform.yml`                    | workflow_dispatch        | Platform-level CI/CD orchestration                                        |
 
 ## Environments
@@ -249,6 +252,62 @@ Detailed per-item tables for all hardening findings (P0-P3, Round 1 and Round 2)
 Architecture docs in `docs/architecture/`: bootstrap-foundation.md, repo-structure.md, portal-comparison-audit.md.
 
 Full audit suite in `docs/audits/` (9 reports covering security, API, database, infra, testing, docs, frontend, UX release gate, comparative).
+
+## Full Comparative Repo Audit (July 7, 2026)
+
+An exhaustive 8-phase comparative audit of `C:\temp\mattermost-master` (Mattermost v11.9.0) vs current repo was completed. Full report: `docs/audits/compare/full_comparative_repo_audit.md`.
+
+### High-Level Verdict
+
+**Do not mirror Mattermost's architecture.** The current repo's modern stack (Next.js 15, Supabase, Turborepo, pnpm, Tailwind, Socket.io, BullMQ) is architecturally superior for a greenfield project. Mattermost's advantages are in feature breadth (plugin system, enterprise auth, 67 locales, 47 job types) and maturity, not architectural patterns.
+
+### Key Wins for Current Repo
+
+| Area               | Current Repo Advantage                                  |
+| ------------------ | ------------------------------------------------------- |
+| **Auth model**     | Supabase Auth — less custom code, built-in RLS          |
+| **Build system**   | Turborepo + pnpm — fast, cacheable, parallel            |
+| **Styling**        | Tailwind + design tokens — consistent, maintainable     |
+| **Database**       | Supabase + RLS — declarative tenant isolation           |
+| **Migrations**     | Forward + rollback scripts (Mattermost lacks rollbacks) |
+| **Infrastructure** | Terraform IaC (Mattermost has none)                     |
+| **CI/CD audit**    | 19 audit workflows (Mattermost has none)                |
+| **PWA**            | Service worker + push (no native app needed)            |
+
+### Alignment Strategy
+
+| Phase                   | Focus               | Items                                                                                                        |
+| ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Phase 0-1** (Week 1)  | No-risk cleanup     | Down migration scripts, store interfaces, CI/CD consolidation, error codes, test coverage, docs              |
+| **Phase 2** (Week 2)    | Low-risk similarity | Centralized route registry, background job expansion, link previews, admin endpoints, webhook UI             |
+| **Phase 3** (Week 3-4)  | Medium convergence  | Data retention enforcement, compliance export, i18n expansion, channel member history, error standardization |
+| **Phase 4-5** (Week 5+) | Strategic optional  | Multi-factor auth, advanced text editor, GIF picker, plugin evaluation                                       |
+
+### Do-Not-Break Guardrails
+
+```
+CRITICAL:
+  1. Authentication — all sessions, all flows
+  2. Message delivery — no loss, no duplication
+  3. RLS policies — never less restrictive
+  4. Real-time connections — no silent disconnects
+  5. Database migrations — always reversible
+
+HIGH:
+  6. API contracts — SDK consumers
+  7. UI layout — responsive design
+  8. Search functionality — tsvector queries
+  9. File upload/download
+  10. Notification delivery
+```
+
+### Things to Keep As-Is
+
+Supabase Auth, Next.js App Router, Tailwind CSS + Design Tokens, Turborepo + pnpm, Socket.io + Redis, RLS Authorization, BullMQ Workers, Down Migration Scripts, PWA Approach, BFF Layer, Storybook, Optimistic UI Hook.
+
+### Things to Skip Porting
+
+Plugin system (unjustified), boards/kanban (out of scope), desktop app (PWA sufficient), Redux patterns (Supabase better), SASS (Tailwind better), Cypress (Playwright sufficient).
 
 ## Local Development
 
