@@ -15,14 +15,26 @@ type MockChain = { [key: string]: any; then: (fn: (v: unknown) => unknown) => Pr
 function createChain(result: unknown): MockChain {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "in", "order", "limit", "single",
-    "insert", "update", "delete", "is", "or", "gt", "lt", "contains", "lte",
+    "select",
+    "eq",
+    "in",
+    "order",
+    "limit",
+    "single",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
+    "contains",
+    "lte",
     "range",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve(result).then(onfulfilled);
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
   return chain;
 }
 
@@ -69,7 +81,8 @@ describe("admin routes", () => {
       const workspaceChain = createChain({ count: 3, error: null });
       const channelChain = createChain({ count: 15, error: null });
       const messageChain = createChain({ count: 200, error: null });
-      const from = vi.fn()
+      const from = vi
+        .fn()
         .mockReturnValueOnce(userChain)
         .mockReturnValueOnce(workspaceChain)
         .mockReturnValueOnce(channelChain)
@@ -90,7 +103,9 @@ describe("admin routes", () => {
     it("returns 500 on error", async () => {
       const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
       const from = vi.fn(() => ({
-        select: vi.fn(() => { throw new Error("DB fail"); }),
+        select: vi.fn(() => {
+          throw new Error("DB fail");
+        }),
       }));
       (getSupabaseAdmin as any).mockReturnValue({ from });
 
@@ -108,7 +123,11 @@ describe("admin routes", () => {
   describe("GET /users", () => {
     it("lists users with pagination", async () => {
       const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
-      const chain = createChain({ data: [{ id: "u1", email: "a@b.com", display_name: "Alice" }], count: 1, error: null });
+      const chain = createChain({
+        data: [{ id: "u1", email: "a@b.com", display_name: "Alice" }],
+        count: 1,
+        error: null,
+      });
       (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
 
       const handler = findHandler("get", "/users");
@@ -138,14 +157,16 @@ describe("admin routes", () => {
 
       await handler(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ page: 0 }),
-      );
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ page: 0 }));
     });
 
     it("searches users by query", async () => {
       const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
-      const chain = createChain({ data: [{ id: "u2", email: "b@c.com", display_name: "Bob" }], count: 1, error: null });
+      const chain = createChain({
+        data: [{ id: "u2", email: "b@c.com", display_name: "Bob" }],
+        count: 1,
+        error: null,
+      });
       (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
 
       const handler = findHandler("get", "/users");
@@ -242,53 +263,59 @@ describe("admin routes", () => {
   });
 
   describe("GET /system", () => {
-  it("returns system info with db status", async () => {
-    const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
-    const chain = createChain({ count: 5, error: null });
-    (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
+    it("returns system info with db status", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const chain = createChain({ count: 5, error: null });
+      (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
 
-    const handler = findHandler("get", "/system");
-    const req = mockReq();
-    const res = mockRes();
+      const handler = findHandler("get", "/system");
+      const req = mockReq();
+      const res = mockRes();
 
-    await handler(req, res);
+      await handler(req, res);
 
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        version: expect.any(String),
-        environment: expect.any(String),
-        uptime_seconds: expect.any(Number),
-        database: "connected",
-        db_latency_ms: expect.any(Number),
-        timestamp: expect.any(String),
-      }),
-    );
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          version: expect.any(String),
+          environment: expect.any(String),
+          uptime_seconds: expect.any(Number),
+          database: "connected",
+          db_latency_ms: expect.any(Number),
+          timestamp: expect.any(String),
+        }),
+      );
+    });
+
+    it("reports db unreachable on error", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const chain = createChain({ count: null, error: new Error("DB down") });
+      (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
+
+      const handler = findHandler("get", "/system");
+      const req = mockReq();
+      const res = mockRes();
+
+      await handler(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          database: "unreachable",
+        }),
+      );
+    });
   });
 
-  it("reports db unreachable on error", async () => {
-    const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
-    const chain = createChain({ count: null, error: new Error("DB down") });
-    (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
-
-    const handler = findHandler("get", "/system");
-    const req = mockReq();
-    const res = mockRes();
-
-    await handler(req, res);
-
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        database: "unreachable",
-      }),
-    );
-  });
-});
-
-describe("GET /integrations", () => {
+  describe("GET /integrations", () => {
     it("lists integrations", async () => {
       const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
       const chain = createChain({
-        data: [{ id: "wh1", url: "https://hook.example.com", workspaces: { name: "Team", slug: "team" } }],
+        data: [
+          {
+            id: "wh1",
+            url: "https://hook.example.com",
+            workspaces: { name: "Team", slug: "team" },
+          },
+        ],
         error: null,
       });
       (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
