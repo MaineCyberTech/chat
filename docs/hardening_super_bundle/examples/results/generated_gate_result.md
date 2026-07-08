@@ -4,6 +4,6 @@
 - Decision: **GO WITH RISKS**
 - P0: **0**
 - P1: **0**
-- Average readiness: **70.18**
+- Average readiness: **73.39**
 
 ## Gate Status: PASS

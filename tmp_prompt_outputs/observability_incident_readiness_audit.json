@@ -12,14 +12,14 @@
   },
   "category_scores": {
     "structured_logging": 90,
-    "distributed_tracing": 35,
+    "distributed_tracing": 65,
     "health_checks": 85,
     "metrics": 80,
-    "alerting": 20,
-    "incident_response": 40,
+    "alerting": 60,
+    "incident_response": 60,
     "audit_logging": 85
   },
-  "readiness": 62,
+  "readiness": 75.0,
   "findings": [
     {
       "severity": "P2",

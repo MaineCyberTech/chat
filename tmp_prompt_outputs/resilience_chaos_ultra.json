@@ -16,10 +16,10 @@
     "idempotency": 75,
     "timeout_handling": 85,
     "graceful_degradation": 70,
-    "bulkhead_isolation": 45,
-    "chaos_testing": 10
+    "bulkhead_isolation": 55,
+    "chaos_testing": 55
   },
-  "readiness": 64,
+  "readiness": 72.14,
   "findings": [
     {
       "severity": "P2",

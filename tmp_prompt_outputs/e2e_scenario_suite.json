@@ -4,7 +4,7 @@
   "stage": "quality_confirmation",
   "decision": "GO WITH RISKS",
   "generated_at": "2026-07-07T12:00:00Z",
-  "readiness": 71.2,
+  "readiness": 71.78,
   "severity_counts": {
     "P0": 0,
     "P1": 0,
@@ -16,11 +16,11 @@
     "middleware_tests": 90,
     "api_tests": 88,
     "component_tests": 85,
-    "e2e_coverage": 50,
+    "e2e_coverage": 60,
     "load_testing": 60,
-    "integration_tests": 10,
+    "integration_tests": 55,
     "visual_regression": 55,
-    "test_ci_integration": 45
+    "test_ci_integration": 65
   },
   "findings": [
     {

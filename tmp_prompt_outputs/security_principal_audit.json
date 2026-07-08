@@ -12,7 +12,7 @@
   },
   "category_scores": {
     "authentication": 90,
-    "authorization": 45,
+    "authorization": 65,
     "secret_handling": 55,
     "cors_csrf": 80,
     "input_validation": 85,
@@ -20,10 +20,10 @@
     "logging_audit": 85,
     "rate_limiting": 85,
     "cross_tenant_isolation": 70,
-    "admin_surface": 20,
+    "admin_surface": 65,
     "auth": 98
   },
-  "readiness": 78,
+  "readiness": 78.91,
   "findings": [
     {
       "severity": "P2",

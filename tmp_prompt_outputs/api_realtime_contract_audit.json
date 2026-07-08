@@ -15,14 +15,14 @@
     "validation": 80,
     "error_handling": 70,
     "idempotency": 40,
-    "realtime": 45,
+    "realtime": 75,
     "security_middleware": 75,
     "pagination": 65,
     "response_consistency": 55,
     "performance": 70,
     "contract_drift": 60
   },
-  "readiness": 64.5,
+  "readiness": 67.5,
   "findings": [
     {
       "severity": "P2",

@@ -14,11 +14,11 @@
     "rbac": 85,
     "permission_enforcement": 75,
     "audit_logging": 80,
-    "policy_tiers": 40,
-    "hotfix_governance": 30,
+    "policy_tiers": 55,
+    "hotfix_governance": 65,
     "admin_access_control": 50
   },
-  "readiness": 60,
+  "readiness": 68.33,
   "findings": [
     {
       "severity": "P2",

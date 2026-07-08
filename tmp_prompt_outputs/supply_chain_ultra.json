@@ -4,7 +4,7 @@
   "stage": "quality_confirmation",
   "decision": "GO WITH RISKS",
   "generated_at": "2026-07-07T12:00:00Z",
-  "readiness": 81.5,
+  "readiness": 78.9,
   "severity_counts": {
     "P0": 0,
     "P1": 0,
@@ -17,8 +17,8 @@
     "trivy_fs_scan": 85,
     "trivy_image_scan": 80,
     "sbom": 80,
-    "image_signatures": 30,
-    "supply_chain_levels": 20,
+    "image_signatures": 55,
+    "supply_chain_levels": 60,
     "peer_deps": 90,
     "docker_hygiene": 72,
     "npm_audit": 85

@@ -38,6 +38,14 @@ fixed_patterns = [
     "Majority of E2E test scenarios are skipped",
     "CI E2E job has no Supabase local instance",
     "Raw CSS variables used inline instead of Tailwind classes",
+    "No failure injection testing",
+    "No cross-service integration tests",
+    "No PagerDuty",
+    "Admin UI is minimal",
+    "No image signing",
+    "No hotfix process",
+    "No tracing",
+    "Socket.io reconnection edge cases",
 ]
 
 outputs_dir = Path("tmp_prompt_outputs")
