@@ -72,6 +72,8 @@ export const MessageItem = React.memo(function MessageItem({
   onMessageTouchStart,
   onMessageTouchEnd,
   onMessageTouchMove,
+  sendErrors,
+  onRetry,
 }: {
   msg: MessageMeta;
   currentUserId?: string;
@@ -100,11 +102,15 @@ export const MessageItem = React.memo(function MessageItem({
   onMessageTouchStart: (e: React.TouchEvent, msg: Message) => void;
   onMessageTouchEnd: () => void;
   onMessageTouchMove: () => void;
+  sendErrors?: Map<string, string>;
+  onRetry?: (messageId: string) => void;
 }) {
   const isOwn = msg.user_id === currentUserId;
   const isFlagged = flaggedMessages?.has(msg.id) ?? false;
   const showDate = msg.showDate ?? false;
   const showAuthor = msg.isGroupStart ?? true;
+  const sendError = sendErrors?.get(msg.id);
+  const isFailed = !!sendError;
   const name = authorName(msg.user_id, profiles);
   const avatar = avatarUrl(msg.user_id, profiles);
   const reactionBtnRef = useRef<HTMLButtonElement>(null);
@@ -375,13 +381,34 @@ export const MessageItem = React.memo(function MessageItem({
                       (edited)
                     </p>
                   )}
-                  {sendingIds?.has(msg.id) && (
+                  {sendingIds?.has(msg.id) && !isFailed && (
                     <p
                       className="mt-0.5 text-xs italic"
                       style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
                     >
                       sending...
                     </p>
+                  )}
+                  {isFailed && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <span
+                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium"
+                        style={{ background: "rgba(var(--error-text-rgb), 0.1)", color: "var(--error-text)" }}
+                        role="alert"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        {sendError}
+                      </span>
+                      {onRetry && (
+                        <button
+                          onClick={() => onRetry(msg.id)}
+                          className="text-xs font-medium underline"
+                          style={{ color: "var(--button-bg)" }}
+                        >
+                          Retry
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 

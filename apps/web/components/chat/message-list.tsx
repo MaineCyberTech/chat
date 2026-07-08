@@ -29,6 +29,8 @@ interface Props {
   sendingIds?: Set<string>;
   flaggedMessages?: Set<string>;
   onToggleFlag?: (messageId: string, flagged: boolean) => void;
+  sendErrors?: Map<string, string>;
+  onRetry?: (messageId: string) => void;
 }
 
 export function MessageList({
@@ -44,6 +46,8 @@ export function MessageList({
   loadingOlder,
   replyCounts,
   sendingIds,
+  sendErrors,
+  onRetry,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -413,6 +417,8 @@ export function MessageList({
             onToggleFlag={toggleFlag}
             onSetPickerMessageId={setPickerMessageId}
             onSetDeleteConfirmId={handleSetDeleteConfirmId}
+            sendErrors={sendErrors}
+            onRetry={onRetry}
           />
         ))}
         <div ref={bottomRef} />

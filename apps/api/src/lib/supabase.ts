@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Env } from "../config/env.js";
+import { logger } from "./logger.js";
 
 const FETCH_TIMEOUT = 15_000;
 
@@ -32,12 +33,16 @@ export function initSupabase(env: Env) {
     global: { fetch: createFetchWithTimeout(FETCH_TIMEOUT) },
   });
 
+  let connectionCount = 1;
   if (env.SUPABASE_SERVICE_ROLE_KEY) {
     adminClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
       global: { fetch: createFetchWithTimeout(FETCH_TIMEOUT) },
     });
+    connectionCount++;
   }
+
+  logger.info("Supabase clients initialized", { connectionCount, url: env.SUPABASE_URL });
 
   return anonClient;
 }

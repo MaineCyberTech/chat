@@ -5,6 +5,7 @@ import express, {
   type NextFunction,
   type ErrorRequestHandler,
 } from "express";
+import compression from "compression";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -14,6 +15,7 @@ import { errorHandler } from "./middleware/error-handler.js";
 import { apiLimiter } from "./middleware/rate-limit.js";
 import { securityHeaders } from "./middleware/security-headers.js";
 import { doubleSubmitCookieCsrf } from "./middleware/csrf.js";
+import { requestTimeout } from "./middleware/request-timeout.js";
 import { register, httpRequestsTotal, httpRequestDuration } from "./lib/metrics.js";
 import { sentryErrorMiddleware } from "./lib/sentry.js";
 import { authenticate } from "./middleware/authenticate.js";
@@ -42,6 +44,7 @@ export function createApp(frontendUrl: string): Express {
 
   app.set("trust proxy", 1);
 
+  app.use(compression());
   app.use(
     cors({
       origin: (origin, callback) => {
@@ -65,6 +68,7 @@ export function createApp(frontendUrl: string): Express {
   app.use(apiLimiter);
   app.use(metricsMiddleware);
   app.use(deprecationMiddleware);
+  app.use(requestTimeout(30000));
 
   for (const { path, router } of routeRegistry) {
     app.use(path, router);

@@ -2,6 +2,34 @@
 
 This runbook covers creating, testing, applying, and rolling back database migrations.
 
+## Naming Rules
+
+All migration files MUST follow these naming rules:
+
+| Rule          | Requirement                                                              |
+| ------------- | ------------------------------------------------------------------------ |
+| **Format**    | `packages/db/sql/migrations/`: `00X_description.sql`                     |
+|               | `supabase/migrations/`: `YYYYMMDDHHMMSS_description.sql`                 |
+| **No spaces** | Use underscores (`_`) between words — never spaces or hyphens            |
+| **Lowercase** | All lowercase except the timestamp portion                               |
+| **Descriptive** | Use a brief, kebab-case description of the change (e.g., `add_user_preferences`, `create_audit_logs`) |
+| **Unique**    | No two migrations can have the same timestamp or sequence number         |
+
+### Good Examples
+
+```
+packages/db/sql/migrations/007_add_user_preferences.sql
+supabase/migrations/20260707120000_create_audit_logs.sql
+```
+
+### Bad Examples
+
+```
+packages/db/sql/migrations/007-My-Change.sql          # hyphens + mixed case
+supabase/migrations/20260707120000.sql                 # missing description
+supabase/migrations/20260707 120000 create table.sql   # spaces in name
+```
+
 ## Migration Structure
 
 ### Dual Migration Directories

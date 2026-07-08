@@ -4,11 +4,21 @@ import { requireChannelAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { getSupabase } from "../../lib/supabase.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { InternalServerError, ConflictError } from "../../lib/app-error.js";
+import { BadRequestError, InternalServerError, ConflictError } from "../../lib/app-error.js";
 import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
+import { notificationService } from "./service.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
+
+// List notifications with pagination
+router.get("/notifications", asyncHandler(async (req, res) => {
+  const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 20, 1), 100);
+  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  const workspaceId = req.query.workspace_id as string | undefined;
+  const notifications = await notificationService.list(req.userId!, workspaceId, limit, offset);
+  res.json({ notifications, limit, offset });
+}));
 
 // Get notification preference for a channel
 router.get(

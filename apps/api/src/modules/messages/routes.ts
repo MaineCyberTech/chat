@@ -37,13 +37,15 @@ router.get("/messages/search", responseCache(30), asyncHandler(async (req, res) 
   if (!req.supabase) {
     throw new InternalServerError("Auth context missing");
   }
+  // Sanitize search query: strip HTML tags and enforce 200 char limit
+  const sanitizedQuery = parsed.data.q.replace(/<[^>]*>/g, "").slice(0, 200);
   const channelIds = parsed.data.channel_ids
     ? parsed.data.channel_ids.split(",").filter(Boolean)
     : null;
   const resultLimit = 20;
   const { data, error } = await req.supabase.rpc("search_messages", {
     workspace_id: parsed.data.workspace_id,
-    query_text: parsed.data.q,
+    query_text: sanitizedQuery,
     result_limit: resultLimit,
     date_from: parsed.data.date_from ?? null,
     date_to: parsed.data.date_to ?? null,

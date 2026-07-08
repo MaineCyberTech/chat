@@ -90,6 +90,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     deduplicateEcho,
     updateItem,
     removeItem,
+    errors: sendErrors,
   } = useOptimistic<Message>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -364,9 +365,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         archived_at: null,
         created_at: new Date().toISOString(),
       };
-      applyOptimistic(tempId, optimistic, () => {
-        setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      });
+      applyOptimistic(tempId, optimistic, () => {});
 
       try {
         const res = await api.post<{ message: { id: string } }>(`/channels/${channelId}/messages`, {
@@ -402,6 +401,16 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
   const handleDelete = useCallback(async (messageId: string) => {
     await api.delete(`/messages/${messageId}`);
   }, []);
+
+  const handleRetry = useCallback(
+    async (messageId: string) => {
+      const msg = messages.find((m) => m.id === messageId);
+      if (!msg) return;
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      await handleSend(msg.content, msg.priority ?? "standard");
+    },
+    [messages, handleSend],
+  );
 
   const handleFileUpload = useCallback(
     async (file: File) => {
@@ -706,6 +715,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               sendingIds={
                 new Set(messages.filter((m) => m.id.startsWith("temp_")).map((m) => m.id))
               }
+              sendErrors={sendErrors}
+              onRetry={handleRetry}
             />
           </div>
 

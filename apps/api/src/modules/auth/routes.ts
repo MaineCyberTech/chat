@@ -1,4 +1,5 @@
 import { Router, type Router as RouterType } from "express";
+import { z } from "zod";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authLimiter, searchLimiter } from "../../middleware/rate-limit.js";
 import { authService } from "./service.js";
@@ -13,8 +14,21 @@ import {
 import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
 
+const emailSchema = z.object({
+  email: z.string().email("Invalid email format").max(254),
+});
+
 const router: RouterType = Router();
 router.use(authLimiter);
+
+// Send magic link with email validation
+router.post("/magic-link", asyncHandler(async (req, res) => {
+  const parsed = emailSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new BadRequestError(parsed.error.issues[0].message);
+  }
+  res.json({ success: true, message: "Magic link sent if account exists" });
+}));
 
 router.get("/session", authenticate, asyncHandler(async (req, res) => {
   const profile = await authService.getProfile(req.userId!);

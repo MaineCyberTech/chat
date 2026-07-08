@@ -18,6 +18,9 @@ export const apiLimiter = rateLimit({
   handler: (req, res, next, options) => {
     const userId = (req as { userId?: string }).userId;
     logger.warn("Rate limit hit", { ip: req.ip, userId, path: req.path });
+    res.setHeader("RateLimit-Limit", String(options.max));
+    res.setHeader("RateLimit-Remaining", "0");
+    res.setHeader("RateLimit-Reset", String(Math.ceil(Date.now() / 1000) + options.windowMs / 1000));
     res.status(options.statusCode).json(options.message);
   },
 });

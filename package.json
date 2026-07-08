@@ -53,7 +53,7 @@
   "lint-staged": {
     "*.{ts,tsx}": [
       "prettier --write",
-      "eslint --fix --max-warnings 100"
+      "eslint --fix --max-warnings 10"
     ],
     "*.{js,mjs,cjs,json,md}": [
       "prettier --write"

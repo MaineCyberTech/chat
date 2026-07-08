@@ -1,2 +1,19 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Check for files larger than 5MB
+echo "Checking for large files (>5MB)..."
+large_files=$(git diff --cached --name-only --diff-filter=ACM | while read -r file; do
+  if [ -f "$file" ] && [ "$(stat -c%s "$file" 2>/dev/null || echo 0)" -gt 5242880 ] 2>/dev/null; then
+    echo "$file"
+  fi
+done)
+if [ -n "$large_files" ]; then
+  echo "ERROR: The following files exceed 5MB and cannot be committed:"
+  echo "$large_files"
+  echo "Please remove them or use Git LFS."
+  exit 1
+fi
+
 npx lint-staged
 exec npx --yes turbo typecheck --affected --continue
