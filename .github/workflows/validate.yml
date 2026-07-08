@@ -339,6 +339,19 @@ jobs:
             echo "No SQL tests found, skipping"
           fi
 
+      - name: Test migration rollback
+        run: |
+          # Verify down scripts exist for all migrations
+          for f in supabase/migrations/*.sql; do
+            base=$(basename "$f" .sql)
+            down="supabase/rollback/${base}_down.sql"
+            if [ ! -f "$down" ]; then
+              echo "ERROR: Missing rollback for $base"
+              exit 1
+            fi
+            echo "✅ $base has rollback"
+          done
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10

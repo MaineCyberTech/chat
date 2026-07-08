@@ -370,6 +370,11 @@ export default function SettingsPage() {
               <option value="subtle">Subtle</option>
               <option value="standard">Standard</option>
               <option value="urgent">Urgent</option>
+              <option value="chime">Chime</option>
+              <option value="bell">Bell</option>
+              <option value="ding">Ding</option>
+              <option value="pop">Pop</option>
+              <option value="tri-tone">Tri-tone</option>
             </select>
           </div>
           <div>
