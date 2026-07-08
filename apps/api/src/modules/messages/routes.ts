@@ -268,8 +268,10 @@ router.delete(
 
 // Get flagged messages
 router.get("/messages/flagged", responseCache(15), asyncHandler(async (req, res) => {
-  const messages = await messageService.getFlagged(req.userId!, req.supabase!);
-  res.json({ messages });
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+  const offset = parseInt(req.query.offset as string) || 0;
+  const { messages, total } = await messageService.getFlagged(req.userId!, req.supabase!, limit, offset);
+  res.json({ messages, total, limit, offset });
 }));
 
 // Forward message to another channel

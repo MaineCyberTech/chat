@@ -278,14 +278,22 @@ export class MessageService {
     return !error;
   }
 
-  async getFlagged(userId: string, supabase: SupabaseClient): Promise<Message[]> {
+  async getFlagged(userId: string, supabase: SupabaseClient, limit = 50, offset = 0): Promise<{ messages: Message[]; total: number }> {
+    const countQuery = await queryWithTimeout(supabase
+      .from("message_flags")
+      .select("message_id", { count: "exact", head: true })
+      .eq("user_id", userId));
+
+    const total = (countQuery as unknown as { count: number | null }).count ?? 0;
+
     const { data } = await queryWithTimeout(supabase
       .from("message_flags")
       .select("message_id")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false }));
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1));
 
-    if (!data || data.length === 0) return [];
+    if (!data || data.length === 0) return { messages: [], total };
 
     const messageIds = data.map((f: { message_id: string }) => f.message_id);
     const { data: messages } = await queryWithTimeout(supabase
@@ -294,7 +302,7 @@ export class MessageService {
       .in("id", messageIds)
       .order("created_at", { ascending: false }));
 
-    return (messages ?? []) as unknown as Message[];
+    return { messages: (messages ?? []) as unknown as Message[], total };
   }
 
   async getEditHistory(messageId: string, supabase: SupabaseClient) {

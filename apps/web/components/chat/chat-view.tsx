@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { getSocket, onReconnect, offReconnect } from "@/lib/socket";
+import { getSocket, disconnectSocket, onReconnect, offReconnect } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
 import { useOptimistic } from "@/lib/optimistic/use-optimistic";
@@ -34,16 +34,37 @@ function ConnectionBanner() {
   const [status, setStatus] = useState<"connected" | "disconnected" | "reconnecting">("connected");
 
   useEffect(() => {
+    let reconnectTimer: ReturnType<typeof setInterval> | undefined;
+    let mounted = true;
+
     getSocket()
       .then((s) => {
-        s.on("disconnect", () => setStatus("disconnected"));
-        s.on("connect", () => setStatus("connected"));
+        s.on("disconnect", () => {
+          if (!mounted) return;
+          setStatus("disconnected");
+          // Fallback: retry connection every 5s if socket.io auto-reconnect stalls
+          reconnectTimer = setInterval(() => {
+            if (!mounted) return;
+            getSocket()
+              .then(() => setStatus("connected"))
+              .catch(() => {});
+          }, 5000);
+        });
+        s.on("connect", () => {
+          setStatus("connected");
+          if (reconnectTimer) {
+            clearInterval(reconnectTimer);
+            reconnectTimer = undefined;
+          }
+        });
         s.on("reconnect_attempt", () => setStatus("reconnecting"));
         s.io.on("reconnect_error", () => setStatus("disconnected"));
       })
       .catch(() => console.warn("Failed to get socket for connection status"));
 
     return () => {
+      mounted = false;
+      if (reconnectTimer) clearInterval(reconnectTimer);
       getSocket()
         .then((s) => {
           s.off("disconnect");

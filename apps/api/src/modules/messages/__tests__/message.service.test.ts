@@ -141,4 +141,38 @@ describe("MessageService", () => {
     const result = await service.remove("m1");
     expect(result).toEqual({ channel_id: "ch-1" });
   });
+
+  it("returns empty flagged results when user has no flags", async () => {
+    const emptySupabase = {
+      from: vi.fn(() => ({
+        select: vi.fn((_columns?: string, opts?: { count?: "exact" }) => {
+          if (opts?.count === "exact") {
+            return {
+              eq: vi.fn(() => ({
+                data: null,
+                error: null,
+                count: 0,
+              })),
+            };
+          }
+          return {
+            eq: vi.fn(() => ({
+              order: vi.fn(() => ({
+                range: vi.fn(() => ({
+                  data: [],
+                  error: null,
+                })),
+                data: [],
+                error: null,
+              })),
+            })),
+          };
+        }),
+      })),
+    } as never;
+
+    const result = await service.getFlagged("u-empty", emptySupabase);
+    expect(result.messages).toHaveLength(0);
+    expect(result.total).toBe(0);
+  });
 });
