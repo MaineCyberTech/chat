@@ -42,3 +42,12 @@ export const searchLimiter = rateLimit({
   message: { error: { code: "RATE_LIMITED", message: "Too many search requests" } },
   keyGenerator: compositeKey,
 });
+
+export const magicLinkLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: "RATE_LIMITED", message: "Too many magic link requests. Please wait before requesting another." } },
+  keyGenerator: (req) => req.ip ?? "unknown",
+});

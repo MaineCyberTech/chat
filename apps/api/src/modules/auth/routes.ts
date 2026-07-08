@@ -1,7 +1,7 @@
 import { Router, type Router as RouterType } from "express";
 import { z } from "zod";
 import { authenticate } from "../../middleware/authenticate.js";
-import { authLimiter, searchLimiter } from "../../middleware/rate-limit.js";
+import { authLimiter, searchLimiter, magicLinkLimiter } from "../../middleware/rate-limit.js";
 import { authService } from "./service.js";
 import { getOnlineUsers } from "../../lib/socket.js";
 import { getSupabaseAdmin } from "../../lib/supabase.js";
@@ -22,7 +22,7 @@ const router: RouterType = Router();
 router.use(authLimiter);
 
 // Send magic link with email validation
-router.post("/magic-link", asyncHandler(async (req, res) => {
+router.post("/magic-link", magicLinkLimiter, asyncHandler(async (req, res) => {
   const parsed = emailSchema.safeParse(req.body);
   if (!parsed.success) {
     throw new BadRequestError(parsed.error.issues[0].message);

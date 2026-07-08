@@ -43,6 +43,9 @@ router.get("/messages/search", responseCache(30), asyncHandler(async (req, res) 
     ? parsed.data.channel_ids.split(",").filter(Boolean)
     : null;
   const resultLimit = parsed.data.limit;
+  // Current search is tsvector-based on message content only.
+  // File content search (e.g., PDFs, documents) could be added via pgvector
+  // embeddings or an external search index like Elasticsearch/MeiliSearch.
   const { data, error } = await req.supabase.rpc("search_messages", {
     workspace_id: parsed.data.workspace_id,
     query_text: sanitizedQuery,

@@ -29,14 +29,16 @@ router.use(authenticate);
 
 router.get("/", responseCache(30), asyncHandler(async (req, res) => {
   logger.info("GET /v1/workspaces", { userId: req.userId });
-  const workspaces = await workspaceService.listByUser(req.supabase);
-  logger.info("Workspaces list result", { userId: req.userId, count: workspaces.length });
-  res.json({ workspaces });
+  const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 20, 1), 50);
+  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  const { workspaces, total } = await workspaceService.listByUser(req.supabase, limit, offset);
+  logger.info("Workspaces list result", { userId: req.userId, count: workspaces.length, total });
+  res.json({ workspaces, pagination: { limit, offset, total } });
 }));
 
 // Consolidated bootstrap endpoint: returns workspaces with their channels in one call
 router.get("/bootstrap", responseCache(30), asyncHandler(async (req, res) => {
-  const workspaces = await workspaceService.listByUser(req.supabase);
+  const { workspaces } = await workspaceService.listByUser(req.supabase);
   const workspaceChannels = await Promise.all(
     workspaces.map(async (ws) => {
       const channels = await channelService.listByWorkspace(ws.id);

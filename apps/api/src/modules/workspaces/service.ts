@@ -21,15 +21,26 @@ export class WorkspaceService {
   // Returns all workspaces accessible to the current authenticated user.
   // Filtering is enforced by Row-Level Security (RLS) policies on the workspaces table,
   // which restrict results to workspaces where the user is a member.
-  async listByUser(supabase?: SupabaseClient): Promise<Workspace[]> {
+  async listByUser(
+    supabase?: SupabaseClient,
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<{ workspaces: Workspace[]; total: number }> {
     const client = this.getClient(supabase);
+
+    const countQuery = await client
+      .from("workspaces")
+      .select("*", { count: "exact", head: true });
+    const total = countQuery.count ?? 0;
+
     const { data, error } = await client
       .from("workspaces")
       .select("id, name, slug, owner_id, created_at, updated_at, deleted_at")
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .range(offset, offset + limit - 1);
 
-    if (error) return [];
-    return (data ?? []) as unknown as Workspace[];
+    if (error) return { workspaces: [], total };
+    return { workspaces: (data ?? []) as unknown as Workspace[], total };
   }
 
   async getById(workspaceId: string, supabase?: SupabaseClient): Promise<Workspace | null> {

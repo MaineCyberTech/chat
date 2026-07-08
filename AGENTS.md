@@ -1,5 +1,12 @@
 # AGENTS.md — Architecture & Implementation Status
 
+## Current State (July 7, 2026)
+
+- **All P0/P1 findings resolved** — 0 P0, 0 P1 across all audit/hardening pipelines
+- **P2/P3 findings**: 5 remaining (down from 117) — all from Frontend Release Gate (9 items → 4 remaining after raw opacity values and skeleton loading fixes)
+- **Deployment**: Development at chat.mainecybertech.us, Production at chat.mainecybertech.com — both healthy
+- **Recent major changes** (July 7): Workspace list pagination with limit/offset, magic link rate limiting (3/min/IP), worker `/healthz` endpoint, channel slug validation, workspace creation limit tests, file content search documentation comment, all TypeScript typechecks passing
+
 ## Architecture Overview
 
 ```
@@ -367,6 +374,7 @@ Detailed change logs for all completed work can be found in the git history:
 - **Round 2 Hardening Fixes (June 30-July 1)** — CSP removal of unsafe-inline/eval, test creds removal, query length guard, console.error→logger, rate limit logging, socket auth logging, config throw, pnpm audit threshold, --force-recreate, consent routes TS fix
 - **Full Comparative Audit Quick Wins (July 7)** — 8 quick wins applied: down migration script for performance indexes, AGENTS.md updated with audit findings, CI/CD consolidation (e2e-daily merged into ci.yml), structured error subclasses (BadRequestError, UnauthorizedError, etc.), test coverage for AppError + OpenAPI routes, centralized route registry (route-registry.ts), data retention enforcement job processor, LinkPreview component for URL unfurling
 - **Phase 2 Alignment Work (July 7)** — Deploy fix (removed hard API dependency from web container, added container log capture on startup failure), admin health/system endpoint (GET /admin/system with version/uptime/DB status), i18n infrastructure expansion (extraction script, pluralization support, locale metadata, formatDate/formatNumber utilities), TypeScript build error fixes (logger arg order), prettier formatting fixes
+- **P2/P3 Finding Fixes (July 7)** — Workspace list pagination with limit/offset (P2), magic link rate limiting at 3/min/IP (P2), channel slug validation (P3), workspace creation limit unit test (P3), file content search documentation comment (P3), worker `/healthz` endpoint confirmed existing (P3)
 
 Run `git log --oneline --since="2026-06-20"` for the full commit history or see `CHANGELOG.md`.
  

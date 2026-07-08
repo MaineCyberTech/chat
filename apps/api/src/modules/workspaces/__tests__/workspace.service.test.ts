@@ -107,9 +107,10 @@ describe("WorkspaceService", () => {
   });
 
   it("lists workspaces for a user", async () => {
-    const list = await service.listByUser();
-    expect(list).toHaveLength(1);
-    expect(list[0].slug).toBe("test");
+    const { workspaces, total } = await service.listByUser();
+    expect(workspaces).toHaveLength(1);
+    expect(total).toBe(1);
+    expect(workspaces[0].slug).toBe("test");
   });
 
   it("gets a workspace by id", async () => {
@@ -154,5 +155,27 @@ describe("WorkspaceService", () => {
   it("updates a member role", async () => {
     const result = await service.updateMemberRole("ws-1", "u2", "admin");
     expect(result).toBe(true);
+  });
+
+  it("rejects workspace creation when limit reached", async () => {
+    vi.mocked(await import("../../../lib/supabase.js").then(m => m.getSupabaseAdmin)).mockReturnValue({
+      from: vi.fn(() => ({
+        select: vi.fn((_cols: string, opts?: { count?: string; head?: boolean }) => {
+          if (opts?.count === "exact") {
+            return { eq: vi.fn(() => ({ data: null, count: 10, error: null })) };
+          }
+          return {
+            order: vi.fn(() => ({ data: [], error: null })),
+            eq: vi.fn(() => ({ single: vi.fn(() => ({ data: null, error: null })) })),
+          };
+        }),
+        insert: vi.fn(() => ({
+          select: vi.fn(() => ({ single: vi.fn(() => ({ data: null, error: null })) })),
+        })),
+      })),
+    } as any);
+
+    const ws = await service.create({ name: "Too Many", owner_id: "u1" });
+    expect(ws).toBeNull();
   });
 });
