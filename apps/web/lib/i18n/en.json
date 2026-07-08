@@ -1,83 +1,320 @@
 {
-  "": {
-    "": "TODO: ."
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "close": "Close",
+    "search": "Search",
+    "back": "Back",
+    "retry": "Retry",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "submit": "Submit",
+    "continue": "Continue",
+    "create": "Create",
+    "edit": "Edit",
+    "remove": "Remove",
+    "copy": "Copy",
+    "name": "Name",
+    "description": "Description",
+    "email": "Email address",
+    "password": "Password",
+    "or": "or",
+    "and": "and",
+    "none": "None",
+    "all": "All",
+    "noResults": "No results found",
+    "noData": "No data available"
   },
-  "calls api": {
-    "get with correct room parameter": "TODO: calls api.get with correct room parameter"
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "sendMagicLink": "Send magic link",
+    "checkEmail": "Check your email for the magic link",
+    "signInWithGoogle": "Sign in with Google",
+    "signInWithGithub": "Sign in with GitHub",
+    "emailPlaceholder": "Enter your email address",
+    "invalidEmail": "Please enter a valid email address",
+    "sessionExpired": "Session expired. Please sign in again.",
+    "verificationEmailSent": "Verification email sent. Check your inbox.",
+    "resendVerification": "Resend verification email",
+    "backToLogin": "Back to login",
+    "verifyEmailTitle": "Verify your email",
+    "verifyEmailMessage": "We sent a verification link to {email}. Please check your inbox and click the link to verify your account."
   },
-  "calls Sentry": {
-    "captureException when Sentry DSN is set": "TODO: calls Sentry.captureException when Sentry DSN is set"
+  "sidebar": {
+    "channels": "Channels",
+    "directMessages": "Direct Messages",
+    "unreads": "Unreads",
+    "allChannels": "All",
+    "jumpTo": "Jump to...",
+    "invitePeople": "Invite people",
+    "addChannel": "Add channel",
+    "createChannel": "Create channel",
+    "channelName": "Channel name",
+    "addWorkspace": "Add workspace",
+    "workspaceName": "Workspace name",
+    "browseChannels": "Browse channels",
+    "savedMessages": "Saved Messages",
+    "scheduledMessages": "Scheduled",
+    "userGroups": "User Groups",
+    "threads": "Threads",
+    "newDM": "New DM",
+    "newGroup": "New group",
+    "noChannels": "No channels yet",
+    "noDMs": "No direct messages yet",
+    "noWorkspaces": "No workspaces yet"
   },
-  "login-desktop": {
-    "png": "TODO: login-desktop.png"
+  "chat": {
+    "sendMessage": "Write a message...",
+    "replyTo": "Replying to {name}",
+    "editMessage": "Edit message",
+    "editMessagePlaceholder": "Edit your message...",
+    "saveEdit": "Save",
+    "cancelEdit": "Cancel",
+    "deleteMessage": "Delete message?",
+    "deleteMessageConfirm": "This action cannot be undone.",
+    "deleteMessageButton": "Delete",
+    "deleting": "Deleting...",
+    "sending": "sending...",
+    "sendFailed": "Failed to send. Tap to retry.",
+    "messageEdited": "Message edited",
+    "messageDeleted": "Message deleted",
+    "messageCopied": "Message copied",
+    "linkCopied": "Link copied",
+    "jumpToPresent": "Jump to present",
+    "noMessages": "No messages yet. Start the conversation!",
+    "newMessages": "{count} new",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "edited": "(edited)",
+    "reply": "Reply",
+    "replies": "{count} replies",
+    "thread": "Thread",
+    "threadTitle": "Thread",
+    "closeThread": "Close thread",
+    "addReaction": "Add reaction",
+    "saveMessage": "Save message",
+    "unsaveMessage": "Unsave message",
+    "copyText": "Copy text",
+    "copyLink": "Copy link",
+    "remindMe": "Remind me",
+    "pinMessage": "Pin message",
+    "unpinMessage": "Unpin message",
+    "forwardMessage": "Forward message",
+    "markAsUnread": "Mark as unread"
   },
-  "login-mobile": {
-    "png": "TODO: login-mobile.png"
+  "channel": {
+    "info": "Channel Info",
+    "members": "Members",
+    "pinnedMessages": "Pinned Messages",
+    "bookmarks": "Bookmarks",
+    "addBookmark": "Add bookmark",
+    "notificationPreferences": "Notification preferences",
+    "channelName": "Channel name",
+    "channelTopic": "Topic",
+    "channelPurpose": "Purpose",
+    "createChannel": "Create channel",
+    "deleteChannel": "Delete channel?",
+    "deleteChannelConfirm": "This will permanently delete the channel and all its messages.",
+    "leaveChannel": "Leave channel",
+    "joinChannel": "Join channel",
+    "copyChannelLink": "Copy channel link",
+    "copyChannelName": "Copy channel name",
+    "favorite": "Favorite",
+    "unfavorite": "Unfavorite",
+    "mute": "Mute channel",
+    "unmute": "Unmute channel",
+    "markRead": "Mark as read",
+    "moveToCategory": "Move to category",
+    "noChannels": "No channels yet",
+    "noMembers": "No members",
+    "onlineCount": "{count} online",
+    "memberCount": "{count} members"
   },
-  "not-found-desktop": {
-    "png": "TODO: not-found-desktop.png"
+  "search": {
+    "placeholder": "Search {type}...",
+    "messages": "Messages",
+    "files": "Files",
+    "noResults": "No results found",
+    "searching": "Searching...",
+    "filterBy": "Filter by",
+    "dateFrom": "From date",
+    "dateTo": "To date",
+    "author": "Author",
+    "channel": "Channel",
+    "fileType": "File type",
+    "operatorHints": "Search operators",
+    "operatorFrom": "from:username — search by author",
+    "operatorIn": "in:channel — search in channel",
+    "operatorOn": "on:YYYY-MM-DD — search by date",
+    "operatorHas": "has:filetype — filter by extension"
   },
-  "Real-time workspace communication, inspired by the best": {
-    "": "TODO: Real-time workspace communication, inspired by the best."
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "language": "Language",
+    "keyboardShortcuts": "Keyboard Shortcuts",
+    "about": "About",
+    "dangerZone": "Danger Zone",
+    "resetPreferences": "Reset all preferences",
+    "resetConfirm": "Are you sure you want to reset all preferences? This cannot be undone.",
+    "deleteAccount": "Delete account",
+    "deleteAccountConfirm": "Are you sure you want to delete your account? All data will be permanently removed.",
+    "typeToConfirm": "Type DELETE to confirm",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "notificationSound": "Notification sound",
+    "soundNone": "None",
+    "soundSubtle": "Subtle",
+    "soundStandard": "Standard",
+    "soundUrgent": "Urgent",
+    "soundChime": "Chime",
+    "soundBell": "Bell",
+    "soundDing": "Ding",
+    "soundPop": "Pop",
+    "soundTriTone": "Tri-tone",
+    "desktopNotifications": "Desktop notifications",
+    "emailNotifications": "Email notifications",
+    "emailImmediate": "Immediate",
+    "emailDigest": "Daily digest",
+    "emailOff": "Off",
+    "mentionSound": "Mention notification sound",
+    "notifyEveryone": "Notify on @everyone"
   },
-  "Search emojis": {
-    "..": "TODO: Search emojis..."
+  "notifications": {
+    "title": "Notifications",
+    "markRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "No notifications",
+    "mentionNotif": "{name} mentioned you in {channel}",
+    "replyNotif": "{name} replied to your message in {channel}",
+    "reactionNotif": "{name} reacted to your message"
   },
-  "settings-desktop": {
-    "png": "TODO: settings-desktop.png"
+  "status": {
+    "online": "Online",
+    "away": "Away",
+    "doNotDisturb": "Do Not Disturb",
+    "offline": "Offline",
+    "setStatus": "Set status",
+    "clearStatus": "Clear status",
+    "customStatus": "Custom status",
+    "customStatusPlaceholder": "What's on your mind?",
+    "duration30m": "30 minutes",
+    "duration1h": "1 hour",
+    "duration4h": "4 hours",
+    "durationToday": "Until end of day",
+    "durationWeek": "This week"
   },
-  "settings-mobile": {
-    "png": "TODO: settings-mobile.png"
+  "workspace": {
+    "title": "Workspaces",
+    "createWorkspace": "Create workspace",
+    "workspaceName": "Workspace name",
+    "switchWorkspace": "Switch workspace",
+    "inviteMembers": "Invite members",
+    "noWorkspaces": "No workspaces yet",
+    "createFirst": "Create your first workspace to get started"
   },
-  "chat:search-open": {
-    "": "TODO: chat:search-open"
+  "upload": {
+    "dropFiles": "Drop files here",
+    "uploadFile": "Upload file",
+    "uploading": "Uploading...",
+    "uploadComplete": "Upload complete",
+    "uploadFailed": "Upload failed",
+    "fileTooLarge": "File is too large. Maximum size is {maxSize}MB.",
+    "fileTypeNotAllowed": "File type not allowed",
+    "imageUpload": "Image upload",
+    "avatarUpload": "Upload avatar",
+    "avatarChange": "Change avatar",
+    "avatarRemove": "Remove avatar"
   },
-  "@": {
-    "": "TODO: @"
+  "errors": {
+    "generic": "Something went wrong",
+    "genericDescription": "An unexpected error occurred. Please try again.",
+    "tryAgain": "Try Again",
+    "refreshPage": "Refresh Page",
+    "notFound": "Page not found",
+    "notFoundDescription": "The page you're looking for doesn't exist.",
+    "goHome": "Go home",
+    "networkError": "Network error. Please check your connection.",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "forbidden": "You don't have permission to access this resource.",
+    "rateLimited": "Too many requests. Please wait a moment and try again."
   },
-  ",": {
-    "": "TODO: ,"
+  "accessibility": {
+    "skipToContent": "Skip to main content",
+    "toggleSidebar": "Toggle sidebar",
+    "toggleTheme": "Toggle theme",
+    "openSearch": "Open search",
+    "closeDialog": "Close dialog",
+    "newMessages": "New messages in channel",
+    "channelNavigation": "Navigate to channel {name}",
+    "userMenu": "User menu",
+    "notificationMenu": "Notification menu",
+    "messageActions": "Message actions"
   },
-  "code": {
-    "": "TODO: code"
+  "keyboardShortcuts": {
+    "title": "Keyboard Shortcuts",
+    "searchPlaceholder": "Search shortcuts...",
+    "noResults": "No shortcuts match your search",
+    "navigation": "Navigation",
+    "messaging": "Messaging",
+    "formatting": "Formatting",
+    "general": "General",
+    "openSearch": "Open search / command palette",
+    "previousChannel": "Previous channel",
+    "nextChannel": "Next channel",
+    "closeDialog": "Close dialog / cancel reply",
+    "sendMessage": "Send message",
+    "newLine": "New line",
+    "bold": "Bold",
+    "italic": "Italic",
+    "strikethrough": "Strikethrough",
+    "insertLink": "Insert link",
+    "showShortcuts": "Show keyboard shortcuts",
+    "showMarkdownHelp": "Show markdown help"
   },
-  "access_token": {
-    "": "TODO: access_token"
+  "onboarding": {
+    "taskList": "Getting Started",
+    "progress": "{completed} of {total} tasks complete",
+    "joinChannel": "Join a channel",
+    "joinChannelDesc": "Find and join a channel to start collaborating",
+    "sendMessage": "Send your first message",
+    "sendMessageDesc": "Type a message and press Enter to send",
+    "inviteMembers": "Invite team members",
+    "inviteMembersDesc": "Invite others to your workspace",
+    "setProfile": "Set up your profile",
+    "setProfileDesc": "Add your name and profile picture",
+    "configureNotifications": "Configure notifications",
+    "configureNotificationsDesc": "Set your notification preferences"
   },
-  "refresh_token": {
-    "": "TODO: refresh_token"
-  },
-  "Enter URL:": {
-    "": "TODO: Enter URL:"
-  },
-  " ": {
-    "": "TODO:  "
-  },
-  "/": {
-    "": "TODO: /"
-  },
-  "@/lib/socket": {
-    "": "TODO: @/lib/socket"
-  },
-  "chat:open-shortcuts": {
-    "": "TODO: chat:open-shortcuts"
-  },
-  "Send magic link": {
-    "": "TODO: Send magic link"
-  },
-  "Name": {
-    "": "TODO: Name"
-  },
-  "Create": {
-    "": "TODO: Create"
-  },
-  "http://localhost:4000": {
-    "": "TODO: http://localhost:4000"
-  },
-  "http://localhost:3000": {
-    "": "TODO: http://localhost:3000"
-  },
-  "|": {
-    "": "TODO: |"
+  "emoji": {
+    "searchEmojis": "Search emojis...",
+    "noEmojisFound": "No emojis found",
+    "skinTone": "Skin tone",
+    "skinToneDefault": "Default",
+    "skinToneLight": "Light",
+    "skinToneMediumLight": "Medium-Light",
+    "skinToneMedium": "Medium",
+    "skinToneMediumDark": "Medium-Dark",
+    "skinToneDark": "Dark",
+    "recent": "Recently used",
+    "smileys": "Smileys & Emotion",
+    "people": "People & Body",
+    "animals": "Animals & Nature",
+    "food": "Food & Drink",
+    "travel": "Travel & Places",
+    "activities": "Activities",
+    "objects": "Objects",
+    "symbols": "Symbols",
+    "flags": "Flags"
   }
 }

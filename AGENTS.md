@@ -77,7 +77,7 @@ All P0/P1/P2/P3 findings from the audit pipeline have been resolved (0 pending a
 | Drafts auto-save | ✅ Done | localStorage auto-save + restore |
 | Multi-factor authentication | ❌ Not done | No MFA/2FA support |
 | OAuth providers | ✅ Done | Google + GitHub sign-in implemented |
-| Full i18n for all UI strings | ⚠️ Partial | Infrastructure exists, strings not wired |
+| Full i18n for all UI strings | ✅ Done | Comprehensive en.json with 250+ keys across 16 categories, pluralization, date/number formatting |
 | In-app notification sounds (9 options) | ✅ Done | chime, bell, ding, pop, tri-tone added (total 9) |
 | Email verification flow | ✅ Done | Verification page with resend |
 | Bulk import/export | ⚠️ Partial | CSV utility exists, no full feature |
