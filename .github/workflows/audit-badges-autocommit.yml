@@ -13,14 +13,14 @@ jobs:
   badges-autocommit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: python scripts/audits/generate_badges.py --repo-root .
-      - uses: stefanzweifel/git-auto-commit-action@v5
+      - uses: stefanzweifel/git-auto-commit-action@v7.1.0
         with:
           commit_message: "chore(audits): refresh hardening operator edition badges [skip ci]"
           file_pattern: docs/hardening_super_bundle/examples/dashboard/**

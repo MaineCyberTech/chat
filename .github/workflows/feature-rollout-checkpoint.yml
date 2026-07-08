@@ -17,7 +17,7 @@ jobs:
   feature-rollout:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Echo operator next step
         run: |
           echo "Open docs/feature_rollout_operator_pack/runbooks/WAVE_BY_WAVE_GUIDE.md"
