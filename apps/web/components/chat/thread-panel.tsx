@@ -16,6 +16,7 @@ interface Props {
   onEdit?: (messageId: string, content: string) => Promise<void>;
   onDelete?: (messageId: string) => Promise<void>;
   isLoading?: boolean;
+  typingUsers?: string[];
 }
 
 interface ParticipantInfo {
@@ -40,6 +41,7 @@ function avatarUrl(userId: string, profiles: Map<string, UserProfile>): string |
 export function ThreadPanel({
   parentMessage, allMessages, currentUserId, profiles,
   onClose, onSendReply, onEdit, onDelete, isLoading = false,
+  typingUsers,
 }: Props) {
   const [replyContent, setReplyContent] = useState("");
   const [sending, setSending] = useState(false);
@@ -217,6 +219,13 @@ export function ThreadPanel({
         {/* Reply input */}
         <div style={{ borderTop: "var(--border-default)", padding: 12 }}>
           {sendError && <p className="mb-2 text-xs" style={{ color: "var(--error-text)" }} role="alert">{sendError}</p>}
+          {typingUsers && typingUsers.length > 0 && (
+            <p className="mb-1 text-xs" style={{ height: 18, color: "rgba(var(--center-channel-color-rgb), 0.75)" }} role="status" aria-live="polite">
+              {typingUsers.length === 1
+                ? `${typingUsers[0]} is typing...`
+                : `${typingUsers.length} people are typing...`}
+            </p>
+          )}
           <div className="flex gap-2">
             <textarea
               ref={replyRef}

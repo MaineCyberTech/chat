@@ -41,6 +41,12 @@ export default function ChannelPageClient() {
   const fetchingRef = useRef(false);
 
   useEffect(() => {
+    if (channel) {
+      document.title = `${channel.name} - Chat`;
+    }
+  }, [channel]);
+
+  useEffect(() => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     getCachedWorkspaces()

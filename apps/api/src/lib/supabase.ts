@@ -4,6 +4,62 @@ import { logger } from "./logger.js";
 
 const FETCH_TIMEOUT = 15_000;
 
+function wrapBuilder(builder: object, table: string, label: string): object {
+  return new Proxy(builder, {
+    get(target, prop) {
+      const value = Reflect.get(target, prop, target);
+      if (typeof value !== "function") return value;
+      if (prop === "then") {
+        return (onfulfilled: unknown, onrejected: unknown) => {
+          const start = performance.now();
+          const thenFn = (target as PromiseLike<unknown>).then;
+          return thenFn.call(target,
+            (result: unknown) => {
+              const duration = (performance.now() - start).toFixed(1);
+              logger.debug("DB query", { table, label, duration: `${duration}ms`, rows: (result as { data?: unknown[] })?.data?.length ?? 0 });
+              if (typeof onfulfilled === "function") return onfulfilled(result);
+              return result;
+            },
+            (error: Error) => {
+              const duration = (performance.now() - start).toFixed(1);
+              logger.warn("DB query failed", { table, label, duration: `${duration}ms`, error: error?.message });
+              if (typeof onrejected === "function") return onrejected(error);
+              throw error;
+            },
+          );
+        };
+      }
+      return (...args: unknown[]) => {
+        const result = value.apply(target, args);
+        if (result != null && typeof (result as Record<string, unknown>).then === "function") {
+          return wrapBuilder(result as object, table, label);
+        }
+        return result;
+      };
+    },
+  });
+}
+
+function createLoggedClient(url: string, key: string, label: string, opts?: Record<string, unknown>): SupabaseClient {
+  const client = createClient(url, key, {
+    auth: { persistSession: false },
+    global: { fetch: createFetchWithTimeout(FETCH_TIMEOUT) },
+    ...opts,
+  } as never);
+  const handler: ProxyHandler<SupabaseClient> = {
+    get(target, prop, receiver) {
+      if (prop === "from") {
+        return (table: string) => {
+          const builder = Reflect.apply(target.from, target, [table]);
+          return wrapBuilder(builder, table, label);
+        };
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  };
+  return new Proxy(client, handler);
+}
+
 function createFetchWithTimeout(timeoutMs: number): typeof fetch {
   return async (input, init) => {
     const controller = new AbortController();
@@ -28,17 +84,11 @@ export function initSupabase(env: Env) {
   }
   anonUrl = env.SUPABASE_URL;
   anonKey = env.SUPABASE_ANON_KEY;
-  anonClient = createClient(anonUrl, anonKey, {
-    auth: { persistSession: false },
-    global: { fetch: createFetchWithTimeout(FETCH_TIMEOUT) },
-  });
+  anonClient = createLoggedClient(anonUrl, anonKey, "anon");
 
   let connectionCount = 1;
   if (env.SUPABASE_SERVICE_ROLE_KEY) {
-    adminClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false },
-      global: { fetch: createFetchWithTimeout(FETCH_TIMEOUT) },
-    });
+    adminClient = createLoggedClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, "admin");
     connectionCount++;
   }
 
@@ -70,17 +120,15 @@ export function getSupabaseAdmin(): SupabaseClient {
 // Each request should get its own client to avoid session conflicts.
 // Passes the JWT via Authorization header so RLS policies see auth.uid().
 export function getSupabaseForUser(jwt: string): SupabaseClient {
-  if (!anonClient || !anonUrl || !anonKey) {
+  if (!anonUrl || !anonKey) {
     throw new Error("Supabase not initialized. Call initSupabase() first.");
   }
-  return createClient(anonUrl, anonKey, {
+  return createLoggedClient(anonUrl, anonKey, "user", {
     global: {
       headers: {
         Authorization: `Bearer ${jwt}`,
       },
-      fetch: createFetchWithTimeout(FETCH_TIMEOUT),
     },
-    auth: { persistSession: false },
   });
 }
 

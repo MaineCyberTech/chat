@@ -132,6 +132,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: pnpm lint
+      - name: Run lint-staged
+        run: pnpm lint-staged --diff="origin/${{ github.base_ref || 'main' }}...HEAD"
 
   typecheck:
     runs-on: ubuntu-latest
@@ -154,6 +156,46 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
+
+  openapi-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate OpenAPI spec
+        run: |
+          node -e "
+          const fs = require('fs');
+          const specPath = 'docs/api/openapi.json';
+          if (!fs.existsSync(specPath)) {
+            console.error('OpenAPI spec not found at ' + specPath);
+            process.exit(1);
+          }
+          const content = fs.readFileSync(specPath, 'utf8');
+          let spec;
+          try { spec = JSON.parse(content); } catch (e) {
+            console.error('Invalid JSON in OpenAPI spec:', e.message);
+            process.exit(1);
+          }
+          const required = ['openapi', 'info', 'paths'];
+          const missing = required.filter((k) => !spec[k]);
+          if (missing.length) {
+            console.error('Missing required fields:', missing.join(', '));
+            process.exit(1);
+          }
+          if (!spec.info.title || !spec.info.version) {
+            console.error('OpenAPI info must have title and version');
+            process.exit(1);
+          }
+          if (!spec.paths || !Object.keys(spec.paths).length) {
+            console.error('OpenAPI spec must define at least one path');
+            process.exit(1);
+          }
+          console.log('OpenAPI spec is valid');
+          "
 
   security-audit:
     runs-on: ubuntu-latest
@@ -291,7 +333,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [lint, typecheck, test, security-audit, migration-test]
+    needs: [lint, typecheck, test, security-audit, migration-test, openapi-validate]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

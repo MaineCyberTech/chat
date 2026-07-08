@@ -4,10 +4,18 @@ import React, { useState } from "react";
 import { api } from "@/lib/api";
 import { Dialog, Button, Input, useToast } from "@chat/ui";
 
+interface Channel {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 interface Props {
   workspaceId: string;
-  onCreated: () => void;
+  onCreated: (channel: Channel) => void;
 }
+
+const tempId = () => `temp_ch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
   const [open, setOpen] = useState(false);
@@ -25,9 +33,18 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
     setLoading(true);
     setError("");
 
+    const optimistic: Channel = {
+      id: tempId(),
+      name: name.trim(),
+      slug: name.trim().toLowerCase().replace(/\s+/g, "-"),
+    };
+    const originalName = name.trim();
+
+    onCreated(optimistic);
+
     try {
-      await api.post(`/workspaces/${workspaceId}/channels`, {
-        name: name.trim(),
+      const res = await api.post<{ channel: Channel }>(`/workspaces/${workspaceId}/channels`, {
+        name: originalName,
         topic: topic.trim() || undefined,
         is_read_only: isReadOnly,
       });
@@ -36,12 +53,19 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
       setOpen(false);
       addToast({
         title: "Channel created",
-        description: `#${name.trim()} has been created.`,
+        description: `#${originalName} has been created.`,
         variant: "success",
       });
-      onCreated();
+      onCreated(res.channel);
     } catch {
       console.warn("Failed to create channel");
+      setError("Failed to create channel. Please try again.");
+      addToast({
+        title: "Failed to create channel",
+        description: `#${originalName} could not be created.`,
+        variant: "error",
+      });
+    } finally {
       setLoading(false);
     }
   }

@@ -46,6 +46,16 @@ export class WorkspaceService {
 
   async create(input: CreateWorkspaceInput): Promise<Workspace | null> {
     const supabase = getSupabaseAdmin();
+
+    const MAX_WORKSPACES_PER_USER = 10;
+    const { count, error: countError } = await supabase
+      .from("workspaces")
+      .select("*", { count: "exact", head: true })
+      .eq("owner_id", input.owner_id);
+    if (!countError && count !== null && count >= MAX_WORKSPACES_PER_USER) {
+      logger.warn("Workspace limit reached", { ownerId: input.owner_id, count, limit: MAX_WORKSPACES_PER_USER });
+      return null;
+    }
     const slug = input.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")

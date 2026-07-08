@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
-import { Button, SidebarGroup, Skeleton, useToast } from "@chat/ui";
-import { Bell, BellOff } from "lucide-react";
+import { Button, SidebarGroup, Skeleton, useToast, Dialog } from "@chat/ui";
+import { Bell, BellOff, AlertTriangle } from "lucide-react";
 import type { UserPreferences, ThemePreference } from "@chat/db";
 
 interface NotificationPrefs {
@@ -32,6 +32,37 @@ export default function SettingsPage() {
     { id: string; workspace_id: string; name: string; slug: string }[]
   >([]);
   const [notifSaving, setNotifSaving] = useState<string | null>(null);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleResetPreferences() {
+    setResetting(true);
+    try {
+      await api.delete("/preferences");
+      setPreferences(null);
+      setResetConfirmOpen(false);
+      addToast({ title: "Preferences reset", variant: "success", duration: 3000 });
+    } catch {
+      addToast({ title: "Error", description: "Failed to reset preferences.", variant: "error" });
+    } finally {
+      setResetting(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      await api.delete("/auth/account");
+      addToast({ title: "Account deleted", variant: "success", duration: 3000 });
+      setTimeout(() => window.location.href = "/sign-in", 1500);
+    } catch {
+      addToast({ title: "Error", description: "Failed to delete account.", variant: "error" });
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => {
     if (authLoading) return;
@@ -464,6 +495,115 @@ export default function SettingsPage() {
           })}
         </div>
       </SidebarGroup>
+
+      <SidebarGroup title="Danger Zone" defaultOpen={false}>
+        <p
+          className="mb-2 text-xs"
+          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        >
+          Destructive actions that cannot be undone.
+        </p>
+        <div className="space-y-3">
+          <div className="rounded-lg border p-3" style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
+              Reset all preferences
+            </p>
+            <p className="mt-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+              Restore all settings to their default values.
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setResetConfirmOpen(true)}
+              className="mt-2"
+              style={{ color: "var(--dnd-indicator)" }}
+            >
+              Reset preferences
+            </Button>
+          </div>
+          <div className="rounded-lg border p-3" style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
+              Delete account
+            </p>
+            <p className="mt-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+              Permanently delete your account and all associated data.
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteConfirmOpen(true)}
+              className="mt-2"
+              style={{ color: "var(--dnd-indicator)" }}
+            >
+              Delete account
+            </Button>
+          </div>
+        </div>
+      </SidebarGroup>
+
+      {/* Reset preferences confirmation */}
+      {resetConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="max-w-sm rounded-lg p-6" style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }} role="alertdialog">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full" style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}>
+              <AlertTriangle size={20} style={{ color: "var(--dnd-indicator)" }} />
+            </div>
+            <h3 className="text-center text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>Reset preferences?</h3>
+            <p className="mt-2 text-center text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+              All your settings will be restored to their default values. This cannot be undone.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setResetConfirmOpen(false)}
+                className="rounded-md px-3 py-1.5 text-xs font-medium"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetPreferences}
+                disabled={resetting}
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
+                style={{ background: "var(--dnd-indicator)" }}
+              >
+                {resetting ? "Resetting..." : "Reset"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete account confirmation */}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="max-w-sm rounded-lg p-6" style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }} role="alertdialog">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full" style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}>
+              <AlertTriangle size={20} style={{ color: "var(--dnd-indicator)" }} />
+            </div>
+            <h3 className="text-center text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>Delete account?</h3>
+            <p className="mt-2 text-center text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+              This will permanently delete your account and all associated data, including messages, channels, and workspaces. This cannot be undone.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteConfirmOpen(false)}
+                className="rounded-md px-3 py-1.5 text-xs font-medium"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
+                style={{ background: "var(--dnd-indicator)" }}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,8 @@
 {
-    # Development Caddyfile — no TLS, plain HTTP
+    # Development Caddyfile — no TLS, plain HTTP.
+    # TLS is disabled in dev; HTTPS should be handled by a reverse proxy
+    # (Cloudflare, Nginx, etc.) in production — see Caddyfile.prod for the
+    # production config with automatic TLS.
     admin off
     http_port 80
     https_port 443

@@ -746,6 +746,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               onSendReply={handleThreadReply}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              typingUsers={typingUsers}
             />
           </div>
           {/* Mobile */}
@@ -791,6 +792,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
                   onSendReply={handleThreadReply}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  typingUsers={typingUsers}
                 />
               </div>
             </div>

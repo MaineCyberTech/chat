@@ -119,7 +119,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     setRefreshKey((k) => k + 1);
   }, []);
 
-  const handleChannelCreated = useCallback(() => {
+  const handleChannelCreated = useCallback((_channel?: { id: string; name: string; slug: string }) => {
     setChannelRefreshKey((k) => k + 1);
   }, []);
 
