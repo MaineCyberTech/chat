@@ -15,7 +15,9 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
       message: err.message,
       ...(err.details ? { details: err.details } : {}),
     });
-    res.status(err.statusCode).json(err.toJSON());
+    res.status(err.statusCode).json({
+      error: { ...err.toJSON().error, requestId },
+    });
   } else {
     logger.error("Unhandled error", {
       requestId,
@@ -23,6 +25,13 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
       name: err.name,
       stack: process.env.SHOW_STACK_TRACES === "true" ? err.stack : undefined,
     });
-    res.status(500).json(errorResponse("INTERNAL_ERROR", "An unexpected error occurred", 500));
+    res
+      .status(500)
+      .json({
+        error: {
+          ...errorResponse("INTERNAL_ERROR", "An unexpected error occurred", 500).error,
+          requestId,
+        },
+      });
   }
 }

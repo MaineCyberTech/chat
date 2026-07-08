@@ -267,6 +267,9 @@ export function registerDataRetentionProcessor() {
           break;
         case "consent_logs":
           cleaned = await retainConsentLogs(supabase, olderThanDays);
+          if (cleaned > 0) {
+            logger.info({ count: cleaned }, "Consent logs: active purge completed");
+          }
           break;
         case "notifications":
           cleaned = await retainNotifications(supabase, olderThanDays);

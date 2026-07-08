@@ -10,6 +10,14 @@ export function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    const dnt =
+      typeof navigator !== "undefined" &&
+      (navigator.doNotTrack === "1" ||
+        (navigator as unknown as Record<string, string>).msDoNotTrack === "1");
+    if (dnt) {
+      void acceptEssential();
+      return;
+    }
     const given = localStorage.getItem(COOKIE_CONSENT_KEY);
     if (!given) {
       const timer = setTimeout(() => setVisible(true), 1000);

@@ -16,8 +16,8 @@
 # Infrastructure
 /infra/ @mainecybertech/devops
 
-# Database migrations
-/supabase/migrations/ @mainecybertech/backend
+# Supabase configuration, policies, seeds, and migrations
+/supabase/ @mainecybertech/backend
 
 # CI/CD
 /.github/workflows/ @mainecybertech/devops

@@ -1,0 +1,29 @@
+name: chat-dev
+
+services:
+  web:
+    volumes:
+      - ../../apps/web:/app/apps/web
+      - ../../packages:/app/packages
+      - ../../node_modules:/app/node_modules
+      - ../../pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ../../turbo.json:/app/turbo.json
+      - ../../tsconfig.base.json:/app/tsconfig.base.json
+
+  api:
+    volumes:
+      - ../../apps/api:/app/apps/api
+      - ../../packages:/app/packages
+      - ../../node_modules:/app/node_modules
+      - ../../pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ../../turbo.json:/app/turbo.json
+      - ../../tsconfig.base.json:/app/tsconfig.base.json
+
+  worker:
+    volumes:
+      - ../../apps/worker:/app/apps/worker
+      - ../../packages:/app/packages
+      - ../../node_modules:/app/node_modules
+      - ../../pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ../../turbo.json:/app/turbo.json
+      - ../../tsconfig.base.json:/app/tsconfig.base.json

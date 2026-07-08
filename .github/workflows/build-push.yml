@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [develop]
-    paths:
+    paths: &build-paths
       - "apps/api/**"
       - "apps/worker/**"
       - "apps/web/**"
@@ -12,6 +12,9 @@ on:
       - "pnpm-lock.yaml"
       - ".dockerignore"
       - ".github/workflows/build-push.yml"
+  pull_request:
+    branches: [develop, main]
+    paths: *build-paths
 
 concurrency:
   group: build-push-${{ github.ref }}

@@ -16,8 +16,20 @@ import { BadRequestError, NotFoundError, ForbiddenError, InternalServerError } f
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+function enforceBodyLimit(req: Request, res: Response, next: NextFunction) {
+  const contentLength = parseInt(req.headers["content-length"] ?? "0", 10);
+  if (contentLength > 262144) {
+    res.status(413).json({
+      error: { code: "PAYLOAD_TOO_LARGE", message: "Request body exceeds 256KB limit" },
+    });
+    return;
+  }
+  next();
+}
+
 const router: RouterType = Router();
 router.use(authenticate);
+router.use(enforceBodyLimit);
 
 const createWebhookSchema = z.object({
   workspace_id: z.string().uuid(),

@@ -30,7 +30,27 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test
+      - name: Turborepo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+      - name: Run tests with coverage and JUnit output
+        run: pnpm vitest run --config vitest.config.ts --coverage --reporter default --reporter junit --outputFile test-results/junit.xml
+      - name: Upload test results (JUnit)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test-results/
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/
 
   diff-coverage:
     runs-on: ubuntu-latest
@@ -59,6 +79,11 @@ jobs:
       - name: Run diff coverage
         run: |
           pnpm test -- --changed --coverage --reporter=json --coverage.reporter=json-summary
+      - name: Upload diff coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-coverage
+          path: coverage/
       - name: Check diff coverage thresholds
         run: |
           node -e "
@@ -234,6 +259,19 @@ jobs:
       - name: Verify migration status
         run: supabase migration list || echo "Migration list not available (project not linked), skipping verification"
 
+      - name: Validate migration order
+        run: |
+          prev=""
+          for f in $(ls supabase/migrations/*.sql 2>/dev/null | sort); do
+            v=$(basename "$f" | cut -d_ -f1)
+            if [ -n "$prev" ] && [ "$v" \< "$prev" ] 2>/dev/null; then
+              echo "❌ Migration ordering error: $v < $prev"
+              exit 1
+            fi
+            prev="$v"
+          done
+          echo "✅ Migration order validated"
+
       - name: Run SQL lint
         run: |
           supabase db lint --level warning || echo "Lint warnings found (non-blocking)"
@@ -271,6 +309,13 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Turborepo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
       - run: pnpm build
 
   e2e:

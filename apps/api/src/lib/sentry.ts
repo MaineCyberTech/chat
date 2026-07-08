@@ -27,6 +27,27 @@ export function initSentry() {
     tracesSampleRate: env.NODE_ENV === "production" ? 0.2 : 1.0,
     profilesSampleRate: env.NODE_ENV === "production" ? 0.1 : 0.0,
     integrations: [Sentry.expressIntegration()],
+    beforeSend: (event) => {
+      if (event.user?.email) event.user.email = "[REDACTED]";
+      if (event.user?.id) event.user.id = "[REDACTED]";
+      if (event.request?.data && typeof event.request.data === "string") {
+        event.request.data = (event.request.data as string).replace(
+          /[\w.+-]+@[\w-]+\.[\w.-]+/g,
+          "[EMAIL]",
+        );
+      }
+      if (event.exception?.values) {
+        for (const value of event.exception.values) {
+          if (value.value) {
+            value.value = value.value.replace(
+              /[\w.+-]+@[\w-]+\.[\w.-]+/g,
+              "[EMAIL]",
+            );
+          }
+        }
+      }
+      return event;
+    },
   });
 
   Sentry.addEventProcessor((event) => {
