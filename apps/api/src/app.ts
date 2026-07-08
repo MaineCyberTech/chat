@@ -18,6 +18,7 @@ import { doubleSubmitCookieCsrf } from "./middleware/csrf.js";
 import { requestTimeout } from "./middleware/request-timeout.js";
 import { register, httpRequestsTotal, httpRequestDuration } from "./lib/metrics.js";
 import { sentryErrorMiddleware } from "./lib/sentry.js";
+import { logger } from "./lib/logger.js";
 import { authenticate } from "./middleware/authenticate.js";
 import { inputSanitizer } from "./middleware/input-sanitizer.js";
 import { routeRegistry } from "./route-registry.js";
@@ -34,6 +35,9 @@ function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
       { method: req.method, route, status_code: res.statusCode },
       duration,
     );
+    if (duration > 5) {
+      logger.warn("Slow API response", { method: req.method, route, duration, status_code: res.statusCode });
+    }
   });
 
   next();

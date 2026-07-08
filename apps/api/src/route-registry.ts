@@ -79,6 +79,6 @@ export const routeRegistry: RouteEntry[] = [
   { path: "/v1/groups", router: userGroupRoutes, description: "User groups CRUD" },
   { path: "/v1/sidebar-categories", router: sidebarRoutes, description: "Sidebar categories" },
   { path: "/v1/scheduled-posts", router: scheduledRoutes, description: "Scheduled posts" },
-  { path: "/v1", router: openApiRoutes, description: "OpenAPI spec endpoint" },
+  { path: "/v1", router: openApiRoutes, description: "OpenAPI spec + changelog endpoints" },
   { path: "/v1/admin", router: adminRoutes, description: "Admin operations" },
 ];

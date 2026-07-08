@@ -8,7 +8,8 @@ interface Props {
   onClose: () => void;
   currentNotify?: "all" | "mentions" | "none";
   currentSound?: boolean;
-  onSave?: (prefs: { notify: "all" | "mentions" | "none"; sound: boolean }) => void;
+  currentNotifyEveryone?: boolean;
+  onSave?: (prefs: { notify: "all" | "mentions" | "none"; sound: boolean; notifyEveryone: boolean }) => void;
 }
 
 const NOTIFY_OPTIONS: { value: "all" | "mentions" | "none"; label: string; desc: string }[] = [
@@ -22,10 +23,12 @@ export function NotificationPreferencesModal({
   onClose,
   currentNotify = "all",
   currentSound = true,
+  currentNotifyEveryone = true,
   onSave,
 }: Props) {
   const [notify, setNotify] = useState<"all" | "mentions" | "none">(currentNotify);
   const [sound, setSound] = useState(currentSound);
+  const [notifyEveryone, setNotifyEveryone] = useState<boolean>(currentNotifyEveryone ?? true);
   const [saving, setSaving] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -49,8 +52,8 @@ export function NotificationPreferencesModal({
   async function handleSave() {
     setSaving(true);
     try {
-      await api.put(`/channels/${channelId}/notification-preferences`, { notify, sound });
-      onSave?.({ notify, sound });
+      await api.put(`/channels/${channelId}/notification-preferences`, { notify, sound, notifyEveryone });
+      onSave?.({ notify, sound, notifyEveryone });
       onClose();
     } catch {
       console.warn("Failed to save notification preferences");
@@ -138,6 +141,31 @@ export function NotificationPreferencesModal({
             <span
               className="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform"
               style={{ transform: sound ? "translateX(16px)" : "translateX(0)" }}
+            />
+          </button>
+        </div>
+
+        <div
+          className="mb-5 flex items-center justify-between rounded-md px-3 py-2"
+          style={{ background: "rgba(var(--center-channel-color-rgb), 0.04)" }}
+        >
+          <label className="text-sm" style={{ color: "var(--center-channel-color)" }}>
+            Notify for <strong>@everyone</strong>
+          </label>
+          <button
+            role="switch"
+            aria-checked={notifyEveryone}
+            onClick={() => setNotifyEveryone(!notifyEveryone)}
+            className="relative h-5 w-9 rounded-full transition-colors"
+            style={{
+              background: notifyEveryone
+                ? "var(--button-bg)"
+                : "rgba(var(--center-channel-color-rgb), 0.2)",
+            }}
+          >
+            <span
+              className="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform"
+              style={{ transform: notifyEveryone ? "translateX(16px)" : "translateX(0)" }}
             />
           </button>
         </div>

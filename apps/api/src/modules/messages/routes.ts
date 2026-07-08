@@ -42,7 +42,7 @@ router.get("/messages/search", responseCache(30), asyncHandler(async (req, res) 
   const channelIds = parsed.data.channel_ids
     ? parsed.data.channel_ids.split(",").filter(Boolean)
     : null;
-  const resultLimit = 20;
+  const resultLimit = parsed.data.limit;
   const { data, error } = await req.supabase.rpc("search_messages", {
     workspace_id: parsed.data.workspace_id,
     query_text: sanitizedQuery,
@@ -71,7 +71,7 @@ router.get("/messages/search", responseCache(30), asyncHandler(async (req, res) 
   }
 
   const hasMore = messages.length === resultLimit;
-  res.json({ messages, hasMore, offset: parsed.data.offset });
+  res.json({ messages, hasMore, offset: parsed.data.offset, limit: parsed.data.limit });
 }));
 
 router.get(

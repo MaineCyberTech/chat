@@ -124,6 +124,18 @@ async function deliverEmail(
 
   if (!user?.email) return false;
 
+  /*
+   * Daily digest email template:
+   *   Subject:  "Your Chat Digest — {{date}}"
+   *   Template: Handlebars-based HTML email with:
+   *     - Unread channel summaries (channel name + last message preview)
+   *     - @mentions section (bold, with link to thread)
+   *     - Top pinned messages
+   *     - Footer with "View all notifications" link and
+   *       "Unsubscribe from digest" link (one-click)
+   *   Variables expected in `data.digest` when type="digest":
+   *     { channels: {name, messageCount, lastMessage}[], mentions: {user, text, link}[], date: string }
+   */
   try {
     const nodemailer = await import("nodemailer");
     const transporter = nodemailer.createTransport({

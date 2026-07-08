@@ -5,6 +5,22 @@ import Redis from "ioredis";
 import { logger } from "./logger.js";
 import { incrementWebsocketConnections } from "./metrics.js";
 
+const ipConnectionTimestamps = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 1000;
+const RATE_LIMIT_MAX_CONNECTIONS = 10;
+
+function checkSocketRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = ipConnectionTimestamps.get(ip) ?? [];
+  const recent = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX_CONNECTIONS) {
+    return false;
+  }
+  recent.push(now);
+  ipConnectionTimestamps.set(ip, recent);
+  return true;
+}
+
 let io: SocketServer | null = null;
 let pubClient: Redis | null = null;
 let subClient: Redis | null = null;
@@ -58,6 +74,15 @@ export function initSocket(
       });
     }
   }
+
+  io.use((socket, next) => {
+    const ip = socket.handshake.address;
+    if (!checkSocketRateLimit(ip)) {
+      logger.warn("Socket rate limit exceeded", { ip });
+      return next(new Error("Rate limit exceeded"));
+    }
+    next();
+  });
 
   io.use(async (socket, next) => {
     // Read token from socket handshake auth (supported in all browsers)

@@ -51,7 +51,11 @@ router.put(
       }
     }
 
-    const { notify, notify_sound } = req.body as { notify?: boolean; notify_sound?: boolean };
+    const { notify, notify_sound, notify_everyone } = req.body as {
+      notify?: boolean;
+      notify_sound?: boolean;
+      notify_everyone?: boolean;
+    };
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("channel_notification_preferences")
@@ -61,6 +65,7 @@ router.put(
           channel_id: req.params.id,
           notify: notify ?? true,
           notify_sound: notify_sound ?? true,
+          notify_everyone: notify_everyone ?? true,
         },
         { onConflict: "user_id,channel_id" },
       )

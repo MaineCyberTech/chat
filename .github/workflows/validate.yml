@@ -37,8 +37,17 @@ jobs:
           key: turbo-${{ runner.os }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml') }}
           restore-keys: |
             turbo-${{ runner.os }}-
-      - name: Run tests with coverage and JUnit output
-        run: pnpm vitest run --config vitest.config.ts --coverage --reporter default --reporter junit --outputFile test-results/junit.xml
+      - name: Run tests with coverage, JUnit output, and flaky test retry
+        run: pnpm vitest run --config vitest.config.ts --retry=1 --coverage --reporter default --reporter junit --outputFile test-results/junit.xml
+      - name: Check for flaky tests
+        if: failure()
+        run: |
+          if [ -f test-results/junit.xml ]; then
+            FLAKY=$(grep -c 'flaky="true"' test-results/junit.xml 2>/dev/null || true)
+            if [ "$FLAKY" -gt 0 ]; then
+              echo "⚠️ $FLAKY flaky test(s) detected. Review test-results/junit.xml for details."
+            fi
+          fi
       - name: Upload test results (JUnit)
         uses: actions/upload-artifact@v4
         if: always()

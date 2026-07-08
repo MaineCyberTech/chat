@@ -1,0 +1,18 @@
+[
+  {
+    "version": "1.0.0",
+    "date": "2026-07-07",
+    "changes": [
+      "Initial API release",
+      "Added /v1/auth endpoints (magic link, status)",
+      "Added /v1/workspaces CRUD",
+      "Added /v1/channels CRUD with DM/GM support",
+      "Added /v1/messages with pin, flag, forward, edit history",
+      "Added /v1/notifications with push subscriptions",
+      "Added /v1/reactions",
+      "Added /v1/admin endpoints (stats, users, channels, health)",
+      "Added /v1/audit/logs",
+      "Added /v1/changelog endpoint"
+    ]
+  }
+]
