@@ -41,8 +41,6 @@ services:
       - chat-dev
 
   livekit:
-
-  livekit:
     image: livekit/livekit-server:latest
     container_name: chat-livekit-dev
     restart: unless-stopped
