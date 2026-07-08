@@ -16,4 +16,12 @@ if [ -n "$large_files" ]; then
 fi
 
 npx lint-staged
+
+# Check for high-severity production vulnerabilities
+echo "Checking pnpm audit for high vulnerabilities..."
+pnpm audit --prod --audit-level=high --no-fix; audit_exit=$?
+if [ "$audit_exit" -ne 0 ]; then
+  echo "⚠️  WARNING: pnpm audit found high vulnerabilities (exit code $audit_exit). Consider running 'pnpm audit --fix'."
+fi
+
 exec npx --yes turbo typecheck --affected --continue

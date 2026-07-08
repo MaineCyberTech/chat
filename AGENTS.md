@@ -1,11 +1,11 @@
 # AGENTS.md — Architecture & Implementation Status
 
-## Current State (July 7, 2026)
+## Current State (July 8, 2026)
 
 - **All P0/P1 findings resolved** — 0 P0, 0 P1 across all audit/hardening pipelines
-- **P2/P3 findings**: 5 remaining (down from 117) — all from Frontend Release Gate (9 items → 4 remaining after raw opacity values and skeleton loading fixes)
+- **P2/P3 findings**: ~130 total (original), many resolved in recent session
 - **Deployment**: Development at chat.mainecybertech.us, Production at chat.mainecybertech.com — both healthy
-- **Recent major changes** (July 7): Workspace list pagination with limit/offset, magic link rate limiting (3/min/IP), worker `/healthz` endpoint, channel slug validation, workspace creation limit tests, file content search documentation comment, all TypeScript typechecks passing
+- **Recent major changes**: Full comparative audit, 105+ P2/P3 fixes, security hardening, test expansion, production readiness, API performance optimization
 
 ## Architecture Overview
 
@@ -66,6 +66,27 @@ All features from the Mattermost comparative audit (July 4, 2026) have been impl
 - **Security**: All CSP/HSTS/metrics auth/SECURITY DEFINER/CSRF/rate limiter/query timeout/resilience hardening items resolved
 
 All P0/P1/P2/P3 findings from the audit pipeline have been resolved (0 pending across all severities as of July 6, 2026).
+
+## Feature Verification Status (July 8, 2026)
+
+| Feature | Status | Details |
+|---|---|---|
+| Multi-team sidebar (65px rail) | ❌ Not done | Single workspace only |
+| Advanced WYSIWYG editor | ⚠️ Partial | Basic TipTap exists, missing advanced features |
+| Onboarding tour / task list | ✅ Done | 5-step task list implemented |
+| Drafts auto-save | ✅ Done | localStorage auto-save + restore |
+| Multi-factor authentication | ❌ Not done | No MFA/2FA support |
+| OAuth providers | ⚠️ Partial | Google sign-in only, no GitHub |
+| Full i18n for all UI strings | ⚠️ Partial | Infrastructure exists, strings not wired |
+| In-app notification sounds (9 options) | ❌ Not done | 3 sounds implemented, 9 needed |
+| Email verification flow | ❌ Not done | No verification UI |
+| Bulk import/export | ⚠️ Partial | CSV utility exists, no full feature |
+| Migration rollback in CI | ⚠️ Partial | Rollback scripts exist, CI doesn't run them |
+| pnpm audit in pre-commit | ✅ Done | Added to .husky/pre-commit |
+| GitHub discussion template | ✅ Done | Created .github/DISCUSSION_TEMPLATE/general.yml |
+| Worker .env.example | ✅ Done | Created apps/worker/.env.example |
+| turbo.json documentation | ✅ Done | Added description fields to all tasks |
+| Dependabot grouping | ✅ Done | All ecosystems grouped properly |
 
 ### Audits Completed
 
@@ -375,6 +396,7 @@ Detailed change logs for all completed work can be found in the git history:
 - **Full Comparative Audit Quick Wins (July 7)** — 8 quick wins applied: down migration script for performance indexes, AGENTS.md updated with audit findings, CI/CD consolidation (e2e-daily merged into ci.yml), structured error subclasses (BadRequestError, UnauthorizedError, etc.), test coverage for AppError + OpenAPI routes, centralized route registry (route-registry.ts), data retention enforcement job processor, LinkPreview component for URL unfurling
 - **Phase 2 Alignment Work (July 7)** — Deploy fix (removed hard API dependency from web container, added container log capture on startup failure), admin health/system endpoint (GET /admin/system with version/uptime/DB status), i18n infrastructure expansion (extraction script, pluralization support, locale metadata, formatDate/formatNumber utilities), TypeScript build error fixes (logger arg order), prettier formatting fixes
 - **P2/P3 Finding Fixes (July 7)** — Workspace list pagination with limit/offset (P2), magic link rate limiting at 3/min/IP (P2), channel slug validation (P3), workspace creation limit unit test (P3), file content search documentation comment (P3), worker `/healthz` endpoint confirmed existing (P3)
+- **Quick Wins Implementation (July 8)** — AGENTS.md Current State + Feature Verification Status updated, pnpm audit added to pre-commit hook, GitHub discussion template created, worker .env.example created, turbo.json task descriptions added
 
 Run `git log --oneline --since="2026-06-20"` for the full commit history or see `CHANGELOG.md`.
  

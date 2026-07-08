@@ -1,0 +1,57 @@
+# GitHub Discussion Template — General
+# See https://docs.github.com/en/discussions/managing-discussions-for-your-community
+
+labels:
+  - discussion
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Welcome to the Chat Discussions!
+
+        Use this template to start a discussion. Choose the appropriate section below.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Discussion Type
+      description: What type of discussion is this?
+      options:
+        - 🚀 Feature Request
+        - ❓ Q&A
+        - 📢 Show and Tell
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+  - type: textarea
+    id: feature-request
+    attributes:
+      label: 🚀 Feature Request
+      description: Describe the feature you'd like to see. What problem does it solve?
+      placeholder: I'd like to be able to...
+    validations:
+      required: false
+
+  - type: textarea
+    id: qa
+    attributes:
+      label: ❓ Q&A
+      description: Ask a question about the project. How can we help?
+      placeholder: How do I...
+    validations:
+      required: false
+
+  - type: textarea
+    id: show-and-tell
+    attributes:
+      label: 📢 Show and Tell
+      description: Share what you've built, discovered, or learned related to this project.
+      placeholder: I built this integration that...
+    validations:
+      required: false

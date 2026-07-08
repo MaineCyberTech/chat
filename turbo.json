@@ -3,19 +3,27 @@
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
+      "description": "Compile all packages and apps (Next.js, tsc, bundlers). Depends on upstream ^build.",
       "dependsOn": ["^build"],
       "outputs": [".next/**", "dist/**", "!.next/cache/**"]
     },
     "dev": {
+      "description": "Start dev servers in watch mode for all packages/apps. Persistent, no cache.",
       "cache": false,
       "persistent": true
     },
-    "lint": {},
-    "typecheck": {},
+    "lint": {
+      "description": "Run ESLint across all packages/apps. No dependencies on builds."
+    },
+    "typecheck": {
+      "description": "Run TypeScript type-checking (tsc --noEmit) across all packages/apps."
+    },
     "test": {
+      "description": "Run test suites (vitest/jest). Depends on build to ensure compiled output exists.",
       "dependsOn": ["build"]
     },
     "clean": {
+      "description": "Remove build artifacts (dist, .next, node_modules/.cache). No caching.",
       "cache": false
     }
   }
