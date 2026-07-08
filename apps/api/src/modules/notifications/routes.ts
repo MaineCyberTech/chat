@@ -6,6 +6,7 @@ import { getSupabase } from "../../lib/supabase.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, InternalServerError, ConflictError } from "../../lib/app-error.js";
 import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
+import { parsePaginationParams } from "../../lib/pagination.js";
 import { notificationService } from "./service.js";
 
 const router: RouterType = Router();
@@ -13,8 +14,7 @@ router.use(authenticate);
 
 // List notifications with pagination
 router.get("/notifications", asyncHandler(async (req, res) => {
-  const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 20, 1), 100);
-  const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+  const { limit, offset } = parsePaginationParams(req.query.limit as string, req.query.offset as string, 20, 100);
   const workspaceId = req.query.workspace_id as string | undefined;
   const notifications = await notificationService.list(req.userId!, workspaceId, limit, offset);
   res.json({ notifications, limit, offset });

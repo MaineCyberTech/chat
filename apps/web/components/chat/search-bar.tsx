@@ -5,7 +5,32 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Skeleton } from "@chat/ui";
-import { Settings, ChevronDown, FileText, MessageSquare } from "lucide-react";
+import { Settings, ChevronDown, FileText, MessageSquare, File, Image } from "lucide-react";
+
+function extractAttachments(content: string): { type: "image" | "file"; name: string; url: string }[] {
+  const attachments: { type: "image" | "file"; name: string; url: string }[] = [];
+  // Match markdown image: ![alt](url)
+  const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  let match: RegExpExecArray | null;
+  while ((match = imgRegex.exec(content)) !== null) {
+    const url = match[2];
+    if (!url) continue;
+    const name = match[1] || url.split("/").pop() || "image";
+    attachments.push({ type: "image", name, url });
+  }
+  // Match markdown link to file: [text](url with file extension)
+  const fileRegex = /\[([^\]]+)\]\(([^)]+\.\w+(?:\?[^)]*)?)\)/g;
+  while ((match = fileRegex.exec(content)) !== null) {
+    const url = match[2];
+    if (!url) continue;
+    const ext = url.split(".").pop()?.split("?")[0]?.toLowerCase() ?? "";
+    const imgExts = new Set(["png", "jpg", "jpeg", "gif", "svg", "webp", "bmp", "ico"]);
+    if (!imgExts.has(ext)) {
+      attachments.push({ type: "file", name: match[1] ?? "", url });
+    }
+  }
+  return attachments;
+}
 
 function highlightText(text: string, query: string): React.ReactNode {
   if (!query || query.length < 2) return text;
@@ -727,7 +752,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               Files
             </button>
           </div>
-          {results.map((r, index) => (
+          {results.map((r, index) => {
+            const attachments = extractAttachments(r.content);
+            return (
             <Link
               key={r.id}
               href={`/${workspaceSlug}/${r.channel_slug ?? r.channel_id}`}
@@ -741,6 +768,23 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               role="option"
               aria-selected={index === selectedIndex}
             >
+              {attachments.length > 0 && (
+                <div className="mb-1 flex flex-wrap gap-1">
+                  {attachments.map((att, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs"
+                      style={{
+                        background: "rgba(var(--button-bg-rgb), 0.1)",
+                        color: "var(--button-bg)",
+                      }}
+                    >
+                      {att.type === "image" ? <Image size={12} /> : <File size={12} />}
+                      <span className="max-w-[120px] truncate">{att.name}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
               <p className="text-sm break-words">{highlightText(r.content.slice(0, 200), query)}</p>
               <p
                 className="mt-0.5 text-xs"
@@ -749,7 +793,8 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 {new Date(r.created_at).toLocaleDateString()}
               </p>
             </Link>
-          ))}
+            );
+          })}
           {hasMore && (
             <button
               onClick={() => search(query, true)}

@@ -146,11 +146,31 @@ async function deliverEmail(
         env.SMTP_USER && env.SMTP_PASS ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
     });
 
+    const html = `<table cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <tr>
+    <td style="padding:24px 32px;background:#f5f5f5;border-radius:8px 8px 0 0;border-bottom:3px solid #4f46e5;">
+      <h1 style="margin:0;font-size:18px;color:#1a1a2e;">${data.title}</h1>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:24px 32px;background:#ffffff;">
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#333;">${data.message}</p>
+      ${data.link ? `<a href="${data.link}" style="display:inline-block;padding:10px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">View in Chat</a>` : ''}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:16px 32px;background:#f5f5f5;border-radius:0 0 8px 8px;font-size:12px;color:#888;text-align:center;">
+      <p style="margin:0;">Sent from Chat Platform</p>
+    </td>
+  </tr>
+</table>`;
+
     await transporter.sendMail({
       from: env.SMTP_FROM,
       to: user.email,
       subject: data.title,
       text: `${data.message}\n\n${data.link ? `View: ${data.link}` : ""}`,
+      html,
     });
 
     return true;

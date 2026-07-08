@@ -85,6 +85,12 @@ export function initSocket(
   });
 
   io.use(async (socket, next) => {
+    // Auth timeout: disconnect if not authenticated within 10 seconds
+    const authTimer = setTimeout(() => {
+      socket.disconnect(true);
+      logger.warn("Socket auth timeout", { ip: socket.handshake.address });
+    }, 10000);
+
     // Read token from socket handshake auth (supported in all browsers)
     // Alternatively from Authorization header for non-browser clients
     const token =
@@ -92,6 +98,7 @@ export function initSocket(
       (socket.handshake.headers?.authorization as string | undefined)?.replace("Bearer ", "");
 
     if (!token) {
+      clearTimeout(authTimer);
       return next(new Error("Missing auth token"));
     }
 
@@ -102,12 +109,15 @@ export function initSocket(
       const { data, error } = await supabase.auth.getUser(token);
 
       if (error || !data.user) {
+        clearTimeout(authTimer);
         return next(new Error("Invalid token"));
       }
 
+      clearTimeout(authTimer);
       socket.userId = data.user.id;
       next();
     } catch (err) {
+      clearTimeout(authTimer);
       logger.warn("Socket.io auth failed", { error: String(err) });
       next(new Error("Authentication failed"));
     }

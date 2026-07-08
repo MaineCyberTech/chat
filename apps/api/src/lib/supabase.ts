@@ -15,8 +15,13 @@ function wrapBuilder(builder: object, table: string, label: string): object {
           const thenFn = (target as PromiseLike<unknown>).then;
           return thenFn.call(target,
             (result: unknown) => {
-              const duration = (performance.now() - start).toFixed(1);
-              logger.debug("DB query", { table, label, duration: `${duration}ms`, rows: (result as { data?: unknown[] })?.data?.length ?? 0 });
+              const durationMs = performance.now() - start;
+              const duration = durationMs.toFixed(1);
+              if (durationMs > 1000) {
+                logger.warn("Slow DB query", { table, label, duration: `${duration}ms`, rows: (result as { data?: unknown[] })?.data?.length ?? 0 });
+              } else {
+                logger.debug("DB query", { table, label, duration: `${duration}ms`, rows: (result as { data?: unknown[] })?.data?.length ?? 0 });
+              }
               if (typeof onfulfilled === "function") return onfulfilled(result);
               return result;
             },

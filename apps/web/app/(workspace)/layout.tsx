@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useTransition } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { AppSidebar } from "@/components/workspace/app-sidebar";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
@@ -13,6 +13,38 @@ import { api } from "@/lib/api";
 import { register } from "@/lib/keyboard-shortcut-registry";
 import { Menu, Hash, Settings as SettingsIcon, ArrowLeft } from "lucide-react";
 import type { Workspace, Channel } from "@chat/db";
+
+function RouteLoadingIndicator() {
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  const [showLoader, setShowLoader] = useState(false);
+
+  useEffect(() => {
+    if (pathname !== prevPathname) {
+      setPrevPathname(pathname);
+      setShowLoader(true);
+      const timer = setTimeout(() => setShowLoader(false), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, prevPathname]);
+
+  return (
+    <div
+      className="fixed top-0 left-0 right-0 z-50 h-0.5"
+      style={{ opacity: showLoader ? 1 : 0, transition: "opacity 200ms" }}
+    >
+      <div
+        className="h-full"
+        style={{
+          background: "var(--button-bg)",
+          width: showLoader ? "100%" : "0%",
+          transition: showLoader ? "width 30s ease-out" : "width 200ms ease-in",
+        }}
+      />
+    </div>
+  );
+}
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const params = useParams<{ workspaceSlug?: string; channelId?: string }>();
@@ -175,6 +207,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         minHeight: 0,
       }}
     >
+      <RouteLoadingIndicator />
+
       {/* Flex row for sidebar + content */}
       <div style={{ display: "flex", overflow: "hidden", minHeight: 0 }}>
         {/* Mobile header */}

@@ -15,6 +15,7 @@ import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, NotFoundError, ForbiddenError, InternalServerError } from "../../lib/app-error.js";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { parsePaginationParams } from "../../lib/pagination.js";
 
 function enforceBodyLimit(req: Request, res: Response, next: NextFunction) {
   const contentLength = parseInt(req.headers["content-length"] ?? "0", 10);
@@ -81,8 +82,7 @@ function requireWorkspaceQueryParam(req: Request, res: Response, next: NextFunct
 router.get("/webhooks/deliveries", requireWorkspaceQueryParam, asyncHandler(async (req, res) => {
   const workspace_id = req.query.workspace_id as string;
   const webhookId = req.query.webhook_id as string | undefined;
-  const limit = Math.min(parseInt(req.query.limit as string) || 100, 200);
-  const offset = parseInt(req.query.offset as string) || 0;
+  const { limit, offset } = parsePaginationParams(req.query.limit as string, req.query.offset as string, 100, 200);
 
   if (!webhookId) {
     res.status(400).json({ error: { code: "INVALID_INPUT", message: "webhook_id query param required" } });

@@ -3,7 +3,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { NotFoundError, InternalServerError } from "../../lib/app-error.js";
+import { NotFoundError, InternalServerError, BadRequestError } from "../../lib/app-error.js";
 
 const router = Router();
 router.use(authenticate);
@@ -59,6 +59,15 @@ router.get("/audit/logs", asyncHandler(async (req: Request, res: Response) => {
     throw new InternalServerError("Auth context missing");
   }
 
+  const parsedLimit = limit !== undefined ? parseInt(limit as string, 10) : 50;
+  const parsedOffset = offset !== undefined ? parseInt(offset as string, 10) : 0;
+  if (isNaN(parsedLimit) || parsedLimit < 1) {
+    throw new BadRequestError("limit must be a positive integer");
+  }
+  if (isNaN(parsedOffset) || parsedOffset < 0) {
+    throw new BadRequestError("offset must be a non-negative integer");
+  }
+
   const { data, error, count } = await queryAuditLogs(supabase, {
     workspaceId: workspaceId as string | undefined,
     actorUserId: actorUserId as string | undefined,
@@ -66,8 +75,8 @@ router.get("/audit/logs", asyncHandler(async (req: Request, res: Response) => {
     entityType: entityType as string | undefined,
     dateFrom: dateFrom as string | undefined,
     dateTo: dateTo as string | undefined,
-    limit: limit ? parseInt(limit as string, 10) : 50,
-    offset: offset ? parseInt(offset as string, 10) : 0,
+    limit: Math.min(parsedLimit, 100),
+    offset: parsedOffset,
   });
 
   if (error) {
