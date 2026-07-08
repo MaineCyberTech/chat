@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
 import { AppSidebar } from "@/components/workspace/app-sidebar";
+import { TeamSidebar } from "@/components/workspace/team-sidebar";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { QuickSwitcher } from "@/components/chat/quick-switcher";
 import { OnboardingTour } from "@/components/workspace/onboarding-tour";
@@ -234,6 +235,11 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             <Menu size={20} />
           </button>
           <span className="truncate text-sm font-semibold">{params.workspaceSlug ?? "Chat"}</span>
+        </div>
+
+        {/* Team sidebar rail (desktop only) */}
+        <div className="hidden md:block" style={{ flexShrink: 0 }}>
+          <TeamSidebar />
         </div>
 
         {/* Sidebar (desktop) */}
