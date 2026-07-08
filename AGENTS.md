@@ -76,12 +76,12 @@ All P0/P1/P2/P3 findings from the audit pipeline have been resolved (0 pending a
 | Onboarding tour / task list | ✅ Done | 5-step task list implemented |
 | Drafts auto-save | ✅ Done | localStorage auto-save + restore |
 | Multi-factor authentication | ❌ Not done | No MFA/2FA support |
-| OAuth providers | ⚠️ Partial | Google sign-in only, no GitHub |
+| OAuth providers | ✅ Done | Google + GitHub sign-in implemented |
 | Full i18n for all UI strings | ⚠️ Partial | Infrastructure exists, strings not wired |
-| In-app notification sounds (9 options) | ❌ Not done | 3 sounds implemented, 9 needed |
-| Email verification flow | ❌ Not done | No verification UI |
+| In-app notification sounds (9 options) | ✅ Done | chime, bell, ding, pop, tri-tone added (total 9) |
+| Email verification flow | ✅ Done | Verification page with resend |
 | Bulk import/export | ⚠️ Partial | CSV utility exists, no full feature |
-| Migration rollback in CI | ⚠️ Partial | Rollback scripts exist, CI doesn't run them |
+| Migration rollback in CI | ✅ Done | CI verifies all migrations have matching rollbacks |
 | pnpm audit in pre-commit | ✅ Done | Added to .husky/pre-commit |
 | GitHub discussion template | ✅ Done | Created .github/DISCUSSION_TEMPLATE/general.yml |
 | Worker .env.example | ✅ Done | Created apps/worker/.env.example |
