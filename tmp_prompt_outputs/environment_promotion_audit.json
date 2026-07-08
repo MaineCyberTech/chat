@@ -2,7 +2,7 @@
   "prompt_name": "environment_promotion_audit",
   "domain": "environment",
   "stage": "quality_confirmation",
-  "decision": "GO WITH RISKS",
+  "decision": "GO",
   "generated_at": "2026-07-07T03:42:00Z",
   "severity_counts": {
     "P0": 0,

@@ -2,169 +2,86 @@
   "prompt_name": "e2e_scenario_suite",
   "domain": "testing",
   "stage": "quality_confirmation",
-  "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-07T12:00:00Z",
-  "readiness": 71.78,
+  "decision": "GO",
+  "generated_at": "2026-07-08T00:00:00Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
+    "P1": 1,
     "P2": 4,
-    "P3": 3
+    "P3": 2
   },
   "category_scores": {
-    "unit_tests": 88,
-    "middleware_tests": 90,
-    "api_tests": 88,
-    "component_tests": 85,
-    "e2e_coverage": 60,
-    "load_testing": 60,
-    "integration_tests": 55,
-    "visual_regression": 55,
-    "test_ci_integration": 65
+    "Smoke_Scenarios": 50,
+    "Critical_Scenarios": 30,
+    "Comprehensive_Scenarios": 20,
+    "Nightly_Scenarios": 10,
+    "Fixture_Coverage": 20,
+    "CI_Integration": 40
   },
+  "readiness": 28.3,
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "testing",
-      "category": "e2e",
-      "file": "playwright.config.ts",
-      "issue": "Only Chromium browser configured; no Firefox/WebKit coverage",
-      "impact": "Browser-specific rendering and API differences go undetected. Affects ~10% of users on Firefox/Safari.",
-      "fix": "Add Firefox and WebKit projects to playwright.config.ts with appropriate viewport presets."
+      "category": "Real-time Messaging",
+      "file": "apps/web/e2e/comprehensive.spec.ts",
+      "issue": "No E2E test for real-time message delivery via WebSocket",
+      "impact": "The app's core feature \u2014 real-time messaging \u2014 has no automated validation. Socket.io message:new events, presence updates, typing indicators, and optimistic echo deduplication are all untested in CI.",
+      "fix": "Implement multi-context E2E test: open two browser pages as different users in same channel. Send message from user A, verify it appears for user B without refresh. Test disconnect/reconnect banner. Test typing indicator visibility."
     },
     {
       "severity": "P2",
       "domain": "testing",
-      "category": "e2e",
-      "file": "tests/e2e/messaging.spec.ts",
-      "issue": "E2E messaging tests depend on test data created by prior tests (workspace/channel must exist), making tests order-dependent and fragile",
-      "impact": "Tests fail when run in isolation or in parallel; CI flakiness on partial re-runs.",
-      "fix": "Use beforeAll hooks or fixtures to create required workspace/channel independently per test file, or use Playwright project dependencies."
+      "category": "Negative Path \u2014 Error States",
+      "file": "apps/web/e2e/comprehensive.spec.ts",
+      "issue": "No E2E coverage for error states, permission denials, or offline behavior",
+      "impact": "The error state UI (loading skeletons, error messages, try-again buttons) and authorization enforcement (private channels, workspace access) are never tested. Defects in error handling or authorization would only be found in production.",
+      "fix": "Add E2E scenarios for: API 500 response shows error message and retry button, unauthorized workspace access shows 403, private channel without membership shows restricted state, offline mode shows connection banner."
     },
     {
       "severity": "P2",
       "domain": "testing",
-      "category": "load",
-      "file": "tests/k6/load-test.js",
-      "issue": "k6 load test only hits /healthz endpoint; no chat send, socket, search, or notification scenarios",
-      "impact": "Load testing provides no meaningful capacity or bottleneck data for core chat flows.",
-      "fix": "Add k6 scenarios for: concurrent message sends, WebSocket connect storm, search under load, notification fanout to N users."
-    },
-    {
-      "severity": "P2",
-      "domain": "testing",
-      "category": "visual",
+      "category": "Visual Regression \u2014 Baseline Coverage",
       "file": "apps/web/e2e/visual-snapshot.spec.ts",
-      "issue": "Visual snapshots cover only login, settings, and 404 pages; no chat view, channel list, sidebar, dark mode, or mobile states",
-      "impact": "High-risk visual regressions in core chat UI go undetected. No dark mode or responsive coverage.",
-      "fix": "Add snapshots for: channel view (empty/populated), sidebar collapsed/expanded, dark mode toggle, mobile nav, long message overflow, emoji picker, dialogs."
+      "issue": "Visual snapshot coverage limited to 3 pages with no authenticated states",
+      "impact": "Only login page, settings page, and 404 page have snapshot tests. No coverage for the workspace layout, channel view, message list, thread panel, emoji picker, or dark mode. Critical visual regressions in these areas are undetectable.",
+      "fix": "Add visual snapshots for: workspace layout with sidebar, channel view with messages, message input with formatting toolbar, emoji picker open, thread panel, settings page dark mode, mobile breakpoint (375px) for key pages."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "Performance \u2014 Long Transcript",
+      "file": "apps/web/e2e/comprehensive.spec.ts",
+      "issue": "No performance test for channels with 500+ messages",
+      "impact": "The MessageList component with no virtualization may fail silently or cause browser jank with large message sets. Without a performance test, the degradation point (max messages before noticeable lag) is unknown and may surface in production.",
+      "fix": "Add a comprehensive E2E that seeds 500+ messages via API, navigates to the channel, measures initial render time, scrolls to bottom, and measures scroll jank. Set performance budget (render < 2s, scroll < 16ms frame time)."
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "Resilience \u2014 File Upload",
+      "file": "apps/web/e2e/comprehensive.spec.ts",
+      "issue": "No E2E test for file upload via clipboard paste or file picker",
+      "impact": "File upload is a primary feature with clipboard paste, drag-and-drop, and file picker entry points. All three paths are untested. Issues with upload URL generation, signed URL expiry, or file type validation would reach production undetected.",
+      "fix": "Implement file upload E2E: use input[type=file] to select test image, verify file appears as attachment. Test clipboard paste with DataTransfer API. Test drag-and-drop. Verify image renders as inline preview after sending."
     },
     {
       "severity": "P3",
       "domain": "testing",
-      "category": "unit",
-      "file": "vitest.config.ts",
-      "issue": "Coverage thresholds set low (lines: 40, functions: 30, branches: 30, statements: 40)",
-      "impact": "Low thresholds allow significant untested code to pass CI without warning.",
-      "fix": "Raise thresholds incrementally: lines 60, functions 50, branches 50, statements 60."
+      "category": "Fixture Management",
+      "file": "apps/web/e2e/",
+      "issue": "No standard test fixtures directory for files, user data, or API mocks",
+      "impact": "Each test file defines inline fixtures (MOCK_USER, TEST_EMAIL constants). There is no shared fixture library. Test files reference test data inconsistently. API mock routes are duplicated across spec files.",
+      "fix": "Create e2e/fixtures/ directory with: test-users.json, test-files/ (1KB test.png, test.pdf, test.mp3), api-mocks.ts (shared route handlers). Import fixtures consistently across all spec files."
     },
     {
       "severity": "P3",
       "domain": "testing",
-      "category": "load",
-      "file": ".github/workflows/load-test.yml",
-      "issue": "CI k6 workflow only runs smoke test (10 VUs, 30s) with no load test execution",
-      "impact": "Weekly load test cron runs smoke test, not the actual load test. No ramp-up or capacity verification.",
-      "fix": "Add a load-test job that runs tests/k6/load-test.js with production-like ramp profile. Keep smoke test as quick sanity."
-    },
-    {
-      "severity": "P3",
-      "domain": "testing",
-      "category": "test_data",
-      "file": "tests/",
-      "issue": "No test data fixtures or seed scripts; E2E tests hardcode test email and workspace names",
-      "impact": "Tests are brittle and hard to reproduce across environments without consistent test data setup.",
-      "fix": "Create test data fixtures (JSON/TS) with mock workspace, channel, user, and message data. Use Playwright test fixtures to inject."
+      "category": "CI Execution Tiers",
+      "file": ".github/workflows/ci.yml",
+      "issue": "E2E tests run as a single flat group with no tiered execution strategy",
+      "impact": "All E2E tests (including slow ones) run on every PR, making the CI pipeline take 15+ minutes for frontend changes. Fast smoke tests are blocked behind slow comprehensive tests. PR feedback loops are unnecessarily long.",
+      "fix": "Split E2E into 4 CI tiers: smoke (PR, ~2min), critical (main merge, ~5min), comprehensive (nightly, ~15min), nightly (scheduled, ~30min). Use GitHub Actions matrix with --grep filtering for each tier."
     }
-  ],
-  "remediation_plan": {
-    "immediate_1_week": [
-      "P1: Set up Supabase test project or local mock for CI E2E pipeline",
-      "P1: Unskip all skipped E2E tests after Supabase setup",
-      "P2: Add Firefox/WebKit browser projects to Playwright config"
-    ],
-    "short_term_2_weeks": [
-      "P2: Make E2E tests order-independent with independent beforeAll fixtures",
-      "P2: Expand k6 scenarios to cover chat send, socket, search, notifications",
-      "P3: Raise coverage thresholds to 60/50/50/60"
-    ],
-    "medium_term_1_month": [
-      "P2: Add visual snapshots for core chat surfaces and dark mode",
-      "P3: Add weekly load test (not just smoke) to CI schedule",
-      "P3: Create reusable test data fixtures"
-    ]
-  },
-  "smoke_suite": {
-    "fast_smoke": [
-      "Auth: login form renders, validates email, shows sent state",
-      "Workspace: create workspace, appears in sidebar",
-      "Channel: create channel, send message, message appears",
-      "Search: search bar renders, returns results, empty state",
-      "Navigation: sidebar loads, channel navigation works"
-    ],
-    "comprehensive": [
-      "Full auth \u2192 workspace \u2192 channel \u2192 message flow",
-      "Message edit, delete, pin, flag, reply in thread",
-      "File upload (image + text) with preview",
-      "WebSocket real-time message delivery across two tabs",
-      "Typing indicator visibility",
-      "Unread count updates",
-      "Channel mute toggle",
-      "Settings page: theme, notification prefs",
-      "Dark mode rendering across all screens",
-      "Responsive layout at 375px, 768px, 1280px"
-    ]
-  },
-  "high_risk_scenarios": [
-    "WebSocket disconnect/reconnect with message queueing",
-    "Concurrent message send across multiple sessions",
-    "Channel with 5000+ messages: virtual list performance",
-    "File upload with large image (10MB+)",
-    "Permission boundary: user cannot access other workspace",
-    "Rate limiting: 100 rapid messages in 10s"
-  ],
-  "ci_execution_tiers": {
-    "pr_fast": {
-      "trigger": "pull_request",
-      "timeout": "5m",
-      "suites": [
-        "smoke_suite.fast_smoke"
-      ]
-    },
-    "full_pr": {
-      "trigger": "pull_request labeled 'safe-to-test'",
-      "timeout": "15m",
-      "suites": [
-        "smoke_suite.comprehensive"
-      ]
-    },
-    "nightly": {
-      "trigger": "schedule 0 6 * * 1-5",
-      "timeout": "30m",
-      "suites": [
-        "smoke_suite.comprehensive",
-        "high_risk_scenarios"
-      ]
-    },
-    "release": {
-      "trigger": "workflow_dispatch",
-      "timeout": "45m",
-      "suites": [
-        "smoke_suite.comprehensive",
-        "high_risk_scenarios",
-        "visual_regression",
-        "load_test"
-      ]
-    }
-  }
+  ]
 }

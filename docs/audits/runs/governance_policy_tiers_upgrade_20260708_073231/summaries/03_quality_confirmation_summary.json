@@ -1,0 +1,78 @@
+{
+  "stage": "quality_confirmation",
+  "prompt_name": "governance_policy_tiers_upgrade",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T03:42:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 4,
+    "P3": 2
+  },
+  "category_scores": {
+    "rbac": 85,
+    "permission_enforcement": 75,
+    "audit_logging": 80,
+    "policy_tiers": 55,
+    "hotfix_governance": 65,
+    "admin_access_control": 50
+  },
+  "readiness": 68.33,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "policy_tiers",
+      "file": "hardening/policies/governance.json",
+      "issue": "Policy structure is flat with no distinction between dev, RC, production, and hotfix release tiers",
+      "impact": "All releases are subject to the same policy thresholds, making it impossible to grant temporary exceptions for hotfixes or allow faster iteration in dev branches.",
+      "fix": "Implement tiered policy files: governance.dev.json, governance.rc.json, governance.prod.json, governance.hotfix.json. Each tier inherits from the base but can override thresholds with explicit approval gates."
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "policy_tiers",
+      "file": "hardening/policies/governance.json",
+      "issue": "No hotfix exception procedure defined; hotfixes would either be blocked by standard gates or bypass them without compensating controls",
+      "impact": "During a production incident requiring a rapid fix, operators have no documented procedure for granting policy exceptions with mandatory post-incident review.",
+      "fix": "Add a 'hotfix' policy tier that relaxes gating thresholds but requires: (1) documented severity justification, (2) at least one peer review, (3) post-deploy audit within 24h, (4) mandatory follow-up to re-apply standard gates."
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "audit_logging",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit logging uses in-memory retry queue that can lose entries and has no mechanism to detect missed audit events",
+      "impact": "A restart during audit log processing can silently lose audit entries for sensitive actions (permission changes, workspace deletion), breaking the audit chain.",
+      "fix": "Add a database audit_log_retry table for persistent queuing. Implement a periodic reconciliation job that detects gaps in audit log sequences. Add an alert for audit logging failures."
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "policy_tiers",
+      "file": ".github/workflows/audit-pr-gate.yml",
+      "issue": "CI/CD audit gates use a single threshold regardless of branch (develop vs main vs hotfix)",
+      "impact": "A PR with P2 findings to develop is blocked with the same severity as a production release, slowing iteration velocity without proportional risk assessment.",
+      "fix": "Map CI/CD gates to policy tiers: PRs to develop allow P2/P3 with warnings, PRs to main/staging block P1+, hotfix releases allow P1 with documented exceptions."
+    },
+    {
+      "severity": "P3",
+      "domain": "governance",
+      "category": "policy_tiers",
+      "file": "hardening/policies/governance.json",
+      "issue": "Policy file lacks versioning or change history; modifications to thresholds are not auditable",
+      "impact": "Policy drift is undetectable. There is no record of when or why thresholds were changed, making governance reviews difficult.",
+      "fix": "Add a version field to policy JSON files. Enforce that policy changes go through a PR with audit trail. Consider storing policy versions alongside run artifacts."
+    },
+    {
+      "severity": "P3",
+      "domain": "governance",
+      "category": "rbac",
+      "file": "packages/db/src/permissions.ts",
+      "issue": "Permission 'workspace:delete' granted to admin role but workspace deletion should require owner-only",
+      "impact": "A workspace admin can delete a workspace, potentially causing data loss without owner consent. Admins have the same destructive permissions as owners.",
+      "fix": "Remove 'workspace:delete' from the admin role permissions list. Only 'owner' should have workspace deletion capability."
+    }
+  ],
+  "run_id": "governance_policy_tiers_upgrade_20260708_073231"
+}

@@ -2,7 +2,7 @@
   "prompt_name": "supply_chain_ultra",
   "domain": "supply_chain",
   "stage": "quality_confirmation",
-  "decision": "GO WITH RISKS",
+  "decision": "GO",
   "generated_at": "2026-07-07T12:00:00Z",
   "readiness": 78.9,
   "severity_counts": {

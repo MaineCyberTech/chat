@@ -1,0 +1,87 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "privacy_ultra",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T03:42:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 4,
+    "P3": 3
+  },
+  "category_scores": {
+    "consent_management": 75,
+    "data_retention": 80,
+    "pii_handling": 70,
+    "compliance_export": 85,
+    "cookie_compliance": 60,
+    "data_subject_rights": 50
+  },
+  "readiness": 70,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "Cookie banner offers only binary choice (Accept all / Essential only) with no granular per-category opt-in",
+      "impact": "Users cannot individually control analytics vs. marketing vs. functional cookies, which may violate GDPR ePrivacy Directive requirements for granular consent.",
+      "fix": "Implement a tiered consent dialog allowing separate toggles for 'essential', 'analytics', and 'marketing' categories. Store each consent_type independently."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Marketing consent type is accepted and stored but no marketing functionality exists to honor the preference",
+      "impact": "Consent is collected for 'marketing' purposes without any marketing feature (emails, ads) to respect that preference, creating an audit gap if marketing features are added later without consent re-collection.",
+      "fix": "Either remove the 'marketing' consent_type until marketing features exist, or add a consent usage audit that maps consent types to actual data processing activities."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "data_subject_rights",
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "issue": "No data subject access request (DSAR) workflow for individual user data export or deletion",
+      "impact": "Users cannot request a copy of their personal data or request deletion under GDPR Article 15/17. The compliance export is admin-only and workspace-scoped.",
+      "fix": "Implement a user-facing 'Export my data' and 'Delete my account' flow in the settings page. Add a DSAR queue endpoint that collects user data across all tables."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_handling",
+      "file": "apps/worker/src/processors/data-retention.ts",
+      "issue": "Consent log data retention deletes records but does not anonymize them first for audit chain integrity",
+      "impact": "Hard-deleting consent logs destroys the audit trail proving consent was given, which may be required by GDPR Article 7(1).",
+      "fix": "Implement anonymization (nullify IP, user_agent, user_id) before hard-deleting consent logs. Retain a minimal anonymized record permanently."
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "pii_handling",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "IP address and user agent stored in plain text in consent_logs without anonymization",
+      "impact": "PII (IP address, user-agent string) is stored in the database. While useful for security audits, it creates additional GDPR data minimization risk.",
+      "fix": "Hash or truncate the IP address (e.g., store /24 prefix only). User agent can be stored but should be flagged as PII in data inventory."
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "cookie_compliance",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "No consent revocation UI \u2014 once accepted, users cannot change or withdraw consent",
+      "impact": "GDPR requires that withdrawing consent be as easy as giving it. Users have no way to revoke analytics or cookies consent after initial acceptance.",
+      "fix": "Add a 'Privacy settings' link in the sidebar or settings page that re-opens the consent dialog. Also clear server-side consent when revoked."
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "Consent acceptance silently fails on network error; user sees banner dismissed even if server-side record fails",
+      "impact": "If the POST to /consent fails, the banner disappears but the server has no record of consent. User believes consent was recorded when it was not.",
+      "fix": "Show an error state or retry mechanism if consent persistence fails. Only dismiss the banner after server confirms the consent record."
+    }
+  ],
+  "run_id": "privacy_ultra_20260708_073232"
+}

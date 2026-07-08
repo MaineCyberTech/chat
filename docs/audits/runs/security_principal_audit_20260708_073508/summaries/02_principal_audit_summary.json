@@ -1,0 +1,135 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "security_principal_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-08T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 4,
+    "P2": 5,
+    "P3": 2
+  },
+  "category_scores": {
+    "authentication": 85,
+    "authorization": 70,
+    "secret_handling": 90,
+    "cors_csrf": 60,
+    "input_validation": 75,
+    "rate_limiting": 85,
+    "logging_audit": 80,
+    "dependency_security": 85
+  },
+  "readiness": 79,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/middleware/require-membership.ts",
+      "issue": "requireMessageAccess middleware uses global getSupabase() instead of per-request client for initial message lookup",
+      "impact": "The anon client (no user JWT) can't satisfy 'to authenticated' RLS policies, so message lookups always fail with 404 for users behind RLS, breaking message operations (edit, delete, pin, flag, forward)",
+      "fix": "Replace getSupabase() with req.supabase (the per-user client) on line 159 of require-membership.ts to ensure RLS policies see auth.uid()"
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "csfr",
+      "file": "apps/api/src/middleware/csrf.ts",
+      "issue": "Double-submit CSRF cookie lacks __Host- prefix, vulnerable to subdomain-based cookie injection",
+      "impact": "An attacker controlling a subdomain of the app's origin can set a csrf_token cookie for the parent domain, bypassing CSRF protection on state-changing requests",
+      "fix": "Set cookie name to __Host-csrf_token (requires Secure flag + cookie set from HTTPS), and validate SameSite=Strict ensures cookie isolation",
+      "exploit_chain": "1. Attacker registers subdomain.example.com pointing to their server. 2. lures victim to visit subdomain. 3. Sets csrf_token cookie for .example.com. 4. Victim visits app.example.com, cookie is sent. 5. Attacker crafts state-changing request with matching header token."
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "cors",
+      "file": "apps/api/src/app.ts",
+      "issue": "CORS config allows requests with null origin (non-browser origins bypass origin check)",
+      "impact": "Non-browser clients, desktop apps, curl, or browser extensions can bypass CORS origin validation because null origin is permitted",
+      "fix": "Remove the 'if (!origin) return callback(null, true)' branch and require origin to always match frontendUrl"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Consent GET endpoint returns all consent_logs without user_id filter \u2014 RLS restricts to own records but query pattern invites future mistakes",
+      "impact": "While RLS prevents cross-user data leak, the code pattern selects all rows without explicit filtering, making it fragile if RLS is ever disabled or bypassed",
+      "fix": "Add explicit .eq('user_id', req.userId) filter to the consent_logs query on line 11 of consent/routes.ts"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "data_lifecycle",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR account deletion does not clean up all user data \u2014 consent_logs, sidebar_categories, channel_bookmarks, audit_logs may leak",
+      "impact": "User account deletion via DELETE /account leaves orphaned PII in consent_logs, sidebar data, bookmarks, and audit log actor references, violating GDPR right to erasure",
+      "fix": "Add deletes for consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, and message_reminders before deleting the user in auth/routes.ts"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "issue": "Admin compliance export uses getSupabaseAdmin() which bypasses RLS with no workspace-level filtering",
+      "impact": "Admin compliance export returns ALL user PII, messages, channels, and audit logs for all workspaces in a single downloadable JSON \u2014 a compromised admin token leaks all tenant data",
+      "fix": "If workspace_id is specified, scope all queries to that workspace; otherwise paginate the export and add audit logging for every compliance export. For full-workspace exports, require explicit admin confirmation or second-factor"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authentication",
+      "file": "apps/api/src/modules/status/routes.ts",
+      "issue": "Status routes use global getSupabase() instead of per-request req.supabase client",
+      "impact": "GET, PUT, DELETE /status and batch endpoints use the global anon client, bypassing RLS user-scoping and potentially leaking user status data across tenants",
+      "fix": "Replace all getSupabase() calls in status/routes.ts with req.supabase from the per-user client"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "input_validation",
+      "file": "apps/api/src/middleware/input-sanitizer.ts",
+      "issue": "Input sanitizer SQL injection patterns have high false-positive rate blocking legitimate content with common words",
+      "impact": "SQL injection pattern matching blocks words like 'select', 'insert', 'union', 'drop', 'alter' and sequences like '--', blocking legitimate messages about SQL or database topics",
+      "fix": "Remove SQL injection pattern matching from the global middleware; Supabase's parameterized queries are immune to SQL injection. Keep XSS pattern detection for non-content fields"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "cors_csrf",
+      "file": "apps/api/src/middleware/csrf.ts",
+      "issue": "CSRF cookie is set with httpOnly: true but read by client JS \u2014 httpOnly prevents JS access, breaking the double-submit pattern",
+      "impact": "The CSRF cookie is set as httpOnly (line 87), which prevents client-side JavaScript from reading it via document.cookie. The frontend cannot include the x-csrf-token header matching the cookie, making CSRF protection non-functional",
+      "fix": "Remove httpOnly: true from the CSRF cookie on line 87, or use a non-httpOnly cookie for the CSRF token sent to the client"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authentication",
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "issue": "Notification preference routes use global getSupabase() instead of per-request client",
+      "impact": "GET/PUT/DELETE /channels/:id/notification-preference use global anon client, bypassing RLS user context \u2014 could leak or allow modification of other users' preferences",
+      "fix": "Replace getSupabase() with req.supabase in notifications/routes.ts"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "observability",
+      "file": "apps/api/src/middleware/error-handler.ts",
+      "issue": "SHOW_STACK_TRACES env var conditionally exposes stack traces in error responses",
+      "impact": "If SHOW_STACK_TRACES is accidentally set to 'true' in production, full stack traces with internal paths may be returned to API consumers",
+      "fix": "Consider removing stack trace exposure entirely in non-development environments, or gate it behind NODE_ENV check in addition to the env var"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "dependency",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "DOMPurify sanitization strips all HTML tags from content including safe formatting",
+      "impact": "DOMPurify is configured with ALLOWED_TAGS: [] and ALLOWED_ATTR: [], stripping ALL HTML from message content \u2014 users cannot use any rich text including bold, lists, or links",
+      "fix": "Allow safe HTML tags (b, i, a, code, pre, blockquote, ul, ol, li) through DOMPurify to support rich text while preventing XSS"
+    }
+  ],
+  "run_id": "security_principal_audit_20260708_073508"
+}

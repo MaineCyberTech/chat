@@ -1,0 +1,617 @@
+{
+  "stage": "principal_audit",
+  "run_id": "full_audit_consolidated_20260708_074019",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-08T07:40:19Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 13,
+    "P2": 31,
+    "P3": 17
+  },
+  "category_scores": {
+    "rest_contract": 75,
+    "realtime_contract": 65,
+    "reconnect_resync": 60,
+    "pagination": 70,
+    "idempotency": 80,
+    "caching": 75,
+    "error_consistency": 85,
+    "schema_migration_alignment": 85,
+    "relational_integrity": 75,
+    "concurrency_safety": 80,
+    "transaction_coverage": 65,
+    "orphan_prevention": 70,
+    "indexing": 80,
+    "migration_safety": 85,
+    "rollback_coverage": 90,
+    "schema_integrity": 75,
+    "rls_posture": 85,
+    "data_lifecycle": 70,
+    "seed_data_risk": 85,
+    "F1_Design_System": 90,
+    "F2_Layout_Navigation": 75,
+    "F3_Chat_UX": 80,
+    "F4_State_Management": 70,
+    "F5_Accessibility": 65,
+    "F6_Responsive_Design": 75,
+    "F7_Performance": 60,
+    "F8_Interaction_Quality": 70,
+    "F9_Visual_Consistency": 85,
+    "F10_Component_Architecture": 65,
+    "structured_logging": 90,
+    "distributed_tracing": 65,
+    "health_checks": 85,
+    "metrics": 80,
+    "alerting": 60,
+    "incident_response": 60,
+    "audit_logging": 85,
+    "consent_management": 75,
+    "data_retention": 80,
+    "pii_handling": 70,
+    "compliance_export": 85,
+    "cookie_compliance": 60,
+    "data_subject_rights": 50,
+    "authentication": 85,
+    "authorization": 70,
+    "secret_handling": 90,
+    "cors_csrf": 60,
+    "input_validation": 75,
+    "rate_limiting": 85,
+    "logging_audit": 80,
+    "dependency_security": 85
+  },
+  "readiness": 75.3,
+  "finding_count": 61,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime_contract",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "Socket.io events have no per-event authorization after initial connection auth",
+      "impact": "After socket auth, events like typing:start, typing:stop, channel:join, channel:leave, presence:set can be emitted for any channel/user without verifying membership. A malicious client could spam typing indicators on arbitrary channels or spoof presence updates for other users",
+      "fix": "Add per-event authorization middleware or checks: verify workspace membership on channel:join/channel:leave, verify the emitting user matches the claimed userId on presence:set. For typing events, verify the user is a member of the target channel's workspace"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime_contract",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "Presence state flickers offline\u2192online on every reconnect (no graceful reconnect window)",
+      "impact": "On every disconnect/reconnect, presence toggles from online\u2192offline\u2192online in rapid succession. Other users see the user flicker offline briefly, causing confusion and unnecessary UI updates. Active users may appear briefly offline to others during network hiccups",
+      "fix": "Add a disconnect grace period (e.g., 30s delay before setting presence to offline). Use a 'last_seen_at' timestamp updated on heartbeat, and only mark offline after the grace period expires without a new heartbeat. Socket events should emit presence:away during the grace window instead of offline"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "rest_contract",
+      "file": "apps/api/src/route-registry.ts",
+      "issue": "No API versioning mechanism beyond static /v1 prefix \u2014 consumers cannot negotiate versions",
+      "impact": "Breaking changes to API payloads or response shapes cannot be rolled out gracefully. All consumers are forced to update simultaneously or break. No Accept-Version header, no Content-Type version negotiation, no deprecation timeline header on existing endpoints",
+      "fix": "Add Accept-Version header support for content negotiation, implement a Sunset or Deprecation header on old versions, and document the versioning strategy (URL-path vs header-based)"
+    },
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "realtime_contract",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "No server-side deduplication for socket event delivery on reconnect \u2014 clients may receive duplicate events",
+      "impact": "Socket.io's default behavior can deliver buffered events on reconnect. Without server-side event IDs and dedup markers, clients may process duplicate message:new, message:updated, or presence:update events, causing duplicate UI entries and confusion",
+      "fix": "Assign monotonic event IDs to critical events (message:new, message:updated, message:deleted). Track last-received event ID per-socket and skip events already delivered. Client-side should already handle dedup via message ID"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "realtime_contract",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "No rate limiting on socket events after authentication",
+      "impact": "Once a socket is authenticated, events like typing:start, channel:join, channel:leave have no per-user rate limiting. A compromised or malicious client can flood the server with events, causing excessive DB writes and broadcast storms to all connected clients",
+      "fix": "Implement per-user rate limiting on socket events (e.g., max 10 typing events per second per user, max 5 channel joins per second). Use an in-memory counter with sliding window per userId"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "pagination",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Inconsistent pagination approaches \u2014 cursor-based for message listing, offset-based for search and other endpoints",
+      "impact": "Cursor-based pagination (message listing) and offset-based pagination (search, channels, admin endpoints) create two different client pagination patterns, increasing frontend complexity. Offset-based pagination also has well-known issues with data shifting during page navigation",
+      "fix": "Standardize on cursor-based pagination for all list endpoints. For admin/export endpoints where offset is acceptable, document the tradeoffs. Implement a shared pagination utility that supports both cursor and offset modes"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "rest_contract",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "Webhook GET /webhooks requires workspace_id query param but PATCH /webhooks/:id uses URL param \u2014 inconsistent resource identification",
+      "impact": "The workspace_id query param pattern for GET /webhooks is inconsistent with the URL-based resource identification used by other endpoints (PATCH, DELETE). This creates confusion for API consumers and SDK authors who expect consistent resource addressing",
+      "fix": "Move GET /webhooks to /workspaces/:workspaceId/webhooks path, or accept workspace_id in both query param and URL param consistently. Document the workspace scoping pattern clearly"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "rest_contract",
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "issue": "Admin and regular modules both define /webhooks/deliveries route \u2014 potential route collision",
+      "impact": "Both admin/routes.ts and webhooks/routes.ts define GET /webhooks/deliveries. Depending on route registration order in route-registry.ts, one may shadow the other. The admin version is for super-users while the regular version uses workspace_id query param \u2014 clients may hit the wrong endpoint",
+      "fix": "Prefix admin webhook routes with /admin (e.g., /v1/admin/webhooks/deliveries) to avoid collision. The admin route is already mounted at /v1/admin, so this may be fine \u2014 but verify route precedence and document both endpoints"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "rest_contract",
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "issue": "Reactions batch endpoint lacks authentication on the user \u2014 no requireMessageAccess middleware",
+      "impact": "GET /reactions/batch has no requireMessageAccess middleware \u2014 any authenticated user can query reactions for any set of message IDs without verifying channel membership. Could leak channel conversation patterns via reaction presence",
+      "fix": "Add requireMessageAccess validation for each message ID, or restrict the batch endpoint to only return reactions for messages the user can access"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "rest_contract",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR export returns full message content as raw JSON download with no encryption or expiry",
+      "impact": "The GDPR data export endpoint returns a downloadable JSON containing all user messages, notifications, preferences, and push subscription data. The download link has no authentication after the initial request and no expiry \u2014 if intercepted, all user data is exposed",
+      "fix": "Generate a short-lived signed URL (e.g., 5 minutes) for the export, or stream the response directly with proper Content-Disposition headers already implemented. Consider encrypting the export payload at rest"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "rest_contract",
+      "file": "apps/api/src/lib/pagination.ts",
+      "issue": "Pagination helper silently caps limit at maxLimit without notifying the caller",
+      "impact": "When a client requests a limit larger than maxLimit, the value is silently capped. The response doesn't indicate the original requested value vs actual limit, which can confuse API consumers about pagination behavior",
+      "fix": "Include both requested_limit and actual_limit in paginated responses, or return a warning header when the limit is capped"
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "concurrency_safety",
+      "file": "apps/api/src/modules/channels/service.ts",
+      "issue": "Channel update uses optimistic locking version check but reorderChannel does sequential row updates without version check or transaction",
+      "impact": "Concurrent reorder operations can interleave \u2014 two admins reordering channels simultaneously can get partial interleaved results. Some channels may end up with duplicate sort_order values or incorrect order. The updates are sequential without isolation, so a crash mid-reorder leaves inconsistent state",
+      "fix": "Wrap reorder in a single transaction (Supabase RPC with BEGIN/COMMIT/ROLLBACK) and accept a version parameter for the entire workspace's channel ordering to prevent concurrent reorder conflicts"
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "relational_integrity",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR account deletion at DELETE /account does not delete consent_logs, leaving orphaned user references",
+      "impact": "The consent_logs table has ON DELETE CASCADE referencing auth.users(id), but if users are deleted via the GDPR endpoint (which uses supabase.auth.admin.deleteUser), the cascade should clean up consent_logs. However, the trigger-based cleanup at 20260707000002 also handles this. But the GDPR endpoint at auth/routes.ts:212-230 does NOT call the trigger path \u2014 it manually deletes specific tables. consent_logs is not included in the manual delete list, so consent records for the deleted user remain as orphans",
+      "fix": "Add DELETE FROM consent_logs WHERE user_id = $userId to the GDPR deletion sequence in auth/routes.ts, after the notifications delete and before the users table delete"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "orphan_prevention",
+      "file": "apps/api/src/modules/messages/service.ts",
+      "issue": "Message hard-delete via remove() breaks referential integrity for child records despite CASCADE",
+      "impact": "When a message is hard-deleted via messageService.remove() (line 328), CASCADE deletes on reactions, message_flags, and message_edit_history will clean up child records. However, the soft-delete RLS only filters deleted_at IS NULL \u2014 hard-deleted messages disappear from view but their brief existence is acknowledged by the CASCADE behavior on child tables. Inconsistency between soft-delete strategy and hard-delete implementation can lead to unexpected disappearances of reactions or flags",
+      "fix": "Standardize on soft-delete for messages (UPDATE deleted_at = NOW()) to match the RLS strategy. Only hard-delete in a background cleanup job after the retention period has passed"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "transaction_coverage",
+      "file": "apps/api/src/modules/channels/service.ts",
+      "issue": "createGroupChannel writes to channels, channel_members, and dm_members tables sequentially without transaction isolation",
+      "impact": "If the server crashes after creating the channel but before adding members to channel_members and dm_members, an orphan channel with no members is created. Subsequent attempts to create the same DM will fail (if the duplicate detection finds the existing channel) or create duplicates, leading to inconsistent DM state",
+      "fix": "Wrap the multi-table channel creation + member additions in a Supabase RPC with BEGIN/COMMIT/ROLLBACK transaction to ensure atomicity"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "relational_integrity",
+      "file": "supabase/policies/06_reactions.sql",
+      "issue": "Reactions SELECT policy allows any authenticated user to read all reactions without channel membership check \u2014 cross-tenant reaction enumeration",
+      "impact": "Any authenticated user can enumerate all reactions across the entire system by querying GET /messages/:id/reactions (which uses requireMessageAccess) or via direct Supabase API access, as the RLS policy does not filter by channel membership. This leaks user reaction patterns across workspace/tenant boundaries",
+      "fix": "Update the reactions SELECT RLS policy to only return reactions for messages that are in channels the user can access (join to messages \u2192 channels \u2192 workspace_members)"
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "indexing",
+      "file": "supabase/migrations",
+      "issue": "No composite index on channel_bookmarks(channel_id, sort_order) despite frequent ordered queries",
+      "impact": "The channel bookmarks endpoint orders by sort_order within a channel. With many bookmarks per channel, the absence of a composite index on (channel_id, sort_order) will cause sequential scans for the ORDER BY + WHERE clause",
+      "fix": "Add CREATE INDEX IF NOT EXISTS idx_channel_bookmarks_channel_sort ON public.channel_bookmarks(channel_id, sort_order)"
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "schema_migration_alignment",
+      "file": "supabase/migrations/20260627000001_add_missing_indexes.sql",
+      "issue": "idx_workspace_members_user_role index exists but is unused by common query patterns",
+      "impact": "The index idx_workspace_members_user_role on (user_id, role) supports the admin check query pattern (user_id + role filter), but the common workspace membership check queries filter on (workspace_id, user_id) which has no dedicated composite index. The workspace_members table has a PK on (workspace_id, user_id) which covers this, so no additional index is needed, but the user_role index may be redundant",
+      "fix": "Consider removing idx_workspace_members_user_role if query analysis shows it is never used, to reduce write overhead. Or keep it for admin queries that filter by role across workspaces"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "data_lifecycle",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR account deletion does not clean up consent_logs, sidebar_categories, channel_bookmarks, or audit_logs",
+      "impact": "When a user deletes their account via DELETE /account at auth/routes.ts:212, user data is deleted from notifications, push_subscriptions, messages, reactions, channel_members, workspace_members, user_preferences, and users \u2014 but consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, message_reminders, and audit_logs are left behind, violating GDPR right to erasure and leaving orphaned PII",
+      "fix": "Add delete operations for consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, message_reminders, and audit_logs (or anonymize actor_user_id in audit_logs)"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "supabase/migrations/20260707000002_cleanup_deleted_users.sql",
+      "issue": "Migration 20260707000002 adds a trigger on auth.users DELETE but cannot be rolled back (no down migration)",
+      "impact": "If the cleanup trigger needs to be modified or reverted, there is no rollback script. The TRIGGER on_auth_user_deleted and FUNCTION handle_user_deletion remain in the database permanently after deployment, making it impossible to cleanly roll back this migration in CI or production rollback scenarios",
+      "fix": "Create supabase/rollback/20260707000002_cleanup_deleted_users_down.sql that DROP TRIGGER on_auth_user_deleted and DROP FUNCTION handle_user_deletion"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "apps/api/src/modules/messages/service.ts",
+      "issue": "Message remove() performs hard DELETE instead of soft-delete, inconsistent with soft-delete strategy",
+      "impact": "The message remove() in messages/service.ts:328 does a hard DELETE from the messages table, bypassing the soft-delete column (deleted_at). Messages deleted via the API are permanently removed, cannot be restored, and break referential integrity for child records (reactions, flags, edit history) despite CASCADE. This is inconsistent with the soft-delete RLS policy that filters by deleted_at IS NULL",
+      "fix": "Change message remove() to soft-delete (UPDATE deleted_at = NOW()) instead of hard DELETE. Reserve hard delete for a separate admin purge endpoint or data retention job"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "schema_integrity",
+      "file": "supabase/migrations/20260703000001_add_message_features.sql",
+      "issue": "message_flags table has UNIQUE(user_id, message_id) constraint but no explicit index matching the unique constraint",
+      "impact": "While a unique constraint implicitly creates a btree index, there is no explicit composite index on (user_id, message_id) for the common query pattern filtering by user_id only. The separate indexes idx_message_flags_user and idx_message_flags_message are single-column and less efficient for the upsert pattern with onConflict",
+      "fix": "The implicit unique index is sufficient for the constraint, but consider adding a covering index with INCLUDE (created_at) for the getFlagged query which joins message_flags \u2192 messages by user_id"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "schema_integrity",
+      "file": "apps/api/src/modules/channels/service.ts",
+      "issue": "Channel reordering updates individual rows sequentially with no transaction wrapping \u2014 partial updates possible",
+      "impact": "The reorderChannel method in channels/service.ts:48-64 updates each channel's sort_order in a loop without a database transaction. If the process fails mid-way, channels will have inconsistent sort_order values, leaving some updated and others not",
+      "fix": "Wrap the sort_order updates in a Supabase RPC with BEGIN/COMMIT/ROLLBACK transaction, or use a batch update approach with a single query"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260625000008_create_reactions.sql",
+      "issue": "Reactions SELECT RLS policy allows all authenticated users to read any reaction without channel membership check",
+      "impact": "The policy 'reactions_select' at line 12-14 allows SELECT for all authenticated users (USING (true)). This means any authenticated user can enumerate reactions across all messages in all channels, leaking which users reacted to which content even in private channels they don't belong to",
+      "fix": "Restrict reactions SELECT policy to only return reactions for messages in channels the user can access via workspace/channel membership, matching the messages_select_member pattern"
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "schema_integrity",
+      "file": "supabase/migrations/20260627000002_enforce_data_retention.sql",
+      "issue": "Data retention enforcement uses pg_cron setup documented in a separate runbook rather than a migration",
+      "impact": "The data retention policy for consent_logs and old messages requires manual pg_cron setup. This is not automatically applied during deployment, creating a gap between migration state and actual enforcement",
+      "fix": "Either include the pg_cron job creation SQL directly in the migration (gated by IF pg_cron extension exists), or integrate the setup into the deployment pipeline script"
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "indexing",
+      "file": "supabase/migrations/20260626000025_consent_logs.sql",
+      "issue": "consent_logs indexes only cover user_id but not consent_type or created_at for audit queries",
+      "impact": "The idx_consent_logs_user_id index supports user-specific lookups, but audit queries filtering by consent_type or date range will require full table scans",
+      "fix": "Consider adding a composite index on (consent_type, created_at) if audit queries against consent_logs are expected at scale"
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/policies/09_webhooks.sql",
+      "issue": "Webhook RLS policies allow workspace members to read webhook_endpoints including encrypted secrets",
+      "impact": "While the API masks secrets at the application layer (webhooks/routes.ts:106-108), the RLS policy allows any workspace member to SELECT from webhook_endpoints, which includes the encrypted_secret column. If an attacker gains direct DB access (via SQL injection or exposed anon key), they could extract encrypted webhook secrets",
+      "fix": "Restrict webhook_endpoints RLS to only expose non-secret columns, or use a VIEW that excludes the secret column for regular users"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "F2 \u2014 Layout & Navigation",
+      "file": "apps/web/app/globals.css",
+      "issue": "Sticky bottom navigation overlaps content on mobile beyond post-create container",
+      "impact": "Settings, admin, and channel info panels lack bottom padding compensation for fixed bottom nav, causing content to be hidden behind nav bar on mobile.",
+      "fix": "Apply uniform bottom padding to all main content areas (.app__content) using var(--bottom-nav-height) + safe-area. Replace page-specific overrides with a global content wrapper class."
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "F3 \u2014 Chat UX",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "Message list renders all messages as DOM nodes with no virtualization",
+      "impact": "Channels with 500+ messages render 500+ DOM nodes plus reactions, context menus, and modals. Performance degrades significantly on low-power mobile devices and long chat sessions.",
+      "fix": "Add @tanstack/react-virtual to render only visible messages (~30-50 DOM nodes). Preserve scroll position on message prepend for infinite scroll. Implement estimated row heights for variable content."
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "F4 \u2014 State Management & Data Flow",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "Optimistic echo deduplication leaves ghost messages after reconnection before server confirmation",
+      "impact": "If a socket reconnects before the API confirms a message, the optimistic temp message persists permanently as a ghost until page reload. Users see duplicate or phantom messages.",
+      "fix": "Track pending message IDs in a Set ref. On initial channel load, reconcile against confirmed IDs. Remove temp IDs that match confirmed server IDs from the pending set. Clear stale temps on reconnect."
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "F5 \u2014 Accessibility",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "8 icon-only buttons lack descriptive accessible names",
+      "impact": "Screen reader users cannot distinguish buttons like 'Export', 'Channel menu', 'Priority picker', 'Schedule message', 'Collapse sidebar', 'Add category', 'New DM', and 'Add channel'. These are critical navigation and action elements.",
+      "fix": "Audit all icon-only buttons for aria-label correctness. Use context-specific labels: 'Export channel' instead of 'Export', 'Set message priority' instead of 'Set priority'. Add aria-describedby for toolbar groupings."
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "F5 \u2014 Accessibility",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "Overlay modals do not auto-focus first interactive element on open",
+      "impact": "The @everyone warning, priority warning, and schedule picker modals trap keyboard focus but do not programmatically move focus to the first button. Keyboard and screen reader users must tab blind to locate the dialog content.",
+      "fix": "Add useEffect on modal mount that calls .focus() on the first focusable button (Cancel/Send). Ensure focus is restored to the triggering element when the modal closes."
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "F5 \u2014 Accessibility",
+      "file": "apps/web/app/(workspace)/layout.tsx",
+      "issue": "Ctrl+K shortcut conflicts with browser default and TipTap link insertion",
+      "impact": "Pressing Ctrl+K in the message editor triggers QuickSwitcher AND may insert a TipTap link simultaneously. The browser may also open its own search. This creates confusing and inconsistent behavior for power users relying on keyboard shortcuts.",
+      "fix": "Suppress global Ctrl+K handler when the active element is an input/textarea/editor. Use Ctrl+Shift+K for QuickSwitcher when inside the editor. Keep Ctrl+K for TipTap link insertion as users expect."
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "F6 \u2014 Responsive Design",
+      "file": "apps/web/components/workspace/app-sidebar.tsx",
+      "issue": "Sidebar auto-collapse state at tablet widths is not persisted across page loads",
+      "impact": "Users who manually expand the sidebar at tablet width lose their preference on every page navigation. The auto-collapse logic resets, forcing a manual re-expand each time.",
+      "fix": "Save the userToggledRef state to localStorage. On mount, check localStorage before applying auto-collapse. Respect user's explicit choice until they toggle again or clear storage."
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "F7 \u2014 Performance",
+      "file": "apps/web/components/chat/emoji-picker.tsx",
+      "issue": "3357 emoji entries are statically imported adding ~150KB to client bundle",
+      "impact": "The emoji-data.ts is always bundled with the chat chunk regardless of whether the emoji picker is opened. Increases initial JS payload and parse time for all users.",
+      "fix": "Lazy-load emoji-data.ts via dynamic import when EmojiPicker first mounts. Use React.lazy or next/dynamic for the picker component itself. Cache the loaded data in a module-level variable."
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "F8 \u2014 Interaction Quality",
+      "file": "apps/web/components/workspace/app-sidebar.tsx",
+      "issue": "Category drag-and-drop reorder uses HTML5 DnD API with no touch support",
+      "impact": "Mobile and tablet users cannot reorder sidebar categories because native HTML5 drag-and-drop does not work on touch devices. This feature is desktop-only despite the app being responsive.",
+      "fix": "Add touch event handlers (touchstart/touchmove/touchend) that mirror the drag logic. Alternatively, use a pointer-events-based approach or a lightweight library like @dnd-kit/core."
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "F9 \u2014 Visual Consistency",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "Inline styles use hardcoded color values instead of CSS custom properties",
+      "impact": "Hardcoded colors (#fff, rgba(0,0,0,0.4)) in ConnectionBanner, overlay, and button elements break dark mode consistency and make theme customization harder. Minor visual drift between themed and un-themed elements.",
+      "fix": "Replace hardcoded colors with CSS variables: use var(--banner-bg) for connection banner, var(--overlay-bg) for modals. Add fallback values for backwards compatibility."
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "F10 \u2014 Component Architecture",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "ChatView component exceeds 890 lines with 8+ mixed responsibilities",
+      "impact": "Single component handles socket lifecycle, optimistic updates, file uploads, typing, presence, notifications, media room, replies, threads, and channel info. Hard to test, maintain, or reason about. Changes risk breaking unrelated features.",
+      "fix": "Extract: useChannelSocket (socket join/leave/events), useChannelNotifications (sound + desktop + prefs), useTypingIndicator (emit + display). ChatView should only compose these hooks with JSX."
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "distributed_tracing",
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "No trace/correlation ID propagation across API, worker, and database tiers",
+      "impact": "Cannot trace a request end-to-end across service boundaries. Correlating logs from API \u2192 Worker \u2192 DB requires manual grep, slowing root cause analysis.",
+      "fix": "Implement OpenTelemetry instrumentation or inject a requestId header through all service calls. Add traceId/spanId to all structured log entries."
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "structured_logging",
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "Logger does not automatically include request context (requestId, userId, route) in structured metadata",
+      "impact": "Log entries lack correlation context, making it difficult to filter or aggregate per-request during incident triage.",
+      "fix": "Add a middleware that creates a child logger with requestId, userId, and route bound automatically, and make it available via req.log."
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "health_checks",
+      "file": "apps/api/src/modules/health/service.ts",
+      "issue": "Health endpoint does not check Redis, queue, or external dependency health",
+      "impact": "Health check can report 'healthy' while critical dependencies (Redis, BullMQ) are down, giving false confidence for deployment decisions.",
+      "fix": "Add Redis ping, queue health (BullMQ), and LiveKit connectivity checks to getFullHealth(). Report unhealthy status when any critical dependency fails."
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "metrics",
+      "file": "apps/api/src/lib/sentry.ts",
+      "issue": "Sentry tracesSampleRate set to 1.0 in development environment, risking excessive event volume",
+      "impact": "In shared dev/staging environments with traffic, 100% tracing generates unnecessary cost and noise, potentially masking real issues.",
+      "fix": "Set tracesSampleRate to 0.1 for development and 0.2 for production. Use a separate DSN or disable Sentry in non-production unless explicitly enabled."
+    },
+    {
+      "severity": "P3",
+      "domain": "observability",
+      "category": "metrics",
+      "file": "apps/api/src/lib/metrics.ts",
+      "issue": "Metrics endpoint (/metrics) not exposed or documented in routes",
+      "impact": "Prometheus cannot scrape metrics because no /metrics route is registered in the route registry.",
+      "fix": "Add a GET /metrics route registered in route-registry.ts that serves register.metrics(). Protect behind authentication or firewall."
+    },
+    {
+      "severity": "P3",
+      "domain": "observability",
+      "category": "incident_response",
+      "file": "apps/worker/src/main.ts",
+      "issue": "Worker health check on separate port (4100) not documented in runbook or deployment config",
+      "impact": "Operators and load balancers may not know the worker exposes a health endpoint, leading to undetected worker failures.",
+      "fix": "Document HEALTH_PORT in environment schema and add to the deployment health check configuration. Standardize worker health to use a known path rather than a separate port."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "Cookie banner offers only binary choice (Accept all / Essential only) with no granular per-category opt-in",
+      "impact": "Users cannot individually control analytics vs. marketing vs. functional cookies, which may violate GDPR ePrivacy Directive requirements for granular consent.",
+      "fix": "Implement a tiered consent dialog allowing separate toggles for 'essential', 'analytics', and 'marketing' categories. Store each consent_type independently."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Marketing consent type is accepted and stored but no marketing functionality exists to honor the preference",
+      "impact": "Consent is collected for 'marketing' purposes without any marketing feature (emails, ads) to respect that preference, creating an audit gap if marketing features are added later without consent re-collection.",
+      "fix": "Either remove the 'marketing' consent_type until marketing features exist, or add a consent usage audit that maps consent types to actual data processing activities."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "data_subject_rights",
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "issue": "No data subject access request (DSAR) workflow for individual user data export or deletion",
+      "impact": "Users cannot request a copy of their personal data or request deletion under GDPR Article 15/17. The compliance export is admin-only and workspace-scoped.",
+      "fix": "Implement a user-facing 'Export my data' and 'Delete my account' flow in the settings page. Add a DSAR queue endpoint that collects user data across all tables."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_handling",
+      "file": "apps/worker/src/processors/data-retention.ts",
+      "issue": "Consent log data retention deletes records but does not anonymize them first for audit chain integrity",
+      "impact": "Hard-deleting consent logs destroys the audit trail proving consent was given, which may be required by GDPR Article 7(1).",
+      "fix": "Implement anonymization (nullify IP, user_agent, user_id) before hard-deleting consent logs. Retain a minimal anonymized record permanently."
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "pii_handling",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "IP address and user agent stored in plain text in consent_logs without anonymization",
+      "impact": "PII (IP address, user-agent string) is stored in the database. While useful for security audits, it creates additional GDPR data minimization risk.",
+      "fix": "Hash or truncate the IP address (e.g., store /24 prefix only). User agent can be stored but should be flagged as PII in data inventory."
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "cookie_compliance",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "No consent revocation UI \u2014 once accepted, users cannot change or withdraw consent",
+      "impact": "GDPR requires that withdrawing consent be as easy as giving it. Users have no way to revoke analytics or cookies consent after initial acceptance.",
+      "fix": "Add a 'Privacy settings' link in the sidebar or settings page that re-opens the consent dialog. Also clear server-side consent when revoked."
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "Consent acceptance silently fails on network error; user sees banner dismissed even if server-side record fails",
+      "impact": "If the POST to /consent fails, the banner disappears but the server has no record of consent. User believes consent was recorded when it was not.",
+      "fix": "Show an error state or retry mechanism if consent persistence fails. Only dismiss the banner after server confirms the consent record."
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "cors",
+      "file": "apps/api/src/app.ts",
+      "issue": "CORS config allows requests with null origin (non-browser origins bypass origin check)",
+      "impact": "Non-browser clients, desktop apps, curl, or browser extensions can bypass CORS origin validation because null origin is permitted",
+      "fix": "Remove the 'if (!origin) return callback(null, true)' branch and require origin to always match frontendUrl"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Consent GET endpoint returns all consent_logs without user_id filter \u2014 RLS restricts to own records but query pattern invites future mistakes",
+      "impact": "While RLS prevents cross-user data leak, the code pattern selects all rows without explicit filtering, making it fragile if RLS is ever disabled or bypassed",
+      "fix": "Add explicit .eq('user_id', req.userId) filter to the consent_logs query on line 11 of consent/routes.ts"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "data_lifecycle",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR account deletion does not clean up all user data \u2014 consent_logs, sidebar_categories, channel_bookmarks, audit_logs may leak",
+      "impact": "User account deletion via DELETE /account leaves orphaned PII in consent_logs, sidebar data, bookmarks, and audit log actor references, violating GDPR right to erasure",
+      "fix": "Add deletes for consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, and message_reminders before deleting the user in auth/routes.ts"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "issue": "Admin compliance export uses getSupabaseAdmin() which bypasses RLS with no workspace-level filtering",
+      "impact": "Admin compliance export returns ALL user PII, messages, channels, and audit logs for all workspaces in a single downloadable JSON \u2014 a compromised admin token leaks all tenant data",
+      "fix": "If workspace_id is specified, scope all queries to that workspace; otherwise paginate the export and add audit logging for every compliance export. For full-workspace exports, require explicit admin confirmation or second-factor"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authentication",
+      "file": "apps/api/src/modules/status/routes.ts",
+      "issue": "Status routes use global getSupabase() instead of per-request req.supabase client",
+      "impact": "GET, PUT, DELETE /status and batch endpoints use the global anon client, bypassing RLS user-scoping and potentially leaking user status data across tenants",
+      "fix": "Replace all getSupabase() calls in status/routes.ts with req.supabase from the per-user client"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "input_validation",
+      "file": "apps/api/src/middleware/input-sanitizer.ts",
+      "issue": "Input sanitizer SQL injection patterns have high false-positive rate blocking legitimate content with common words",
+      "impact": "SQL injection pattern matching blocks words like 'select', 'insert', 'union', 'drop', 'alter' and sequences like '--', blocking legitimate messages about SQL or database topics",
+      "fix": "Remove SQL injection pattern matching from the global middleware; Supabase's parameterized queries are immune to SQL injection. Keep XSS pattern detection for non-content fields"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "cors_csrf",
+      "file": "apps/api/src/middleware/csrf.ts",
+      "issue": "CSRF cookie is set with httpOnly: true but read by client JS \u2014 httpOnly prevents JS access, breaking the double-submit pattern",
+      "impact": "The CSRF cookie is set as httpOnly (line 87), which prevents client-side JavaScript from reading it via document.cookie. The frontend cannot include the x-csrf-token header matching the cookie, making CSRF protection non-functional",
+      "fix": "Remove httpOnly: true from the CSRF cookie on line 87, or use a non-httpOnly cookie for the CSRF token sent to the client"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authentication",
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "issue": "Notification preference routes use global getSupabase() instead of per-request client",
+      "impact": "GET/PUT/DELETE /channels/:id/notification-preference use global anon client, bypassing RLS user context \u2014 could leak or allow modification of other users' preferences",
+      "fix": "Replace getSupabase() with req.supabase in notifications/routes.ts"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "observability",
+      "file": "apps/api/src/middleware/error-handler.ts",
+      "issue": "SHOW_STACK_TRACES env var conditionally exposes stack traces in error responses",
+      "impact": "If SHOW_STACK_TRACES is accidentally set to 'true' in production, full stack traces with internal paths may be returned to API consumers",
+      "fix": "Consider removing stack trace exposure entirely in non-development environments, or gate it behind NODE_ENV check in addition to the env var"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "dependency",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "DOMPurify sanitization strips all HTML tags from content including safe formatting",
+      "impact": "DOMPurify is configured with ALLOWED_TAGS: [] and ALLOWED_ATTR: [], stripping ALL HTML from message content \u2014 users cannot use any rich text including bold, lists, or links",
+      "fix": "Allow safe HTML tags (b, i, a, code, pre, blockquote, ul, ol, li) through DOMPurify to support rich text while preventing XSS"
+    }
+  ]
+}

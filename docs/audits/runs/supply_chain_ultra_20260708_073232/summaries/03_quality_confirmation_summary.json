@@ -1,0 +1,91 @@
+{
+  "stage": "quality_confirmation",
+  "prompt_name": "supply_chain_ultra",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T12:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 3,
+    "P3": 4
+  },
+  "category_scores": {
+    "lockfile": 92,
+    "dependabot": 90,
+    "trivy_fs_scan": 85,
+    "trivy_image_scan": 80,
+    "sbom": 80,
+    "image_signatures": 55,
+    "supply_chain_levels": 60,
+    "peer_deps": 90,
+    "docker_hygiene": 72,
+    "npm_audit": 85
+  },
+  "readiness": 78.9,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "image_integrity",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Docker images pushed to GHCR are not signed/attested; no cosign, notation, or SLSA provenance",
+      "impact": "No cryptographic verification that images were built from trusted CI. Compromised CI could inject malicious images without detection at deploy time.",
+      "fix": "Integrate cosign for image signing + keyless signing via GitHub OIDC. Add SLSA generator workflow for provenance attestation."
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "docker_hygiene",
+      "file": "apps/api/Dockerfile",
+      "issue": "No multi-stage build verification; package installation may include dev dependencies in production image if not properly staged",
+      "impact": "Production images may contain unnecessary binaries and packages, increasing attack surface and image size.",
+      "fix": "Audit Dockerfiles to confirm multi-stage build separation. Add .dockerignore entry for dev dependencies. Run `docker scout` or `trivy` on final stage only."
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "dependency_audit",
+      "file": "pnpm-lock.yaml",
+      "issue": "No automated license compliance check; open-source dependency licenses are not reviewed or tracked",
+      "impact": "Risk of GPL/AGPL viral license contamination or incompatible license terms in production distribution.",
+      "fix": "Add pnpm-licenses or license-checker to CI. Fail build on prohibited licenses (AGPL, non-commercial). Add license report to SBOM."
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "trivy",
+      "file": ".github/workflows/validate.yml",
+      "issue": "Trivy fs scan runs on every PR but vulnerability database is not updated; stale DB misses recent CVEs",
+      "impact": "Scans may miss vulnerabilities discovered between cached DB updates. False sense of security.",
+      "fix": "Add trivy DB update step before scanning: `trivy image --download-db-only` or use `--cache-dir` with scheduled refresh."
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "trivy",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Trivy image scan runs with continue-on-error: true, so vulnerabilities do not block the build",
+      "impact": "HIGH/CRITICAL vulnerabilities in Docker images are reported but do not prevent deployment. No enforcement.",
+      "fix": "Set continue-on-error: false for production builds, or add a post-scan step that fails if CRITICAL vulnerabilities exceed threshold (e.g., > 0)."
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "sbom",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "SBOM generation only runs on push to develop, not on main/release builds",
+      "impact": "Production releases lack SBOM artifacts for vulnerability tracking and compliance.",
+      "fix": "Enable SBOM generation for all pushes to main/release branches. Upload SBOM as release asset."
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "dependabot",
+      "file": ".github/dependabot.yml",
+      "issue": "Dependabot batch groups (minor-patch) may cause delayed patch updates for critical security fixes",
+      "impact": "Critical security patches bundled with non-urgent changes may be delayed by cooldown period (15 days).",
+      "fix": "Exempt 'security' update type from batch grouping so critical patches are opened immediately. Add `ignored_updates` only for non-security."
+    }
+  ],
+  "run_id": "supply_chain_ultra_20260708_073232"
+}

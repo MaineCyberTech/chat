@@ -1,0 +1,88 @@
+{
+  "stage": "quality_confirmation",
+  "prompt_name": "resilience_chaos_ultra",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-07T03:42:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 5,
+    "P3": 2
+  },
+  "category_scores": {
+    "circuit_breaker": 85,
+    "retry_logic": 80,
+    "idempotency": 75,
+    "timeout_handling": 85,
+    "graceful_degradation": 70,
+    "bulkhead_isolation": 55,
+    "chaos_testing": 55
+  },
+  "readiness": 72.14,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "bulkhead_isolation",
+      "file": "apps/worker/src/main.ts",
+      "issue": "No bulkhead or isolation pattern between different queue processors sharing the same Redis connection",
+      "impact": "A single misbehaving queue processor (e.g., blocked webhook delivery) can exhaust the Redis connection pool and starve other processors (notifications, search indexing).",
+      "fix": "Use separate Redis connection pools per queue processor, or configure max concurrency per processor independently. Monitor Redis connection usage per processor."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "circuit_breaker",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker metrics are tracked but not exposed via the /metrics endpoint for monitoring",
+      "impact": "Operators cannot monitor circuit breaker state (open/closed/half-open) in dashboards or alert on cascading circuit breaker failures.",
+      "fix": "Integrate circuit breaker stats into the Prometheus metrics endpoint. Expose breaker status, failure rate, and request volume as gauges."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "graceful_degradation",
+      "file": "apps/api/src/lib/supabase.ts",
+      "issue": "No database connection pool health monitoring; Supabase client retries internally but application has no visibility into pool exhaustion",
+      "impact": "If Supabase connection pool is exhausted, requests silently hang until timeout with no operator visibility into the pool utilization.",
+      "fix": "Add a database pool health gauge metric. Implement a connection pool timeout alert. Consider adding a readiness check that verifies database connection pool availability."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "idempotency",
+      "file": "apps/api/src/lib/idempotency.ts",
+      "issue": "In-memory idempotency fallback limited to single process \u2014 resets on restart, not shared across instances",
+      "impact": "In a multi-instance deployment, idempotency keys stored in-memory on one instance are invisible to another. A restart loses all idempotency state, potentially allowing duplicate message processing.",
+      "fix": "Add a database-backed idempotency store as a secondary fallback. Document that in-memory fallback is single-instance-only and provide a migration path to Redis."
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "chaos_testing",
+      "file": "docs/prompts/testing/failure_injection_chaos_pack_prompt.md",
+      "issue": "Chaos engineering prompt exists but no actual chaos tests are executed or integrated into CI/CD",
+      "impact": "Resilience characteristics (circuit breaker behavior, graceful degradation, fallback paths) are untested. Failures in production may behave differently than expected.",
+      "fix": "Implement chaos testing scenarios: Redis failure, database latency injection, queue worker crash, and API service restart. Add a scheduled chaos test workflow."
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "idempotency",
+      "file": "apps/worker/src/processors/webhook-delivery.ts",
+      "issue": "Webhook delivery uses randomUUID as idempotency key instead of deterministic hash of payload",
+      "impact": "Random idempotency keys do not prevent duplicate deliveries for identical payloads because each retry generates a new key.",
+      "fix": "Generate idempotency key as SHA-256 hash of (event + payload + webhookId) to ensure identical payloads produce identical keys. Use the delivery.id for tracking."
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "retry_logic",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit log retry queue is purely in-memory with no persistence \u2014 lost on process restart",
+      "impact": "If the API process restarts while audit entries are queued for retry, those entries are lost permanently with no record.",
+      "fix": "Persist failed audit entries to a database table (audit_log_retry_queue) or use BullMQ for the audit queue. Add a startup recovery job that retries unprocessed entries."
+    }
+  ],
+  "run_id": "resilience_chaos_ultra_20260708_073233"
+}

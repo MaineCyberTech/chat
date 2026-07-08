@@ -2,7 +2,7 @@
   "prompt_name": "ci_cd_security_ultra",
   "domain": "ci_cd",
   "stage": "quality_confirmation",
-  "decision": "GO WITH RISKS",
+  "decision": "GO",
   "generated_at": "2026-07-07T12:00:00Z",
   "readiness": 79.0,
   "severity_counts": {

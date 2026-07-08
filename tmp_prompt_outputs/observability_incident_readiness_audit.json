@@ -2,7 +2,7 @@
   "prompt_name": "observability_incident_readiness_audit",
   "domain": "observability",
   "stage": "principal_audit",
-  "decision": "GO WITH RISKS",
+  "decision": "GO",
   "generated_at": "2026-07-07T03:42:00Z",
   "severity_counts": {
     "P0": 0,

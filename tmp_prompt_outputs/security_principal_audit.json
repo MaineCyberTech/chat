@@ -2,98 +2,97 @@
   "prompt_name": "security_principal_audit",
   "domain": "security",
   "stage": "principal_audit",
-  "decision": "GO",
-  "generated_at": "2026-07-07T23:00:00.000Z",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-08T12:00:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
-    "P2": 4,
-    "P3": 3
+    "P1": 3,
+    "P2": 3,
+    "P3": 2
   },
   "category_scores": {
-    "authentication": 90,
-    "authorization": 65,
-    "secret_handling": 55,
-    "cors_csrf": 80,
-    "input_validation": 85,
-    "dependency_posture": 90,
-    "logging_audit": 85,
+    "authentication": 85,
+    "authorization": 70,
+    "secret_handling": 90,
+    "cors_csrf": 60,
+    "input_validation": 75,
     "rate_limiting": 85,
-    "cross_tenant_isolation": 70,
-    "admin_surface": 65,
-    "auth": 98
+    "logging_audit": 80,
+    "dependency_security": 85
   },
-  "readiness": 78.91,
+  "readiness": 79,
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "security",
       "category": "authorization",
-      "file": "apps/api/src/modules/reactions/routes.ts",
-      "issue": "Reactions batch endpoint skips message access control check",
-      "impact": "GET /v1/reactions/batch?message_ids=... (line 23) does not use `requireMessageAccess` middleware. While `requireMessageAccess` is applied to single-message reaction endpoints, the batch endpoint blindly fetches reactions for any message IDs provided. Combined with the RLS policy `reactions_select` which allows ANY authenticated user to read all reactions (`using (true)`), this enables enumeration of reactions on messages in private channels the user doesn't have access to.",
-      "fix": "Add an access check to the batch endpoint. For each message_id, verify the user has access to the message's channel before returning reactions. Alternatively, require a workspace_id parameter and verify membership.",
-      "exploit_chain": "Attacker obtains message IDs (e.g., from public channel messages or by ID enumeration) \u00e2\u2020\u2019 calls GET /v1/reactions/batch?message_ids=id1,id2,id3 \u00e2\u2020\u2019 learns user reaction patterns including users who reacted, which can reveal user relationships and interests."
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "authorization",
-      "file": "apps/api/src/modules/messages/routes.ts",
-      "issue": "Message forwarding does not verify target channel access",
-      "impact": "POST /messages/:id/forward (line 271) checks access to the source message via `requireMessageAccess` but does not validate that the user has access to `targetChannelId`. A user could forward messages to channels they cannot read or write to, potentially exfiltrating data to restricted channels or causing notifications in spaces the user shouldn't interact with.",
-      "fix": "Add a channel access check for `targetChannelId` before creating the forwarded message. Use `requireChannelAccess('targetChannelId')` or a manual check against workspace_members and channel_members tables.",
-      "exploit_chain": "User in workspace A finds a targetChannelId for a restricted channel (e.g., from a colleague's browser devtools) \u00e2\u2020\u2019 forwards sensitive messages to that channel \u00e2\u2020\u2019 contents become visible to channel members."
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "cors_csrf",
-      "file": "apps/api/src/app.ts",
-      "issue": "CORS configuration allows null-origin requests",
-      "impact": "The CORS middleware at line 47 (`if (!origin) return callback(null, true)`) allows requests with no `Origin` header, which is typical of server-side scripts, curl, and non-browser HTTP clients. While not exploitable via browsers (which always send Origin), this means any server-side script can call the API without CORS restrictions if it omits the Origin header. Combined with the credentialless nature of server-side requests, this weakens the defense-in-depth posture.",
-      "fix": "Remove the null-origin pass-through. Change the handler to return an error when origin is missing unless the method is GET/HEAD/OPTIONS. For server-side clients, require proper authentication which is already enforced via the Bearer token.",
-      "exploit_chain": "Less relevant for browser-based attacks but enables easier automated scanning and abuse from non-browser clients since CORS doesn't block them."
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "authorization",
-      "file": "apps/api/src/modules/messages/routes.ts",
-      "issue": "Message upload endpoint has no channel or workspace validation",
-      "impact": "POST /messages/upload (line 344) creates an upload URL and file path without any channel or workspace context. Any authenticated user can upload arbitrary files of any type (the SST policy on the storage bucket is the only guard). This could allow filling storage quotas, uploading malicious files, or bypassing content moderation.",
-      "fix": "Require a `channel_id` or `workspace_id` parameter in the upload request. Verify the user has access to the channel/workspace before generating the upload URL. Apply file type restrictions on the server side before generating the signed URL.",
-      "exploit_chain": "Authenticated user calls POST /messages/upload with a large executable file \u00e2\u2020\u2019 storage fills up \u00e2\u2020\u2019 service degradation for legitimate users. Attacker uploads a malicious file \u00e2\u2020\u2019 references it in a message \u00e2\u2020\u2019 other users download infected content."
-    },
-    {
-      "severity": "P3",
-      "domain": "security",
-      "category": "logging_audit",
       "file": "apps/api/src/modules/consent/routes.ts",
-      "issue": "Consent GET endpoint queries all records without explicit user_id filter",
-      "impact": "GET /v1/consent (line 9-20) queries `supabase.from(\"consent_logs\").select(\"*\")` without appending `.eq(\"user_id\", req.userId)`. The RLS policy (`auth.uid() = user_id`) prevents actual data leakage, but the API code is misleading and could be broken if RLS policies are ever relaxed. Future maintainers might see this pattern and replicate it in other endpoints.",
-      "fix": "Add an explicit `.eq(\"user_id\", req.userId)` filter to the query. This makes the authorization intent clear at the code level and follows the principal of defense in depth.",
-      "exploit_chain": "No direct exploit path due to RLS protection. Code quality and maintainability risk."
+      "issue": "Consent GET endpoint returns all consent_logs without user_id filter \u2014 RLS restricts to own records but query pattern invites future mistakes",
+      "impact": "While RLS prevents cross-user data leak, the code pattern selects all rows without explicit filtering, making it fragile if RLS is ever disabled or bypassed",
+      "fix": "Add explicit .eq('user_id', req.userId) filter to the consent_logs query on line 11 of consent/routes.ts"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "data_lifecycle",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR account deletion does not clean up all user data \u2014 consent_logs, sidebar_categories, channel_bookmarks, audit_logs may leak",
+      "impact": "User account deletion via DELETE /account leaves orphaned PII in consent_logs, sidebar data, bookmarks, and audit log actor references, violating GDPR right to erasure",
+      "fix": "Add deletes for consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, and message_reminders before deleting the user in auth/routes.ts"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "issue": "Admin compliance export uses getSupabaseAdmin() which bypasses RLS with no workspace-level filtering",
+      "impact": "Admin compliance export returns ALL user PII, messages, channels, and audit logs for all workspaces in a single downloadable JSON \u2014 a compromised admin token leaks all tenant data",
+      "fix": "If workspace_id is specified, scope all queries to that workspace; otherwise paginate the export and add audit logging for every compliance export. For full-workspace exports, require explicit admin confirmation or second-factor"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authentication",
+      "file": "apps/api/src/modules/status/routes.ts",
+      "issue": "Status routes use global getSupabase() instead of per-request req.supabase client",
+      "impact": "GET, PUT, DELETE /status and batch endpoints use the global anon client, bypassing RLS user-scoping and potentially leaking user status data across tenants",
+      "fix": "Replace all getSupabase() calls in status/routes.ts with req.supabase from the per-user client"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "input_validation",
+      "file": "apps/api/src/middleware/input-sanitizer.ts",
+      "issue": "Input sanitizer SQL injection patterns have high false-positive rate blocking legitimate content with common words",
+      "impact": "SQL injection pattern matching blocks words like 'select', 'insert', 'union', 'drop', 'alter' and sequences like '--', blocking legitimate messages about SQL or database topics",
+      "fix": "Remove SQL injection pattern matching from the global middleware; Supabase's parameterized queries are immune to SQL injection. Keep XSS pattern detection for non-content fields"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authentication",
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "issue": "Notification preference routes use global getSupabase() instead of per-request client",
+      "impact": "GET/PUT/DELETE /channels/:id/notification-preference use global anon client, bypassing RLS user context \u2014 could leak or allow modification of other users' preferences",
+      "fix": "Replace getSupabase() with req.supabase in notifications/routes.ts"
     },
     {
       "severity": "P3",
       "domain": "security",
-      "category": "authorization",
-      "file": "apps/api/src/modules/webhooks/service.ts",
-      "issue": "Webhook service uses getSupabase() (anon client) instead of user-authenticated client",
-      "impact": "Multiple methods in webhook service (listByWorkspace, getById, create, update, remove) use `getSupabase()` which creates a client with no user session context (only anon key). When RLS policies check `auth.uid()`, they see null, potentially causing queries to return empty results or fail silently. This masks authorization failures and makes the service unreliable \u00e2\u20ac\u201d a workspace member verified by middleware may get empty results from the service.",
-      "fix": "Refactor service methods to accept and use the user-authenticated Supabase client (`SupabaseClient`) passed from the route handler via `req.supabase`, consistent with how channelService and messageService handle it.",
-      "exploit_chain": "Not a direct security exploit path. Reliability and correctness issue that could lead to unexpected authorization gaps if RLS policies change."
+      "category": "observability",
+      "file": "apps/api/src/middleware/error-handler.ts",
+      "issue": "SHOW_STACK_TRACES env var conditionally exposes stack traces in error responses",
+      "impact": "If SHOW_STACK_TRACES is accidentally set to 'true' in production, full stack traces with internal paths may be returned to API consumers",
+      "fix": "Consider removing stack trace exposure entirely in non-development environments, or gate it behind NODE_ENV check in addition to the env var"
     },
     {
       "severity": "P3",
       "domain": "security",
-      "category": "authorization",
-      "file": "apps/api/src/modules/channels/routes.ts",
-      "issue": "Channel delete and member management missing admin role check",
-      "impact": "DELETE /channels/:id (line 111), POST /channels/:id/members (line 141), DELETE /channels/:id/members/:userId (line 335) only use `requireChannelAccess` middleware which checks workspace membership + private channel membership but does not verify admin/owner role. Any workspace member can delete channels or manage channel membership, even without administrative privileges.",
-      "fix": "Add an admin role check (e.g., `requirePermission('manage_channels')` or a custom middleware checking `workspaceRole` for 'admin' or 'owner') to channel delete and member management endpoints.",
-      "exploit_chain": "Workspace member deletes a critical public channel \u00e2\u2020\u2019 all messages lost. Member adds unauthorized users to a private channel \u00e2\u2020\u2019 data disclosure."
+      "category": "dependency",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "DOMPurify sanitization strips all HTML tags from content including safe formatting",
+      "impact": "DOMPurify is configured with ALLOWED_TAGS: [] and ALLOWED_ATTR: [], stripping ALL HTML from message content \u2014 users cannot use any rich text including bold, lists, or links",
+      "fix": "Allow safe HTML tags (b, i, a, code, pre, blockquote, ul, ol, li) through DOMPurify to support rich text while preventing XSS"
     }
   ]
 }

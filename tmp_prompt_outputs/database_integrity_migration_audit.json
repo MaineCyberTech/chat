@@ -2,113 +2,105 @@
   "prompt_name": "database_integrity_migration_audit",
   "domain": "database",
   "stage": "principal_audit",
-  "decision": "GO",
-  "generated_at": "2026-07-07T12:00:00Z",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-08T12:00:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
-    "P2": 5,
-    "P3": 5
+    "P1": 2,
+    "P2": 4,
+    "P3": 3
   },
   "category_scores": {
-    "migration_correctness": 75,
-    "rollback_coverage": 70,
+    "migration_safety": 85,
+    "rollback_coverage": 90,
+    "schema_integrity": 75,
     "rls_posture": 85,
-    "index_coverage": 90,
-    "type_coverage": 65,
-    "data_retention": 70
+    "indexing": 80,
+    "data_lifecycle": 70,
+    "seed_data_risk": 85
   },
-  "readiness": 76,
+  "readiness": 81,
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "database",
-      "category": "TypeScript Types",
-      "file": "packages/db/src/types.ts",
-      "issue": "Missing TypeScript type definitions for 16 database tables",
-      "impact": "Tables created since the original type definitions (thread_metadata, thread_participants, channel_role_overrides, dm_channels, dm_members, user_presence, channel_bookmarks, sidebar_categories, sidebar_channel_assignments, channel_notification_preferences, custom_emoji, message_reminders, notification_preferences, user_statuses, channel_member_history, webhook_dead_letters) have no client-side types. SDK consumers must use raw any-typed queries.",
-      "fix": "Add TypeScript interfaces for all untabled tables in types.ts and export from index.ts."
+      "category": "data_lifecycle",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR account deletion does not clean up consent_logs, sidebar_categories, channel_bookmarks, or audit_logs",
+      "impact": "When a user deletes their account via DELETE /account at auth/routes.ts:212, user data is deleted from notifications, push_subscriptions, messages, reactions, channel_members, workspace_members, user_preferences, and users \u2014 but consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, message_reminders, and audit_logs are left behind, violating GDPR right to erasure and leaving orphaned PII",
+      "fix": "Add delete operations for consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, message_reminders, and audit_logs (or anonymize actor_user_id in audit_logs)"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "supabase/migrations/20260707000002_cleanup_deleted_users.sql",
+      "issue": "Migration 20260707000002 adds a trigger on auth.users DELETE but cannot be rolled back (no down migration)",
+      "impact": "If the cleanup trigger needs to be modified or reverted, there is no rollback script. The TRIGGER on_auth_user_deleted and FUNCTION handle_user_deletion remain in the database permanently after deployment, making it impossible to cleanly roll back this migration in CI or production rollback scenarios",
+      "fix": "Create supabase/rollback/20260707000002_cleanup_deleted_users_down.sql that DROP TRIGGER on_auth_user_deleted and DROP FUNCTION handle_user_deletion"
     },
     {
       "severity": "P2",
       "domain": "database",
-      "category": "RLS Policies",
-      "file": "supabase/policies/11_feature_flags.sql",
-      "issue": "feature_flags RLS not scoped to a specific workspace",
-      "impact": "The feature_flags RLS policy checks workspace_members.role across ANY workspace, allowing an admin in any workspace to read/manage feature flags that apply globally. If feature flags are meant to be global, the workspace_members join is unnecessary and misleading.",
-      "fix": "Add workspace_id FK to feature_flags table and scope RLS to that workspace, or remove the workspace_members join and document that feature_flags are a global system table."
+      "category": "migration_safety",
+      "file": "apps/api/src/modules/messages/service.ts",
+      "issue": "Message remove() performs hard DELETE instead of soft-delete, inconsistent with soft-delete strategy",
+      "impact": "The message remove() in messages/service.ts:328 does a hard DELETE from the messages table, bypassing the soft-delete column (deleted_at). Messages deleted via the API are permanently removed, cannot be restored, and break referential integrity for child records (reactions, flags, edit history) despite CASCADE. This is inconsistent with the soft-delete RLS policy that filters by deleted_at IS NULL",
+      "fix": "Change message remove() to soft-delete (UPDATE deleted_at = NOW()) instead of hard DELETE. Reserve hard delete for a separate admin purge endpoint or data retention job"
     },
     {
       "severity": "P2",
       "domain": "database",
-      "category": "Data Lifecycle",
-      "file": "apps/worker/src/processors/data-retention.ts",
-      "issue": "Data retention worker has unimplemented consent_logs and notifications types",
-      "impact": "DataRetentionJobData includes 'consent_logs' and 'notifications' types in the union but the worker switch statement only handles messages, audit_logs, soft_deleted_channels, and soft_deleted_workspaces. Sending these jobs silently does nothing. Consent logs have GDPR compliance implications.",
-      "fix": "Implement retainConsentLogs and retainNotifications functions following the SQL purge functions in enforce_data_retention.sql."
+      "category": "schema_integrity",
+      "file": "supabase/migrations/20260703000001_add_message_features.sql",
+      "issue": "message_flags table has UNIQUE(user_id, message_id) constraint but no explicit index matching the unique constraint",
+      "impact": "While a unique constraint implicitly creates a btree index, there is no explicit composite index on (user_id, message_id) for the common query pattern filtering by user_id only. The separate indexes idx_message_flags_user and idx_message_flags_message are single-column and less efficient for the upsert pattern with onConflict",
+      "fix": "The implicit unique index is sufficient for the constraint, but consider adding a covering index with INCLUDE (created_at) for the getFlagged query which joins message_flags \u2192 messages by user_id"
     },
     {
       "severity": "P2",
       "domain": "database",
-      "category": "Data Lifecycle",
-      "file": "supabase/migrations/20260625000015_data_retention.sql",
-      "issue": "archive_old_messages channel_id filter is always true due to parameter/column name collision",
-      "impact": "Line 28: AND (channel_id = channel_id OR channel_id IS NULL) \u2014 the parameter name shadows the column name, making this always true. Archive operations cannot be scoped to a specific channel.",
-      "fix": "Rename the function parameter to target_channel_id to disambiguate from the column reference."
+      "category": "schema_integrity",
+      "file": "apps/api/src/modules/channels/service.ts",
+      "issue": "Channel reordering updates individual rows sequentially with no transaction wrapping \u2014 partial updates possible",
+      "impact": "The reorderChannel method in channels/service.ts:48-64 updates each channel's sort_order in a loop without a database transaction. If the process fails mid-way, channels will have inconsistent sort_order values, leaving some updated and others not",
+      "fix": "Wrap the sort_order updates in a Supabase RPC with BEGIN/COMMIT/ROLLBACK transaction, or use a batch update approach with a single query"
     },
     {
       "severity": "P2",
       "domain": "database",
-      "category": "Migration Correctness",
-      "file": "supabase/migrations/20260625000013_audit_log_pruning.sql, supabase/migrations/20260625000014_soft_delete.sql, supabase/migrations/20260625000015_data_retention.sql, supabase/migrations/20260625000017_audit_logs_org_fk.sql",
-      "issue": "Migration comments reference old sequential filenames instead of actual timestamp-based names",
-      "impact": "Comments like 'Run after 006_user_preferences.sql' refer to the old sequential naming scheme. With the YYYYMMDDHHMMSS naming convention, these references are ambiguous and make dependency tracing confusing.",
-      "fix": "Update all migration comments to reference actual timestamp-based filenames or remove sequential references entirely."
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260625000008_create_reactions.sql",
+      "issue": "Reactions SELECT RLS policy allows all authenticated users to read any reaction without channel membership check",
+      "impact": "The policy 'reactions_select' at line 12-14 allows SELECT for all authenticated users (USING (true)). This means any authenticated user can enumerate reactions across all messages in all channels, leaking which users reacted to which content even in private channels they don't belong to",
+      "fix": "Restrict reactions SELECT policy to only return reactions for messages in channels the user can access via workspace/channel membership, matching the messages_select_member pattern"
     },
     {
       "severity": "P3",
       "domain": "database",
-      "category": "RLS Policies",
-      "file": "supabase/migrations/20260627000006_channel_role_overrides.sql",
-      "issue": "channel_role_overrides has no INSERT/DELETE policy for non-admin users",
-      "impact": "The table only has manage_admin (FOR ALL for admins) and select_member (FOR SELECT for members) policies. Regular members cannot create or delete overrides through the API, but the overrides control channel-level deny rules that members might need to request.",
-      "fix": "Document the access model. Consider adding a request_override flow at the app level if needed. By design for now."
+      "category": "schema_integrity",
+      "file": "supabase/migrations/20260627000002_enforce_data_retention.sql",
+      "issue": "Data retention enforcement uses pg_cron setup documented in a separate runbook rather than a migration",
+      "impact": "The data retention policy for consent_logs and old messages requires manual pg_cron setup. This is not automatically applied during deployment, creating a gap between migration state and actual enforcement",
+      "fix": "Either include the pg_cron job creation SQL directly in the migration (gated by IF pg_cron extension exists), or integrate the setup into the deployment pipeline script"
     },
     {
       "severity": "P3",
       "domain": "database",
-      "category": "Schema",
-      "file": "supabase/migrations/20260625000010_create_audit_logs.sql",
-      "issue": "audit_logs.organization_id column name is misleading",
-      "impact": "The column is named organization_id but its FK constraint references public.workspaces(id). Developers reading the schema will assume it references an organizations table that does not exist.",
-      "fix": "Rename the column to workspace_id via a new migration, or add documentation clarifying the workspace mapping."
+      "category": "indexing",
+      "file": "supabase/migrations/20260626000025_consent_logs.sql",
+      "issue": "consent_logs indexes only cover user_id but not consent_type or created_at for audit queries",
+      "impact": "The idx_consent_logs_user_id index supports user-specific lookups, but audit queries filtering by consent_type or date range will require full table scans",
+      "fix": "Consider adding a composite index on (consent_type, created_at) if audit queries against consent_logs are expected at scale"
     },
     {
       "severity": "P3",
       "domain": "database",
-      "category": "Seed Data",
-      "file": "supabase/seeds/00_local_test_users.sql, supabase/seeds/01_workspaces.sql, supabase/seeds/02_channels.sql, supabase/seeds/03_messages.sql, supabase/seeds/04_threads.sql, supabase/seeds/05_reactions.sql, supabase/seeds/06_notifications.sql",
-      "issue": "Seed scripts can overwrite production data due to ON CONFLICT DO UPDATE pattern and no runtime guard",
-      "impact": "All seed scripts use ON CONFLICT DO UPDATE which overwrites existing rows with matching IDs. Only 00_local_test_users.sql has a 'LOCAL / DEV ONLY' comment. Running these against production would silently overwrite data.",
-      "fix": "Add runtime guards at the top of each seed file: DO $$ BEGIN IF EXISTS (SELECT 1 FROM public.workspaces LIMIT 1) THEN RAISE EXCEPTION 'Seeds not for production'; END IF; END $$;"
-    },
-    {
-      "severity": "P3",
-      "domain": "database",
-      "category": "Rollback Scripts",
-      "file": "supabase/rollback/20260625000001_create_users_down.sql, supabase/rollback/20260627000004_threads_down.sql",
-      "issue": "Rollback scripts contain auto-generation placeholder comments",
-      "impact": "Files contain 'Manual rollback needed: UPDATE on ON/SET' comment artifacts that appear to be stubs from auto-generation. These suggest incomplete rollback coverage for trigger functions.",
-      "fix": "Remove placeholder comments after verifying the DROP FUNCTION and DROP TRIGGER statements correctly handle the rollback. Add manual steps if triggers truly need custom rollback."
-    },
-    {
-      "severity": "P3",
-      "domain": "database",
-      "category": "Indexes",
-      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
-      "issue": "No index on channels.channel_type for type-based filtering",
-      "impact": "channel_type column was added for DM/GM/public/private filtering but has no dedicated index. Queries filtering by type (e.g., list all DM channels) will perform sequential scans as channel count grows.",
-      "fix": "Add CREATE INDEX IF NOT EXISTS idx_channels_channel_type ON public.channels(channel_type) as a new migration."
+      "category": "rls_posture",
+      "file": "supabase/policies/09_webhooks.sql",
+      "issue": "Webhook RLS policies allow workspace members to read webhook_endpoints including encrypted secrets",
+      "impact": "While the API masks secrets at the application layer (webhooks/routes.ts:106-108), the RLS policy allows any workspace member to SELECT from webhook_endpoints, which includes the encrypted_secret column. If an attacker gains direct DB access (via SQL injection or exposed anon key), they could extract encrypted webhook secrets",
+      "fix": "Restrict webhook_endpoints RLS to only expose non-secret columns, or use a VIEW that excludes the secret column for regular users"
     }
   ]
 }

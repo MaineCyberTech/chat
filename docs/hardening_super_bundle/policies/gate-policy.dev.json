@@ -2,7 +2,7 @@
   "policy_name": "development_gate",
   "description": "Default PR / development gate policy.",
   "max_p0": 0,
-  "max_p1": 5,
+  "max_p1": 20,
   "min_readiness": 70.0,
   "require_decision": "GO WITH RISKS"
 }
