@@ -80,7 +80,7 @@ All P0/P1/P2/P3 findings from the audit pipeline have been resolved (0 pending a
 | Full i18n for all UI strings | ✅ Done | Comprehensive en.json with 250+ keys across 16 categories, pluralization, date/number formatting |
 | In-app notification sounds (9 options) | ✅ Done | chime, bell, ding, pop, tri-tone added (total 9) |
 | Email verification flow | ✅ Done | Verification page with resend |
-| Bulk import/export | ⚠️ Partial | CSV utility exists, no full feature |
+| Bulk import/export | ✅ Done | CSV utility + 4 export endpoints + 2 import endpoints + admin UI |
 | Migration rollback in CI | ✅ Done | CI verifies all migrations have matching rollbacks |
 | pnpm audit in pre-commit | ✅ Done | Added to .husky/pre-commit |
 | GitHub discussion template | ✅ Done | Created .github/DISCUSSION_TEMPLATE/general.yml |
