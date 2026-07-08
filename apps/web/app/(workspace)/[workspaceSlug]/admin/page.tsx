@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Skeleton } from "@chat/ui";
-import { Shield, Users, Hash, MessageSquare, Globe, Webhook, Search, X } from "lucide-react";
+import { Shield, Users, Hash, MessageSquare, Globe, Webhook, Search, X, Download, Upload } from "lucide-react";
 
 interface Stats {
   users: number;
@@ -40,7 +41,7 @@ interface AdminIntegration {
   workspaces: { name: string; slug: string };
 }
 
-type Tab = "overview" | "users" | "channels" | "workspaces" | "integrations";
+type Tab = "overview" | "users" | "channels" | "workspaces" | "integrations" | "import-export";
 
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("overview");
@@ -56,6 +57,53 @@ export default function AdminPage() {
   const [userTotal, setUserTotal] = useState(0);
   const [channelPage, setChannelPage] = useState(0);
   const [channelTotal, setChannelTotal] = useState(0);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importEndpoint, setImportEndpoint] = useState<"workspaces" | "users">("workspaces");
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ imported: number; errors?: string[] } | null>(null);
+  const [exportFormat, setExportFormat] = useState<"csv" | "json">("csv");
+
+  async function downloadExport(path: string) {
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+      const res = await fetch(`${API_BASE}/v1${path}?format=${exportFormat}`, {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const filename = disposition.match(/filename="?(.+?)"?$/)?.[1] ?? `export.${exportFormat}`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Export failed");
+    }
+  }
+
+  async function handleImport() {
+    if (!importFile) return;
+    setImporting(true);
+    setImportResult(null);
+    setError(null);
+    try {
+      const text = await importFile.text();
+      const res = await api.post<{ imported: number; errors?: string[] }>(
+        `/admin/import/${importEndpoint}`,
+        { csv: text },
+      );
+      setImportResult(res);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Import failed");
+    }
+    setImporting(false);
+  }
 
   const fetchTab = async (t: Tab) => {
     setError(null);
@@ -106,6 +154,7 @@ export default function AdminPage() {
     { id: "channels", label: "Channels", icon: <Hash size={16} /> },
     { id: "workspaces", label: "Workspaces", icon: <Globe size={16} /> },
     { id: "integrations", label: "Integrations", icon: <Webhook size={16} /> },
+    { id: "import-export", label: "Import/Export", icon: <Download size={16} /> },
   ];
 
   return (
@@ -135,7 +184,7 @@ export default function AdminPage() {
           System Console
         </h1>
 
-        {loading ? (
+        {loading && tab !== "import-export" ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="rounded-lg border p-4" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}>
@@ -439,6 +488,131 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : tab === "import-export" ? (
+          <div className="space-y-8">
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold" style={{ color: "var(--center-channel-color)" }}>Export Data</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>Format:</span>
+                  {(["csv", "json"] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setExportFormat(f)}
+                      className="rounded-md px-3 py-1 text-xs font-medium uppercase transition-colors"
+                      style={{
+                        background: exportFormat === f ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.08)",
+                        color: exportFormat === f ? "#fff" : "var(--center-channel-color)",
+                      }}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  { label: "Workspaces", path: "/admin/export/workspaces", icon: <Globe size={16} /> },
+                  { label: "Users", path: "/admin/export/users", icon: <Users size={16} /> },
+                  { label: "Channels", path: "/admin/export/channels", icon: <Hash size={16} /> },
+                  { label: "Messages", path: "/admin/export/messages", icon: <MessageSquare size={16} /> },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => downloadExport(item.path)}
+                    className="flex items-center gap-3 rounded-lg border p-4 text-left transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"
+                    style={{
+                      borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                      background: "var(--center-channel-bg)",
+                      color: "var(--center-channel-color)",
+                    }}
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "rgba(var(--button-bg-rgb), 0.12)", color: "var(--button-bg)" }}>
+                      {item.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium">{item.label}</div>
+                      <div className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>Download as {exportFormat.toUpperCase()}</div>
+                    </div>
+                    <Download size={16} className="shrink-0" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <hr style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }} />
+
+            <div>
+              <h2 className="mb-4 text-lg font-semibold" style={{ color: "var(--center-channel-color)" }}>Import Data</h2>
+              <div className="space-y-4 rounded-lg border p-4" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)", background: "var(--center-channel-bg)" }}>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>Entity type:</label>
+                  <select
+                    value={importEndpoint}
+                    onChange={(e) => { setImportEndpoint(e.target.value as "workspaces" | "users"); setImportResult(null); }}
+                    className="rounded-md border px-3 py-1.5 text-sm focus:outline-none"
+                    style={{
+                      borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                      background: "var(--center-channel-bg)",
+                      color: "var(--center-channel-color)",
+                    }}
+                  >
+                    <option value="workspaces">Workspaces</option>
+                    <option value="users">Users</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label
+                    className="flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"
+                    style={{
+                      borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                      color: "var(--center-channel-color)",
+                    }}
+                  >
+                    <Upload size={16} />
+                    {importFile ? importFile.name : "Choose CSV file"}
+                    <input
+                      type="file"
+                      accept=".csv,.txt"
+                      onChange={(e) => { setImportFile(e.target.files?.[0] ?? null); setImportResult(null); }}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    onClick={handleImport}
+                    disabled={!importFile || importing}
+                    className="rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+                    style={{ background: "var(--button-bg)" }}
+                  >
+                    {importing ? "Importing..." : "Import"}
+                  </button>
+                </div>
+
+                {importResult && (
+                  <div className="rounded-md border p-3 text-sm" style={{
+                    borderColor: importResult.errors?.length ? "rgba(var(--dnd-indicator-rgb,214,66,66),0.3)" : "rgba(var(--online-indicator-rgb,48,186,120),0.3)",
+                    background: importResult.errors?.length ? "rgba(var(--dnd-indicator-rgb,214,66,66),0.06)" : "rgba(var(--online-indicator-rgb,48,186,120),0.06)",
+                  }}>
+                    <p style={{ color: "var(--center-channel-color)" }}>
+                      Successfully imported <strong>{importResult.imported}</strong> {importEndpoint}.
+                    </p>
+                    {importResult.errors && importResult.errors.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs font-medium" style={{ color: "var(--dnd-indicator)" }}>
+                          {importResult.errors.length} error(s):
+                        </p>
+                        <ul className="mt-1 space-y-0.5">
+                          {importResult.errors.map((err, i) => (
+                            <li key={i} className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{err}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         ) : null}
       </div>

@@ -19,6 +19,8 @@ import userGroupRoutes from "./modules/user-groups/routes.js";
 import sidebarRoutes from "./modules/sidebar/routes.js";
 import scheduledRoutes from "./modules/scheduled-posts/routes.js";
 import adminRoutes from "./modules/admin/routes.js";
+import exportRoutes from "./modules/export/routes.js";
+import importRoutes from "./modules/import/routes.js";
 import openApiRoutes from "./modules/openapi/routes.js";
 
 export interface RouteEndpoint {
@@ -81,4 +83,6 @@ export const routeRegistry: RouteEntry[] = [
   { path: "/v1/scheduled-posts", router: scheduledRoutes, description: "Scheduled posts" },
   { path: "/v1", router: openApiRoutes, description: "OpenAPI spec + changelog endpoints" },
   { path: "/v1/admin", router: adminRoutes, description: "Admin operations" },
+  { path: "/v1", router: exportRoutes, description: "Admin data export (CSV/JSON)" },
+  { path: "/v1", router: importRoutes, description: "Admin data import from CSV" },
 ];
