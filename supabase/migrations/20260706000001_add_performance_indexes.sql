@@ -50,6 +50,10 @@ CREATE INDEX IF NOT EXISTS idx_users_display_name_trgm
 CREATE INDEX IF NOT EXISTS idx_users_email_trgm
   ON public.users USING GIN (email gin_trgm_ops);
 
+-- Index for user presence lookups (most common query: login status check)
+CREATE INDEX IF NOT EXISTS idx_user_presence_user_id
+  ON public.user_presence (user_id);
+
 COMMENT ON INDEX idx_messages_channel_created IS 'Speeds up channel message listing sorted by newest first';
 COMMENT ON INDEX idx_notifications_workspace_created IS 'Speeds up workspace-filtered notification listing';
 COMMENT ON INDEX idx_dm_members_user_id IS 'Speeds up DM channel listing per user';
@@ -58,3 +62,4 @@ COMMENT ON INDEX idx_channel_members_user_channel IS 'Speeds up channel membersh
 COMMENT ON INDEX idx_channels_workspace_slug IS 'Speeds up channel lookup by workspace and slug';
 COMMENT ON INDEX idx_users_display_name_trgm IS 'Speeds up user autocomplete/mention search via ILIKE';
 COMMENT ON INDEX idx_users_email_trgm IS 'Speeds up admin user search by email';
+COMMENT ON INDEX idx_user_presence_user_id IS 'Speeds up user presence status lookups';

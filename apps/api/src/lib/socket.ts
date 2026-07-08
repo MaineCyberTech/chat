@@ -15,6 +15,12 @@ declare module "socket.io" {
   }
 }
 
+function corsOriginCheck(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void, allowedOrigin: string) {
+  if (!origin) return callback(null, true);
+  if (origin === allowedOrigin) return callback(null, true);
+  callback(new Error("Not allowed by CORS"));
+}
+
 export function initSocket(
   httpServer: HttpServer,
   corsOrigin: string,
@@ -22,7 +28,7 @@ export function initSocket(
 ): SocketServer {
   io = new SocketServer(httpServer, {
     path: "/v1/socket.io",
-    cors: { origin: corsOrigin, credentials: true },
+    cors: { origin: (origin, callback) => corsOriginCheck(origin, callback, corsOrigin), credentials: true },
     transports: ["websocket", "polling"],
     // Reconnection/connection health settings
     pingInterval: 25000, // Send ping every 25s

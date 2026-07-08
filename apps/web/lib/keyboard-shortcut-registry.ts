@@ -2,6 +2,7 @@ type Callback = () => void;
 
 const registry: Record<string, Callback | null> = {
   searchOpen: null,
+  channelSearch: null,
   channelUp: null,
   channelDown: null,
 };

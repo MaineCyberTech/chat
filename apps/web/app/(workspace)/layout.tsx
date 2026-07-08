@@ -129,10 +129,15 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       const event = new CustomEvent("chat:search-open");
       document.dispatchEvent(event);
     });
+    register("channelSearch", () => {
+      const event = new CustomEvent("chat:search-open");
+      document.dispatchEvent(event);
+    });
     return () => {
       register("channelUp", null);
       register("channelDown", null);
       register("searchOpen", null);
+      register("channelSearch", null);
     };
   }, [params.workspaceSlug, params.channelId, channels, router]);
 

@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { createApp } from "./app.js";
-import { loadEnv } from "./config/env.js";
+import { loadEnv, logEnvStatus } from "./config/env.js";
 import { initSupabase } from "./lib/supabase.js";
 import { initSocket, shutdownSocket } from "./lib/socket.js";
 import { initSentry } from "./lib/sentry.js";
@@ -16,6 +16,7 @@ import type { Socket } from "node:net";
 //   - Health check at GET /health (for LB / DO monitoring)
 
 const env = loadEnv();
+logEnvStatus(env);
 initSentry();
 if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
   initSupabase(env);

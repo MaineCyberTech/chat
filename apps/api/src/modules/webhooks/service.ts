@@ -428,6 +428,26 @@ export class WebhookService {
     await this.deliver(admin, endpoint, event, payload, retryCount);
   }
 
+  async listDeliveries(
+    webhookId: string,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<{ deliveries: WebhookDelivery[]; total: number }> {
+    const supabase = getSupabase();
+    const limit = options.limit ?? 100;
+    const offset = options.offset ?? 0;
+    const { data, error, count } = await supabase
+      .from("webhook_deliveries")
+      .select("*", { count: "exact" })
+      .eq("webhook_id", webhookId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) {
+      logger.error("Failed to list webhook deliveries", { webhookId, error });
+      return { deliveries: [], total: 0 };
+    }
+    return { deliveries: (data ?? []) as WebhookDelivery[], total: count ?? 0 };
+  }
+
   // Process pending retries (called by cron job or scheduler)
   async processPendingRetries(): Promise<number> {
     const admin = getSupabaseAdmin();

@@ -1,3 +1,21 @@
+/**
+ * Legacy HTTP client for the chat API.
+ *
+ * Relationship with @chat/sdk:
+ * - `packages/sdk/src/client.ts` (SDKClient) provides a generic base HTTP client
+ *   with auth token injection and error handling — suitable for any consumer.
+ * - This file (`api.ts`) wraps SDKClient patterns with Next.js-specific logic:
+ *   Supabase session token acquisition, CSRF token handling, and 401 → sign-out.
+ *
+ * When to use which:
+ * - Use `@chat/sdk` (SDKClient) in non-Next.js contexts (e.g. workers, scripts,
+ *   packages) or when you don't need CSRF / automatic session refresh.
+ * - Use `api.ts` in Next.js client components for full-featured API access.
+ *
+ * Goal: migrate shared functionality into SDKClient so this file becomes a thin
+ * Next.js-specific adapter.
+ */
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 const CSRF_COOKIE_NAME = "csrf_token";
 

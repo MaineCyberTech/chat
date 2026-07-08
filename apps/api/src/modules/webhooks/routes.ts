@@ -66,6 +66,27 @@ function requireWorkspaceQueryParam(req: Request, res: Response, next: NextFunct
     });
 }
 
+router.get("/webhooks/deliveries", requireWorkspaceQueryParam, asyncHandler(async (req, res) => {
+  const workspace_id = req.query.workspace_id as string;
+  const webhookId = req.query.webhook_id as string | undefined;
+  const limit = Math.min(parseInt(req.query.limit as string) || 100, 200);
+  const offset = parseInt(req.query.offset as string) || 0;
+
+  if (!webhookId) {
+    res.status(400).json({ error: { code: "INVALID_INPUT", message: "webhook_id query param required" } });
+    return;
+  }
+
+  // Verify the webhook belongs to this workspace
+  const webhook = await webhookService.getById(webhookId);
+  if (!webhook || webhook.workspace_id !== workspace_id) {
+    throw new NotFoundError("Webhook not found in this workspace");
+  }
+
+  const result = await webhookService.listDeliveries(webhookId, { limit, offset });
+  res.json({ deliveries: result.deliveries, total: result.total, limit, offset });
+}));
+
 router.get("/webhooks", requireWorkspaceQueryParam, asyncHandler(async (req, res) => {
   const workspace_id = req.query.workspace_id as string;
   const webhooks = await webhookService.listByWorkspace(workspace_id);

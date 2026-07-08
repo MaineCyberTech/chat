@@ -25,6 +25,41 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+function isSecretKey(key: string): boolean {
+  return /secret|key|pass|token/i.test(key);
+}
+
+export function logEnvStatus(env: Env): void {
+  // Use dynamic import to avoid circular dependency
+  const logger = { info: (...args: unknown[]) => console.log(...args) };
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const l = require("../lib/logger.js");
+    logger.info = l.logger.info.bind(l.logger);
+  } catch {
+    // Fallback to console if logger not yet available
+  }
+
+  const defined: string[] = [];
+  const missing: string[] = [];
+  for (const [key, value] of Object.entries(env)) {
+    if (isSecretKey(key)) {
+      // Skip logging secret values
+      continue;
+    }
+    if (value === undefined || value === null || value === "") {
+      missing.push(key);
+    } else {
+      defined.push(key);
+    }
+  }
+
+  logger.info("Environment configuration", {
+    defined: defined.join(", "),
+    missing: missing.length > 0 ? missing.join(", ") : "(none)",
+  });
+}
+
 export function loadEnv(): Env {
   const result = envSchema.safeParse(process.env);
   if (!result.success) {

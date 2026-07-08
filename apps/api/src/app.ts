@@ -19,6 +19,7 @@ import { sentryErrorMiddleware } from "./lib/sentry.js";
 import { authenticate } from "./middleware/authenticate.js";
 import { inputSanitizer } from "./middleware/input-sanitizer.js";
 import { routeRegistry } from "./route-registry.js";
+import { healthService } from "./modules/health/service.js";
 
 function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = process.hrtime.bigint();
@@ -69,8 +70,10 @@ export function createApp(frontendUrl: string): Express {
     app.use(path, router);
   }
 
-  app.get("/", (_req, res) => {
-    res.json({ name: "chat-api", status: "running" });
+  app.get("/", async (_req, res) => {
+    const result = await healthService.getFullHealth();
+    const statusCode = result.status === "healthy" ? 200 : result.status === "degraded" ? 200 : 503;
+    res.status(statusCode).json(result);
   });
 
   app.get("/metrics", authenticate, async (_req: Request, res: Response) => {

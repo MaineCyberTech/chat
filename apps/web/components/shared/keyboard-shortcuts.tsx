@@ -4,10 +4,11 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { getCallback } from "@/lib/keyboard-shortcut-registry";
 
 const SHORTCUT_CATEGORIES = [
-  {
+    {
     name: "Navigation",
     shortcuts: [
       { keys: "Ctrl+K", label: "Open search / command palette" },
+      { keys: "Ctrl+Shift+F", label: "Channel search" },
       { keys: "Ctrl+Shift+Up", label: "Previous channel" },
       { keys: "Ctrl+Shift+Down", label: "Next channel" },
       { keys: "Escape", label: "Close dialog / cancel reply" },
@@ -77,12 +78,19 @@ export function KeyboardShortcuts() {
       }
 
       const searchOpen = getCallback("searchOpen");
+      const channelSearch = getCallback("channelSearch");
       const channelUp = getCallback("channelUp");
       const channelDown = getCallback("channelDown");
 
       if (e.key === "k" && mod && !e.shiftKey && searchOpen) {
         e.preventDefault();
         searchOpen();
+        return;
+      }
+
+      if (e.key === "F" && mod && e.shiftKey && channelSearch) {
+        e.preventDefault();
+        channelSearch();
         return;
       }
 

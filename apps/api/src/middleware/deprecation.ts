@@ -1,11 +1,22 @@
 import type { Request, Response, NextFunction } from "express";
 
-const DEPRECATED_ROUTES: Record<string, { sunset: string; deprecation: string; link?: string }> =
-  {};
+interface DeprecatedRouteConfig {
+  sunset: string;
+  deprecation: string;
+  link?: string;
+}
+
+const DEPRECATED_ROUTES = new Map<string, DeprecatedRouteConfig>();
+
+export function registerDeprecatedRoute(
+  route: string,
+  config: DeprecatedRouteConfig,
+): void {
+  DEPRECATED_ROUTES.set(route, config);
+}
 
 export function deprecationMiddleware(req: Request, res: Response, next: NextFunction) {
-  const route = req.path;
-  const config = DEPRECATED_ROUTES[route];
+  const config = DEPRECATED_ROUTES.get(req.path);
   if (config) {
     res.set("Sunset", config.sunset);
     res.set("Deprecation", config.deprecation);

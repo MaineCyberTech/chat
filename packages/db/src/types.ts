@@ -265,3 +265,123 @@ export interface UserGroupMember {
   user_id: string;
   created_at: string;
 }
+
+export interface ThreadMetadata {
+  id: string;
+  message_id: string;
+  reply_count: number;
+  participant_count: number;
+  last_activity_at: string;
+  created_at: string;
+}
+
+export interface ThreadParticipant {
+  thread_id: string;
+  user_id: string;
+  last_read_at: string | null;
+  joined_at: string;
+}
+
+export interface NotificationPreference {
+  id: string;
+  user_id: string;
+  workspace_id: string;
+  channel_id: string | null;
+  notification_type: string;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChannelRoleOverride {
+  id: string;
+  channel_id: string;
+  role: string | null;
+  user_id: string | null;
+  permission: "allow" | "deny";
+  scope: "read" | "write" | "admin";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserStatus {
+  id: string;
+  user_id: string;
+  emoji: string;
+  text: string;
+  expires_at: string | null;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface DmChannel {
+  id: string;
+  channel_id: string;
+  user1_id: string;
+  user2_id: string;
+  created_at: string;
+}
+
+export interface UserPresence {
+  user_id: string;
+  status: "online" | "away" | "dnd" | "offline";
+  custom_status: string | null;
+  last_seen_at: string;
+  updated_at: string;
+}
+
+export interface ChannelBookmark {
+  id: string;
+  channel_id: string;
+  message_id: string | null;
+  title: string;
+  url: string | null;
+  emoji: string | null;
+  created_by: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChannelNotificationPreference {
+  id: string;
+  user_id: string;
+  channel_id: string;
+  notify: boolean;
+  notify_sound: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DmMember {
+  id: string;
+  channel_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface MessageReminder {
+  id: string;
+  user_id: string;
+  message_id: string;
+  remind_at: string;
+  created_at: string;
+  notified: boolean;
+}
+
+export interface CustomEmoji {
+  id: string;
+  workspace_id: string;
+  name: string;
+  image_url: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface ChannelMemberHistory {
+  id: string;
+  channel_id: string;
+  user_id: string;
+  event: "joined" | "removed" | "left";
+  created_at: string;
+}
