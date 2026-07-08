@@ -71,7 +71,7 @@ All P0/P1/P2/P3 findings from the audit pipeline have been resolved (0 pending a
 
 | Feature | Status | Details |
 |---|---|---|
-| Multi-team sidebar (65px rail) | ❌ Not done | Single workspace only |
+| Multi-team sidebar (65px rail) | ✅ Done | TeamSidebar component with workspace icons, desktop only |
 | Advanced WYSIWYG editor | ✅ Done | TipTap with underline, highlight, task lists, image, text align, 15 formatting buttons |
 | Onboarding tour / task list | ✅ Done | 5-step task list implemented |
 | Drafts auto-save | ✅ Done | localStorage auto-save + restore |
