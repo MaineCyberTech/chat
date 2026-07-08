@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Bold, Italic, Code, Link, Quote, List, ListOrdered, Strikethrough } from "lucide-react";
+import { Bold, Italic, Code, Link, Quote, List, ListOrdered, Strikethrough, Underline, Highlighter, AlignLeft, AlignCenter, AlignRight, Image, CheckSquare } from "lucide-react";
 import { type Editor } from "@tiptap/react";
 
 interface Props {
   editorRef: React.RefObject<Editor | null>;
 }
 
-type FormatMode = "bold" | "italic" | "strike" | "code" | "link" | "quote" | "ul" | "ol";
+type FormatMode = "bold" | "italic" | "strike" | "underline" | "highlight" | "code" | "link" | "quote" | "ul" | "ol" | "taskList" | "alignLeft" | "alignCenter" | "alignRight" | "image";
 
 function applyFormat(editor: Editor, mode: FormatMode) {
   switch (mode) {
@@ -20,6 +20,12 @@ function applyFormat(editor: Editor, mode: FormatMode) {
       break;
     case "strike":
       editor.chain().focus().toggleStrike().run();
+      break;
+    case "underline":
+      editor.chain().focus().toggleUnderline().run();
+      break;
+    case "highlight":
+      editor.chain().focus().toggleHighlight().run();
       break;
     case "code": {
       const { from, to } = editor.state.selection;
@@ -44,18 +50,42 @@ function applyFormat(editor: Editor, mode: FormatMode) {
     case "ol":
       editor.chain().focus().toggleOrderedList().run();
       break;
+    case "taskList":
+      editor.chain().focus().toggleTaskList().run();
+      break;
+    case "alignLeft":
+      editor.chain().focus().setTextAlign("left").run();
+      break;
+    case "alignCenter":
+      editor.chain().focus().setTextAlign("center").run();
+      break;
+    case "alignRight":
+      editor.chain().focus().setTextAlign("right").run();
+      break;
+    case "image": {
+      const url = window.prompt("Enter image URL:");
+      if (url) editor.chain().focus().setImage({ src: url }).run();
+      break;
+    }
   }
 }
 
 const FORMAT_BUTTONS: { mode: FormatMode; icon: React.ReactNode; label: string }[] = [
   { mode: "bold", icon: <Bold size={14} />, label: "Bold" },
   { mode: "italic", icon: <Italic size={14} />, label: "Italic" },
+  { mode: "underline", icon: <Underline size={14} />, label: "Underline" },
   { mode: "strike", icon: <Strikethrough size={14} />, label: "Strikethrough" },
   { mode: "code", icon: <Code size={14} />, label: "Code" },
+  { mode: "highlight", icon: <Highlighter size={14} />, label: "Highlight" },
   { mode: "link", icon: <Link size={14} />, label: "Link" },
   { mode: "quote", icon: <Quote size={14} />, label: "Quote" },
   { mode: "ul", icon: <List size={14} />, label: "Bullet list" },
   { mode: "ol", icon: <ListOrdered size={14} />, label: "Numbered list" },
+  { mode: "taskList", icon: <CheckSquare size={14} />, label: "Task list" },
+  { mode: "image", icon: <Image size={14} />, label: "Image" },
+  { mode: "alignLeft", icon: <AlignLeft size={14} />, label: "Align left" },
+  { mode: "alignCenter", icon: <AlignCenter size={14} />, label: "Align center" },
+  { mode: "alignRight", icon: <AlignRight size={14} />, label: "Align right" },
 ];
 
 export function FormattingBar({ editorRef }: Props) {
