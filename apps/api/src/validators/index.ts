@@ -14,3 +14,11 @@ export { updateProfileSchema, batchProfilesSchema } from "./auth.js";
 export { uploadRequestSchema, uploadAvatarSchema } from "./upload.js";
 
 export { updatePreferencesSchema } from "./preferences.js";
+
+export {
+  createSidebarCategorySchema,
+  updateSidebarCategorySchema,
+  addSidebarAssignmentSchema,
+  reorderSidebarCategoriesSchema,
+  reorderSidebarAssignmentsSchema,
+} from "./sidebar.js";

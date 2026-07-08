@@ -154,6 +154,7 @@ jobs:
             if (missing.length > 0) {
               console.log('❌ Missing branch protection rules:', missing.join(', '));
               core.setFailed(`Branch protection not fully configured. Missing: ${missing.join(', ')}`);
+              process.exit(1);
             } else {
               console.log('✅ All branch protection rules configured');
             }

@@ -27,9 +27,13 @@ router.get(
   requireWorkspaceMembership("workspaceId"),
   responseCache(30),
   asyncHandler(async (req, res) => {
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
     const channels = await channelService.listByWorkspace(
       req.params.workspaceId as string,
       req.supabase,
+      limit,
+      offset,
     );
     res.json({ channels });
   }),
@@ -148,7 +152,9 @@ router.get(
   requireChannelAccess("id"),
   responseCache(30),
   asyncHandler(async (req, res) => {
-    const members = await channelService.getMembers(req.params.id as string);
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+    const members = await channelService.getMembers(req.params.id as string, limit, offset);
     res.json({ members });
   }),
 );

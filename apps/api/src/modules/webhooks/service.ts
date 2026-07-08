@@ -2,6 +2,7 @@ import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
 import { recordWebhookDelivery } from "../../lib/metrics.js";
 import { executeWithCircuitBreaker } from "../../lib/circuit-breaker.js";
+import { createCipheriv, createDecipheriv, randomBytes, createHash, createHmac, randomUUID } from "node:crypto";
 
 // SSRF protection: private IP ranges and localhost
 const PRIVATE_IP_RANGES = [
@@ -19,10 +20,42 @@ function isPrivateIp(hostname: string): boolean {
   return PRIVATE_IP_RANGES.some((range) => range.test(hostname));
 }
 
-// NOTE: The webhook secret is stored in plaintext in the database.
-// This is a known limitation — secrets should be encrypted at rest
-// using a column-level encryption or a dedicated secrets manager (e.g. AWS Secrets Manager, HashiCorp Vault).
-// Tracked in: https://github.com/anomalyco/chat/issues/xxx
+const ENCRYPTION_ALGORITHM = "aes-256-gcm";
+const IV_LENGTH = 16;
+
+function getEncryptionKey(): Buffer {
+  const key = process.env.WEBHOOK_ENCRYPTION_KEY || process.env.JWT_SECRET || "";
+  if (!key) {
+    throw new Error("WEBHOOK_ENCRYPTION_KEY or JWT_SECRET must be set for webhook secret encryption");
+  }
+  return createHash("sha256").update(key).digest();
+}
+
+function encryptSecret(plaintext: string): string {
+  const key = getEncryptionKey();
+  const iv = randomBytes(IV_LENGTH);
+  const cipher = createCipheriv(ENCRYPTION_ALGORITHM, key, iv);
+  let encrypted = cipher.update(plaintext, "utf8", "hex");
+  encrypted += cipher.final("hex");
+  const authTag = cipher.getAuthTag().toString("hex");
+  return `${iv.toString("hex")}:${authTag}:${encrypted}`;
+}
+
+function decryptSecret(encrypted: string): string {
+  const key = getEncryptionKey();
+  const parts = encrypted.split(":");
+  if (parts.length !== 3) {
+    throw new Error("Invalid encrypted secret format");
+  }
+  const iv = Buffer.from(parts[0], "hex");
+  const authTag = Buffer.from(parts[1], "hex");
+  const encryptedData = parts[2];
+  const decipher = createDecipheriv(ENCRYPTION_ALGORITHM, key, iv);
+  decipher.setAuthTag(authTag);
+  let plaintext = decipher.update(encryptedData, "hex", "utf8");
+  plaintext += decipher.final("utf8");
+  return plaintext;
+}
 
 const WEBHOOK_SECRET_MIN_LENGTH = 16;
 
@@ -149,6 +182,8 @@ export class WebhookService {
       throw new Error(validation.error);
     }
 
+    const encryptedSecret = input.secret ? encryptSecret(input.secret) : "";
+
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("webhook_endpoints")
@@ -156,7 +191,7 @@ export class WebhookService {
         workspace_id: input.workspace_id,
         name: input.name,
         url: input.url,
-        secret: input.secret ?? "",
+        secret: encryptedSecret,
         events: input.events,
         created_by: input.created_by,
       })
@@ -170,10 +205,14 @@ export class WebhookService {
   }
 
   async update(id: string, input: Partial<WebhookEndpoint>): Promise<WebhookEndpoint | null> {
+    const updateData = { ...input };
+    if (updateData.secret) {
+      updateData.secret = encryptSecret(updateData.secret);
+    }
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("webhook_endpoints")
-      .update(input)
+      .update(updateData)
       .eq("id", id)
       .select("*")
       .single();
@@ -222,10 +261,8 @@ export class WebhookService {
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (endpoint.secret) {
-        // Use HMAC-SHA256 for signature
-        const crypto = await import("node:crypto");
-        const signature = crypto
-          .createHmac("sha256", endpoint.secret)
+        const decryptedSecret = decryptSecret(endpoint.secret);
+        const signature = createHmac("sha256", decryptedSecret)
           .update(JSON.stringify({ event, ...payload }))
           .digest("hex");
         headers["X-Webhook-Signature"] = `sha256=${signature}`;
@@ -233,7 +270,7 @@ export class WebhookService {
 
       const breakerName = `webhook:${endpoint.id}`;
 
-      const idempotencyKey = crypto.randomUUID();
+      const idempotencyKey = randomUUID();
 
       // SSRF protection: validate URL at delivery time (DNS may have changed)
       const urlValidation = await validateWebhookUrl(endpoint.url);

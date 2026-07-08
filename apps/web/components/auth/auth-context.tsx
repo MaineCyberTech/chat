@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSocket, disconnectSocket } from "@/lib/socket";
 import type { User } from "@supabase/supabase-js";
 
 interface AuthState {
@@ -38,14 +39,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(({ data: { session } }) => {
         setUser(session?.user ?? null);
         setLoading(false);
+        if (session?.user) {
+          getSocket().catch(() => {});
+        }
       })
       .catch(() => {
         setUser(null);
         setLoading(false);
       });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === "SIGNED_IN" && session?.user) {
+        getSocket().catch(() => {});
+      } else if (event === "SIGNED_OUT") {
+        disconnectSocket();
+      }
     });
 
     return () => {
@@ -96,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
+    disconnectSocket();
     await supabase.auth.signOut();
     setUser(null);
   }, []);

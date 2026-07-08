@@ -1,4 +1,6 @@
 name: Governance v5
+# NOTE: This workflow is superseded by platform.yml (v6 Platform).
+# Use platform.yml for all future runs; this file is retained for back-compat.
 on:
   workflow_dispatch:
 jobs:

@@ -86,6 +86,7 @@ jobs:
             fi
             cd ${{ env.REPO_DIR }} && git fetch origin develop && git stash 2>/dev/null || true && git checkout -B develop origin/develop && git reset --hard origin/develop
 
+            set +x
             CERT_DIR=${{ env.REPO_DIR }}/infra/docker/certs
             mkdir -p "$CERT_DIR"
             echo "${{ secrets.CF_ORIGIN_CERT }}" > "$CERT_DIR/fullchain.pem"
@@ -129,6 +130,7 @@ jobs:
             if [ -n "${{ secrets.VAPID_PRIVATE_KEY }}" ]; then
               echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> ${{ env.REPO_DIR }}/.env
             fi
+            set -x
 
             # Also create .env in infra/docker for docker-compose
             mkdir -p ${{ env.REPO_DIR }}/infra/docker
@@ -149,7 +151,9 @@ jobs:
           script: |
             set -e
             cd ${{ env.REPO_DIR }}
+            set +x
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            set -x
 
             # Aggressive disk cleanup before pulling
             echo "=== Disk usage before cleanup ==="

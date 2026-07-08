@@ -1,12 +1,38 @@
-import { Router } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
+import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
+import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, InternalServerError } from "../../lib/app-error.js";
+import { BadRequestError, InternalServerError, ForbiddenError, NotFoundError } from "../../lib/app-error.js";
+
+async function requireGroupAccess(req: Request, _res: Response, next: NextFunction) {
+  const { data: group } = await req
+    .supabase!.from("user_groups")
+    .select("workspace_id")
+    .eq("id", req.params.id as string)
+    .single();
+
+  if (!group) throw new NotFoundError("Group not found");
+
+  const { data: member } = await req
+    .supabase!.from("workspace_members")
+    .select("role")
+    .eq("workspace_id", group.workspace_id)
+    .eq("user_id", req.userId)
+    .single();
+
+  if (!member) throw new ForbiddenError("Not a member of this workspace");
+  next();
+}
 
 const router = Router();
 router.use(authenticate);
 
-router.get("/workspaces/:workspaceId/groups", asyncHandler(async (req, res) => {
+router.get(
+  "/workspaces/:workspaceId/groups",
+  validateUuidParam("workspaceId"),
+  requireWorkspaceMembership("workspaceId"),
+  asyncHandler(async (req, res) => {
   const { data } = await req
     .supabase!.from("user_groups")
     .select("*, user_group_members!inner(user_id, users!inner(email, display_name))")
@@ -15,7 +41,11 @@ router.get("/workspaces/:workspaceId/groups", asyncHandler(async (req, res) => {
   res.json({ groups: data ?? [] });
 }));
 
-router.post("/workspaces/:workspaceId/groups", asyncHandler(async (req, res) => {
+router.post(
+  "/workspaces/:workspaceId/groups",
+  validateUuidParam("workspaceId"),
+  requireWorkspaceMembership("workspaceId"),
+  asyncHandler(async (req, res) => {
   const { name, displayName, description, memberIds } = req.body;
   if (!name || !displayName) {
     throw new BadRequestError("name and displayName required");
@@ -43,7 +73,11 @@ router.post("/workspaces/:workspaceId/groups", asyncHandler(async (req, res) => 
   res.status(201).json({ group });
 }));
 
-router.post("/groups/:id/members", asyncHandler(async (req, res) => {
+router.post(
+  "/groups/:id/members",
+  validateUuidParam("id"),
+  requireGroupAccess,
+  asyncHandler(async (req, res) => {
   const { userIds } = req.body;
   if (!userIds?.length) {
     throw new BadRequestError("userIds required");
@@ -57,7 +91,12 @@ router.post("/groups/:id/members", asyncHandler(async (req, res) => {
   res.status(201).json({ success: true });
 }));
 
-router.delete("/groups/:id/members/:userId", asyncHandler(async (req, res) => {
+router.delete(
+  "/groups/:id/members/:userId",
+  validateUuidParam("id"),
+  validateUuidParam("userId"),
+  requireGroupAccess,
+  asyncHandler(async (req, res) => {
   const { error } = await req
     .supabase!.from("user_group_members")
     .delete()
@@ -69,7 +108,11 @@ router.delete("/groups/:id/members/:userId", asyncHandler(async (req, res) => {
   res.status(204).send();
 }));
 
-router.delete("/groups/:id", asyncHandler(async (req, res) => {
+router.delete(
+  "/groups/:id",
+  validateUuidParam("id"),
+  requireGroupAccess,
+  asyncHandler(async (req, res) => {
   const { error } = await req
     .supabase!.from("user_groups")
     .delete()

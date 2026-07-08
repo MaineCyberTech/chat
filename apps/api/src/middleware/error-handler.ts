@@ -21,7 +21,7 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
       requestId,
       message: err.message,
       name: err.name,
-      stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+      stack: process.env.SHOW_STACK_TRACES === "true" ? err.stack : undefined,
     });
     res.status(500).json(errorResponse("INTERNAL_ERROR", "An unexpected error occurred", 500));
   }

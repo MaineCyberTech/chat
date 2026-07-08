@@ -31,14 +31,15 @@ export class ChannelService {
     return supabase ?? getSupabase();
   }
 
-  async listByWorkspace(workspaceId: string, supabase?: SupabaseClient): Promise<Channel[]> {
+  async listByWorkspace(workspaceId: string, supabase?: SupabaseClient, limit = 50, offset = 0): Promise<Channel[]> {
     const client = this.getClient(supabase);
     const { data, error } = await client
       .from("channels")
       .select("id, name, slug, topic, workspace_id, created_by, is_private, is_read_only, channel_type, sort_order, created_at, updated_at, deleted_at")
       .eq("workspace_id", workspaceId)
       .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .range(offset, offset + limit - 1);
 
     if (error) return [];
     return (data ?? []) as unknown as Channel[];
@@ -200,12 +201,13 @@ export class ChannelService {
     return success;
   }
 
-  async getMembers(channelId: string): Promise<{ user_id: string }[]> {
+  async getMembers(channelId: string, limit = 50, offset = 0): Promise<{ user_id: string }[]> {
     const supabase = getSupabase();
     const { data } = await supabase
       .from("channel_members")
       .select("user_id")
-      .eq("channel_id", channelId);
+      .eq("channel_id", channelId)
+      .range(offset, offset + limit - 1);
 
     return (data ?? []) as { user_id: string }[];
   }

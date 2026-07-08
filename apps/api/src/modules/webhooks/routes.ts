@@ -72,7 +72,7 @@ router.get("/webhooks", requireWorkspaceQueryParam, asyncHandler(async (req, res
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const masked = webhooks.map((w: any) => ({
     ...w,
-    secret: w.secret ? `${w.secret.slice(0, 4)}...${w.secret.slice(-4)}` : "",
+    secret: w.secret ? "••••••••" : "",
   }));
   res.json({ webhooks: masked });
 }));
@@ -86,10 +86,9 @@ router.get(
     if (!webhook) {
       throw new NotFoundError("Webhook not found");
     }
-    // Mask secret in response
     const masked = {
       ...webhook,
-      secret: webhook.secret ? `${webhook.secret.slice(0, 4)}...${webhook.secret.slice(-4)}` : "",
+      secret: webhook.secret ? "••••••••" : "",
     };
     res.json({ webhook: masked });
   }),
@@ -111,9 +110,10 @@ router.post("/webhooks", requireWorkspaceMembership("workspace_id"), asyncHandle
   if (!webhook) {
     throw new InternalServerError("Could not create webhook");
   }
+  // Show the original secret on create (one-time opportunity)
   const masked = {
     ...webhook,
-    secret: webhook.secret ? `${webhook.secret.slice(0, 4)}...${webhook.secret.slice(-4)}` : "",
+    secret: parsed.data.secret ? `${parsed.data.secret.slice(0, 4)}...${parsed.data.secret.slice(-4)}` : "",
   };
   res.status(201).json({ webhook: masked });
   logAuditEvent({
@@ -149,7 +149,7 @@ router.patch(
     }
     const masked = {
       ...webhook,
-      secret: webhook.secret ? `${webhook.secret.slice(0, 4)}...${webhook.secret.slice(-4)}` : "",
+      secret: webhook.secret ? "••••••••" : "",
     };
     res.json({ webhook: masked });
     logAuditEvent({

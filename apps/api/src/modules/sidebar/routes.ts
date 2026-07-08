@@ -4,6 +4,13 @@ import { authenticate as requireAuth } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
+import {
+  createSidebarCategorySchema,
+  updateSidebarCategorySchema,
+  addSidebarAssignmentSchema,
+  reorderSidebarCategoriesSchema,
+  reorderSidebarAssignmentsSchema,
+} from "../../config/validators.js";
 
 const router = Router();
 
@@ -46,10 +53,10 @@ router.get("/", requireAuth, asyncHandler(async (req: Request, res: Response) =>
 
 // POST /v1/sidebar-categories - create a category
 router.post("/", requireAuth, asyncHandler(async (req: Request, res: Response) => {
-  const { workspace_id, name } = req.body;
-  if (!workspace_id || !name)
-    throw new BadRequestError("workspace_id and name required");
+  const parsed = createSidebarCategorySchema.safeParse(req.body);
+  if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
 
+  const { workspace_id, name } = parsed.data;
   const supabase = req.supabase as SupabaseClient;
 
   const { data: existing } = await supabase
@@ -74,12 +81,14 @@ router.post("/", requireAuth, asyncHandler(async (req: Request, res: Response) =
 
 // PATCH /v1/sidebar-categories/:id - rename
 router.patch("/:id", requireAuth, validateUuidParam("id"), asyncHandler(async (req: Request, res: Response) => {
-  const { name, sort_order } = req.body;
+  const parsed = updateSidebarCategorySchema.safeParse(req.body);
+  if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
+
   const supabase = req.supabase as SupabaseClient;
 
   const updates: Record<string, unknown> = {};
-  if (name !== undefined) updates.name = name;
-  if (sort_order !== undefined) updates.sort_order = sort_order;
+  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+  if (parsed.data.sort_order !== undefined) updates.sort_order = parsed.data.sort_order;
 
   const { data, error } = await supabase
     .from("sidebar_categories")
@@ -113,9 +122,10 @@ router.post(
   requireAuth,
   validateUuidParam("id"),
   asyncHandler(async (req: Request, res: Response) => {
-    const { channel_id } = req.body;
-    if (!channel_id) throw new BadRequestError("channel_id required");
+    const parsed = addSidebarAssignmentSchema.safeParse(req.body);
+    if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
 
+    const { channel_id } = parsed.data;
     const supabase = req.supabase as SupabaseClient;
 
     const { data: cat } = await supabase
@@ -169,10 +179,10 @@ router.delete(
 
 // PATCH /v1/sidebar-categories/reorder - reorder all categories
 router.patch("/reorder", requireAuth, asyncHandler(async (req: Request, res: Response) => {
-  const { categoryIds } = req.body as { categoryIds: string[] };
-  if (!Array.isArray(categoryIds))
-    throw new BadRequestError("categoryIds array required");
+  const parsed = reorderSidebarCategoriesSchema.safeParse(req.body);
+  if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
 
+  const { categoryIds } = parsed.data;
   const supabase = req.supabase as SupabaseClient;
   const errs: string[] = [];
 
@@ -195,10 +205,10 @@ router.patch(
   requireAuth,
   validateUuidParam("id"),
   asyncHandler(async (req: Request, res: Response) => {
-    const { channelIds } = req.body as { channelIds: string[] };
-    if (!Array.isArray(channelIds))
-      throw new BadRequestError("channelIds array required");
+    const parsed = reorderSidebarAssignmentsSchema.safeParse(req.body);
+    if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
 
+    const { channelIds } = parsed.data;
     const supabase = req.supabase as SupabaseClient;
     const errs: string[] = [];
 

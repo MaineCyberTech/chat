@@ -8,6 +8,10 @@ on:
       - development
       - dev
       - release/**
+    paths:
+      - "docs/audits/runs/**"
+      - "scripts/audits/generate_dashboard.py"
+      - ".github/workflows/audit-ci-autocommit.yml"
   workflow_dispatch:
 
 permissions:
@@ -41,5 +45,5 @@ jobs:
       - name: Auto-commit dashboard artifacts
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(audits): refresh dashboard artifacts"
+          commit_message: "chore(audits): refresh dashboard artifacts [skip ci]"
           file_pattern: docs/audits/dashboard/** docs/audits/latest_run.json

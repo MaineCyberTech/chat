@@ -2,6 +2,10 @@ name: audit-badges-autocommit
 on:
   push:
     branches: [main, master, development, dev]
+    paths:
+      - "hardening/**"
+      - "scripts/audits/generate_badges.py"
+      - ".github/workflows/audit-badges-autocommit.yml"
   workflow_dispatch:
 permissions:
   contents: write
@@ -18,5 +22,5 @@ jobs:
       - run: python scripts/audits/generate_badges.py --repo-root .
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(audits): refresh hardening operator edition badges"
+          commit_message: "chore(audits): refresh hardening operator edition badges [skip ci]"
           file_pattern: docs/hardening_super_bundle/examples/dashboard/**

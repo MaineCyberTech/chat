@@ -214,6 +214,11 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       .catch(() => {});
   }, [channelId, loadProfiles]);
 
+  // Socket lifecycle:
+  //   Socket is initialized lazily via getSocket() in lib/socket.ts.
+  //   AuthContext calls getSocket() on sign-in and disconnectSocket() on sign-out
+  //   (see auth-context.tsx). This effect joins/leaves the channel and sets up
+  //   event listeners. It does NOT initialize the socket itself.
   useEffect(() => {
     let socket: Socket | null = null;
     let isConnectionAttempted = false;

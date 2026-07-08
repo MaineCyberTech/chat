@@ -19,6 +19,8 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters").optional(),
+  SHOW_STACK_TRACES: z.enum(["true", "false"]).default("false"),
+  WEBHOOK_ENCRYPTION_KEY: z.string().min(32).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
