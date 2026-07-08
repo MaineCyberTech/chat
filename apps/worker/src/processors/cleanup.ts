@@ -4,7 +4,7 @@ import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 
 export interface CleanupJobData {
-  type: "old_deliveries" | "dead_letters" | "consent_logs" | "stale_sessions" | "expired_uploads";
+  type: "old_deliveries" | "dead_letters" | "consent_logs" | "stale_sessions" | "expired_uploads" | "message_edit_history";
   olderThanDays?: number;
 }
 
@@ -120,6 +120,38 @@ async function cleanupConsentLogs(
   return ids.length;
 }
 
+async function cleanupMessageEditHistory(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  olderThanDays: number,
+) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - olderThanDays);
+
+  const { data: edits, error: selectError } = await supabase
+    .from("message_edit_history")
+    .select("id")
+    .lt("edited_at", cutoff.toISOString())
+    .limit(1000);
+
+  if (selectError) {
+    logger.error({ error: selectError }, "Failed to select old message edit history for cleanup");
+    return 0;
+  }
+
+  if (!edits || edits.length === 0) return 0;
+
+  const ids = edits.map((e: { id: string }) => e.id);
+  const { error: deleteError } = await supabase.from("message_edit_history").delete().in("id", ids);
+
+  if (deleteError) {
+    logger.error({ error: deleteError }, "Failed to delete old message edit history");
+    return 0;
+  }
+
+  logger.info({ count: ids.length, olderThanDays }, "Cleaned up old message edit history");
+  return ids.length;
+}
+
 export function registerCleanupProcessor() {
   const env = loadEnv();
   if (!env.REDIS_URL) throw new Error("Redis URL not configured");
@@ -145,6 +177,9 @@ export function registerCleanupProcessor() {
           break;
         case "consent_logs":
           cleaned = await cleanupConsentLogs(supabase, olderThanDays);
+          break;
+        case "message_edit_history":
+          cleaned = await cleanupMessageEditHistory(supabase, olderThanDays);
           break;
         case "expired_uploads":
           logger.info({ type }, "Expired upload cleanup not yet implemented");

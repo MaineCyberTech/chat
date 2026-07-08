@@ -104,4 +104,31 @@ router.post("/status/batch", asyncHandler(async (req, res) => {
   res.json({ statuses: map });
 }));
 
+// Get presence for multiple users (online/away/dnd/offline)
+router.post("/status/presence/batch", asyncHandler(async (req, res) => {
+  const { userIds } = req.body as { userIds: string[] };
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    res.json({ presence: {} });
+    return;
+  }
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .from("user_presence")
+    .select("user_id, status, last_seen_at")
+    .in("user_id", userIds);
+  const presenceMap: Record<string, { status: string; last_seen_at: string | null }> = {};
+  if (data) {
+    for (const row of data) {
+      presenceMap[row.user_id] = { status: row.status, last_seen_at: row.last_seen_at };
+    }
+  }
+  // Default offline for any not found
+  for (const uid of userIds) {
+    if (!presenceMap[uid]) {
+      presenceMap[uid] = { status: "offline", last_seen_at: null };
+    }
+  }
+  res.json({ presence: presenceMap });
+}));
+
 export default router;

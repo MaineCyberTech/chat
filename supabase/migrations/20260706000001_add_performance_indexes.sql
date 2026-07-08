@@ -26,6 +26,10 @@ CREATE INDEX IF NOT EXISTS idx_dm_members_user_id
 CREATE INDEX IF NOT EXISTS idx_message_flags_user_created
   ON public.message_flags (user_id, created_at DESC);
 
+-- Index for workspace lookup by slug
+CREATE INDEX IF NOT EXISTS idx_workspaces_slug
+  ON public.workspaces (slug);
+
 -- Composite index for channel member existence checks (fast membership lookup)
 CREATE INDEX IF NOT EXISTS idx_channel_members_user_channel
   ON public.channel_members (user_id, channel_id);

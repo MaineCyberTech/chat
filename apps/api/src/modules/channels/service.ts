@@ -1,7 +1,7 @@
 import { getSupabase } from "../../lib/supabase.js";
 import { webhookService } from "../webhooks/service.js";
 import { logger } from "../../lib/logger.js";
-import { getIO } from "../../lib/socket.js";
+import { getIO, removeAllFromRoom } from "../../lib/socket.js";
 import type { Channel } from "@chat/db";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -192,7 +192,9 @@ export class ChannelService {
         .catch(() => {});
 
       try {
-        getIO().to(`channel:${channelId}`).emit("channel:deleted", { channelId, workspaceId: channel.workspace_id });
+        const roomName = `channel:${channelId}`;
+        getIO().to(roomName).emit("channel:deleted", { channelId, workspaceId: channel.workspace_id });
+        removeAllFromRoom(roomName);
       } catch {
         // Socket not initialized
       }

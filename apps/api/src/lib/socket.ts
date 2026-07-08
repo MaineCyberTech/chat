@@ -301,6 +301,18 @@ export async function shutdownSocket(): Promise<void> {
   }
 }
 
+export function removeAllFromRoom(roomName: string): void {
+  if (!io) return;
+  const room = io.sockets.adapter.rooms.get(roomName);
+  if (!room) return;
+  for (const socketId of room) {
+    const socket = io.sockets.sockets.get(socketId);
+    if (socket) {
+      socket.leave(roomName);
+    }
+  }
+}
+
 export function getOnlineUsers(): string[] {
   if (!io) return [];
   const sockets = io.sockets.sockets;
