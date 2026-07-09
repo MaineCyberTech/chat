@@ -106,11 +106,12 @@ interface Props {
 export function ChatView({
   channelId,
   channelName,
-  channelTopic,
+  channelTopic: _channelTopic,
   workspaceId,
   workspaceSlug,
 }: Props) {
   const { user } = useAuth();
+  const [channelTopic, setChannelTopic] = useState(_channelTopic);
 
   const {
     items: messages,
@@ -141,7 +142,12 @@ export function ChatView({
   }>({ notify: "all", sound: true });
   const [showChannelInfo, setShowChannelInfo] = useState<false | "info" | "bookmarks">(false);
   const [showChannelMenu, setShowChannelMenu] = useState(false);
+  const [editingTopic, setEditingTopic] = useState(false);
+  const [topicDraft, setTopicDraft] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const topicInputRef = useRef<HTMLInputElement>(null);
   const channelMenuRef = useRef<HTMLDivElement>(null);
+  const dragCounterRef = useRef(0);
   const [filterQuery] = useState("");
   const { addToast } = useToast();
   const [globalNotifPrefs, setGlobalNotifPrefs] = useState<{
@@ -159,6 +165,10 @@ export function ChatView({
   });
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { activeRoom, startCall, endCall } = useMediaRoom();
+
+  useEffect(() => {
+    if (editingTopic) topicInputRef.current?.focus();
+  }, [editingTopic]);
 
   useEffect(() => {
     if (!showChannelMenu) return;
@@ -521,6 +531,39 @@ export function ChatView({
     [channelId, addToast],
   );
 
+  const handleDropFiles = useCallback((files: FileList) => {
+    for (const file of Array.from(files)) {
+      handleFileUpload(file);
+    }
+  }, [handleFileUpload]);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.types?.includes("Files")) setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current <= 0) { dragCounterRef.current = 0; setDragOver(false); }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    dragCounterRef.current = 0;
+    if (e.dataTransfer.files.length > 0) handleDropFiles(e.dataTransfer.files);
+  }, [handleDropFiles]);
+
   const handleTypingStart = useCallback(() => {
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -637,7 +680,26 @@ export function ChatView({
   }
 
   return (
-    <div className="flex h-full" id="channel_view">
+    <div
+      className="flex h-full"
+      id="channel_view"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {dragOver && (
+        <div
+          className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center"
+          style={{ background: "rgba(var(--button-bg-rgb), 0.08)" }}
+        >
+          <div className="rounded-xl border-2 border-dashed p-8 text-center backdrop-blur-sm" style={{ borderColor: "var(--button-bg)", background: "rgba(var(--center-channel-bg-rgb), 0.95)" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--button-bg)" }}>
+              Drop files here to upload
+            </p>
+          </div>
+        </div>
+      )}
       <div
         className="flex min-w-0 flex-1 flex-col"
         style={{ background: "var(--center-channel-bg)" }}
@@ -690,10 +752,41 @@ export function ChatView({
                 </button>
               </div>
             )}
-            {channelTopic && (
-              <p className="truncate text-xs" style={{ color: "var(--text-tertiary)" }}>
-                {channelTopic}
-              </p>
+            {editingTopic ? (
+              <div className="flex items-center gap-1">
+                <input
+                  ref={topicInputRef}
+                  value={topicDraft}
+                  onChange={(e) => setTopicDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      api.patch(`/channels/${channelId}`, { topic: topicDraft }).then(() => {
+                        setChannelTopic(topicDraft);
+                        setEditingTopic(false);
+                        addToast({ title: "Topic updated", variant: "success", duration: 2000 });
+                      }).catch(() => addToast({ title: "Failed to update topic", variant: "error" }));
+                    }
+                    if (e.key === "Escape") {
+                      setEditingTopic(false);
+                    }
+                  }}
+                  onBlur={() => setEditingTopic(false)}
+                  maxLength={500}
+                  className="w-full rounded border bg-transparent px-2 py-0.5 text-xs"
+                  style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)", color: "var(--center-channel-color)" }}
+                  aria-label="Edit channel topic"
+                />
+              </div>
+            ) : (
+              <button
+                onClick={() => { setTopicDraft(channelTopic ?? ""); setEditingTopic(true); }}
+                className="w-full truncate text-left text-xs transition-opacity hover:opacity-80"
+                style={{ color: "var(--text-tertiary)" }}
+                aria-label="Edit channel topic"
+              >
+                {channelTopic || "Add a topic"}
+              </button>
             )}
           </div>
           <div className="flex items-center gap-1">
