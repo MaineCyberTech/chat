@@ -141,8 +141,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: pnpm lint
-      - name: Run lint-staged
-        run: pnpm lint-staged --diff="origin/${{ github.base_ref || 'main' }}...HEAD"
 
   typecheck:
     runs-on: ubuntu-latest
