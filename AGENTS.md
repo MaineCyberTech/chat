@@ -1,14 +1,14 @@
 # AGENTS.md — Architecture & Implementation Status
 
-## Current State (July 8, 2026)
+## Current State (July 9, 2026)
 
 - **All P0/P1 findings resolved** — 0 P0, 0 P1 across all audit/hardening pipelines
 - **P2/P3 findings**: ~130 total (original), all resolved
 - **Phases 6-8 of Mattermost comparative audit**: Complete — Change Plan (Phase 6) revised, Patch Sets (Phase 7) redesigned, Final Reconciliation (Phase 8) updated with current SSOT
-- **Remaining gaps**: 7 patch sets remain (~10 engineering days) — emoji expansion, DM modal, channel context menu, category management, MessageList split completion, resizable sidebar, global notification settings
+- **Remaining gaps**: 7 patch sets remain (~10 engineering days) — emoji expansion, DM modal, channel context menu, category management, MessageList split completion, resizable sidebar, global notification settings. Full Mattermost feature inventory tracked below.
 - **Strategic items gated**: Multi-team sidebar, i18n expansion, full TipTap expansion — require post-launch analytics to justify
 - **Deployment**: Development at chat.mainecybertech.us, Production at chat.mainecybertech.com — both healthy
-- **Recent major changes**: Full comparative audit, 105+ P2/P3 fixes, security hardening, test expansion, production readiness, API performance optimization, Phase 6-8 reconciliation
+- **Recent major changes**: Full comparative audit, 105+ P2/P3 fixes, security hardening, test expansion, production readiness, API performance optimization, Phase 6-8 reconciliation, full Mattermost feature comparison documented
 
 ## Architecture Overview
 
@@ -193,6 +193,74 @@ Full 8-phase Mattermost comparative audit (`C:\temp\mattermost-master` vs `C:\te
 | Sidebar    | Multi-team sidebar (65px rail)                | `team_sidebar/`                                         |
 | Sidebar    | User groups CRUD (6 modals)                   | `user_groups_modal/`, `create_user_groups_modal/`, etc. |
 | Sidebar    | DM creation modal with multi-select           | `more_direct_channels/` (5 files)                       |
+
+## Mattermost Comparison — Complete Feature Inventory
+
+Full comparative audit executed (8 phases). All 16 verified features documented below. Source: `docs/audits/compare/`.
+
+### Already Implemented
+
+| Area          | Feature                                            | Status                                |
+| ------------- | -------------------------------------------------- | ------------------------------------- |
+| Emoji         | Category tabs (11 categories)                      | ✅ Implemented in `emoji-picker.tsx`   |
+| Emoji         | Skin tone selector (5 tones)                       | ✅ Implemented in `emoji-picker.tsx`   |
+| Emoji         | Hover preview + name                               | ✅ Implemented (setPreview state)      |
+| Emoji         | `:` colon autocomplete                             | ✅ Implemented in `message-input.tsx`  |
+| Emoji         | 3000+ emojis + recent tracking                     | ✅ `emoji-data.ts` (3357 emojis)       |
+| Search        | Messages/Files type toggle                         | ✅ Added to search page                |
+| Files         | Multi-file navigation (prev/next)                  | ✅ Implemented in `file-preview.tsx`   |
+| Files         | Zoom in/out/100%/fit-to-window                     | ✅ Implemented in `file-preview.tsx`   |
+| Files         | File metadata panel (name, size, uploader)         | ✅ Implemented in `file-preview.tsx`   |
+| Keyboard      | Ctrl+K quick switcher (full)                       | ✅ Implemented in `quick-switcher.tsx` |
+| Keyboard      | Full shortcut modal with categories                | ✅ Implemented in `keyboard-shortcuts.tsx` |
+| Composer      | WYSIWYG editor (TipTap)                            | ✅ Implemented (underline, highlight, task lists, image, text align, 15 buttons) |
+| Onboarding    | Task list popover with checkmarks                  | ✅ Implemented in `onboarding-tour.tsx` |
+| Onboarding    | Tour tips (5-step guided tour)                     | ✅ Implemented in `onboarding-tour.tsx` |
+| Drafts        | Auto-save + restore                                | ✅ Implemented in `message-input.tsx` |
+| Sidebar       | Multi-team sidebar (65px rail)                     | ✅ Implemented in `team-sidebar.tsx` |
+| Auth          | Magic link auth                                    | ✅ Implemented (Supabase) |
+| Auth          | OAuth providers (Google + GitHub)                  | ✅ Implemented in `auth-context.tsx` |
+| i18n          | Full i18n infrastructure                           | ✅ 250+ keys, 16 categories, pluralization, `t()`/`tn()`/`formatDate()`/`formatNumber()` |
+| Sounds        | Notification sounds (9 options)                    | ✅ chime, bell, ding, pop, tri-tone added |
+| Email         | Email verification flow                            | ✅ Verification page with resend |
+| Import/Export | Bulk import/export (CSV/JSON)                      | ✅ 4 export endpoints + 2 import endpoints + admin UI |
+
+### Medium Effort (2-4 days each)
+
+| Area          | Feature                                            | Reference                                                           |
+| ------------- | -------------------------------------------------- | ------------------------------------------------------------------- |
+| Sidebar       | Category management (create/rename/delete/reorder) | `sidebar_category/` (466 lines, draggable)                          |
+| Sidebar       | Channel context menu (right-click)                 | `sidebar_channel_menu/` (favorite, mute, move, copy, leave, delete) |
+| Sidebar       | Sidebar header team menu                           | `sidebar_header/` (team switch, browse channels, create, invite)    |
+| Sidebar       | Resizable sidebar (drag handle)                    | `resizable_sidebar/`                                                |
+| Search        | Operator hints (`from:`, `in:`, etc.)              | `search_box_hints.tsx`                                              |
+| Search        | File extension suggestions                         | `extension_suggestions_provider.tsx`                                |
+| Notifications | Global notification settings page                  | `user_settings_notifications.tsx` (1300 lines)                      |
+| Notifications | Desktop notification sounds (9 sounds)             | `desktop_notification_sounds_setting/`                              |
+| Notifications | Trigger words + auto-responder                     | `user_settings_notifications.tsx`                                   |
+
+### High Effort (1-2 weeks each)
+
+| Area       | Feature                                       | Reference                                               |
+| ---------- | --------------------------------------------- | ------------------------------------------------------- |
+| Composer   | Send scheduling (later today/tomorrow/custom) | `send_button/` + `scheduled_post_indicator/`            |
+| Composer   | AI rewrite actions                            | `use_rewrite.tsx` + `ai_actions_menu.tsx`               |
+| Sidebar    | User groups CRUD (6 modals)                   | `user_groups_modal/`, `create_user_groups_modal/`, etc. |
+| Sidebar    | DM creation modal with multi-select           | `more_direct_channels/` (5 files)                       |
+
+### Enterprise / Strategic (Not Yet Scoped)
+
+| Area              | Feature                          | Reference                                      |
+| ----------------- | -------------------------------- | ----------------------------------------------- |
+| Auth              | Multi-factor authentication (MFA) | TOTP + backup codes + enforce config            |
+| Auth              | SAML/OIDC SSO                    | SAML SP metadata, IdP-initiated login, SCIM     |
+| Auth              | LDAP directory sync              | LDAP bind, user/group import, scheduled sync    |
+| Auth              | Bot accounts                     | Bot API + plugin API                            |
+| Infrastructure   | Plugin system                    | Plugin registration API, hook interfaces        |
+| Search            | Elasticsearch integration        | Full-text search engine plugin                  |
+| Compliance        | Compliance export                | Message export, audit export                    |
+| Enterprise        | Boards/kanban                    | Project management integration                  |
+| Enterprise        | Desktop app (Electron/Tauri)     | Native desktop wrapper                          |
 
 ## Hardening Analysis Summary
 
