@@ -9,6 +9,7 @@ import { VersionBadge } from "@/components/version-badge";
 import { CookieBanner } from "@/components/cookie-banner";
 import { KeyboardShortcuts } from "@/components/shared/keyboard-shortcuts";
 import { ToastProvider } from "@chat/ui/components/toast";
+import { I18nProvider } from "@/components/i18n-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,6 +29,9 @@ const themeScript = `
 
 const viewportScript =
   "!function(){function u(){var v=window.visualViewport;if(v){document.documentElement.style.setProperty('--vh',(v.height/100)+'px')}else{var h=window.innerHeight;document.documentElement.style.setProperty('--vh',(h/100)+'px')}}u();if(window.visualViewport){window.visualViewport.addEventListener('resize',u)}else{window.addEventListener('resize',u)}window.addEventListener('orientationchange',function(){setTimeout(u,100)})}()";
+
+const localeScript =
+  "!function(){var l=localStorage.getItem('chat-locale')||(navigator.language||'en').slice(0,5);var m={es:1,fr:1,de:1,'pt-BR':1,ja:1};if(m[l])document.documentElement.setAttribute('lang',l);else document.documentElement.setAttribute('lang','en');localStorage.setItem('chat-locale',document.documentElement.lang)}()";
 
 const reducedMotionScript =
   "!function(){var m=window.matchMedia('(prefers-reduced-motion:reduce)');if(m.matches)document.documentElement.setAttribute('data-reduced-motion','true');m.addEventListener('change',function(e){if(e.matches)document.documentElement.setAttribute('data-reduced-motion','true');else document.documentElement.removeAttribute('data-reduced-motion')})}()";
@@ -56,14 +60,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: ws: wss:; frame-src 'self' https:; manifest-src 'self'; media-src 'self' data: https: blob:; worker-src 'self' blob:;" />
         <style>{"html,body{background:#fff}html.dark,body.dark{background:#1a1a1a}"}</style>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: viewportScript }} />
+        <script dangerouslySetInnerHTML={{ __html: localeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: reducedMotionScript }} />
       </head>
       <body
         className="flex h-screen min-h-0 flex-col overflow-hidden antialiased"
         style={{ height: "calc(var(--vh, 1vh) * 100)" }}
       >
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <script dangerouslySetInnerHTML={{ __html: viewportScript }} />
-        <script dangerouslySetInnerHTML={{ __html: reducedMotionScript }} />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-[var(--center-channel-bg)] focus:p-4 focus:text-[var(--center-channel-color)]"
@@ -71,6 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <ThemeProvider>
+          <I18nProvider>
           <PWAProvider>
             <AuthProvider>
               <ToastProvider>
@@ -86,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </ToastProvider>
             </AuthProvider>
           </PWAProvider>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>

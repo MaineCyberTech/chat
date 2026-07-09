@@ -1,4 +1,9 @@
 import en from "./en.json";
+import es from "./es.json";
+import fr from "./fr.json";
+import de from "./de.json";
+import ptBR from "./pt-BR.json";
+import ja from "./ja.json";
 
 export interface LocaleInfo {
   code: string;
@@ -9,9 +14,14 @@ export interface LocaleInfo {
 
 const localeMap: Record<string, LocaleInfo> = {
   en: { code: "en", name: "English", nativeName: "English", direction: "ltr" },
+  es: { code: "es", name: "Spanish", nativeName: "Español", direction: "ltr" },
+  fr: { code: "fr", name: "French", nativeName: "Français", direction: "ltr" },
+  de: { code: "de", name: "German", nativeName: "Deutsch", direction: "ltr" },
+  "pt-BR": { code: "pt-BR", name: "Portuguese (Brazil)", nativeName: "Português (Brasil)", direction: "ltr" },
+  ja: { code: "ja", name: "Japanese", nativeName: "日本語", direction: "ltr" },
 };
 
-const locales = { en } as const;
+const locales = { en, es, fr, de, "pt-BR": ptBR, ja } as const;
 type Locale = keyof typeof locales;
 type Messages = typeof en;
 
