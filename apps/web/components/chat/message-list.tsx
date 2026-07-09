@@ -53,7 +53,7 @@ export function MessageList({
   onToggleFlag: _onToggleFlag,
   sendErrors,
   onRetry,
-  onUndoDelete,
+  onUndoDelete: _onUndoDelete,
   channelTopic,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
