@@ -322,8 +322,7 @@ jobs:
           for f in supabase/migrations/*.sql; do
             base=$(basename "$f")
             if [ "$base" = "migrations.list" ]; then continue; fi
-            actual="$actual$base
-"
+            actual="${actual}${base}"$'\n'
           done
           actual=$(echo "$actual" | sort)
           # Read manifest
