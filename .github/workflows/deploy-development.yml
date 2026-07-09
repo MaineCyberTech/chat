@@ -36,6 +36,27 @@ jobs:
       - name: Set lowercase repo
         run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
+      - name: Wait for build-push to complete
+        run: |
+          set -e
+          echo "Waiting for build-push workflow for commit ${{ github.sha }}..."
+          for i in $(seq 1 30); do
+            STATUS=$(curl -sf -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build-push.yml/runs?head_sha=${{ github.sha }}&per_page=1" \
+              | jq -r '.workflow_runs[0].conclusion // "null"')
+            if [ "$STATUS" = "success" ]; then
+              echo "Build-push completed successfully."
+              exit 0
+            elif [ "$STATUS" = "failure" ] || [ "$STATUS" = "cancelled" ]; then
+              echo "ERROR: Build-push failed with status: $STATUS"
+              exit 1
+            fi
+            echo "Attempt $i/30 - build-push status: $STATUS"
+            sleep 10
+          done
+          echo "ERROR: Timed out waiting for build-push to complete"
+          exit 1
+
       - name: Install Supabase CLI
         run: npm install -g supabase
 
