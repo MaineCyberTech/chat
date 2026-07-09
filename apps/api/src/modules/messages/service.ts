@@ -26,7 +26,9 @@ export class MessageService {
     const client = supabase ?? getSupabase();
     let query = client
       .from("messages")
-      .select("id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority")
+      .select(
+        "id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority",
+      )
       .eq("channel_id", channelId)
       .order("created_at", { ascending: false })
       .limit(limit + 1);
@@ -55,7 +57,9 @@ export class MessageService {
 
   async getById(messageId: string, supabase?: SupabaseClient): Promise<Message | null> {
     const client = supabase ?? getSupabase();
-    const { data, error } = await queryWithTimeout(client.from("messages").select("*").eq("id", messageId).single());
+    const { data, error } = await queryWithTimeout(
+      client.from("messages").select("*").eq("id", messageId).single(),
+    );
 
     if (error) return null;
     return data as unknown as Message;
@@ -63,17 +67,21 @@ export class MessageService {
 
   async create(input: CreateMessageInput, supabase?: SupabaseClient): Promise<Message | null> {
     const client = supabase ?? getSupabase();
-    const { data, error } = await queryWithTimeout(client
-      .from("messages")
-      .insert({
-        channel_id: input.channel_id,
-        user_id: input.user_id,
-        content: input.content,
-        parent_id: input.parent_id ?? null,
-        priority: input.priority ?? "standard",
-      })
-      .select("id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority")
-      .single());
+    const { data, error } = await queryWithTimeout(
+      client
+        .from("messages")
+        .insert({
+          channel_id: input.channel_id,
+          user_id: input.user_id,
+          content: input.content,
+          parent_id: input.parent_id ?? null,
+          priority: input.priority ?? "standard",
+        })
+        .select(
+          "id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority",
+        )
+        .single(),
+    );
 
     if (error || !data) return null;
 
@@ -144,6 +152,58 @@ export class MessageService {
       })
       .catch((err) => logger.error("Mention processing failed", { error: String(err) }));
 
+    // Auto-responder: if this is a DM, check if the recipient has auto-reply enabled
+    try {
+      const { data: ch } = await client
+        .from("channels")
+        .select("channel_type, name")
+        .eq("id", input.channel_id)
+        .single();
+      if (ch?.channel_type === "dm") {
+        const otherUserId = ch.name.replace(/^dm-/, "");
+        if (otherUserId !== input.user_id) {
+          const { data: responder } = await client
+            .from("auto_responders")
+            .select("message, enabled, trigger_status")
+            .eq("user_id", otherUserId)
+            .single();
+          if (responder?.enabled) {
+            const { data: presence } = await client
+              .from("user_presence")
+              .select("status")
+              .eq("user_id", otherUserId)
+              .single();
+            if (presence && responder.trigger_status.includes(presence.status)) {
+              const { data: autoReply } = await client
+                .from("messages")
+                .insert({
+                  channel_id: input.channel_id,
+                  user_id: otherUserId,
+                  content: `_Auto-reply: ${responder.message}_`,
+                  priority: "standard",
+                })
+                .select(
+                  "id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority",
+                )
+                .single();
+              if (autoReply) {
+                try {
+                  const io = getIO();
+                  io.to(`channel:${input.channel_id}`).emit("message:new", {
+                    message: autoReply,
+                  });
+                } catch {
+                  /* socket may not be available */
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      /* auto-responder errors are non-critical */
+    }
+
     return message;
   }
 
@@ -176,7 +236,13 @@ export class MessageService {
       query = query.eq("version", version);
     }
 
-    const { data, error } = await queryWithTimeout(query.select("id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority").single());
+    const { data, error } = await queryWithTimeout(
+      query
+        .select(
+          "id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority",
+        )
+        .single(),
+    );
 
     if (error || !data) return null;
 
@@ -252,12 +318,16 @@ export class MessageService {
   }
 
   async getPinned(channelId: string, supabase: SupabaseClient): Promise<Message[]> {
-    const { data } = await queryWithTimeout(supabase
-      .from("messages")
-      .select("id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority")
-      .eq("channel_id", channelId)
-      .eq("is_pinned", true)
-      .order("created_at", { ascending: false }));
+    const { data } = await queryWithTimeout(
+      supabase
+        .from("messages")
+        .select(
+          "id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority",
+        )
+        .eq("channel_id", channelId)
+        .eq("is_pinned", true)
+        .order("created_at", { ascending: false }),
+    );
 
     return (data ?? []) as unknown as Message[];
   }
@@ -278,29 +348,42 @@ export class MessageService {
     return !error;
   }
 
-  async getFlagged(userId: string, supabase: SupabaseClient, limit = 50, offset = 0): Promise<{ messages: Message[]; total: number }> {
-    const countQuery = await queryWithTimeout(supabase
-      .from("message_flags")
-      .select("message_id", { count: "exact", head: true })
-      .eq("user_id", userId));
+  async getFlagged(
+    userId: string,
+    supabase: SupabaseClient,
+    limit = 50,
+    offset = 0,
+  ): Promise<{ messages: Message[]; total: number }> {
+    const countQuery = await queryWithTimeout(
+      supabase
+        .from("message_flags")
+        .select("message_id", { count: "exact", head: true })
+        .eq("user_id", userId),
+    );
 
     const total = (countQuery as unknown as { count: number | null }).count ?? 0;
 
-    const { data } = await queryWithTimeout(supabase
-      .from("message_flags")
-      .select("message_id")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1));
+    const { data } = await queryWithTimeout(
+      supabase
+        .from("message_flags")
+        .select("message_id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1),
+    );
 
     if (!data || data.length === 0) return { messages: [], total };
 
     const messageIds = data.map((f: { message_id: string }) => f.message_id);
-    const { data: messages } = await queryWithTimeout(supabase
-      .from("messages")
-      .select("id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority")
-      .in("id", messageIds)
-      .order("created_at", { ascending: false }));
+    const { data: messages } = await queryWithTimeout(
+      supabase
+        .from("messages")
+        .select(
+          "id, channel_id, user_id, content, created_at, edited_at, parent_id, is_pinned, deleted_at, archived_at, priority",
+        )
+        .in("id", messageIds)
+        .order("created_at", { ascending: false }),
+    );
 
     return { messages: (messages ?? []) as unknown as Message[], total };
   }

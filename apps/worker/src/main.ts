@@ -7,6 +7,7 @@ import { registerNotificationProcessor } from "./processors/notification.js";
 import { registerSearchIndexer } from "./processors/search-indexer.js";
 import { registerCleanupProcessor } from "./processors/cleanup.js";
 import { registerDataRetentionProcessor } from "./processors/data-retention.js";
+import { startScheduler } from "./scheduler.js";
 
 loadEnv();
 
@@ -53,6 +54,9 @@ async function main() {
   registerSearchIndexer();
   registerCleanupProcessor();
   registerDataRetentionProcessor();
+
+  // Start maintenance scheduler (data retention, cleanup)
+  startScheduler();
 
   // Poll for due reminders every 30 seconds
   const { processReminders } = await import("./processors/reminder.js");

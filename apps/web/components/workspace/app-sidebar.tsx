@@ -21,9 +21,11 @@ import {
   Search,
   Plus,
   ChevronDown,
+  ChevronUp,
   X,
   UserPlus,
   Shield,
+  Pencil,
 } from "lucide-react";
 import type { Channel, Workspace } from "@chat/db";
 import { UserPickerModal } from "@/components/groups/user-picker-modal";
@@ -41,7 +43,12 @@ const SIDEBAR_WIDTH = 264;
 const SIDEBAR_MIN_WIDTH = 200;
 const SIDEBAR_MAX_WIDTH = 304;
 
-export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose }: Props) {
+export function AppSidebar({
+  workspaceSlug,
+  channelId,
+  mobileOpen,
+  onMobileClose: _onMobileClose,
+}: Props) {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { addToast } = useToast();
@@ -120,9 +127,12 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     setRefreshKey((k) => k + 1);
   }, []);
 
-  const handleChannelCreated = useCallback((_channel?: { id: string; name: string; slug: string }) => {
-    setChannelRefreshKey((k) => k + 1);
-  }, []);
+  const handleChannelCreated = useCallback(
+    (_channel?: { id: string; name: string; slug: string }) => {
+      setChannelRefreshKey((k) => k + 1);
+    },
+    [],
+  );
 
   // Fetch selected workspace by slug to get its ID for channel list
   React.useEffect(() => {
@@ -276,6 +286,36 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
     } catch {
       console.warn("Failed to rename category");
     }
+  }
+
+  async function reorderCategories(ids: string[]) {
+    try {
+      await api.patch("/sidebar-categories/reorder", { categoryIds: ids });
+    } catch {
+      console.warn("Failed to reorder categories");
+    }
+  }
+
+  async function moveCategoryUp(id: string) {
+    setCategories((prev) => {
+      const idx = prev.findIndex((c) => c.id === id);
+      if (idx <= 0) return prev;
+      const next = [...prev];
+      [next[idx - 1], next[idx]] = [next[idx]!, next[idx - 1]!];
+      reorderCategories(next.map((c) => c.id));
+      return next;
+    });
+  }
+
+  async function moveCategoryDown(id: string) {
+    setCategories((prev) => {
+      const idx = prev.findIndex((c) => c.id === id);
+      if (idx === -1 || idx >= prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx], next[idx + 1]] = [next[idx + 1]!, next[idx]!];
+      reorderCategories(next.map((c) => c.id));
+      return next;
+    });
   }
 
   async function deleteCategory(id: string) {
@@ -480,14 +520,6 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
 
   return (
     <>
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-30"
-          style={{ background: "rgba(0,0,0,0.5)" }}
-          onClick={onMobileClose}
-        />
-      )}
-
       <div
         id="SidebarContainer"
         ref={setSidebarRef}
@@ -645,23 +677,21 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
         {/* Channel Navigator (Jump to / search) */}
         {!collapsed && workspaceSlug && (
           <div className="px-3 py-2">
-            <div
-              className="flex h-9 items-center gap-2 rounded px-2 text-sm"
+            <button
+              className="flex h-9 w-full items-center gap-2 rounded px-2 text-sm"
               style={{
                 background: "rgba(255,255,255,0.08)",
                 color: "rgba(255,255,255,0.72)",
-                cursor: "pointer",
               }}
               onClick={() => {
                 const event = new CustomEvent("chat:search-open");
                 document.dispatchEvent(event);
               }}
-              role="button"
               aria-label="Jump to channel or user"
             >
               <Search size={14} />
               <span style={{ fontSize: 13 }}>Jump to...</span>
-            </div>
+            </button>
             <button
               onClick={() => {
                 if (workspace) setShowInviteModal(true);
@@ -696,7 +726,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
           {/* Category-driven channels */}
           {workspaceSlug && !collapsed && (
             <div className="mb-2">
-              {categories.map((cat) => {
+              {categories.map((cat, index) => {
                 const isDefault = cat.name === "Channels" || cat.name === "Direct Messages";
                 const isExpanded = expandedCategories.has(cat.id);
                 return (
@@ -748,7 +778,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                             className="flex-1 rounded px-1 py-0.5 text-xs"
                             style={{
                               background: "rgba(255,255,255,0.1)",
-                              color: "#fff",
+                              color: "var(--button-color)",
                               border: "none",
                               outline: "none",
                             }}
@@ -767,13 +797,44 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                         </span>
                       )}
                       {!isDefault && (
-                        <button
-                          onClick={() => deleteCategory(cat.id)}
-                          className="mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)]"
-                          aria-label={`Delete ${cat.name}`}
-                        >
-                          <X size={10} style={{ color: "rgba(255,255,255,0.5)" }} />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => moveCategoryUp(cat.id)}
+                            className="mr-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                            aria-label={`Move ${cat.name} up`}
+                            title="Move up"
+                            disabled={index === 0}
+                          >
+                            <ChevronUp size={8} style={{ color: "rgba(255,255,255,0.5)" }} />
+                          </button>
+                          <button
+                            onClick={() => moveCategoryDown(cat.id)}
+                            className="mr-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                            aria-label={`Move ${cat.name} down`}
+                            title="Move down"
+                            disabled={index === categories.length - 1}
+                          >
+                            <ChevronDown size={8} style={{ color: "rgba(255,255,255,0.5)" }} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setRenamingCategory(cat.id);
+                              setRenameValue(cat.name);
+                            }}
+                            className="mr-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] focus-visible:opacity-100"
+                            aria-label={`Rename ${cat.name}`}
+                            title="Rename"
+                          >
+                            <Pencil size={8} style={{ color: "rgba(255,255,255,0.5)" }} />
+                          </button>
+                          <button
+                            onClick={() => deleteCategory(cat.id)}
+                            className="mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] focus-visible:opacity-100"
+                            aria-label={`Delete ${cat.name}`}
+                          >
+                            <X size={10} style={{ color: "rgba(255,255,255,0.5)" }} />
+                          </button>
+                        </>
                       )}
                     </div>
                     {isExpanded && (
@@ -859,7 +920,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
                     className="flex-1 rounded px-2 py-1 text-xs"
                     style={{
                       background: "rgba(255,255,255,0.1)",
-                      color: "#fff",
+                      color: "var(--button-color)",
                       border: "none",
                       outline: "none",
                     }}

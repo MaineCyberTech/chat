@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { X, Check, Sparkles } from "lucide-react";
+import { api } from "@/lib/api";
 
 interface Task {
   id: string;
@@ -108,6 +109,11 @@ export function OnboardingTour() {
     setTaskStates(states);
     setCompletedCount(count);
     setVisible(true);
+    // Sync completed tasks to server
+    const completedKeys = TASKS.filter((t) => states[t.id]).map((t) => t.checkKey);
+    if (completedKeys.length > 0) {
+      api.put("/preferences", { onboarding: completedKeys }).catch(() => {});
+    }
   }, []);
 
   const dismiss = useCallback(() => {
@@ -208,7 +214,7 @@ export function OnboardingTour() {
                       background: done
                         ? "var(--online-indicator)"
                         : "rgba(var(--center-channel-color-rgb), 0.16)",
-                      color: "#fff",
+                      color: "var(--button-color)",
                     }}
                   >
                     {done && <Check size={10} />}

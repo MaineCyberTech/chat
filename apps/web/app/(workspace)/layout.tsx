@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useTransition } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-context";
@@ -17,7 +17,6 @@ import type { Workspace, Channel } from "@chat/db";
 
 function RouteLoadingIndicator() {
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
   const [prevPathname, setPrevPathname] = useState(pathname);
   const [showLoader, setShowLoader] = useState(false);
 
@@ -32,7 +31,7 @@ function RouteLoadingIndicator() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-50 h-0.5"
+      className="fixed top-0 right-0 left-0 z-50 h-0.5"
       style={{ opacity: showLoader ? 1 : 0, transition: "opacity 200ms" }}
     >
       <div
@@ -70,6 +69,20 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     [sidebarWidth],
   );
 
+  const handleResizeKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const step = e.shiftKey ? 20 : 5;
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      setSidebarWidth((w) => Math.max(200, w - step));
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      setSidebarWidth((w) => Math.min(500, w + step));
+    }
+  }, []);
+
+  const sidebarWidthRef = useRef(sidebarWidth);
+  sidebarWidthRef.current = sidebarWidth;
+
   useEffect(() => {
     function onMouseMove(e: MouseEvent) {
       if (!resizingRef.current) return;
@@ -85,7 +98,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
         try {
-          localStorage.setItem("sidebar_width", String(sidebarWidth));
+          localStorage.setItem("sidebar_width", String(sidebarWidthRef.current));
         } catch {
           /* ignore */
         }
@@ -97,7 +110,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
     };
-  }, [sidebarWidth]);
+  }, []);
 
   useEffect(() => {
     try {
@@ -211,11 +224,11 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       <RouteLoadingIndicator />
 
       {/* Flex row for sidebar + content */}
-      <div style={{ display: "flex", overflow: "hidden", minHeight: 0 }}>
+      <div style={{ display: "flex", overflow: "clip", minHeight: 0 }}>
         {/* Mobile header */}
         <div
           id="global-header"
-          className="flex items-center gap-2 px-3 py-2 md:hidden"
+          className="flex items-center gap-2 px-3 md:hidden"
           style={{
             background: "var(--sidebar-header-bg)",
             color: "var(--sidebar-header-text-color)",
@@ -224,6 +237,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             left: 0,
             right: 0,
             zIndex: 30,
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            height: "calc(3rem + env(safe-area-inset-top, 0px))",
           }}
         >
           <button
@@ -247,7 +262,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           className="hidden md:flex"
           style={{ width: sidebarWidth, minWidth: 200, position: "relative", flexShrink: 0 }}
         >
-          <div style={{ width: "100%", overflow: "hidden" }}>
+          <div style={{ width: "100%", overflow: "hidden auto" }}>
             <AppSidebar
               workspaceSlug={params.workspaceSlug}
               channelId={params.channelId}
@@ -257,6 +272,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           </div>
           <div
             onMouseDown={handleMouseDown}
+            onKeyDown={handleResizeKeyDown}
             className="hidden md:block"
             style={{
               width: 4,
@@ -269,11 +285,13 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
               zIndex: 10,
               transition: "background 150ms",
             }}
+            tabIndex={0}
+            role="separator"
+            aria-label="Resize sidebar. Use arrow keys to resize."
             onMouseEnter={(e) =>
               (e.currentTarget.style.background = "rgba(var(--center-channel-color-rgb), 0.16)")
             }
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            aria-label="Resize sidebar"
           />
         </div>
 
@@ -315,7 +333,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         <nav
           className="flex shrink-0 items-center justify-around md:hidden"
           style={{
-            height: "var(--bottom-nav-height)",
+            height: "calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))",
+            paddingBottom: "env(safe-area-inset-bottom, 0px)",
             borderTop: "var(--border-default)",
             background: "var(--center-channel-bg)",
             position: "fixed",

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
-import { Button, SidebarGroup, Skeleton, useToast, Dialog } from "@chat/ui";
+import { Button, SidebarGroup, Skeleton, useToast } from "@chat/ui";
 import { Bell, BellOff, AlertTriangle, X, Plus } from "lucide-react";
 import type { UserPreferences, ThemePreference } from "@chat/db";
 
@@ -36,10 +36,15 @@ export default function SettingsPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [triggerWords, setTriggerWords] = useState<{ id: string; word: string; created_at: string }[]>([]);
+  const [triggerWords, setTriggerWords] = useState<
+    { id: string; word: string; created_at: string }[]
+  >([]);
   const [newTriggerWord, setNewTriggerWord] = useState("");
   const [triggerLoading, setTriggerLoading] = useState(false);
   const [triggerSaving, setTriggerSaving] = useState(false);
+  const [autoResponderEnabled, setAutoResponderEnabled] = useState(false);
+  const [autoResponderMessage, setAutoResponderMessage] = useState("");
+  const [autoResponderSaving, setAutoResponderSaving] = useState(false);
 
   async function handleResetPreferences() {
     setResetting(true);
@@ -60,7 +65,7 @@ export default function SettingsPage() {
     try {
       await api.delete("/auth/account");
       addToast({ title: "Account deleted", variant: "success", duration: 3000 });
-      setTimeout(() => window.location.href = "/sign-in", 1500);
+      setTimeout(() => (window.location.href = "/sign-in"), 1500);
     } catch {
       addToast({ title: "Error", description: "Failed to delete account.", variant: "error" });
     } finally {
@@ -73,6 +78,7 @@ export default function SettingsPage() {
     fetchPreferences();
     fetchChannels();
     fetchTriggerWords();
+    fetchAutoResponder();
   }, [authLoading]);
 
   async function fetchChannels() {
@@ -93,6 +99,40 @@ export default function SettingsPage() {
       setChannelPrefs(prefMap);
     } catch {
       console.warn("Failed to fetch channels");
+    }
+  }
+
+  async function fetchAutoResponder() {
+    try {
+      const wsRes = await api.get<{ workspaces: { id: string }[] }>("/workspaces");
+      const ws = wsRes.workspaces[0];
+      if (!ws) return;
+      const res = await api.get<{
+        responder: { enabled: boolean; message: string; trigger_status: string[] };
+      }>(`/status/auto-responder?workspace_id=${ws.id}`);
+      setAutoResponderEnabled(res.responder.enabled);
+      setAutoResponderMessage(res.responder.message);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function saveAutoResponder() {
+    setAutoResponderSaving(true);
+    try {
+      const wsRes = await api.get<{ workspaces: { id: string }[] }>("/workspaces");
+      const ws = wsRes.workspaces[0];
+      if (!ws) return;
+      await api.put("/status/auto-responder", {
+        workspace_id: ws.id,
+        enabled: autoResponderEnabled,
+        message: autoResponderMessage,
+      });
+      addToast({ title: "Auto-responder saved", variant: "success", duration: 2000 });
+    } catch {
+      addToast({ title: "Error", description: "Failed to save auto-responder", variant: "error" });
+    } finally {
+      setAutoResponderSaving(false);
     }
   }
 
@@ -244,9 +284,17 @@ export default function SettingsPage() {
   if (error) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
-        <p className="mb-3 text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{error}</p>
+        <p
+          className="mb-3 text-sm"
+          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+        >
+          {error}
+        </p>
         <button
-          onClick={() => { setError(null); fetchPreferences(); }}
+          onClick={() => {
+            setError(null);
+            fetchPreferences();
+          }}
           className="rounded-md px-4 py-2 text-xs font-medium text-white"
           style={{ background: "var(--button-bg)" }}
         >
@@ -437,9 +485,7 @@ export default function SettingsPage() {
             </label>
             <select
               value={notifPrefs.email_mode ?? "immediate"}
-              onChange={(e) =>
-                handleNotificationChange("email_mode", e.target.value)
-              }
+              onChange={(e) => handleNotificationChange("email_mode", e.target.value)}
               disabled={saving}
               className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
               style={{
@@ -466,12 +512,14 @@ export default function SettingsPage() {
             >
               Get notified when these words are mentioned in any channel
             </p>
-            <div className="flex gap-2 mb-3">
+            <div className="mb-3 flex gap-2">
               <input
                 type="text"
                 value={newTriggerWord}
                 onChange={(e) => setNewTriggerWord(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") addTriggerWord(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addTriggerWord();
+                }}
                 disabled={triggerSaving}
                 placeholder="e.g. deploy, urgent"
                 className="flex-1 rounded-lg border px-3 py-2 text-sm placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus-visible:outline-none"
@@ -492,11 +540,17 @@ export default function SettingsPage() {
               </Button>
             </div>
             {triggerLoading ? (
-              <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+              <p
+                className="text-xs"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
                 Loading...
               </p>
             ) : triggerWords.length === 0 ? (
-              <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+              <p
+                className="text-xs"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
                 No trigger words added yet
               </p>
             ) : (
@@ -523,6 +577,58 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
+        </div>
+      </SidebarGroup>
+
+      <SidebarGroup title="Auto-Responder" defaultOpen={false}>
+        <p
+          className="mb-2 text-xs"
+          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        >
+          Auto-reply to direct messages when you&apos;re away or busy.
+        </p>
+        <div className="space-y-3">
+          <ToggleRow
+            label="Enable auto-responder"
+            description="Automatically reply to DMs based on your status"
+            checked={autoResponderEnabled}
+            onChange={setAutoResponderEnabled}
+            disabled={autoResponderSaving}
+          />
+          {autoResponderEnabled && (
+            <>
+              <div>
+                <label
+                  className="mb-1 block text-xs font-medium"
+                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                >
+                  Auto-reply message
+                </label>
+                <textarea
+                  value={autoResponderMessage}
+                  onChange={(e) => setAutoResponderMessage(e.target.value)}
+                  disabled={autoResponderSaving}
+                  maxLength={500}
+                  rows={3}
+                  placeholder="I'm currently away. I'll get back to you soon."
+                  className="w-full rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+                  style={{
+                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                    background: "var(--center-channel-bg)",
+                    color: "var(--center-channel-color)",
+                  }}
+                />
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={saveAutoResponder}
+                disabled={autoResponderSaving}
+              >
+                {autoResponderSaving ? "Saving..." : "Save Auto-Responder"}
+              </Button>
+            </>
+          )}
         </div>
       </SidebarGroup>
 
@@ -597,11 +703,17 @@ export default function SettingsPage() {
           Destructive actions that cannot be undone.
         </p>
         <div className="space-y-3">
-          <div className="rounded-lg border p-3" style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}>
+          <div
+            className="rounded-lg border p-3"
+            style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
+          >
             <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
               Reset all preferences
             </p>
-            <p className="mt-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+            <p
+              className="mt-1 text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            >
               Restore all settings to their default values.
             </p>
             <Button
@@ -614,11 +726,17 @@ export default function SettingsPage() {
               Reset preferences
             </Button>
           </div>
-          <div className="rounded-lg border p-3" style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}>
+          <div
+            className="rounded-lg border p-3"
+            style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
+          >
             <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
               Delete account
             </p>
-            <p className="mt-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+            <p
+              className="mt-1 text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            >
               Permanently delete your account and all associated data.
             </p>
             <Button
@@ -636,13 +754,31 @@ export default function SettingsPage() {
 
       {/* Reset preferences confirmation */}
       {resetConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="max-w-sm rounded-lg p-6" style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }} role="alertdialog">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full" style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+        >
+          <div
+            className="max-w-sm rounded-lg p-6"
+            style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }}
+            role="alertdialog"
+          >
+            <div
+              className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
+              style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}
+            >
               <AlertTriangle size={20} style={{ color: "var(--dnd-indicator)" }} />
             </div>
-            <h3 className="text-center text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>Reset preferences?</h3>
-            <p className="mt-2 text-center text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+            <h3
+              className="text-center text-sm font-semibold"
+              style={{ color: "var(--center-channel-color)" }}
+            >
+              Reset preferences?
+            </h3>
+            <p
+              className="mt-2 text-center text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
               All your settings will be restored to their default values. This cannot be undone.
             </p>
             <div className="mt-4 flex justify-end gap-2">
@@ -668,14 +804,33 @@ export default function SettingsPage() {
 
       {/* Delete account confirmation */}
       {deleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="max-w-sm rounded-lg p-6" style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }} role="alertdialog">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full" style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+        >
+          <div
+            className="max-w-sm rounded-lg p-6"
+            style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }}
+            role="alertdialog"
+          >
+            <div
+              className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
+              style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}
+            >
               <AlertTriangle size={20} style={{ color: "var(--dnd-indicator)" }} />
             </div>
-            <h3 className="text-center text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>Delete account?</h3>
-            <p className="mt-2 text-center text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
-              This will permanently delete your account and all associated data, including messages, channels, and workspaces. This cannot be undone.
+            <h3
+              className="text-center text-sm font-semibold"
+              style={{ color: "var(--center-channel-color)" }}
+            >
+              Delete account?
+            </h3>
+            <p
+              className="mt-2 text-center text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
+              This will permanently delete your account and all associated data, including messages,
+              channels, and workspaces. This cannot be undone.
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
