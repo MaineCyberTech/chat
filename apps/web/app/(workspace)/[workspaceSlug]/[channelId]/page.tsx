@@ -98,6 +98,7 @@ export default function ChannelPageClient() {
     <ChatView
       channelId={channel.id}
       channelName={channel.name}
+      channelTopic={channel.topic ?? undefined}
       workspaceId={workspaceId ?? channel.workspace_id}
       workspaceSlug={params.workspaceSlug}
     />

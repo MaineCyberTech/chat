@@ -36,6 +36,7 @@ function mockRes() {
   res.json = vi.fn(() => res) as any;
   res.send = vi.fn(() => res) as any;
   res.setHeader = vi.fn(() => res) as any;
+  res.req = { query: {} } as any;
   return res as any;
 }
 

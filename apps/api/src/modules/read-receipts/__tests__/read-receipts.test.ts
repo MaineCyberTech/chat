@@ -9,6 +9,11 @@ vi.mock("../../../lib/logger.js", () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
+vi.mock("../../../lib/socket.js", () => ({
+  emitToChannel: vi.fn(),
+  getIO: vi.fn(),
+}));
+
 vi.mock("@chat/db", () => ({
   readReceiptStore: {
     markChannelRead: vi.fn(),

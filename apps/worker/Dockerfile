@@ -22,24 +22,11 @@ RUN corepack enable && corepack prepare pnpm@9 --activate
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/worker/package.json ./apps/worker/package.json
 COPY --from=base /app/apps/worker/dist ./apps/worker/dist
-COPY --from=base /app/packages/db/package.json ./packages/db/package.json
-COPY --from=base /app/packages/db/dist ./packages/db/dist
-COPY --from=base /app/packages/config/package.json ./packages/config/package.json
-COPY --from=base /app/packages/config/dist ./packages/config/dist
-COPY --from=base /app/packages/sdk/package.json ./packages/sdk/package.json
-COPY --from=base /app/packages/sdk/dist ./packages/sdk/dist
+COPY --from=base /app/packages/db ./packages/db
+COPY --from=base /app/packages/config ./packages/config
 
-# Production-only install
 RUN pnpm install --frozen-lockfile --filter ./apps/worker --prod --ignore-scripts
 
-ENV NODE_ENV=production
+EXPOSE 4001
 
-WORKDIR /app/apps/worker
-
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4100/healthz || exit 1
-
-RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 appuser
-USER appuser
-
-CMD ["node", "dist/main.js"]
+CMD ["node", "apps/worker/dist/main.js"]

@@ -9,6 +9,7 @@ import { TeamSidebar } from "@/components/workspace/team-sidebar";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { QuickSwitcher } from "@/components/chat/quick-switcher";
 import { OnboardingTour } from "@/components/workspace/onboarding-tour";
+import { AnnouncementBanner } from "@/components/announcement-banner";
 import { useSwipeBack } from "@/lib/use-swipe-back";
 import { api } from "@/lib/api";
 import { register } from "@/lib/keyboard-shortcut-registry";
@@ -54,6 +55,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const [channels, setChannels] = useState<string[]>([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const resizingRef = useRef(false);
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
@@ -119,6 +121,17 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     } catch {
       /* ignore */
     }
+  }, []);
+
+  // Auto-collapse sidebar on tablet (768-1024px)
+  useEffect(() => {
+    function handleResize() {
+      const w = window.innerWidth;
+      setSidebarCollapsed(w >= 768 && w < 1024);
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useSwipeBack(() => {
@@ -223,6 +236,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     >
       <RouteLoadingIndicator />
 
+      <AnnouncementBanner />
+
       {/* Flex row for sidebar + content */}
       <div style={{ display: "flex", overflow: "clip", minHeight: 0 }}>
         {/* Mobile header */}
@@ -257,10 +272,16 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           <TeamSidebar />
         </div>
 
-        {/* Sidebar (desktop) */}
+        {/* Sidebar (desktop/tablet) */}
         <div
           className="hidden md:flex"
-          style={{ width: sidebarWidth, minWidth: 200, position: "relative", flexShrink: 0 }}
+          style={{
+            width: sidebarCollapsed ? 60 : sidebarWidth,
+            minWidth: sidebarCollapsed ? 60 : 200,
+            position: "relative",
+            flexShrink: 0,
+            transition: "width 200ms",
+          }}
         >
           <div style={{ width: "100%", overflow: "hidden auto" }}>
             <AppSidebar
@@ -270,11 +291,12 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
               onMobileClose={() => setSidebarOpen(false)}
             />
           </div>
-          <div
-            onMouseDown={handleMouseDown}
-            onKeyDown={handleResizeKeyDown}
-            className="hidden md:block"
-            style={{
+          {!sidebarCollapsed && (
+            <div
+              onMouseDown={handleMouseDown}
+              onKeyDown={handleResizeKeyDown}
+              className="hidden md:block"
+              style={{
               width: 4,
               cursor: "col-resize",
               background: "transparent",
@@ -293,6 +315,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             }
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           />
+          )}
         </div>
 
         {/* Main content */}

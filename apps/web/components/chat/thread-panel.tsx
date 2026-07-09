@@ -25,6 +25,8 @@ interface Props {
   onDelete?: (messageId: string) => Promise<void>;
   isLoading?: boolean;
   typingUsers?: string[];
+  onTypingStart?: () => void;
+  onTypingStop?: () => void;
 }
 
 interface ParticipantInfo {
@@ -49,7 +51,7 @@ function avatarUrl(userId: string, profiles: Map<string, UserProfile>): string |
 export function ThreadPanel({
   parentMessage, allMessages, currentUserId, profiles,
   onClose, onSendReply, onEdit, onDelete, isLoading = false,
-  typingUsers,
+  typingUsers, onTypingStart, onTypingStop,
 }: Props) {
   const [replyContent, setReplyContent] = useState("");
   const [sending, setSending] = useState(false);
@@ -65,6 +67,7 @@ export function ThreadPanel({
   const { addToast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
   const replyRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const replies = React.useMemo(
     () => allMessages.filter((m) => m.parent_id === parentMessage.id),
@@ -135,6 +138,18 @@ export function ThreadPanel({
     if (!onDelete) return;
     try { await onDelete(replyId); setDeleteConfirmId(null); addToast({ title: "Reply deleted", variant: "success", duration: 3000 }); }
     catch { setDeleteError("Failed to delete reply."); addToast({ title: "Error", description: "Failed to delete reply.", variant: "error" }); }
+  }
+
+  function handleReplyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setReplyContent(e.target.value);
+    if (e.target.value && onTypingStart) {
+      onTypingStart();
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    }
+    if (onTypingStop) {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(onTypingStop, 3000);
+    }
   }
 
   async function handleSubmit() {
@@ -311,7 +326,7 @@ export function ThreadPanel({
           {typingUsers && typingUsers.length > 0 && (
             <p className="mb-1 text-xs" style={{ height: 18, color: "rgba(var(--center-channel-color-rgb), 0.75)" }} role="status" aria-live="polite">
               {typingUsers.length === 1
-                ? `${typingUsers[0]} is typing...`
+                ? `${authorName(typingUsers[0]!, profiles)} is typing...`
                 : `${typingUsers.length} people are typing...`}
             </p>
           )}
@@ -319,7 +334,7 @@ export function ThreadPanel({
             <textarea
               ref={replyRef}
               value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
+              onChange={handleReplyChange}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
               rows={1}
               placeholder="Reply in thread..."

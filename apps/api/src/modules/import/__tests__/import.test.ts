@@ -54,8 +54,12 @@ describe("Import Routes", () => {
     const handler = findHandler("post", "/admin/import/workspaces");
     const req = mockReq(csvBody("name,slug"));
     const res = mockRes();
-    await handler(req, res);
-    expect(res.status).toHaveBeenCalledWith(400);
+    const next = vi.fn();
+    await handler(req, res, next);
+    // asyncHandler catches BadRequestError and forwards to next
+    expect(next).toHaveBeenCalled();
+    const err = next.mock.calls[0]?.[0];
+    expect(err?.message).toContain("CSV must contain a header row");
   });
 
   it("POST /admin/import/users accepts CSV body", async () => {

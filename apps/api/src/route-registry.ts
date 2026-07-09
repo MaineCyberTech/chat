@@ -24,6 +24,7 @@ import importRoutes from "./modules/import/routes.js";
 import openApiRoutes from "./modules/openapi/routes.js";
 import aiRoutes from "./modules/ai/routes.js";
 import readReceiptRoutes from "./modules/read-receipts/routes.js";
+import announcementRoutes from "./modules/announcements/routes.js";
 
 export interface RouteEndpoint {
   method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -114,4 +115,5 @@ export const routeRegistry: RouteEntry[] = [
   { path: "/v1", router: importRoutes, description: "Admin data import from CSV" },
   { path: "/v1/ai", router: aiRoutes, description: "AI rewrite actions" },
   { path: "/v1", router: readReceiptRoutes, description: "Read receipts + unread counts" },
+  { path: "/v1", router: announcementRoutes, description: "Workspace announcements" },
 ];
