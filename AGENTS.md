@@ -239,14 +239,14 @@ Full comparative audit executed (8 phases). All 16 verified features documented 
 | Notifications | Desktop notification sounds (9 sounds)             | ✅ DONE | `notification-sound.ts` |
 | Notifications | Trigger words + auto-responder                     | ✅ DONE | `trigger_words` API + UI |
 
-### High Effort (1-2 weeks each)
+### High Effort (1-2 weeks each) — All Implemented
 
-| Area       | Feature                                       | Reference                                               |
-| ---------- | --------------------------------------------- | ------------------------------------------------------- |
-| Composer   | Send scheduling (later today/tomorrow/custom) | `send_button/` + `scheduled_post_indicator/`            |
-| Composer   | AI rewrite actions                            | `use_rewrite.tsx` + `ai_actions_menu.tsx`               |
-| Sidebar    | User groups CRUD (6 modals)                   | `user_groups_modal/`, `create_user_groups_modal/`, etc. |
-| Sidebar    | DM creation modal with multi-select           | `more_direct_channels/` (5 files)                       |
+| Area       | Feature                                       | Status | Reference |
+| ---------- | --------------------------------------------- | ------ | --------- |
+| Composer   | Send scheduling                               | ✅ DONE | `message-input.tsx` — presets + custom date/time |
+| Composer   | AI rewrite actions                            | ✅ DONE | `ai/routes.ts` + Sparkles button (5 actions) |
+| Sidebar    | User groups CRUD (6 modals)                   | ✅ DONE | `group-modal.tsx` — 6 modal modes |
+| Sidebar    | DM multi-select modal                         | ✅ DONE | `user-picker-modal.tsx` + `app-sidebar.tsx` |
 
 ### Enterprise / Strategic (Not Yet Scoped)
 
