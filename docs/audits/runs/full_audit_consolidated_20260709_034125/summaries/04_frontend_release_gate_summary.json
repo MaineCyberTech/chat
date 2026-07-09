@@ -1,0 +1,171 @@
+{
+  "stage": "frontend_release_gate",
+  "run_id": "full_audit_consolidated_20260709_034125",
+  "decision": "GO",
+  "generated_at": "2026-07-09T03:41:25Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 9,
+    "P3": 4
+  },
+  "category_scores": {
+    "Message_Compose": 90,
+    "Message_Display": 80,
+    "Navigation": 85,
+    "Emoji_Reactions": 90,
+    "Search_Filter": 60,
+    "Onboarding": 70,
+    "Notifications": 85,
+    "Threads": 75,
+    "File_Handling": 85,
+    "Empty_States": 65,
+    "Security": 70,
+    "Testing": 40,
+    "Resilience": 65,
+    "Rollback_Readiness": 75,
+    "Observability": 70,
+    "Performance": 80,
+    "Accessibility": 65,
+    "CI_CD": 70
+  },
+  "readiness": 73.33,
+  "finding_count": 15,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Chat UX \u2014 Message Search",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "In-channel message filter does not highlight matching text or scroll to first result",
+      "impact": "Users must visually scan the filtered message list to find where the search term appears. No visual indication of why each message matched. In channels with hundreds of messages, this makes the filter nearly useless for finding specific content.",
+      "fix": "Add <mark> element highlighting around matching substrings in MessageItem when a filterQuery is present. Scroll the message list to the first match on filter change. Show match count indicator."
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Chat UX \u2014 Message Deletion",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "No undo capability after message deletion confirmation",
+      "impact": "Accidental message deletion is permanent. Unlike Slack, Discord, and other chat apps that offer a 5-second 'Undo' toast, this app offers no recovery path. A mistaken delete requires admin database intervention.",
+      "fix": "Implement soft-delete with ephemeral undo window. After delete API succeeds, show toast 'Message deleted. Undo' for 5 seconds. Call a restore API endpoint if undo is clicked. Add a deleted_at grace period in the message model."
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "Chat UX \u2014 Bookmarks",
+      "file": "apps/web/components/chat/channel-bookmarks.tsx",
+      "issue": "Channel bookmarks show blank area when no bookmarks exist",
+      "impact": "Users who click the bookmark icon see an empty panel with no guidance. They may think the feature is broken or not know how to create bookmarks. Reduces discoverability of the pin-to-bookmark flow.",
+      "fix": "Add empty state message: 'No bookmarks yet. Pin a message to add it as a bookmark.' Include a brief illustration and link to instructions."
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Chat UX \u2014 Pinned Messages",
+      "file": "apps/web/components/chat/message-list.tsx",
+      "issue": "Pinned messages in the message list lack any visual indicator",
+      "impact": "Users cannot tell which messages are pinned without checking the channel info sidebar. The is_pinned flag exists in the data model and API but is not rendered in the UI. Reduces the value of the pinning feature.",
+      "fix": "Add a pin icon (\ud83d\udccc or Pin icon from lucide-react) to the message metadata area when is_pinned is true. Style the message background with a subtle highlight. Add filter option to show only pinned messages."
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "Chat UX \u2014 Thread Navigation",
+      "file": "apps/web/components/chat/thread-panel.tsx",
+      "issue": "No way to navigate from thread panel to the parent message in the main list",
+      "impact": "Users viewing a thread cannot easily locate the parent message in the main channel view. The parent message is displayed inline in the thread panel but scrolling in the main list to find related context is cumbersome.",
+      "fix": "Add a 'Jump to message' link/button in the thread header. When clicked, close the thread panel, scroll the main list to the parent message, and briefly highlight it with a yellow flash animation."
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Chat UX \u2014 Scheduling",
+      "file": "apps/web/components/chat/message-input.tsx",
+      "issue": "Scheduling confirmation toast does not include the scheduled time",
+      "impact": "After scheduling a message, users see 'Message scheduled' but not when it will be sent. They must reopen the schedule picker to verify the datetime. Creates uncertainty about whether the correct time was saved.",
+      "fix": "Update success toast to include formatted datetime: 'Message scheduled for Apr 12, 3:30 PM'. Include timezone indicator. Add the scheduled time to the toast's description field."
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Chat UX \u2014 Onboarding",
+      "file": "apps/web/components/workspace/onboarding-tour.tsx",
+      "issue": "Onboarding tour steps are not independently resolvable leading to stale state",
+      "impact": "If a user creates a channel before the tour reaches step 2, the tour shows a 'Create Channel' step that is already done. Users must complete it again or dismiss the tour. This causes frustration for proactive users and reduces tour credibility.",
+      "fix": "Make each onboarding step independently checkable. Query channel/workspace state to auto-advance steps that the user has already completed. Allow manual skip on any step without breaking future steps."
+    },
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "Security \u2014 Content Security Policy",
+      "file": "apps/web/app/layout.tsx",
+      "issue": "CSP includes 'unsafe-eval' which is unnecessary and 'unsafe-inline' for all scripts",
+      "impact": "Unsafe-eval enables XSS via eval() calls even though TipTap and Next.js do not require it. Unsafe-inline on all scripts means any injected script executes. Production CSP should use nonces or hashes for inline scripts.",
+      "fix": "Remove 'unsafe-eval' from script-src. Move 3 inline scripts (theme, viewport, reduced-motion) to nonce-based execution by generating a nonce in middleware. Add 'strict-dynamic' for fallback. Test all third-party script integrations."
+    },
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "Testing \u2014 E2E Coverage",
+      "file": "apps/web/e2e/comprehensive.spec.ts",
+      "issue": "88% of E2E tests are skipped due to missing Supabase test project",
+      "impact": "No automated validation of sign-in, workspace creation, channel CRUD, message operations, file upload, WebSocket messaging, presence, notifications, or authorization. Releases cannot be certified via CI. Manual testing is the only gate.",
+      "fix": "Provision a Supabase test project with seed data. Create CI job for migrations + seed. Use test user credentials stored as CI secrets. Remove all test.skip() calls and implement proper assertions with fixtures."
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Testing \u2014 Visual Regression",
+      "file": "apps/web/e2e/visual-snapshot.spec.ts",
+      "issue": "No committed visual snapshot baselines exist in the repository",
+      "impact": "Playwright toHaveScreenshot assertions will pass on first run (auto-creating baselines) but subsequent runs compare against those auto-generated images. Without review, visual regressions go undetected. No baseline review process exists.",
+      "fix": "Generate baseline screenshots on a known-good commit. Review each for visual correctness. Commit baseline PNGs to the repo. Add CI step that fails if visual diff exceeds 1% threshold. Add a PR comment with diff images."
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Resilience \u2014 WebSocket",
+      "file": "apps/web/lib/socket.ts",
+      "issue": "No feature flag or kill-switch to disable WebSocket connections during incidents",
+      "impact": "If Socket.io misbehaves (reconnect storm, high memory, backend failure), operators have no way to disable real-time connections without a full deployment. Users get stuck in reconnect loops with no graceful fallback.",
+      "fix": "Add getSocket() check against /v1/feature-flags endpoint. When 'realtime_disabled' flag is active, return a no-op socket that fires events to /dev/null. Show persistent banner: 'Real-time unavailable \u2014 page reload may be required.'"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Rollback Readiness \u2014 Database Migrations",
+      "file": "supabase/rollback/",
+      "issue": "CI does not test migration rollback scripts in automated pipeline",
+      "impact": "Down migration scripts exist for most migrations but are never verified in CI. A migration with a broken rollback could prevent production rollback, forcing a maintenance window or data restore from backup.",
+      "fix": "Add CI job that runs all pending migrations up, verifies schema, runs all rollbacks down, verifies schema matches pre-migration state, and reports any errors. Fail CI if any rollback fails."
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "Performance \u2014 Bundle Analysis",
+      "file": "apps/web/next.config.ts",
+      "issue": "No bundle size regression check in CI pipeline",
+      "impact": "Large dependencies can be added without visibility into their impact on initial load JS. No alerting when bundle grows beyond acceptable thresholds. Users on slow connections may experience degradation without team awareness.",
+      "fix": "Add @next/bundle-analyzer. Configure CI step to generate bundle report on main and PR. Set size budget (300KB gzip for initial route JS). Fail CI if budget exceeded. Post bundle diff comment on PRs."
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "Observability \u2014 Error Reporting",
+      "file": "apps/web/components/chat/chat-view.tsx",
+      "issue": "Multiple catch blocks use console.warn instead of structured error reporting to Sentry",
+      "impact": "Socket initialization failures, profile load errors, and message load failures are silently logged to console.warn. In production, these errors are invisible to operators. Sentry is initialized but these specific errors bypass it.",
+      "fix": "Create a structured logger utility that prefixes component/operation context. Route important failures to Sentry.captureException or Sentry.captureMessage with appropriate level. Keep console.warn only for low-severity debug info."
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Accessibility \u2014 Focus Indicator",
+      "file": "apps/web/app/globals.css",
+      "issue": "Custom interactive elements lack consistent focus-visible indicators",
+      "impact": "Keyboard users navigating the app cannot see which element is focused on mm-button-icon buttons, sidebar items, and action toolbar buttons. The CSS reset removes browser default outlines but custom focus styles are only on the skip link.",
+      "fix": "Add global focus-visible style: [data-focus-visible-added] or :focus-visible { outline: 2px solid var(--button-bg); outline-offset: 2px; }. Apply to all interactive elements. Ensure 3:1 minimum contrast ratio for focus indicators."
+    }
+  ]
+}

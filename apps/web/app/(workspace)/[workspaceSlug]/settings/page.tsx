@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
 import { Button, SidebarGroup, Skeleton, useToast, Dialog } from "@chat/ui";
-import { Bell, BellOff, AlertTriangle } from "lucide-react";
+import { Bell, BellOff, AlertTriangle, X, Plus } from "lucide-react";
 import type { UserPreferences, ThemePreference } from "@chat/db";
 
 interface NotificationPrefs {
@@ -36,6 +36,10 @@ export default function SettingsPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [triggerWords, setTriggerWords] = useState<{ id: string; word: string; created_at: string }[]>([]);
+  const [newTriggerWord, setNewTriggerWord] = useState("");
+  const [triggerLoading, setTriggerLoading] = useState(false);
+  const [triggerSaving, setTriggerSaving] = useState(false);
 
   async function handleResetPreferences() {
     setResetting(true);
@@ -68,6 +72,7 @@ export default function SettingsPage() {
     if (authLoading) return;
     fetchPreferences();
     fetchChannels();
+    fetchTriggerWords();
   }, [authLoading]);
 
   async function fetchChannels() {
@@ -88,6 +93,52 @@ export default function SettingsPage() {
       setChannelPrefs(prefMap);
     } catch {
       console.warn("Failed to fetch channels");
+    }
+  }
+
+  async function fetchTriggerWords() {
+    setTriggerLoading(true);
+    try {
+      const res = await api.get<{
+        trigger_words: { id: string; word: string; created_at: string }[];
+      }>("/notifications/trigger-words");
+      setTriggerWords(res.trigger_words);
+    } catch {
+      console.warn("Failed to fetch trigger words");
+    } finally {
+      setTriggerLoading(false);
+    }
+  }
+
+  async function addTriggerWord() {
+    const word = newTriggerWord.trim();
+    if (!word) return;
+    setTriggerSaving(true);
+    try {
+      const res = await api.post<{
+        trigger_word: { id: string; word: string; created_at: string };
+      }>("/notifications/trigger-words", { word });
+      setTriggerWords((prev) => [...prev, res.trigger_word]);
+      setNewTriggerWord("");
+      addToast({ title: "Trigger word added", variant: "success", duration: 2000 });
+    } catch (err) {
+      addToast({
+        title: "Failed to add trigger word",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "error",
+      });
+    } finally {
+      setTriggerSaving(false);
+    }
+  }
+
+  async function deleteTriggerWord(id: string) {
+    try {
+      await api.delete(`/notifications/trigger-words/${id}`);
+      setTriggerWords((prev) => prev.filter((tw) => tw.id !== id));
+      addToast({ title: "Trigger word removed", variant: "success", duration: 2000 });
+    } catch {
+      addToast({ title: "Failed to remove trigger word", variant: "error" });
     }
   }
 
@@ -410,30 +461,67 @@ export default function SettingsPage() {
               Trigger words
             </label>
             <p
-              className="mb-1 text-xs"
+              className="mb-2 text-xs"
               style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
             >
-              You&#39;ll be notified when any of these words are mentioned (comma-separated)
+              Get notified when these words are mentioned in any channel
             </p>
-            <input
-              type="text"
-              value={(notifPrefs.trigger_words ?? []).join(", ")}
-              onChange={(e) => {
-                const words = e.target.value
-                  .split(",")
-                  .map((w) => w.trim())
-                  .filter(Boolean);
-                handleNotificationChange("trigger_words", words);
-              }}
-              disabled={saving}
-              placeholder="e.g. deploy, urgent, bug"
-              className="w-full rounded-lg border px-3 py-2 text-sm placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus-visible:outline-none"
-              style={{
-                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                background: "var(--center-channel-bg)",
-                color: "var(--center-channel-color)",
-              }}
-            />
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={newTriggerWord}
+                onChange={(e) => setNewTriggerWord(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") addTriggerWord(); }}
+                disabled={triggerSaving}
+                placeholder="e.g. deploy, urgent"
+                className="flex-1 rounded-lg border px-3 py-2 text-sm placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus-visible:outline-none"
+                style={{
+                  borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                  background: "var(--center-channel-bg)",
+                  color: "var(--center-channel-color)",
+                }}
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={addTriggerWord}
+                disabled={triggerSaving || !newTriggerWord.trim()}
+              >
+                <Plus size={14} className="mr-1" />
+                Add
+              </Button>
+            </div>
+            {triggerLoading ? (
+              <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                Loading...
+              </p>
+            ) : triggerWords.length === 0 ? (
+              <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                No trigger words added yet
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {triggerWords.map((tw) => (
+                  <div
+                    key={tw.id}
+                    className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm"
+                    style={{
+                      background: "rgba(var(--button-bg-rgb), 0.1)",
+                      color: "var(--button-bg)",
+                    }}
+                  >
+                    {tw.word}
+                    <button
+                      onClick={() => deleteTriggerWord(tw.id)}
+                      className="ml-0.5 rounded-full p-0.5 hover:bg-[rgba(var(--button-bg-rgb),0.2)]"
+                      aria-label={`Remove ${tw.word}`}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </SidebarGroup>
