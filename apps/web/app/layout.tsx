@@ -16,12 +16,15 @@ export const metadata: Metadata = {
   title: "MaineCyberTech Chat",
   description: "Real-time workspace communication platform",
   manifest: "/manifest.webmanifest",
-  themeColor: "#ffffff",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "MaineCyberTech Chat",
   },
+};
+
+export const viewport = {
+  themeColor: "#ffffff",
 };
 
 const themeScript = `
@@ -58,7 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="MaineCyberTech Chat" />
         <meta
-          http-equiv="Content-Security-Policy"
+          httpEquiv="Content-Security-Policy"
           content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: ws: wss:; frame-src 'self' https:; manifest-src 'self'; media-src 'self' data: https: blob:; worker-src 'self' blob:;"
         />
         <style>{"html,body{background:#fff}html.dark,body.dark{background:#1a1a1a}"}</style>
