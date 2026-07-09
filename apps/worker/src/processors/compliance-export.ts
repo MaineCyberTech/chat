@@ -59,7 +59,7 @@ async function exportMessages(
   }
 
   const count = data?.length ?? 0;
-  const csv = rowsToCsv(data as Record<string, unknown>[], columns);
+  const csv = rowsToCsv(data as unknown as Record<string, unknown>[], columns);
   return { csv, count };
 }
 
@@ -91,7 +91,7 @@ async function exportAuditLogs(
 
   const count = data?.length ?? 0;
   const csv = rowsToCsv(
-    (data as Record<string, unknown>[]).map((r) => ({
+    (data as unknown as Record<string, unknown>[]).map((r) => ({
       ...r,
       metadata: JSON.stringify(r.metadata ?? {}),
     })),
@@ -127,7 +127,7 @@ async function exportChannels(
   }
 
   const count = data?.length ?? 0;
-  const csv = rowsToCsv(data as Record<string, unknown>[], columns);
+  const csv = rowsToCsv(data as unknown as Record<string, unknown>[], columns);
   return { csv, count };
 }
 
@@ -150,7 +150,7 @@ async function exportUsers(
   }
 
   const count = data?.length ?? 0;
-  const csv = rowsToCsv(data as Record<string, unknown>[], columns);
+  const csv = rowsToCsv(data as unknown as Record<string, unknown>[], columns);
   return { csv, count };
 }
 

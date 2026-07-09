@@ -120,10 +120,11 @@
     --border-dark: solid 1px rgba(var(--center-channel-color-rgb), 0.16);
 
     /* Semantic colors */
-    --semantic-color-info: 93, 137, 234;
-    --semantic-color-success: 61, 184, 135;
-    --semantic-color-warning: 204, 143, 0;
-    --semantic-color-danger: 210, 75, 78;
+--semantic-color-info: 93, 137, 234;
+--semantic-color-success: 61, 184, 135;
+--semantic-color-warning: 204, 143, 0;
+--semantic-color-danger: 210, 75, 78;
+--color-code-bg: #1e1e2e;
   }
 
   /* Scrollbar - Mattermost style */
@@ -311,6 +312,7 @@ html.dark, html.dark body {
   --semantic-color-success: 52, 211, 153;
   --semantic-color-warning: 251, 191, 36;
   --semantic-color-danger: 248, 113, 113;
+  --color-code-bg: #1e1e2e;
 }
 
 /* Ensure minimum touch targets on mobile for icon-only buttons */

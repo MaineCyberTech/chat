@@ -3,29 +3,27 @@
 import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { Button, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
   Paperclip,
   Smile,
   Eye,
   Send,
-  Image,
-  File,
-  X,
   Flag,
-  AlertTriangle,
-  AlertCircle,
   Clock,
   Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 import { FormattingBar } from "./formatting-bar";
-import { CodeBlock } from "./code-block";
 import { EmojiPicker, searchEmojis } from "./emoji-picker";
 import { TipTapEditor, type Editor } from "./tiptap-editor";
 import { SLASH_COMMANDS } from "@/lib/slash-commands";
-
-type PostPriority = "standard" | "important" | "urgent" | "critical";
+import { MarkdownPreview } from "./markdown-preview";
+import type { PostPriority } from "./priority-picker";
+import { FileAttachmentList } from "./file-attachment-list";
+import { PriorityPicker, PRIORITY_OPTIONS } from "./priority-picker";
+import { AiRewritePicker } from "./ai-rewrite-picker";
+import { SchedulePicker } from "./schedule-picker";
+import { useClickOutside } from "@/lib/hooks/use-click-outside";
 
 interface Props {
   channelId: string;
@@ -47,42 +45,6 @@ interface Member {
 const DRAFT_KEY_PREFIX = "chat-draft:";
 const DRAFT_SAVE_DEBOUNCE_MS = 500;
 const TYPING_THROTTLE_MS = 2000;
-
-function MarkdownPreview({ content }: { content: string }) {
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={{
-        a: ({ href, children }) => (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "var(--link-color)" }}
-          >
-            {children}
-          </a>
-        ),
-        code: ({ className, children }) => {
-          const match = /language-(\w+)/.exec(className ?? "");
-          const code = String(children).replace(/\n$/, "");
-          if (match) return <CodeBlock code={code} language={match[1]} />;
-          return (
-            <code
-              className="rounded px-1 py-0.5 font-mono text-sm"
-              style={{ background: "rgba(var(--center-channel-color-rgb), 0.08)" }}
-            >
-              {children}
-            </code>
-          );
-        },
-        pre: ({ children }) => <>{children}</>,
-      }}
-    >
-      {content}
-    </ReactMarkdown>
-  );
-}
 
 export function MessageInput({
   channelId,
@@ -131,25 +93,10 @@ export function MessageInput({
   const priorityPickerRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
 
-  const PRIORITY_CONFIG: Record<
-    PostPriority,
-    { label: string; icon: React.ReactNode; color: string }
-  > = {
-    standard: {
-      label: "Standard",
-      icon: <Flag size={14} />,
-      color: "rgba(var(--center-channel-color-rgb), 0.56)",
-    },
-    important: {
-      label: "Important",
-      icon: <AlertCircle size={14} />,
-      color: "var(--online-indicator)",
-    },
-    urgent: { label: "Urgent", icon: <AlertTriangle size={14} />, color: "var(--dnd-indicator)" },
-    critical: { label: "Critical", icon: <AlertTriangle size={14} />, color: "var(--error-text)" },
-  };
-
-  const PRIORITY_ORDER: PostPriority[] = ["standard", "important", "urgent", "critical"];
+  useClickOutside(emojiPickerRef, () => setShowEmojiPicker(false), showEmojiPicker);
+  useClickOutside(priorityPickerRef, () => setShowPriorityPicker(false), showPriorityPicker);
+  useClickOutside(schedulePickerRef, () => setShowSchedulePicker(false), showSchedulePicker);
+  useClickOutside(aiPickerRef, () => setShowAiPicker(false), showAiPicker);
 
   useEffect(() => {
     if (!showEmojiPicker) return;
@@ -169,25 +116,6 @@ export function MessageInput({
       document.removeEventListener("keydown", handleKey);
     };
   }, [showEmojiPicker]);
-
-  useEffect(() => {
-    if (!showPriorityPicker) return;
-    function handleClick(e: MouseEvent | TouchEvent) {
-      if (priorityPickerRef.current && !priorityPickerRef.current.contains(e.target as Node))
-        setShowPriorityPicker(false);
-    }
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setShowPriorityPicker(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("touchstart", handleClick, { passive: true });
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("touchstart", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [showPriorityPicker]);
 
   useEffect(() => {
     const draft = localStorage.getItem(`${DRAFT_KEY_PREFIX}${channelId}`);
@@ -540,17 +468,6 @@ export function MessageInput({
     el.addEventListener("drop", onDrop);
   }, [onFileUpload]);
 
-  // Close schedule picker on click outside
-  useEffect(() => {
-    if (!showSchedulePicker) return;
-    function handleClick(e: MouseEvent) {
-      if (schedulePickerRef.current && !schedulePickerRef.current.contains(e.target as Node))
-        setShowSchedulePicker(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [showSchedulePicker]);
-
   function confirmMentionSend() {
     setShowMentionWarning(false);
     const text = pendingMentionText || content;
@@ -636,33 +553,6 @@ export function MessageInput({
     }
   }, [addToast]);
 
-  const AI_ACTIONS = [
-    { id: "fix-spelling", label: "Fix spelling" },
-    { id: "shorter", label: "Make shorter" },
-    { id: "formal", label: "Make formal" },
-    { id: "concise", label: "Make concise" },
-    { id: "friendly", label: "Make friendly" },
-  ];
-
-  useEffect(() => {
-    if (!showAiPicker) return;
-    function handleClick(e: MouseEvent | TouchEvent) {
-      if (aiPickerRef.current && !aiPickerRef.current.contains(e.target as Node))
-        setShowAiPicker(false);
-    }
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setShowAiPicker(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("touchstart", handleClick, { passive: true });
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("touchstart", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [showAiPicker]);
-
   return (
     <div
       ref={editorRef}
@@ -728,37 +618,7 @@ export function MessageInput({
           >
             {showFormatting && <FormattingBar editorRef={tiptapRef} />}
 
-            {/* File attachments */}
-            {files.length > 0 && (
-              <div className="flex flex-wrap gap-1 px-2 pt-2">
-                {files.map((file, index) => (
-                  <span
-                    key={`${file.name}-${index}`}
-                    className="flex items-center gap-1 rounded px-2 py-0.5 text-xs"
-                    style={{
-                      background: "rgba(var(--center-channel-color-rgb), 0.08)",
-                      color: "rgba(var(--center-channel-color-rgb), 0.72)",
-                    }}
-                  >
-                    {file.type.startsWith("image/") ? (
-                      <Image size={14} className="inline" />
-                    ) : (
-                      <File size={14} className="inline" />
-                    )}
-                    {file.name}
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      className="ml-1 p-0.5"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-                      aria-label={`Remove ${file.name}`}
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
+            <FileAttachmentList files={files} onRemove={removeFile} />
 
             {/* Markdown preview */}
             {showPreview && content.trim() && (
@@ -910,47 +770,12 @@ export function MessageInput({
               </div>
             )}
 
-            {/* Priority picker */}
-            {showPriorityPicker && (
-              <div
-                ref={priorityPickerRef}
-                className="absolute right-8 bottom-full z-10 mb-1 rounded-lg border py-1"
-                style={{
-                  background: "var(--center-channel-bg)",
-                  borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                  boxShadow: "var(--elevation-3)",
-                }}
-              >
-                {PRIORITY_ORDER.map((p) => {
-                  const config = PRIORITY_CONFIG[p];
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => {
-                        setPriority(p);
-                        setShowPriorityPicker(false);
-                      }}
-                      className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${priority === p ? "bg-[rgba(var(--button-bg-rgb),0.08)]" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"}`}
-                    >
-                      <span style={{ color: config.color }}>{config.icon}</span>
-                      <span
-                        style={{
-                          color:
-                            priority === p ? "var(--button-bg)" : "var(--center-channel-color)",
-                        }}
-                      >
-                        {config.label}
-                      </span>
-                      {priority === p && (
-                        <span className="ml-auto text-xs" style={{ color: "var(--button-bg)" }}>
-                          {"\u2713"}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            <PriorityPicker
+              priority={priority}
+              show={showPriorityPicker}
+              onSelect={(p) => { setPriority(p); setShowPriorityPicker(false); }}
+              onClose={() => setShowPriorityPicker(false)}
+            />
 
             {/* Formatting/Preview buttons in bottom-right of editor */}
             <div className="absolute right-1 bottom-1 flex items-center gap-0.5">
@@ -962,8 +787,8 @@ export function MessageInput({
                     color: "var(--dnd-indicator)",
                   }}
                 >
-                  {PRIORITY_CONFIG[priority].icon}
-                  {PRIORITY_CONFIG[priority].label}
+                  <Flag size={14} />
+                  {PRIORITY_OPTIONS.find((o) => o.key === priority)?.label ?? priority}
                 </span>
               )}
               <button
@@ -1024,33 +849,12 @@ export function MessageInput({
                 <Sparkles size={16} />
               </button>
 
-              {showAiPicker && (
-                <div
-                  ref={aiPickerRef}
-                  className="absolute right-0 bottom-full z-10 mb-1 w-44 rounded-lg border py-1 shadow-[var(--elevation-3)]"
-                  style={{
-                    background: "var(--center-channel-bg)",
-                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                  }}
-                >
-                  {AI_ACTIONS.map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() => handleAiRewrite(a.id)}
-                      disabled={aiRewriting}
-                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                      style={{ color: "var(--center-channel-color)" }}
-                    >
-                      {aiRewriting ? (
-                        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      ) : (
-                        <Sparkles size={14} style={{ color: "rgba(var(--button-bg-rgb), 0.72)" }} />
-                      )}
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <AiRewritePicker
+                show={showAiPicker}
+                rewriting={aiRewriting}
+                onRewrite={handleAiRewrite}
+                onClose={() => setShowAiPicker(false)}
+              />
             </div>
 
             {/* Schedule button */}
@@ -1072,126 +876,13 @@ export function MessageInput({
                 <Clock size={16} />
               </button>
 
-              {showSchedulePicker && (
-                <div
-                  ref={schedulePickerRef}
-                  className="absolute right-0 bottom-full z-10 mb-1 w-64 rounded-lg border p-3 shadow-[var(--elevation-3)]"
-                  style={{
-                    background: "var(--center-channel-bg)",
-                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                  }}
-                >
-                  <p
-                    className="mb-2 text-xs font-medium"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
-                  >
-                    Schedule message
-                  </p>
-
-                  {/* Preset options */}
-                  {[
-                    {
-                      label: "Later today",
-                      desc: "In 1 hour",
-                      getTime: () => {
-                        const d = new Date();
-                        d.setHours(d.getHours() + 1);
-                        return d;
-                      },
-                    },
-                    {
-                      label: "Tomorrow morning",
-                      desc: "9:00 AM",
-                      getTime: () => {
-                        const d = new Date();
-                        d.setDate(d.getDate() + 1);
-                        d.setHours(9, 0, 0, 0);
-                        return d;
-                      },
-                    },
-                    {
-                      label: "Tomorrow afternoon",
-                      desc: "1:00 PM",
-                      getTime: () => {
-                        const d = new Date();
-                        d.setDate(d.getDate() + 1);
-                        d.setHours(13, 0, 0, 0);
-                        return d;
-                      },
-                    },
-                  ].map((opt) => {
-                    const t = opt.getTime();
-                    const val = t.toISOString().slice(0, 16);
-                    return (
-                      <button
-                        key={opt.label}
-                        onClick={() => {
-                          setScheduledAt(val);
-                          setShowSchedulePicker(false);
-                        }}
-                        className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs ${
-                          scheduledAt === val
-                            ? "bg-[rgba(var(--button-bg-rgb),0.08)]"
-                            : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                        }`}
-                        style={{
-                          color:
-                            scheduledAt === val
-                              ? "var(--button-bg)"
-                              : "var(--center-channel-color)",
-                        }}
-                      >
-                        <span className="font-medium">{opt.label}</span>
-                        <span style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-                          {opt.desc}
-                        </span>
-                      </button>
-                    );
-                  })}
-
-                  {/* Custom date/time picker */}
-                  <div className="mt-2 border-t pt-2" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}>
-                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wider" style={{ color: "rgba(var(--center-channel-color-rgb), 0.48)" }}>
-                      Custom
-                    </p>
-                    <input
-                      type="datetime-local"
-                      value={scheduledAt}
-                      onChange={(e) => setScheduledAt(e.target.value)}
-                      min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-                      className="w-full rounded border px-2 py-1 text-xs"
-                      style={{
-                        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                        background: "var(--center-channel-bg)",
-                        color: "var(--center-channel-color)",
-                      }}
-                      aria-label="Custom schedule date and time"
-                    />
-                  </div>
-
-                  <div className="mt-2 flex justify-end gap-2">
-                    {scheduledAt && (
-                      <button
-                        onClick={() => {
-                          setScheduledAt("");
-                          setShowSchedulePicker(false);
-                        }}
-                        className="rounded px-2 py-1 text-xs"
-                        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-                      >
-                        Clear
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setShowSchedulePicker(false)}
-                      className="rounded px-2 py-1 text-xs font-medium"
-                      style={{ background: "var(--button-bg)", color: "var(--button-color)" }}
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
-              )}
+              <SchedulePicker
+                scheduledAt={scheduledAt}
+                show={showSchedulePicker}
+                onSchedule={(iso) => { setScheduledAt(iso); setShowSchedulePicker(false); }}
+                onClear={() => { setScheduledAt(""); setShowSchedulePicker(false); }}
+                onClose={() => setShowSchedulePicker(false)}
+              />
             </div>
 
             <div className="flex items-center gap-1">
