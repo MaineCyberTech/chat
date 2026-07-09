@@ -3,33 +3,59 @@ import { WorkspaceService } from "../service.js";
 
 const mockClient = () => ({
   from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      order: vi.fn(() => ({
-        data: [
-          {
-            id: "ws-1",
-            name: "Test",
-            slug: "test",
-            owner_id: "u1",
-            created_at: "2024-01-01",
-            updated_at: "2024-01-01",
-          },
-        ],
-        error: null,
-      })),
-      eq: vi.fn(() => ({
-        single: vi.fn(() => ({
-          data: {
-            id: "ws-1",
-            name: "Test",
-            slug: "test",
-            owner_id: "u1",
-            created_at: "2024-01-01",
-            updated_at: "2024-01-01",
-          },
-          error: null,
-        })),
+    select: vi.fn((_cols: string, opts?: { count?: string; head?: boolean }) => {
+      if (opts?.count === "exact") {
+        const countResult = { data: null, count: 1, error: null };
+        return {
+          ...countResult,
+          eq: vi.fn(() => ({
+            ...countResult,
+            then: (onfulfilled: (v: unknown) => unknown) =>
+              Promise.resolve(countResult).then(onfulfilled),
+          })),
+          then: (onfulfilled: (v: unknown) => unknown) =>
+            Promise.resolve(countResult).then(onfulfilled),
+        };
+      }
+      return {
         order: vi.fn(() => ({
+          range: vi.fn(() => ({
+            data: [
+              {
+                id: "ws-1",
+                name: "Test",
+                slug: "test",
+                owner_id: "u1",
+                created_at: "2024-01-01",
+                updated_at: "2024-01-01",
+              },
+            ],
+            error: null,
+          })),
+        })),
+        eq: vi.fn(() => ({
+          single: vi.fn(() => ({
+            data: {
+              id: "ws-1",
+              name: "Test",
+              slug: "test",
+              owner_id: "u1",
+              created_at: "2024-01-01",
+              updated_at: "2024-01-01",
+            },
+            error: null,
+          })),
+          order: vi.fn(() => ({
+            data: [
+              {
+                user_id: "u1",
+                role: "owner",
+                users: [{ display_name: "Owner", email: "owner@test.com", avatar_url: null }],
+              },
+            ],
+            error: null,
+          })),
+          eq: vi.fn(() => ({ error: null })),
           data: [
             {
               user_id: "u1",
@@ -39,17 +65,8 @@ const mockClient = () => ({
           ],
           error: null,
         })),
-        eq: vi.fn(() => ({ error: null })),
-        data: [
-          {
-            user_id: "u1",
-            role: "owner",
-            users: [{ display_name: "Owner", email: "owner@test.com", avatar_url: null }],
-          },
-        ],
-        error: null,
-      })),
-    })),
+      };
+    }),
     insert: vi.fn(() => ({
       select: vi.fn(() => ({
         single: vi.fn(() => ({
@@ -94,7 +111,9 @@ vi.mock("../../../lib/supabase.js", () => ({
   getSupabaseAdmin: vi.fn(() => mockClient()),
 }));
 
-vi.mock("../../../lib/logger.js", () => ({ logger: { info: vi.fn(), error: vi.fn() } }));
+vi.mock("../../../lib/logger.js", () => ({
+  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
+}));
 vi.mock("../webhooks/service.js", () => ({
   webhookService: { triggerEvent: vi.fn(() => Promise.resolve()) },
 }));
@@ -158,7 +177,9 @@ describe("WorkspaceService", () => {
   });
 
   it("rejects workspace creation when limit reached", async () => {
-    vi.mocked(await import("../../../lib/supabase.js").then(m => m.getSupabaseAdmin)).mockReturnValue({
+    vi.mocked(
+      await import("../../../lib/supabase.js").then((m) => m.getSupabaseAdmin),
+    ).mockReturnValue({
       from: vi.fn(() => ({
         select: vi.fn((_cols: string, opts?: { count?: string; head?: boolean }) => {
           if (opts?.count === "exact") {

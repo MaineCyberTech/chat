@@ -1,11 +1,11 @@
 {
-  "run_id": "full_audit_consolidated_20260709_070901",
-  "generated_at": "2026-07-09T07:09:01Z",
+  "run_id": "full_audit_consolidated_20260709_072529",
+  "generated_at": "2026-07-09T07:25:29Z",
   "decision": "GO WITH RISKS",
   "severity_totals": {
     "P0": 0,
     "P1": 19,
-    "P2": 48,
+    "P2": 47,
     "P3": 36
   },
   "category_health_scores": {
@@ -51,7 +51,7 @@
     "ci_execution": 53.3
   },
   "readiness": 66.88,
-  "finding_count": 103,
+  "finding_count": 102,
   "findings": [
     {
       "severity": "P2",
@@ -599,15 +599,6 @@
       "issue": "Socket.io has reconnection settings but no exponential backoff or jitter on reconnect attempts",
       "impact": "All clients reconnect simultaneously after server restart \u00e2\u20ac\u201d thundering herd on socket initialization",
       "fix": "Add exponential backoff with jitter to socket reconnection: initialDelay=1s, maxDelay=30s, randomizationFactor=0.3"
-    },
-    {
-      "severity": "P2",
-      "domain": "resilience",
-      "category": "webhook_idempotency_coverage",
-      "file": "apps/api/src/modules/webhooks/service.ts",
-      "issue": "Webhook delivery generates idempotency keys but receiver-side dedup relies on external system honoring X-Idempotency-Key header \u00e2\u20ac\u201d no server-side dedup for webhook processing",
-      "impact": "If webhook receiver does not support idempotency, duplicate webhooks will cause duplicate actions",
-      "fix": "Add server-side idempotency check in webhook receive handler using idempotency.ts library (same pattern as workspace/message routes)"
     },
     {
       "severity": "P3",

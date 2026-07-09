@@ -32,7 +32,7 @@ BEGIN
     ts_rank(to_tsvector('english', m.content), plainto_tsquery('english', query_text)) AS rank
   FROM public.messages m
   JOIN public.channels ch ON ch.id = m.channel_id
-  WHERE ch.workspace_id = workspace_id
+  WHERE ch.workspace_id = search_messages.workspace_id
     AND m.deleted_at IS NULL
     AND to_tsvector('english', m.content) @@ plainto_tsquery('english', query_text)
     AND (date_from IS NULL OR m.created_at >= date_from)
@@ -41,7 +41,7 @@ BEGIN
     AND (channel_ids IS NULL OR ch.id = ANY(channel_ids))
     AND EXISTS (
       SELECT 1 FROM public.workspace_members wm
-      WHERE wm.workspace_id = workspace_id
+      WHERE wm.workspace_id = search_messages.workspace_id
         AND wm.user_id = auth.uid()
     )
   ORDER BY rank DESC

@@ -214,5 +214,17 @@
       "P3": 36
     },
     "finding_count": 103
+  },
+  {
+    "run_id": "full_audit_consolidated_20260709_072529",
+    "timestamp": "2026-07-09T07:25:41+00:00",
+    "decision": "GO WITH RISKS",
+    "severity_totals": {
+      "P0": 0,
+      "P1": 19,
+      "P2": 47,
+      "P3": 36
+    },
+    "finding_count": 102
   }
 ]

@@ -28,7 +28,9 @@ export default function UserGroupsPage() {
   const { user } = useAuth();
   const params = useParams<{ workspaceSlug: string }>();
 
-  useEffect(() => { document.title = "User Groups - Chat"; }, []);
+  useEffect(() => {
+    document.title = "User Groups - Chat";
+  }, []);
   const workspaceSlug = params?.workspaceSlug ?? "";
   const [groups, setGroups] = useState<Group[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
@@ -36,7 +38,9 @@ export default function UserGroupsPage() {
   const [error, setError] = useState<string | null>(null);
   const [workspaceId, setWorkspaceId] = useState("");
 
-  const [modalMode, setModalMode] = useState<"create" | "edit" | "delete" | "add-members" | "detail" | null>(null);
+  const [modalMode, setModalMode] = useState<
+    "create" | "edit" | "delete" | "add-members" | "detail" | null
+  >(null);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
   const fetchData = useCallback(async (wsId: string) => {
@@ -107,12 +111,13 @@ export default function UserGroupsPage() {
 
   // Listen for add-members event from detail modal
   useEffect(() => {
-    function handler(e: CustomEvent) {
-      const g = groups.find((grp) => grp.id === e.detail?.groupId);
+    function handler(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      const g = groups.find((grp) => grp.id === detail?.groupId);
       if (g) openAddMembers(g);
     }
-    window.addEventListener("chat:group-add-members" as any, handler as any);
-    return () => window.removeEventListener("chat:group-add-members" as any, handler as any);
+    window.addEventListener("chat:group-add-members", handler);
+    return () => window.removeEventListener("chat:group-add-members", handler);
   }, [groups]);
 
   if (loading) {
@@ -144,7 +149,10 @@ export default function UserGroupsPage() {
   if (error) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
-        <p className="mb-3 text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+        <p
+          className="mb-3 text-sm"
+          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+        >
           {error}
         </p>
         <button
@@ -200,10 +208,7 @@ export default function UserGroupsPage() {
               >
                 {g.name.charAt(0).toUpperCase()}
               </div>
-              <div
-                className="min-w-0 flex-1 cursor-pointer"
-                onClick={() => openDetail(g)}
-              >
+              <div className="min-w-0 flex-1 cursor-pointer" onClick={() => openDetail(g)}>
                 <div className="flex items-center gap-2">
                   <code
                     className="rounded px-1.5 py-0.5 text-sm font-medium"

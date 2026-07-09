@@ -6,7 +6,7 @@ const mockClient = () => ({
     select: vi.fn(() => ({
       eq: vi.fn(() => ({
         order: vi.fn(() => ({
-          limit: vi.fn(() => ({
+          range: vi.fn(() => ({
             data: [
               {
                 id: "n1",

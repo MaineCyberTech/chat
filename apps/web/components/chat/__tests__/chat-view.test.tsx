@@ -32,8 +32,18 @@ const { mockSocket, mockApi, mockUser } = vi.hoisted(() => {
     close: vi.fn(),
     io: { on: vi.fn(), off: vi.fn() },
   };
-  const api = { get: vi.fn(), post: vi.fn(), patch: vi.fn(), put: vi.fn(), delete: vi.fn() };
-  const user = { id: "user-1", email: "test@test.com", user_metadata: { display_name: "Test User" } };
+  const api = {
+    get: vi.fn(),
+    post: vi.fn().mockReturnValue({ catch: vi.fn() }),
+    patch: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  };
+  const user = {
+    id: "user-1",
+    email: "test@test.com",
+    user_metadata: { display_name: "Test User" },
+  };
   return { mockSocket: socket, mockApi: api, mockUser: user };
 });
 
@@ -48,7 +58,11 @@ vi.mock("@/lib/api", () => ({ api: mockApi }));
 vi.mock("@/components/auth/auth-context", () => ({ useAuth: () => ({ user: mockUser }) }));
 
 vi.mock("@/components/media/media-room", () => ({
-  MediaRoom: ({ onLeave }: any) => <div data-testid="media-room"><button onClick={onLeave}>Leave Call</button></div>,
+  MediaRoom: ({ onLeave }: any) => (
+    <div data-testid="media-room">
+      <button onClick={onLeave}>Leave Call</button>
+    </div>
+  ),
   useMediaRoom: () => ({ activeRoom: null, startCall: vi.fn(), endCall: vi.fn() }),
 }));
 
@@ -63,9 +77,22 @@ vi.mock("@chat/ui", () => ({
 }));
 
 vi.mock("lucide-react", () => {
-  const names = ["X", "Phone", "ArrowLeft", "ExternalLink", "Bell", "BellOff", "Info", "Download", "ChevronDown", "Bookmark"];
+  const names = [
+    "X",
+    "Phone",
+    "ArrowLeft",
+    "ExternalLink",
+    "Bell",
+    "BellOff",
+    "Info",
+    "Download",
+    "ChevronDown",
+    "Bookmark",
+  ];
   const icons: Record<string, any> = {};
-  names.forEach((n) => { icons[n] = (props: any) => <span data-testid={`icon-${n}`} {...props} />; });
+  names.forEach((n) => {
+    icons[n] = (props: any) => <span data-testid={`icon-${n}`} {...props} />;
+  });
   return icons;
 });
 
@@ -78,7 +105,9 @@ vi.mock("../message-list", () => ({
         <div key={m.id} data-testid={`msg-${m.id}`}>
           <span>{m.content}</span>
           {m.id.startsWith("temp_") && <span data-testid="temp-badge">sending...</span>}
-          <button data-testid={`thread-${m.id}`} onClick={() => props.onThreadOpen?.(m)}>Thread</button>
+          <button data-testid={`thread-${m.id}`} onClick={() => props.onThreadOpen?.(m)}>
+            Thread
+          </button>
         </div>
       ))}
     </div>
@@ -88,8 +117,12 @@ vi.mock("../message-list", () => ({
 vi.mock("../message-input", () => ({
   MessageInput: (props: any) => (
     <div data-testid="message-input">
-      <button data-testid="send-btn" onClick={() => props.onSend("Sent from test", "standard")}>Send</button>
-      <button data-testid="typing-start" onClick={() => props.onTypingStart()}>Type</button>
+      <button data-testid="send-btn" onClick={() => props.onSend("Sent from test", "standard")}>
+        Send
+      </button>
+      <button data-testid="typing-start" onClick={() => props.onTypingStart()}>
+        Type
+      </button>
       {props.typingUsers?.length > 0 && (
         <span data-testid="typing-indicator">{props.typingUsers.length} user(s) typing</span>
       )}
@@ -108,7 +141,9 @@ vi.mock("../thread-panel", () => ({
 
 vi.mock("../channel-info", () => ({ ChannelInfo: () => <div data-testid="channel-info" /> }));
 vi.mock("../search-bar", () => ({ SearchBar: () => <div data-testid="search-bar" /> }));
-vi.mock("../channel-bookmarks", () => ({ ChannelBookmarks: () => <div data-testid="channel-bookmarks" /> }));
+vi.mock("../channel-bookmarks", () => ({
+  ChannelBookmarks: () => <div data-testid="channel-bookmarks" />,
+}));
 vi.mock("../notification-preferences-modal", () => ({
   NotificationPreferencesModal: (props: any) => (
     <div data-testid="notif-prefs-modal">
@@ -122,7 +157,12 @@ function getSocketHandler(event: string) {
 }
 
 describe("ChatView", () => {
-  const defaultProps = { channelId: "ch-1", channelName: "general", workspaceId: "ws-1", workspaceSlug: "my-workspace" };
+  const defaultProps = {
+    channelId: "ch-1",
+    channelName: "general",
+    workspaceId: "ws-1",
+    workspaceSlug: "my-workspace",
+  };
 
   beforeEach(() => {
     document.body.innerHTML = "";
@@ -138,7 +178,8 @@ describe("ChatView", () => {
         });
       }
       if (path.includes("/members")) return Promise.resolve({ members: [{ user_id: "user-1" }] });
-      if (path.includes("/preferences")) return Promise.resolve({ preferences: { notification_prefs: {} } });
+      if (path.includes("/preferences"))
+        return Promise.resolve({ preferences: { notification_prefs: {} } });
       return Promise.resolve({});
     });
     mockApi.post.mockImplementation((path: string) => {
@@ -151,7 +192,9 @@ describe("ChatView", () => {
     setupDefaultApi();
     render(<ChatView {...defaultProps} />);
     await screen.findByTestId("message-list");
-    await waitFor(() => expect(mockSocket.on).toHaveBeenCalledWith("message:new", expect.any(Function)));
+    await waitFor(() =>
+      expect(mockSocket.on).toHaveBeenCalledWith("message:new", expect.any(Function)),
+    );
   }
 
   // 1. Loading state
@@ -203,7 +246,10 @@ describe("ChatView", () => {
   it("sends message with optimistic update and confirms on success", async () => {
     let resolvePost: (value: any) => void = () => {};
     mockApi.post.mockImplementation((path: string) => {
-      if (path === "/channels/ch-1/messages") return new Promise((r) => { resolvePost = r; });
+      if (path === "/channels/ch-1/messages")
+        return new Promise((r) => {
+          resolvePost = r;
+        });
       if (path === "/auth/profiles") return Promise.resolve({ profiles: [] });
       return Promise.resolve({});
     });
@@ -238,7 +284,9 @@ describe("ChatView", () => {
     const { playNotificationSound } = await import("@/lib/notification-sound");
     await renderAndWaitForMessages();
 
-    getSocketHandler("message:new")({ message: makeMessage({ id: "live-msg-2", content: "Echo", user_id: "user-2" }) });
+    getSocketHandler("message:new")({
+      message: makeMessage({ id: "live-msg-2", content: "Echo", user_id: "user-2" }),
+    });
 
     await waitFor(() => expect(playNotificationSound).toHaveBeenCalled());
   });
@@ -255,7 +303,9 @@ describe("ChatView", () => {
 
   it("handles message:updated socket event", async () => {
     await renderAndWaitForMessages();
-    getSocketHandler("message:updated")({ message: makeMessage({ id: "msg-1", content: "Edited content" }) });
+    getSocketHandler("message:updated")({
+      message: makeMessage({ id: "msg-1", content: "Edited content" }),
+    });
 
     expect(await screen.findByText("Edited content")).toBeInTheDocument();
   });
@@ -271,7 +321,10 @@ describe("ChatView", () => {
   it("deduplicates echo messages via socket", async () => {
     let resolvePost: (value: any) => void = () => {};
     mockApi.post.mockImplementation((path: string) => {
-      if (path === "/channels/ch-1/messages") return new Promise((r) => { resolvePost = r; });
+      if (path === "/channels/ch-1/messages")
+        return new Promise((r) => {
+          resolvePost = r;
+        });
       if (path === "/auth/profiles") return Promise.resolve({ profiles: [] });
       return Promise.resolve({});
     });
@@ -282,7 +335,9 @@ describe("ChatView", () => {
     resolvePost({ message: { id: "echo-msg-id" } });
     await waitFor(() => expect(screen.queryByTestId("temp-badge")).not.toBeInTheDocument());
 
-    getSocketHandler("message:new")({ message: makeMessage({ id: "echo-msg-id", content: "Should dedupe", user_id: "user-1" }) });
+    getSocketHandler("message:new")({
+      message: makeMessage({ id: "echo-msg-id", content: "Should dedupe", user_id: "user-1" }),
+    });
 
     await new Promise((r) => setTimeout(r, 50));
     expect(screen.getAllByText("Should dedupe").length).toBe(1);

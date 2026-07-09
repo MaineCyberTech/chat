@@ -3,10 +3,14 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { requireChannelAccess, requireMessageAccess } from "../../middleware/require-membership.js";
 import { messageService } from "./service.js";
-import { logger } from "../../lib/logger.js";
 import { logAuditEvent } from "../../services/audit.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, ConflictError, InternalServerError } from "../../lib/app-error.js";
+import {
+  BadRequestError,
+  NotFoundError,
+  ConflictError,
+  InternalServerError,
+} from "../../lib/app-error.js";
 import {
   createMessageSchema,
   updateMessageSchema,
@@ -28,54 +32,58 @@ function sanitizeContent(content: string): string {
 const router: RouterType = Router();
 router.use(authenticate);
 
-router.get("/messages/search", responseCache(30), asyncHandler(async (req, res) => {
-  const parsed = searchQuerySchema.safeParse(req.query);
-  if (!parsed.success) {
-    throw new BadRequestError(parsed.error.issues[0].message);
-  }
+router.get(
+  "/messages/search",
+  responseCache(30),
+  asyncHandler(async (req, res) => {
+    const parsed = searchQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw new BadRequestError(parsed.error.issues[0].message);
+    }
 
-  if (!req.supabase) {
-    throw new InternalServerError("Auth context missing");
-  }
-  // Sanitize search query: strip HTML tags and enforce 200 char limit
-  const sanitizedQuery = parsed.data.q.replace(/<[^>]*>/g, "").slice(0, 200);
-  const channelIds = parsed.data.channel_ids
-    ? parsed.data.channel_ids.split(",").filter(Boolean)
-    : null;
-  const resultLimit = parsed.data.limit;
-  // Current search is tsvector-based on message content only.
-  // File content search (e.g., PDFs, documents) could be added via pgvector
-  // embeddings or an external search index like Elasticsearch/MeiliSearch.
-  const { data, error } = await req.supabase.rpc("search_messages", {
-    workspace_id: parsed.data.workspace_id,
-    query_text: sanitizedQuery,
-    result_limit: resultLimit,
-    date_from: parsed.data.date_from ?? null,
-    date_to: parsed.data.date_to ?? null,
-    author_id: parsed.data.author_id ?? null,
-    channel_ids: channelIds,
-    result_offset: parsed.data.offset,
-  });
-
-  if (error) {
-    throw new InternalServerError(error.message);
-  }
-
-  let messages = data ?? [];
-
-  // When type is "files", filter to messages with file/attachment content
-  if (parsed.data.type === "files") {
-    messages = messages.filter((m: { content?: string }) => {
-      const c = m.content ?? "";
-      return /!\[.*?\]\(|\[.*?\]\(.*?\.\w+\)|attachment|upload|\.(png|jpg|jpeg|gif|pdf|docx?|xlsx?|pptx?|txt|csv|svg|webp|mp[34]|mov|avi)/i.test(
-        c,
-      );
+    if (!req.supabase) {
+      throw new InternalServerError("Auth context missing");
+    }
+    // Sanitize search query: strip HTML tags and enforce 200 char limit
+    const sanitizedQuery = parsed.data.q.replace(/<[^>]*>/g, "").slice(0, 200);
+    const channelIds = parsed.data.channel_ids
+      ? parsed.data.channel_ids.split(",").filter(Boolean)
+      : null;
+    const resultLimit = parsed.data.limit;
+    // Current search is tsvector-based on message content only.
+    // File content search (e.g., PDFs, documents) could be added via pgvector
+    // embeddings or an external search index like Elasticsearch/MeiliSearch.
+    const { data, error } = await req.supabase.rpc("search_messages", {
+      workspace_id: parsed.data.workspace_id,
+      query_text: sanitizedQuery,
+      result_limit: resultLimit,
+      date_from: parsed.data.date_from ?? null,
+      date_to: parsed.data.date_to ?? null,
+      author_id: parsed.data.author_id ?? null,
+      channel_ids: channelIds,
+      result_offset: parsed.data.offset,
     });
-  }
 
-  const hasMore = messages.length === resultLimit;
-  res.json({ messages, hasMore, offset: parsed.data.offset, limit: parsed.data.limit });
-}));
+    if (error) {
+      throw new InternalServerError(error.message);
+    }
+
+    let messages = data ?? [];
+
+    // When type is "files", filter to messages with file/attachment content
+    if (parsed.data.type === "files") {
+      messages = messages.filter((m: { content?: string }) => {
+        const c = m.content ?? "";
+        return /!\[.*?\]\(|\[.*?\]\(.*?\.\w+\)|attachment|upload|\.(png|jpg|jpeg|gif|pdf|docx?|xlsx?|pptx?|txt|csv|svg|webp|mp[34]|mov|avi)/i.test(
+          c,
+        );
+      });
+    }
+
+    const hasMore = messages.length === resultLimit;
+    res.json({ messages, hasMore, offset: parsed.data.offset, limit: parsed.data.limit });
+  }),
+);
 
 router.get(
   "/channels/:channelId/messages",
@@ -267,12 +275,21 @@ router.delete(
 );
 
 // Get flagged messages
-router.get("/messages/flagged", responseCache(15), asyncHandler(async (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-  const offset = parseInt(req.query.offset as string) || 0;
-  const { messages, total } = await messageService.getFlagged(req.userId!, req.supabase!, limit, offset);
-  res.json({ messages, total, limit, offset });
-}));
+router.get(
+  "/messages/flagged",
+  responseCache(15),
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const offset = parseInt(req.query.offset as string) || 0;
+    const { messages, total } = await messageService.getFlagged(
+      req.userId!,
+      req.supabase!,
+      limit,
+      offset,
+    );
+    res.json({ messages, total, limit, offset });
+  }),
+);
 
 // Forward message to another channel
 router.post(
@@ -348,76 +365,92 @@ router.delete(
   }),
 );
 
-router.post("/messages/upload", asyncHandler(async (req, res) => {
-  const parsed = uploadRequestSchema.safeParse(req.body);
-  if (!parsed.success) {
-    throw new BadRequestError(parsed.error.issues[0].message);
-  }
+router.post(
+  "/messages/upload",
+  asyncHandler(async (req, res) => {
+    const parsed = uploadRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new BadRequestError(parsed.error.issues[0].message);
+    }
 
-  if (!req.supabase) {
-    throw new InternalServerError("Auth context missing");
-  }
+    if (!req.supabase) {
+      throw new InternalServerError("Auth context missing");
+    }
 
-  const safeFileName = parsed.data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const filePath = `${req.userId}/${Date.now()}-${safeFileName}`;
+    const safeFileName = parsed.data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filePath = `${req.userId}/${Date.now()}-${safeFileName}`;
 
-  const { data, error } = await req.supabase.storage
-    .from("chat-uploads")
-    .createSignedUploadUrl(filePath);
+    const { data, error } = await req.supabase.storage
+      .from("chat-uploads")
+      .createSignedUploadUrl(filePath);
 
-  if (error || !data) {
-    throw new InternalServerError(error?.message ?? "Could not create upload URL");
-  }
+    if (error || !data) {
+      throw new InternalServerError(error?.message ?? "Could not create upload URL");
+    }
 
-  res.json({
-    uploadUrl: data.signedUrl,
-    filePath,
-    publicUrl: req.supabase.storage.from("chat-uploads").getPublicUrl(filePath).data.publicUrl,
-  });
-}));
+    res.json({
+      uploadUrl: data.signedUrl,
+      filePath,
+      publicUrl: req.supabase.storage.from("chat-uploads").getPublicUrl(filePath).data.publicUrl,
+    });
+  }),
+);
 
 // Reminder endpoints
-router.post("/messages/:id/remind", authenticate, validateUuidParam("id"), asyncHandler(async (req, res) => {
-  const { remindAt } = req.body;
-  if (!remindAt) {
-    throw new BadRequestError("remindAt required");
-  }
-  const { data, error } = await req
-    .supabase!.from("message_reminders")
-    .insert({
-      user_id: req.userId,
-      message_id: req.params.id as string,
-      remind_at: remindAt,
-    })
-    .select("*")
-    .single();
-  if (error) {
-    throw new InternalServerError(error.message);
-  }
-  res.status(201).json({ reminder: data });
-}));
+router.post(
+  "/messages/:id/remind",
+  authenticate,
+  validateUuidParam("id"),
+  asyncHandler(async (req, res) => {
+    const { remindAt } = req.body;
+    if (!remindAt) {
+      throw new BadRequestError("remindAt required");
+    }
+    const { data, error } = await req
+      .supabase!.from("message_reminders")
+      .insert({
+        user_id: req.userId,
+        message_id: req.params.id as string,
+        remind_at: remindAt,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      throw new InternalServerError(error.message);
+    }
+    res.status(201).json({ reminder: data });
+  }),
+);
 
-router.get("/reminders", authenticate, asyncHandler(async (req, res) => {
-  const { data } = await req
-    .supabase!.from("message_reminders")
-    .select("*, messages!inner(content, channel_id)")
-    .eq("user_id", req.userId)
-    .eq("notified", false)
-    .order("remind_at", { ascending: true });
-  res.json({ reminders: data ?? [] });
-}));
+router.get(
+  "/reminders",
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const { data } = await req
+      .supabase!.from("message_reminders")
+      .select("*, messages!inner(content, channel_id)")
+      .eq("user_id", req.userId)
+      .eq("notified", false)
+      .order("remind_at", { ascending: true });
+    res.json({ reminders: data ?? [] });
+  }),
+);
 
-router.delete("/reminders/:id", authenticate, asyncHandler(async (req, res) => {
-  const { error } = await req
-    .supabase!.from("message_reminders")
-    .delete()
-    .eq("id", req.params.id as string)
-    .eq("user_id", req.userId);
-  if (error) {
-    throw new InternalServerError(error.message);
-  }
-  res.status(204).send();
-}));
+router.delete(
+  "/reminders/:id",
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const { error } = await req
+      .supabase!.from("message_reminders")
+      .delete()
+      .eq("id", req.params.id as string)
+      .eq("user_id", req.userId);
+    if (error) {
+      throw new InternalServerError(error.message);
+    }
+    res.status(204).send();
+  }),
+);
 
 router.get(
   "/channels/:channelId/export",

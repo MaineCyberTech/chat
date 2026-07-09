@@ -21,77 +21,104 @@ import {
 } from "../../config/validators.js";
 import { responseCache } from "../../middleware/cache.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, ForbiddenError, InternalServerError, ConflictError } from "../../lib/app-error.js";
+import {
+  BadRequestError,
+  NotFoundError,
+  InternalServerError,
+  ConflictError,
+} from "../../lib/app-error.js";
 import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
 import { parsePaginationParams } from "../../lib/pagination.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
 
-router.get("/", responseCache(30), asyncHandler(async (req, res) => {
-  logger.info("GET /v1/workspaces", { userId: req.userId });
-  const { limit, offset } = parsePaginationParams(req.query.limit as string, req.query.offset as string, 20, 50);
-  const { workspaces, total } = await workspaceService.listByUser(req.supabase, limit, offset);
-  logger.info("Workspaces list result", { userId: req.userId, count: workspaces.length, total });
-  res.json({ workspaces, pagination: { limit, offset, total } });
-}));
+router.get(
+  "/",
+  responseCache(30),
+  asyncHandler(async (req, res) => {
+    logger.info("GET /v1/workspaces", { userId: req.userId });
+    const { limit, offset } = parsePaginationParams(
+      req.query.limit as string,
+      req.query.offset as string,
+      20,
+      50,
+    );
+    const { workspaces, total } = await workspaceService.listByUser(req.supabase, limit, offset);
+    logger.info("Workspaces list result", { userId: req.userId, count: workspaces.length, total });
+    res.json({ workspaces, pagination: { limit, offset, total } });
+  }),
+);
 
 // Consolidated bootstrap endpoint: returns workspaces with their channels in one call
-router.get("/bootstrap", responseCache(30), asyncHandler(async (req, res) => {
-  const { workspaces } = await workspaceService.listByUser(req.supabase);
-  const workspaceChannels = await Promise.all(
-    workspaces.map(async (ws) => {
-      const channels = await channelService.listByWorkspace(ws.id);
-      return { workspace: ws, channels };
-    }),
-  );
-  res.json({ workspaces: workspaceChannels });
-}));
+router.get(
+  "/bootstrap",
+  responseCache(30),
+  asyncHandler(async (req, res) => {
+    const { workspaces } = await workspaceService.listByUser(req.supabase);
+    const workspaceChannels = await Promise.all(
+      workspaces.map(async (ws) => {
+        const channels = await channelService.listByWorkspace(ws.id);
+        return { workspace: ws, channels };
+      }),
+    );
+    res.json({ workspaces: workspaceChannels });
+  }),
+);
 
-router.post("/", asyncHandler(async (req, res) => {
-  const idempotencyKey = req.headers["idempotency-key"] as string | undefined;
-  if (idempotencyKey) {
-    const existingId = await checkIdempotencyKey(idempotencyKey);
-    if (existingId) {
-      throw new ConflictError("Idempotent request — workspace already created");
+router.post(
+  "/",
+  asyncHandler(async (req, res) => {
+    const idempotencyKey = req.headers["idempotency-key"] as string | undefined;
+    if (idempotencyKey) {
+      const existingId = await checkIdempotencyKey(idempotencyKey);
+      if (existingId) {
+        throw new ConflictError("Idempotent request — workspace already created");
+      }
     }
-  }
 
-  const parsed = createWorkspaceSchema.safeParse(req.body);
-  if (!parsed.success) {
-    throw new BadRequestError(parsed.error.issues[0].message);
-  }
+    const parsed = createWorkspaceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new BadRequestError(parsed.error.issues[0].message);
+    }
 
-  const workspace = await workspaceService.create({
-    name: parsed.data.name,
-    owner_id: req.userId!,
-  });
-  if (!workspace) {
-    throw new InternalServerError("Could not create workspace. Check server logs for details.");
-  }
+    const workspace = await workspaceService.create({
+      name: parsed.data.name,
+      owner_id: req.userId!,
+    });
+    if (!workspace) {
+      throw new InternalServerError("Could not create workspace. Check server logs for details.");
+    }
 
-  if (idempotencyKey) {
-    await storeIdempotencyKey(idempotencyKey, workspace.id);
-    res.set("Idempotency-Key", idempotencyKey);
-  }
+    if (idempotencyKey) {
+      await storeIdempotencyKey(idempotencyKey, workspace.id);
+      res.set("Idempotency-Key", idempotencyKey);
+    }
 
-  res.status(201).json({ workspace });
-  logAuditEvent({
-    actorUserId: req.userId,
-    action: "workspace.create",
-    entityType: "workspace",
-    entityId: workspace.id,
-    metadata: { name: workspace.name },
-  });
-}));
+    res.status(201).json({ workspace });
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "workspace.create",
+      entityType: "workspace",
+      entityId: workspace.id,
+      metadata: { name: workspace.name },
+    });
+  }),
+);
 
-router.get("/:id", validateUuidParam("id"), requireWorkspaceMembership("id"), responseCache(30), asyncHandler(async (req, res) => {
-  const workspace = await workspaceService.getById(req.params.id as string, req.supabase);
-  if (!workspace) {
-    throw new NotFoundError("Workspace not found");
-  }
-  res.json({ workspace });
-}));
+router.get(
+  "/:id",
+  validateUuidParam("id"),
+  requireWorkspaceMembership("id"),
+  responseCache(30),
+  asyncHandler(async (req, res) => {
+    const workspace = await workspaceService.getById(req.params.id as string, req.supabase);
+    if (!workspace) {
+      throw new NotFoundError("Workspace not found");
+    }
+    res.json({ workspace });
+  }),
+);
 
 router.patch(
   "/:id",

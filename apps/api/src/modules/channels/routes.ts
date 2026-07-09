@@ -12,10 +12,14 @@ import {
   addChannelMemberSchema,
 } from "../../config/validators.js";
 import { logAuditEvent } from "../../services/audit.js";
-import { logger } from "../../lib/logger.js";
 import { responseCache } from "../../middleware/cache.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, ConflictError, InternalServerError } from "../../lib/app-error.js";
+import {
+  BadRequestError,
+  NotFoundError,
+  ConflictError,
+  InternalServerError,
+} from "../../lib/app-error.js";
 import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
 import { parsePaginationParams } from "../../lib/pagination.js";
 
@@ -28,7 +32,12 @@ router.get(
   requireWorkspaceMembership("workspaceId"),
   responseCache(30),
   asyncHandler(async (req, res) => {
-    const { limit, offset } = parsePaginationParams(req.query.limit as string, req.query.offset as string, 50, 100);
+    const { limit, offset } = parsePaginationParams(
+      req.query.limit as string,
+      req.query.offset as string,
+      50,
+      100,
+    );
     const channels = await channelService.listByWorkspace(
       req.params.workspaceId as string,
       req.supabase,
@@ -152,7 +161,12 @@ router.get(
   requireChannelAccess("id"),
   responseCache(30),
   asyncHandler(async (req, res) => {
-    const { limit, offset } = parsePaginationParams(req.query.limit as string, req.query.offset as string, 50, 100);
+    const { limit, offset } = parsePaginationParams(
+      req.query.limit as string,
+      req.query.offset as string,
+      50,
+      100,
+    );
     const members = await channelService.getMembers(req.params.id as string, limit, offset);
     res.json({ members });
   }),
@@ -231,10 +245,14 @@ router.post(
 );
 
 // Get DM channels for current user
-router.get("/dm-channels", responseCache(30), asyncHandler(async (req, res) => {
-  const channels = await channelService.listDmChannels(req.userId!, req.supabase);
-  res.json({ channels });
-}));
+router.get(
+  "/dm-channels",
+  responseCache(30),
+  asyncHandler(async (req, res) => {
+    const channels = await channelService.listDmChannels(req.userId!, req.supabase);
+    res.json({ channels });
+  }),
+);
 
 // Reorder channels in a workspace
 router.patch(

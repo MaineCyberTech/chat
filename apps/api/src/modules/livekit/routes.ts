@@ -1,7 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { liveKitService } from "./service.js";
-import { asyncHandler } from "../../lib/async-handler.js";
 
 const router = Router();
 

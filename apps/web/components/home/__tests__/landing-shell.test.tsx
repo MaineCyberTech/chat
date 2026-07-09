@@ -9,7 +9,7 @@ describe("LandingShell", () => {
 
   it("renders the heading", () => {
     render(<LandingShell />);
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Chat Platform");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("MaineCyberTech Chat");
   });
 
   it("renders the tagline", () => {

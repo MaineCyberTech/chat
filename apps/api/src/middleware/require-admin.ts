@@ -19,7 +19,7 @@ export async function requireAdmin(req: Request, _res: Response, next: NextFunct
       return;
     }
     next();
-  } catch (err) {
+  } catch {
     next(new ForbiddenError("Admin access check failed"));
   }
 }

@@ -12,7 +12,7 @@ import { webhookService } from "./service.js";
 import { validateWebhookUrl } from "./service.js";
 import { logAuditEvent } from "../../services/audit.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, ForbiddenError, InternalServerError } from "../../lib/app-error.js";
+import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parsePaginationParams } from "../../lib/pagination.js";
@@ -79,36 +79,51 @@ function requireWorkspaceQueryParam(req: Request, res: Response, next: NextFunct
     });
 }
 
-router.get("/webhooks/deliveries", requireWorkspaceQueryParam, asyncHandler(async (req, res) => {
-  const workspace_id = req.query.workspace_id as string;
-  const webhookId = req.query.webhook_id as string | undefined;
-  const { limit, offset } = parsePaginationParams(req.query.limit as string, req.query.offset as string, 100, 200);
+router.get(
+  "/webhooks/deliveries",
+  requireWorkspaceQueryParam,
+  asyncHandler(async (req, res) => {
+    const workspace_id = req.query.workspace_id as string;
+    const webhookId = req.query.webhook_id as string | undefined;
+    const { limit, offset } = parsePaginationParams(
+      req.query.limit as string,
+      req.query.offset as string,
+      100,
+      200,
+    );
 
-  if (!webhookId) {
-    res.status(400).json({ error: { code: "INVALID_INPUT", message: "webhook_id query param required" } });
-    return;
-  }
+    if (!webhookId) {
+      res
+        .status(400)
+        .json({ error: { code: "INVALID_INPUT", message: "webhook_id query param required" } });
+      return;
+    }
 
-  // Verify the webhook belongs to this workspace
-  const webhook = await webhookService.getById(webhookId);
-  if (!webhook || webhook.workspace_id !== workspace_id) {
-    throw new NotFoundError("Webhook not found in this workspace");
-  }
+    // Verify the webhook belongs to this workspace
+    const webhook = await webhookService.getById(webhookId);
+    if (!webhook || webhook.workspace_id !== workspace_id) {
+      throw new NotFoundError("Webhook not found in this workspace");
+    }
 
-  const result = await webhookService.listDeliveries(webhookId, { limit, offset });
-  res.json({ deliveries: result.deliveries, total: result.total, limit, offset });
-}));
+    const result = await webhookService.listDeliveries(webhookId, { limit, offset });
+    res.json({ deliveries: result.deliveries, total: result.total, limit, offset });
+  }),
+);
 
-router.get("/webhooks", requireWorkspaceQueryParam, asyncHandler(async (req, res) => {
-  const workspace_id = req.query.workspace_id as string;
-  const webhooks = await webhookService.listByWorkspace(workspace_id);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const masked = webhooks.map((w: any) => ({
-    ...w,
-    secret: w.secret ? "••••••••" : "",
-  }));
-  res.json({ webhooks: masked });
-}));
+router.get(
+  "/webhooks",
+  requireWorkspaceQueryParam,
+  asyncHandler(async (req, res) => {
+    const workspace_id = req.query.workspace_id as string;
+    const webhooks = await webhookService.listByWorkspace(workspace_id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const masked = webhooks.map((w: any) => ({
+      ...w,
+      secret: w.secret ? "••••••••" : "",
+    }));
+    res.json({ webhooks: masked });
+  }),
+);
 
 router.get(
   "/webhooks/:id",
@@ -127,36 +142,42 @@ router.get(
   }),
 );
 
-router.post("/webhooks", requireWorkspaceMembership("workspace_id"), asyncHandler(async (req, res) => {
-  const parsed = createWebhookSchema.safeParse(req.body);
-  if (!parsed.success) {
-    throw new BadRequestError(parsed.error.issues[0].message);
-  }
+router.post(
+  "/webhooks",
+  requireWorkspaceMembership("workspace_id"),
+  asyncHandler(async (req, res) => {
+    const parsed = createWebhookSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new BadRequestError(parsed.error.issues[0].message);
+    }
 
-  // SSRF protection: validate webhook URL
-  const urlValidation = await validateWebhookUrl(parsed.data.url);
-  if (!urlValidation.valid) {
-    throw new BadRequestError(urlValidation.error ?? "Invalid URL");
-  }
+    // SSRF protection: validate webhook URL
+    const urlValidation = await validateWebhookUrl(parsed.data.url);
+    if (!urlValidation.valid) {
+      throw new BadRequestError(urlValidation.error ?? "Invalid URL");
+    }
 
-  const webhook = await webhookService.create({ ...parsed.data, created_by: req.userId! });
-  if (!webhook) {
-    throw new InternalServerError("Could not create webhook");
-  }
-  // Show the original secret on create (one-time opportunity)
-  const masked = {
-    ...webhook,
-    secret: parsed.data.secret ? `${parsed.data.secret.slice(0, 4)}...${parsed.data.secret.slice(-4)}` : "",
-  };
-  res.status(201).json({ webhook: masked });
-  logAuditEvent({
-    actorUserId: req.userId,
-    action: "webhook.create",
-    entityType: "webhook_endpoint",
-    entityId: webhook.id,
-    metadata: { name: webhook.name, workspace_id: webhook.workspace_id },
-  });
-}));
+    const webhook = await webhookService.create({ ...parsed.data, created_by: req.userId! });
+    if (!webhook) {
+      throw new InternalServerError("Could not create webhook");
+    }
+    // Show the original secret on create (one-time opportunity)
+    const masked = {
+      ...webhook,
+      secret: parsed.data.secret
+        ? `${parsed.data.secret.slice(0, 4)}...${parsed.data.secret.slice(-4)}`
+        : "",
+    };
+    res.status(201).json({ webhook: masked });
+    logAuditEvent({
+      actorUserId: req.userId,
+      action: "webhook.create",
+      entityType: "webhook_endpoint",
+      entityId: webhook.id,
+      metadata: { name: webhook.name, workspace_id: webhook.workspace_id },
+    });
+  }),
+);
 
 router.patch(
   "/webhooks/:id",

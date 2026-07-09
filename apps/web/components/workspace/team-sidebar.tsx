@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
-import { Avatar } from "@chat/ui";
 import type { Workspace } from "@chat/db";
 
 export function TeamSidebar() {
@@ -13,14 +12,15 @@ export function TeamSidebar() {
   const currentSlug = pathname?.split("/")[1];
 
   useEffect(() => {
-    api.get<{ workspaces: Workspace[] }>("/workspaces")
+    api
+      .get<{ workspaces: Workspace[] }>("/workspaces")
       .then((res) => setWorkspaces(res.workspaces))
       .catch(() => {});
   }, []);
 
   return (
     <div
-      className="flex flex-col items-center py-2 gap-1"
+      className="flex flex-col items-center gap-1 py-2"
       style={{
         width: 65,
         minWidth: 65,

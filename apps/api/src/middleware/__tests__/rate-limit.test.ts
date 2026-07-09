@@ -28,9 +28,9 @@ describe("rate-limit middleware", () => {
     expect(capturedOptions[0].legacyHeaders).toBe(false);
   });
 
-  it("creates an auth limiter with 20 requests per minute and composite key", async () => {
+  it("creates an auth limiter with 10 requests per minute and composite key", async () => {
     await import("../rate-limit.js");
-    expect(capturedOptions[1].max).toBe(20);
+    expect(capturedOptions[1].max).toBe(10);
     expect(capturedOptions[1].windowMs).toBe(60_000);
     expect(capturedOptions[1].keyGenerator).toBeDefined();
   });
@@ -61,7 +61,7 @@ describe("rate-limit middleware", () => {
     const { logger } = await import("../../lib/logger.js");
     const handler = capturedOptions[0].handler;
     const req = { ip: "127.0.0.1", path: "/api/test", userId: undefined };
-    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn(), setHeader: vi.fn() };
 
     handler(req, res, vi.fn(), {
       statusCode: 429,
@@ -82,7 +82,7 @@ describe("rate-limit middleware", () => {
     const { logger } = await import("../../lib/logger.js");
     const handler = capturedOptions[0].handler;
     const req = { ip: "10.0.0.1", path: "/api/data", userId: "user-42" };
-    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn(), setHeader: vi.fn() };
 
     handler(req, res, vi.fn(), { statusCode: 429, message: {} });
 
@@ -114,10 +114,10 @@ describe("rate-limit middleware", () => {
     expect(key).toBe("unknown");
   });
 
-  it("each limiter has correct max values (100, 20, 30)", async () => {
+  it("each limiter has correct max values (100, 10, 30)", async () => {
     await import("../rate-limit.js");
     expect(capturedOptions[0].max).toBe(100);
-    expect(capturedOptions[1].max).toBe(20);
+    expect(capturedOptions[1].max).toBe(10);
     expect(capturedOptions[2].max).toBe(30);
   });
 });

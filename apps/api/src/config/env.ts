@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logger as importedLogger } from "../lib/logger.js";
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
@@ -33,9 +34,7 @@ export function logEnvStatus(env: Env): void {
   // Use dynamic import to avoid circular dependency
   const logger = { info: (...args: unknown[]) => console.log(...args) };
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const l = require("../lib/logger.js");
-    logger.info = l.logger.info.bind(l.logger);
+    logger.info = importedLogger.info.bind(importedLogger) as (...args: unknown[]) => void;
   } catch {
     // Fallback to console if logger not yet available
   }

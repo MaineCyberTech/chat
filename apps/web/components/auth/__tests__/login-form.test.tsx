@@ -77,7 +77,7 @@ describe("LoginForm", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("Invalid email")).toBeDefined();
+      expect(screen.getByText("Invalid email or password")).toBeDefined();
     });
   });
 

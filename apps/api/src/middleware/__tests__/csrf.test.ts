@@ -172,7 +172,7 @@ describe("doubleSubmitCookieCsrf", () => {
       "csrf_token",
       expect.any(String),
       expect.objectContaining({
-        httpOnly: false,
+        httpOnly: true,
         sameSite: "strict",
       }),
     );

@@ -17,6 +17,9 @@ vi.mock("@/lib/api", () => ({
 }));
 
 vi.mock("@chat/ui", () => ({
+  EmptyState: ({ description }: { description?: string }) => (
+    <div data-testid="empty-state">{description}</div>
+  ),
   useToast: () => ({ addToast: vi.fn() }),
 }));
 
@@ -28,6 +31,21 @@ vi.mock("lucide-react", () => ({
   Bookmark: () => null,
   AlertCircle: () => null,
   AlertTriangle: () => null,
+}));
+
+vi.mock("@tanstack/react-virtual", () => ({
+  useVirtualizer: (opts: { count: number }) => ({
+    getTotalSize: () => opts.count * 60,
+    getVirtualItems: () =>
+      Array.from({ length: opts.count }, (_, i) => ({
+        index: i,
+        start: i * 60,
+        size: 60,
+        key: i,
+      })),
+    scrollToIndex: () => {},
+    measureElement: () => {},
+  }),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -94,8 +112,7 @@ describe("MessageList", () => {
         profiles={mockProfiles}
       />,
     );
-    const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    expect(screen.getAllByText(timeStr).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/10:30/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows date separators between messages on different days", () => {

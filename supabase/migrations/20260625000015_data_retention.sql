@@ -20,12 +20,12 @@ RETURNS INTEGER AS $$
 DECLARE
   archived_count INTEGER;
 BEGIN
-  UPDATE public.messages
+  UPDATE public.messages m
   SET archived_at = NOW()
-  WHERE archived_at IS NULL
-    AND deleted_at IS NULL
-    AND created_at < NOW() - (days_threshold || ' days')::INTERVAL
-    AND (channel_id = channel_id OR channel_id IS NULL);
+  WHERE m.archived_at IS NULL
+    AND m.deleted_at IS NULL
+    AND m.created_at < NOW() - (days_threshold || ' days')::INTERVAL
+    AND (m.channel_id = archive_old_messages.channel_id OR archive_old_messages.channel_id IS NULL);
 
   GET DIAGNOSTICS archived_count = ROW_COUNT;
 
@@ -46,17 +46,17 @@ BEGIN
   -- First, delete related reactions, reactions
   DELETE FROM public.reactions
   WHERE message_id IN (
-    SELECT id FROM public.messages
-    WHERE archived_at IS NOT NULL
-      AND archived_at < NOW() - (days_threshold || ' days')::INTERVAL
-      AND (channel_id = channel_id OR channel_id IS NULL)
+    SELECT m.id FROM public.messages m
+    WHERE m.archived_at IS NOT NULL
+      AND m.archived_at < NOW() - (days_threshold || ' days')::INTERVAL
+      AND (m.channel_id = purge_archived_messages.channel_id OR purge_archived_messages.channel_id IS NULL)
   );
 
   -- Delete the archived messages
-  DELETE FROM public.messages
-  WHERE archived_at IS NOT NULL
-    AND archived_at < NOW() - (days_threshold || ' days')::INTERVAL
-    AND (channel_id = channel_id OR channel_id IS NULL);
+  DELETE FROM public.messages m
+  WHERE m.archived_at IS NOT NULL
+    AND m.archived_at < NOW() - (days_threshold || ' days')::INTERVAL
+    AND (m.channel_id = purge_archived_messages.channel_id OR purge_archived_messages.channel_id IS NULL);
 
   GET DIAGNOSTICS purged_count = ROW_COUNT;
 

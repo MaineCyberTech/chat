@@ -29,11 +29,8 @@ COPY --from=base /app/packages/config/dist ./packages/config/dist
 COPY --from=base /app/packages/sdk/package.json ./packages/sdk/package.json
 COPY --from=base /app/packages/sdk/dist ./packages/sdk/dist
 
-# Copy root node_modules from build stage for workspace symlinks
-COPY --from=base /app/node_modules ./node_modules
-
-# Production-only install (uses existing node_modules for workspace packages)
-RUN pnpm install --frozen-lockfile --filter ./apps/worker --prod --ignore-scripts || true
+# Production-only install
+RUN pnpm install --frozen-lockfile --filter ./apps/worker --prod --ignore-scripts
 
 ENV NODE_ENV=production
 

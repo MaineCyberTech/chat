@@ -4,7 +4,12 @@ import { requireChannelAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { getSupabase } from "../../lib/supabase.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, InternalServerError, ConflictError, NotFoundError } from "../../lib/app-error.js";
+import {
+  BadRequestError,
+  InternalServerError,
+  ConflictError,
+  NotFoundError,
+} from "../../lib/app-error.js";
 import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
 import { parsePaginationParams } from "../../lib/pagination.js";
 import { notificationService } from "./service.js";
@@ -13,12 +18,20 @@ const router: RouterType = Router();
 router.use(authenticate);
 
 // List notifications with pagination
-router.get("/notifications", asyncHandler(async (req, res) => {
-  const { limit, offset } = parsePaginationParams(req.query.limit as string, req.query.offset as string, 20, 100);
-  const workspaceId = req.query.workspace_id as string | undefined;
-  const notifications = await notificationService.list(req.userId!, workspaceId, limit, offset);
-  res.json({ notifications, limit, offset });
-}));
+router.get(
+  "/notifications",
+  asyncHandler(async (req, res) => {
+    const { limit, offset } = parsePaginationParams(
+      req.query.limit as string,
+      req.query.offset as string,
+      20,
+      100,
+    );
+    const workspaceId = req.query.workspace_id as string | undefined;
+    const notifications = await notificationService.list(req.userId!, workspaceId, limit, offset);
+    res.json({ notifications, limit, offset });
+  }),
+);
 
 // Get notification preference for a channel
 router.get(
@@ -101,61 +114,71 @@ router.delete(
 );
 
 // List trigger words for the current user
-router.get("/trigger-words", asyncHandler(async (req, res) => {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("trigger_words")
-    .select("id, word, created_at")
-    .eq("user_id", req.userId)
-    .order("created_at", { ascending: true });
-  if (error) {
-    throw new InternalServerError(error.message);
-  }
-  res.json({ trigger_words: data });
-}));
+router.get(
+  "/trigger-words",
+  asyncHandler(async (req, res) => {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("trigger_words")
+      .select("id, word, created_at")
+      .eq("user_id", req.userId)
+      .order("created_at", { ascending: true });
+    if (error) {
+      throw new InternalServerError(error.message);
+    }
+    res.json({ trigger_words: data });
+  }),
+);
 
 // Add a trigger word
-router.post("/trigger-words", asyncHandler(async (req, res) => {
-  const { word } = req.body as { word?: string };
-  if (!word || !word.trim()) {
-    throw new BadRequestError("Word is required");
-  }
-  const trimmed = word.trim().toLowerCase();
-  if (trimmed.length > 100) {
-    throw new BadRequestError("Word must be 100 characters or less");
-  }
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("trigger_words")
-    .insert({ user_id: req.userId, word: trimmed })
-    .select("id, word, created_at")
-    .single();
-  if (error) {
-    if (error.code === "23505") {
-      throw new ConflictError("Trigger word already exists");
+router.post(
+  "/trigger-words",
+  asyncHandler(async (req, res) => {
+    const { word } = req.body as { word?: string };
+    if (!word || !word.trim()) {
+      throw new BadRequestError("Word is required");
     }
-    throw new InternalServerError(error.message);
-  }
-  res.status(201).json({ trigger_word: data });
-}));
+    const trimmed = word.trim().toLowerCase();
+    if (trimmed.length > 100) {
+      throw new BadRequestError("Word must be 100 characters or less");
+    }
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("trigger_words")
+      .insert({ user_id: req.userId, word: trimmed })
+      .select("id, word, created_at")
+      .single();
+    if (error) {
+      if (error.code === "23505") {
+        throw new ConflictError("Trigger word already exists");
+      }
+      throw new InternalServerError(error.message);
+    }
+    res.status(201).json({ trigger_word: data });
+  }),
+);
 
 // Delete a trigger word
-router.delete("/trigger-words/:id", validateUuidParam("id"), asyncHandler(async (req, res) => {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("trigger_words")
-    .delete()
-    .eq("id", req.params.id)
-    .eq("user_id", req.userId)
-    .select("id")
-    .single();
-  if (error) {
-    if (error.code === "PGRST116") {
-      throw new NotFoundError("Trigger word not found");
+router.delete(
+  "/trigger-words/:id",
+  validateUuidParam("id"),
+  asyncHandler(async (req, res) => {
+    const supabase = getSupabase();
+    const { data: _data, error } = await supabase
+      .from("trigger_words")
+      .delete()
+      .eq("id", req.params.id)
+      .eq("user_id", req.userId)
+      .select("id")
+      .single();
+    if (error) {
+      if (error.code === "PGRST116") {
+        throw new NotFoundError("Trigger word not found");
+      }
+      throw new InternalServerError(error.message);
     }
-    throw new InternalServerError(error.message);
-  }
-  res.status(204).send();
-}));
+    res.status(204).send();
+  }),
+);
 
 export default router;

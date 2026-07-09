@@ -1,6 +1,9 @@
 import { logger } from "@chat/config/logger.js";
+import { createClient } from "@supabase/supabase-js";
+import { loadEnv } from "@chat/config/env-schema.js";
 import { dataRetentionQueue } from "./processors/data-retention.js";
 import { cleanupQueue } from "./processors/cleanup.js";
+import { complianceExportQueue } from "./processors/compliance-export.js";
 
 type DataRetentionJobData = {
   type:
@@ -64,6 +67,56 @@ async function runCleanup() {
   }
 }
 
+async function runComplianceExport() {
+  logger.info("Running scheduled compliance export");
+  const env = loadEnv();
+  const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+
+  const endDate = new Date();
+  const startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+
+  const types: ("messages" | "audit_logs")[] = ["messages", "audit_logs"];
+  for (const type of types) {
+    try {
+      const { data: record, error } = await supabase
+        .from("compliance_exports")
+        .insert({
+          type,
+          date_from: startDate.toISOString(),
+          date_to: endDate.toISOString(),
+          status: "pending",
+          row_count: 0,
+        })
+        .select("id")
+        .single();
+
+      if (error || !record) {
+        logger.error({ type, error }, "Failed to create export record");
+        continue;
+      }
+
+      await complianceExportQueue.add(
+        "compliance-export",
+        {
+          type,
+          dateFrom: startDate.toISOString(),
+          dateTo: endDate.toISOString(),
+          exportId: record.id,
+        },
+        {
+          removeOnComplete: { age: 3600 },
+          removeOnFail: { age: 86400 },
+        },
+      );
+      logger.debug({ type, exportId: record.id }, "Enqueued compliance export");
+    } catch (err) {
+      logger.error({ type, error: String(err) }, "Failed to enqueue compliance export");
+    }
+  }
+}
+
 export function startScheduler() {
   runDataRetention().catch((err) =>
     logger.error({ error: String(err) }, "Initial data retention run failed"),
@@ -86,5 +139,20 @@ export function startScheduler() {
     6 * 60 * 60 * 1000,
   );
 
-  logger.info("Maintenance scheduler started (retention: 24h, cleanup: 6h)");
+  runComplianceExport().catch((err) =>
+    logger.error({ error: String(err) }, "Initial compliance export run failed"),
+  );
+
+  setInterval(
+    () => {
+      runComplianceExport().catch((err) =>
+        logger.error({ error: String(err) }, "Compliance export run failed"),
+      );
+    },
+    24 * 60 * 60 * 1000,
+  );
+
+  logger.info(
+    "Maintenance scheduler started (retention: 24h, cleanup: 6h, compliance export: 24h)",
+  );
 }

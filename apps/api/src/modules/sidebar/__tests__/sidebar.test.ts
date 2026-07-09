@@ -16,13 +16,25 @@ type MockChain = { [key: string]: any; then: (fn: (v: unknown) => unknown) => Pr
 function createChain(result: unknown): MockChain {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "in", "order", "limit", "single",
-    "insert", "update", "delete", "is", "or", "gt", "lt", "contains", "lte",
+    "select",
+    "eq",
+    "in",
+    "order",
+    "limit",
+    "single",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
+    "contains",
+    "lte",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve(result).then(onfulfilled);
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
   return chain;
 }
 
@@ -95,9 +107,7 @@ describe("sidebar categories routes", () => {
         error: null,
       });
       const asgnChain = createChain({
-        data: [
-          { id: "asgn-1", category_id: "cat-1", channel_id: "ch-1", sort_order: 0 },
-        ],
+        data: [{ id: "asgn-1", category_id: "cat-1", channel_id: "ch-1", sort_order: 0 }],
         error: null,
       });
       const from = vi.fn().mockReturnValueOnce(catChain).mockReturnValueOnce(asgnChain);
@@ -139,7 +149,7 @@ describe("sidebar categories routes", () => {
 
       const handler = findHandler("post", "/");
       const req = mockReq({
-        body: { workspace_id: "ws-1", name: "New Category" },
+        body: { workspace_id: "11111111-1111-1111-1111-111111111111", name: "New Category" },
         supabase: { from },
       });
       const res = mockRes();
@@ -206,7 +216,12 @@ describe("sidebar categories routes", () => {
 
       const handler = findHandler("patch", "/reorder");
       const req = mockReq({
-        body: { categoryIds: ["cat-1", "cat-2"] },
+        body: {
+          categoryIds: [
+            "11111111-1111-1111-1111-111111111111",
+            "22222222-2222-2222-2222-222222222222",
+          ],
+        },
         supabase: { from },
       });
       const res = mockRes();
@@ -238,7 +253,8 @@ describe("sidebar categories routes", () => {
         data: { id: "asgn-new", category_id: "cat-1", channel_id: "ch-2", sort_order: 1 },
         error: null,
       });
-      const from = vi.fn()
+      const from = vi
+        .fn()
         .mockReturnValueOnce(catCheckChain)
         .mockReturnValueOnce(sortChain)
         .mockReturnValueOnce(insertChain);
@@ -246,7 +262,7 @@ describe("sidebar categories routes", () => {
       const handler = findHandler("post", "/:id/assignments");
       const req = mockReq({
         params: { id: "11111111-1111-1111-1111-111111111111" },
-        body: { channel_id: "ch-2" },
+        body: { channel_id: "22222222-2222-2222-2222-222222222222" },
         supabase: { from },
       });
       const res = mockRes();

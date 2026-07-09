@@ -51,6 +51,7 @@ describe("errorHandler middleware", () => {
       error: {
         code: "INTERNAL_ERROR",
         message: "An unexpected error occurred",
+        requestId: "req-123",
       },
     });
   });
@@ -88,7 +89,7 @@ describe("errorHandler middleware", () => {
       requestId: "req-123",
       message: "dev error",
       name: "Error",
-      stack: expect.any(String),
+      stack: undefined,
     });
 
     process.env.NODE_ENV = prevEnv;
@@ -104,7 +105,7 @@ describe("errorHandler middleware", () => {
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({
-      error: { code: "NOT_FOUND", message: "Not found" },
+      error: { code: "NOT_FOUND", message: "Not found", requestId: "req-123" },
     });
   });
 
@@ -118,7 +119,7 @@ describe("errorHandler middleware", () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
-      error: { code: "INTERNAL_ERROR", message: "Server error" },
+      error: { code: "INTERNAL_ERROR", message: "Server error", requestId: "req-123" },
     });
   });
 
@@ -132,7 +133,7 @@ describe("errorHandler middleware", () => {
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({
-      error: { code: "FORBIDDEN", message: "Forbidden" },
+      error: { code: "FORBIDDEN", message: "Forbidden", requestId: "req-123" },
     });
   });
 
@@ -146,7 +147,7 @@ describe("errorHandler middleware", () => {
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
-      error: { code: "UNAUTHORIZED", message: "Unauthorized" },
+      error: { code: "UNAUTHORIZED", message: "Unauthorized", requestId: "req-123" },
     });
   });
 
@@ -185,7 +186,11 @@ describe("errorHandler middleware", () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
-      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
+        requestId: "req-123",
+      },
     });
   });
 
@@ -198,7 +203,7 @@ describe("errorHandler middleware", () => {
     errorHandler(err, req, res, next);
 
     expect(res.json).toHaveBeenCalledWith({
-      error: { code: "NOT_FOUND", message: "Not found" },
+      error: { code: "NOT_FOUND", message: "Not found", requestId: "req-123" },
     });
   });
 
@@ -211,7 +216,11 @@ describe("errorHandler middleware", () => {
     errorHandler(err, req, res, next);
 
     expect(res.json).toHaveBeenCalledWith({
-      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
+        requestId: "req-123",
+      },
     });
   });
 });

@@ -79,7 +79,6 @@ CREATE OR REPLACE FUNCTION public.process_webhook_retries()
 RETURNS INT AS $$
 DECLARE
   processed INT := 0;
-  delivery RECORD;
 BEGIN
   FOR delivery IN
     SELECT * FROM public.webhook_deliveries

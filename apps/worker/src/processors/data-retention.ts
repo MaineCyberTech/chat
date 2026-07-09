@@ -68,7 +68,7 @@ async function retainMessages(
 async function retainAuditLogs(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -101,7 +101,7 @@ async function retainAuditLogs(
 async function retainSoftDeletedChannels(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -138,7 +138,7 @@ async function retainSoftDeletedChannels(
 async function retainConsentLogs(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -164,17 +164,14 @@ async function retainConsentLogs(
     return 0;
   }
 
-  logger.info(
-    { count: ids.length, olderThanDays },
-    "Data retention: cleaned up old consent logs",
-  );
+  logger.info({ count: ids.length, olderThanDays }, "Data retention: cleaned up old consent logs");
   return ids.length;
 }
 
 async function retainNotifications(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -200,17 +197,14 @@ async function retainNotifications(
     return 0;
   }
 
-  logger.info(
-    { count: ids.length, olderThanDays },
-    "Data retention: cleaned up old notifications",
-  );
+  logger.info({ count: ids.length, olderThanDays }, "Data retention: cleaned up old notifications");
   return ids.length;
 }
 
 async function retainSoftDeletedWorkspaces(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -301,7 +295,9 @@ export function registerDataRetentionProcessor() {
       return await Promise.race([
         work(),
         new Promise<never>((_, reject) => {
-          signal.addEventListener("abort", () => reject(new Error("Job timed out after 30s")), { once: true });
+          signal.addEventListener("abort", () => reject(new Error("Job timed out after 30s")), {
+            once: true,
+          });
         }),
       ]);
     },
