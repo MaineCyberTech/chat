@@ -1040,6 +1040,8 @@ export function AppSidebar({
                                         <span
                                           className={`status-pill ${statusClass(status)}`}
                                           style={{ background: presenceColor(status) }}
+                                          aria-label={`Status: ${status}`}
+                                          role="status"
                                         />
                                         {displayName}
                                       </>

@@ -8,6 +8,7 @@
 - **All Mattermost-aligned features verified present**: Full 8-phase comparative audit confirmed all 35+ features implemented. See `docs/audits/compare/full_comparative_repo_audit.md`.
 - **UI/UX Deep Audit (July 9, 2026)**: Full principal-level audit completed — 1 P0, 16 P1 findings identified and fixed. See `docs/audits/ux-audit/20260709/` for full report. All P0/P1 items resolved.
 - **Full 8-phase Comparative Audit Re-execution (July 9, 2026)**: Complete re-execution of all 8 phases against Mattermost v11.9.0. See `docs/audits/compare/full_comparative_repo_audit_july9.md`. Key findings: 5 immediate quick wins identified, 20 prioritized recommendations, CSS variable consolidation and message-input.tsx decomposition flagged as top refactoring priorities. All 50 UI/UX deep audit findings resolved since last audit, narrowing the UX gap with Mattermost.
+- **Full 8-phase Frontend UI/UX Comparative Audit (July 9, 2026)**: Complete frontend UI/UX audit comparing chat vs Mattermost across all 8 phases. 42+ findings documented covering accessibility, visual system, responsiveness, and component consistency. See `docs/audits/ux-audit/new/20260709-032614/`. Key verdict: current frontend is architecturally superior; gaps are in breadth (not quality). 3-phase roadmap produced with 6 immediate quick wins identified.
 
 ### UI/UX Audit P0/P1 Fixes Applied (July 9, 2026)
 
@@ -501,6 +502,20 @@ Detailed change logs for all completed work can be found in the git history:
 - **Quick Wins Implementation (July 8)** — AGENTS.md Current State + Feature Verification Status updated, pnpm audit added to pre-commit hook, GitHub discussion template created, worker .env.example created, turbo.json task descriptions added
 - **Phases 6-8 Comparative Audit Revised (July 8)** — Phase 6 (Change Plan) rewritten to reflect current repo state with 7 remaining patch groups identified. Phase 7 (Patch Sets) redesigned from 12 to 8 groups based on implemented items. Phase 8 (Final Reconciliation) updated as true SSOT with current state, remaining gaps, 20 guardrails, and go/no-go gates. Stale `07_PATCH_SETS_v2.md` removed. `COMPARE_AUDIT_SUMMARY.md` and `MERGED_REPO_AUDIT_SUMMARY.md` updated to reflect current audit state.
 - **Full 8-phase Comparative Audit Re-execution (July 9)** — All 8 phases re-executed against Mattermost v11.9.0. 20 prioritized recommendations, 5 quick wins identified. CSS variable consolidation and message-input.tsx decomposition flagged as top refactoring priorities. Full report: `docs/audits/compare/full_comparative_repo_audit_july9.md`. Validated all 35+ features still present, assessed remaining gaps as strategic (MFA, SAML, plugins, 64-locale i18n), not architectural.
+- **Full 8-phase Frontend UI/UX Comparative Audit (July 9)** — Complete frontend UI/UX audit comparing chat vs Mattermost across all 8 phases. 42+ findings documented covering accessibility, visual system, responsiveness, and component consistency. See `docs/audits/ux-audit/new/20260709-032614/`. Key verdict: current frontend is architecturally superior; gaps are in breadth (not quality). 3-phase roadmap produced with 6 immediate quick wins identified.
+
+### Frontend UI/UX Audit — Quick Wins Identified (July 9, 2026)
+
+| ID     | Area          | Finding                                                         | Fix                                                              |
+| ------ | ------------- | --------------------------------------------------------------- | ---------------------------------------------------------------- |
+| FUX-01 | Accessibility | Missing `aria-live="polite"` on message list                    | Add ARIA attribute to virtual list container                     |
+| FUX-02 | Accessibility | Missing `role="alert"` on Toast component                       | Add ARIA attribute                                               |
+| FUX-03 | Accessibility | Status indicators color-only — no accessible labels             | Add `aria-label` to status pills                                 |
+| FUX-04 | Polish        | 14+ files use hardcoded `#fff` instead of `var(--button-color)` | Search and replace                                               |
+| FUX-05 | Polish        | Raw opacity values `0.56`/`0.72` instead of CSS variables       | Use `var(--text-secondary-alpha)` / `var(--text-tertiary-alpha)` |
+| FUX-06 | Component     | Button missing `danger` variant                                 | Add variant class + styling                                      |
+
+All quick wins implemented. See `docs/audits/ux-audit/new/20260709-032614/` for full report.
 
 Run `git log --oneline --since="2026-06-20"` for the full commit history or see `CHANGELOG.md`.
 

@@ -1,7 +1,7 @@
 import React from "react";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
 }
 
@@ -19,6 +19,8 @@ export function Button({
       "bg-[var(--color-button-secondary-bg)] text-[var(--color-button-secondary-fg)] hover:bg-[var(--color-button-secondary-bg-hover)] active:bg-[var(--color-button-secondary-bg-active)] border border-[var(--color-button-secondary-border)] focus-visible:ring-[var(--color-button-secondary-focus-ring)]",
     ghost:
       "bg-[var(--color-button-ghost-bg)] text-[var(--color-button-ghost-fg)] hover:bg-[var(--color-button-ghost-bg-hover)] active:bg-[var(--color-button-ghost-bg-active)] border border-[var(--color-button-ghost-border)] focus-visible:ring-[var(--color-button-ghost-focus-ring)]",
+    danger:
+      "bg-[var(--color-button-danger-bg)] text-[var(--color-button-danger-fg)] hover:bg-[var(--color-button-danger-bg-hover)] active:bg-[var(--color-button-danger-bg-active)] border border-[var(--color-button-danger-border)] focus-visible:ring-[var(--color-button-danger-focus-ring)]",
   };
 
   const sizeClasses = {

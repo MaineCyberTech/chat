@@ -172,9 +172,7 @@ export function MessageList({
           .get<{ reactions: Record<string, Reaction[]> }>(
             `/reactions/batch?message_ids=${chunk.join(",")}`,
           )
-          .then((res) =>
-            Object.entries(res.reactions).map(([id, r]) => ({ id, reactions: r })),
-          )
+          .then((res) => Object.entries(res.reactions).map(([id, r]) => ({ id, reactions: r })))
           .catch(() =>
             Promise.all(
               chunk.map((id) =>
@@ -387,72 +385,79 @@ export function MessageList({
 
   return (
     <>
-      <div id="post-list" ref={listRef} style={{ overflow: "auto", flex: 1 }}>
+      <div
+        id="post-list"
+        ref={listRef}
+        role="log"
+        aria-live="polite"
+        aria-label="Message list"
+        style={{ overflow: "auto", flex: 1 }}
+      >
         {loadingOlder && (
-            <div className="flex justify-center py-3">
-              <div
-                className="h-5 w-5 animate-spin rounded-full border-2"
-                style={{
-                  borderColor: "rgba(var(--center-channel-color-rgb), 0.3)",
-                  borderTopColor: "transparent",
-                }}
-              />
-            </div>
-          )}
-          <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
-            {virtualizer.getVirtualItems().map((virtualRow) => {
-              const msg = messagesWithMeta[virtualRow.index];
-              if (!msg) return null;
-              return (
-                <div
-                  key={msg.id}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: virtualRow.size,
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                  ref={virtualizer.measureElement}
-                >
-                  <MessageItem
-                    msg={msg}
-                    currentUserId={currentUserId}
-                    profiles={profiles}
-                    editingId={editingId}
-                    editContent={editContent}
-                    reactions={reactions}
-                    pickerMessageId={pickerMessageId}
-                    editError={editError}
-                    replyCounts={replyCounts ?? new Map()}
-                    sendingIds={sendingIds}
-                    flaggedMessages={flaggedMsgs}
-                    onReply={onReply}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onThreadOpen={onThreadOpen}
-                    onStartEdit={(m) => startEdit(m)}
-                    onMessageContextMenu={handleContextMenu}
-                    onMessageTouchStart={handleTouchStart}
-                    onMessageTouchEnd={handleTouchEnd}
-                    onMessageTouchMove={handleTouchMove}
-                    onSubmitEdit={submitEdit}
-                    onCancelEdit={handleCancelEdit}
-                    onSetEditContent={setEditContent}
-                    onToggleReaction={toggleReaction}
-                    onToggleFlag={toggleFlag}
-                    onSetPickerMessageId={setPickerMessageId}
-                    onSetDeleteConfirmId={handleSetDeleteConfirmId}
-                    sendErrors={sendErrors}
-                    onRetry={onRetry}
-                  />
-                </div>
-              );
-            })}
+          <div className="flex justify-center py-3">
+            <div
+              className="h-5 w-5 animate-spin rounded-full border-2"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.3)",
+                borderTopColor: "transparent",
+              }}
+            />
           </div>
-          <div ref={bottomRef} />
+        )}
+        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const msg = messagesWithMeta[virtualRow.index];
+            if (!msg) return null;
+            return (
+              <div
+                key={msg.id}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: virtualRow.size,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+                ref={virtualizer.measureElement}
+              >
+                <MessageItem
+                  msg={msg}
+                  currentUserId={currentUserId}
+                  profiles={profiles}
+                  editingId={editingId}
+                  editContent={editContent}
+                  reactions={reactions}
+                  pickerMessageId={pickerMessageId}
+                  editError={editError}
+                  replyCounts={replyCounts ?? new Map()}
+                  sendingIds={sendingIds}
+                  flaggedMessages={flaggedMsgs}
+                  onReply={onReply}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onThreadOpen={onThreadOpen}
+                  onStartEdit={(m) => startEdit(m)}
+                  onMessageContextMenu={handleContextMenu}
+                  onMessageTouchStart={handleTouchStart}
+                  onMessageTouchEnd={handleTouchEnd}
+                  onMessageTouchMove={handleTouchMove}
+                  onSubmitEdit={submitEdit}
+                  onCancelEdit={handleCancelEdit}
+                  onSetEditContent={setEditContent}
+                  onToggleReaction={toggleReaction}
+                  onToggleFlag={toggleFlag}
+                  onSetPickerMessageId={setPickerMessageId}
+                  onSetDeleteConfirmId={handleSetDeleteConfirmId}
+                  sendErrors={sendErrors}
+                  onRetry={onRetry}
+                />
+              </div>
+            );
+          })}
         </div>
+        <div ref={bottomRef} />
+      </div>
 
       {showJumpButton && (
         <button

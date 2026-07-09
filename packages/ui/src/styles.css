@@ -62,6 +62,13 @@
   --color-button-ghost-border: transparent;
   --color-button-ghost-focus-ring: #737373;
 
+  --color-button-danger-bg: #dc2626;
+  --color-button-danger-bg-hover: #b91c1c;
+  --color-button-danger-bg-active: #991b1b;
+  --color-button-danger-fg: #ffffff;
+  --color-button-danger-border: #dc2626;
+  --color-button-danger-focus-ring: #dc2626;
+
   --color-input-bg: #ffffff;
   --color-input-border: #d4d4d4;
   --color-input-border-hover: #737373;
@@ -240,6 +247,13 @@ html.dark {
     --color-button-ghost-fg: #d4d4d4;
     --color-button-ghost-border: transparent;
     --color-button-ghost-focus-ring: #737373;
+
+    --color-button-danger-bg: #dc2626;
+    --color-button-danger-bg-hover: #b91c1c;
+    --color-button-danger-bg-active: #991b1b;
+    --color-button-danger-fg: #ffffff;
+    --color-button-danger-border: #dc2626;
+    --color-button-danger-focus-ring: #dc2626;
 
     --color-input-bg: #262626;
     --color-input-border: #404040;
