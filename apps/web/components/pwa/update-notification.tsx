@@ -26,10 +26,7 @@ export function UpdateNotification() {
           <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
             Update Available
           </p>
-          <p
-            className="mt-0.5 text-xs"
-            style={{ color: "var(--text-secondary)" }}
-          >
+          <p className="mt-0.5 text-xs" style={{ color: "var(--text-secondary)" }}>
             A new version of the app is ready. Refresh to update.
           </p>
         </div>

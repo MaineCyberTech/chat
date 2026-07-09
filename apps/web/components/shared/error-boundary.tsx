@@ -42,10 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <h2 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
             Something went wrong
           </h2>
-          <p
-            className="max-w-md text-sm"
-            style={{ color: "var(--text-secondary)" }}
-          >
+          <p className="max-w-md text-sm" style={{ color: "var(--text-secondary)" }}>
             An unexpected error occurred. Please try refreshing the page.
           </p>
           <Button onClick={() => window.location.reload()}>Refresh Page</Button>

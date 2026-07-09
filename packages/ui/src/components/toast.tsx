@@ -135,7 +135,9 @@ function Toast({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => vo
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
           <div className="flex-1">
-            <p className="text-sm font-medium text-[var(--color-foreground-primary)]">{toast.title}</p>
+            <p className="text-sm font-medium text-[var(--color-foreground-primary)]">
+              {toast.title}
+            </p>
             {toast.description && (
               <p className="mt-1 text-sm text-[var(--color-foreground-secondary)]">
                 {toast.description}

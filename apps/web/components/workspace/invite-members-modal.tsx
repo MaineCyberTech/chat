@@ -139,9 +139,7 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
           />
         </div>
         <div className="max-h-56 overflow-y-auto p-1">
-          {results.length === 0 && (
-            <EmptyState description="No members found" className="!py-0" />
-          )}
+          {results.length === 0 && <EmptyState description="No members found" className="!py-0" />}
           {results.map((m) => {
             const isSelected = selected.has(m.user_id);
             return (
@@ -173,21 +171,14 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
                   <p className="truncate font-medium text-[var(--center-channel-color)]">
                     {m.display_name ?? m.email.split("@")[0]}
                   </p>
-                  <p
-                    className="truncate text-xs"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
+                  <p className="truncate text-xs" style={{ color: "var(--text-tertiary)" }}>
                     {m.email}
                   </p>
                 </div>
                 {isSelected ? (
                   <X size={14} className="shrink-0" style={{ color: "var(--button-bg)" }} />
                 ) : (
-                  <Plus
-                    size={14}
-                    className="shrink-0"
-                    style={{ color: "var(--text-tertiary)" }}
-                  />
+                  <Plus size={14} className="shrink-0" style={{ color: "var(--text-tertiary)" }} />
                 )}
               </button>
             );

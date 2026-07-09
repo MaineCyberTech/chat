@@ -19,10 +19,7 @@ export function LandingShell({ onGetStarted, onLearnMore }: Props) {
         >
           MaineCyberTech Chat
         </h1>
-        <p
-          className="max-w-md text-base md:text-lg"
-          style={{ color: "var(--text-secondary)" }}
-        >
+        <p className="max-w-md text-base md:text-lg" style={{ color: "var(--text-secondary)" }}>
           Real-time workspace communication, inspired by the best.
         </p>
       </div>

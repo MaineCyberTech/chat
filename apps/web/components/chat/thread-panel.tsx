@@ -251,10 +251,7 @@ export function ThreadPanel({
             Thread
           </h2>
           {participants.length > 0 && (
-            <span
-              className="text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
               {participants.length} participant{participants.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -289,10 +286,7 @@ export function ThreadPanel({
             <div className="min-w-0">
               <p className="text-xs font-medium" style={{ color: "var(--center-channel-color)" }}>
                 {authorName(parentMessage.user_id, profiles)}
-                <span
-                  className="ml-2"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <span className="ml-2" style={{ color: "var(--text-tertiary)" }}>
                   {formatTime(parentMessage.created_at)}
                 </span>
               </p>
@@ -303,10 +297,7 @@ export function ThreadPanel({
                 {parentMessage.content}
               </p>
               {parentMessage.edited_at && (
-                <p
-                  className="mt-0.5 text-xs"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <p className="mt-0.5 text-xs" style={{ color: "var(--text-tertiary)" }}>
                   (edited)
                 </p>
               )}
@@ -349,10 +340,7 @@ export function ThreadPanel({
                 ))}
               </div>
             ) : replies.length === 0 ? (
-              <p
-                className="px-4 text-center text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="px-4 text-center text-xs" style={{ color: "var(--text-tertiary)" }}>
                 No replies yet
               </p>
             ) : (
@@ -378,10 +366,7 @@ export function ThreadPanel({
                             style={{ color: "var(--center-channel-color)" }}
                           >
                             {name}
-                            <span
-                              className="ml-2"
-                              style={{ color: "var(--text-tertiary)" }}
-                            >
+                            <span className="ml-2" style={{ color: "var(--text-tertiary)" }}>
                               {formatTime(reply.created_at)}
                             </span>
                           </p>
@@ -434,10 +419,7 @@ export function ThreadPanel({
                             </p>
                           )}
                           {reply.edited_at && (
-                            <p
-                              className="mt-0.5 text-xs"
-                              style={{ color: "var(--text-tertiary)" }}
-                            >
+                            <p className="mt-0.5 text-xs" style={{ color: "var(--text-tertiary)" }}>
                               (edited)
                             </p>
                           )}
@@ -483,10 +465,7 @@ export function ThreadPanel({
                                   className="flex h-5 w-5 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
                                   aria-label="Add reaction"
                                 >
-                                  <Smile
-                                    size={12}
-                                    style={{ color: "var(--text-tertiary)" }}
-                                  />
+                                  <Smile size={12} style={{ color: "var(--text-tertiary)" }} />
                                 </button>
                                 {pickerMessageId === reply.id && (
                                   <EmojiPicker
@@ -547,10 +526,7 @@ export function ThreadPanel({
               >
                 Delete reply?
               </h3>
-              <p
-                className="mt-1 text-xs"
-                style={{ color: "var(--text-secondary)" }}
-              >
+              <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>
                 This cannot be undone.
               </p>
               {deleteError && (

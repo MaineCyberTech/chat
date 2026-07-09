@@ -72,10 +72,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
           onClick={() => setTab("members")}
           className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${tab === "members" ? "border-b-2" : ""}`}
           style={{
-            color:
-              tab === "members"
-                ? "var(--button-bg)"
-                : "var(--text-tertiary)",
+            color: tab === "members" ? "var(--button-bg)" : "var(--text-tertiary)",
             borderColor: tab === "members" ? "var(--button-bg)" : "transparent",
           }}
         >
@@ -85,8 +82,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
           onClick={() => setTab("pins")}
           className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${tab === "pins" ? "border-b-2" : ""}`}
           style={{
-            color:
-              tab === "pins" ? "var(--button-bg)" : "var(--text-tertiary)",
+            color: tab === "pins" ? "var(--button-bg)" : "var(--text-tertiary)",
             borderColor: tab === "pins" ? "var(--button-bg)" : "transparent",
           }}
         >
@@ -96,10 +92,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
           onClick={() => setTab("bookmarks")}
           className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${tab === "bookmarks" ? "border-b-2" : ""}`}
           style={{
-            color:
-              tab === "bookmarks"
-                ? "var(--button-bg)"
-                : "var(--text-tertiary)",
+            color: tab === "bookmarks" ? "var(--button-bg)" : "var(--text-tertiary)",
             borderColor: tab === "bookmarks" ? "var(--button-bg)" : "transparent",
           }}
         >
@@ -163,10 +156,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
                 >
                   {msg.content}
                 </p>
-                <p
-                  className="mt-0.5 text-[10px]"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <p className="mt-0.5 text-[10px]" style={{ color: "var(--text-tertiary)" }}>
                   {new Date(msg.created_at).toLocaleDateString()}
                 </p>
               </div>

@@ -80,7 +80,10 @@ export default function SavedMessagesPage() {
         <h1 className="text-xl font-bold text-[var(--center-channel-color)]">Saved Messages</h1>
       </div>
       {messages.length === 0 && (
-        <EmptyState description="No saved messages yet. Right-click or long-press a message and select \u201CCopy link\u201D or use reactions to keep track." className="!py-0" />
+        <EmptyState
+          description="No saved messages yet. Right-click or long-press a message and select \u201CCopy link\u201D or use reactions to keep track."
+          className="!py-0"
+        />
       )}
       <div className="space-y-2">
         {messages.map((msg) => (
@@ -98,16 +101,10 @@ export default function SavedMessagesPage() {
               <p className="text-xs font-medium text-[var(--center-channel-color)]">
                 {name(msg.user_id)}
               </p>
-              <p
-                className="mt-0.5 line-clamp-2 text-sm"
-                style={{ color: "var(--text-secondary)" }}
-              >
+              <p className="mt-0.5 line-clamp-2 text-sm" style={{ color: "var(--text-secondary)" }}>
                 {msg.content}
               </p>
-              <p
-                className="mt-0.5 text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="mt-0.5 text-xs" style={{ color: "var(--text-tertiary)" }}>
                 {new Date(msg.created_at).toLocaleDateString()}
               </p>
             </div>

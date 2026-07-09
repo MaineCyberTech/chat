@@ -130,10 +130,7 @@ export const MessageItem = React.memo(function MessageItem({
   if (isSystem) {
     return (
       <div className="mm-post text-center" style={{ paddingTop: 4, paddingBottom: 4 }}>
-        <span
-          className="text-xs italic"
-          style={{ color: "var(--text-tertiary)" }}
-        >
+        <span className="text-xs italic" style={{ color: "var(--text-tertiary)" }}>
           {msg.content}
         </span>
       </div>
@@ -225,9 +222,7 @@ export const MessageItem = React.memo(function MessageItem({
                 >
                   {name}
                 </span>
-                <span
-                  style={{ fontSize: 11, color: "var(--text-tertiary)" }}
-                >
+                <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
                   {formatTime(msg.created_at)}
                 </span>
               </div>
@@ -286,10 +281,7 @@ export const MessageItem = React.memo(function MessageItem({
                   onTouchMove={onMessageTouchMove}
                 >
                   {msg.parent_id && (
-                    <p
-                      className="mb-0.5 text-xs italic"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
+                    <p className="mb-0.5 text-xs italic" style={{ color: "var(--text-tertiary)" }}>
                       <Reply size={10} className="mr-0.5 inline" /> Reply
                     </p>
                   )}
@@ -380,10 +372,7 @@ export const MessageItem = React.memo(function MessageItem({
                     </p>
                   )}
                   {sendingIds?.has(msg.id) && !isFailed && (
-                    <p
-                      className="mt-0.5 text-xs italic"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
+                    <p className="mt-0.5 text-xs italic" style={{ color: "var(--text-tertiary)" }}>
                       sending...
                     </p>
                   )}
@@ -499,9 +488,7 @@ export const MessageItem = React.memo(function MessageItem({
                     }}
                   >
                     <span>{emoji}</span>
-                    <span style={{ color: "var(--text-secondary)" }}>
-                      {count}
-                    </span>
+                    <span style={{ color: "var(--text-secondary)" }}>{count}</span>
                   </button>
                 ))}
               </div>

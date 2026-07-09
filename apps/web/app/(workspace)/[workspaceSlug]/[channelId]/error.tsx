@@ -20,10 +20,7 @@ export default function ChannelError({
       <h1 className="text-xl font-bold" style={{ color: "var(--center-channel-color)" }}>
         Failed to load channel
       </h1>
-      <p
-        className="max-w-md text-sm"
-        style={{ color: "var(--text-secondary)" }}
-      >
+      <p className="max-w-md text-sm" style={{ color: "var(--text-secondary)" }}>
         An unexpected error occurred while loading this channel. Please try again.
       </p>
       <Button onClick={() => reset()}>Try Again</Button>

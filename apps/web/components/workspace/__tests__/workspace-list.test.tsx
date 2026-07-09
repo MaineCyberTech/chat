@@ -14,6 +14,7 @@ vi.mock("@/lib/api", () => ({
 
 vi.mock("@chat/ui", () => ({
   Skeleton: () => <div data-testid="skeleton" />,
+  EmptyState: ({ description }: { description?: string }) => <div>{description}</div>,
   useToast: () => ({ addToast: vi.fn() }),
 }));
 

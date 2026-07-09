@@ -453,36 +453,39 @@ export function ChatView({
     }
   }, []);
 
-  const handleDelete = useCallback(async (messageId: string) => {
-    const timer = setTimeout(async () => {
-      pendingDeletesRef.current.delete(messageId);
-      try {
-        await api.delete(`/messages/${messageId}`);
-      } catch {
-        addToast({
-          title: "Error",
-          description: "Failed to delete message.",
-          variant: "error",
-        });
-      }
-    }, 5000);
-    pendingDeletesRef.current.set(messageId, timer);
-    addToast({
-      title: "Message deleted",
-      variant: "default",
-      duration: 5000,
-      action: {
-        label: "Undo",
-        onClick: () => {
-          const t = pendingDeletesRef.current.get(messageId);
-          if (t) {
-            clearTimeout(t);
-            pendingDeletesRef.current.delete(messageId);
-          }
+  const handleDelete = useCallback(
+    async (messageId: string) => {
+      const timer = setTimeout(async () => {
+        pendingDeletesRef.current.delete(messageId);
+        try {
+          await api.delete(`/messages/${messageId}`);
+        } catch {
+          addToast({
+            title: "Error",
+            description: "Failed to delete message.",
+            variant: "error",
+          });
+        }
+      }, 5000);
+      pendingDeletesRef.current.set(messageId, timer);
+      addToast({
+        title: "Message deleted",
+        variant: "default",
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            const t = pendingDeletesRef.current.get(messageId);
+            if (t) {
+              clearTimeout(t);
+              pendingDeletesRef.current.delete(messageId);
+            }
+          },
         },
-      },
-    });
-  }, [addToast]);
+      });
+    },
+    [addToast],
+  );
 
   const handleRetry = useCallback(
     async (messageId: string) => {
@@ -688,10 +691,7 @@ export function ChatView({
               </div>
             )}
             {channelTopic && (
-              <p
-                className="truncate text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="truncate text-xs" style={{ color: "var(--text-tertiary)" }}>
                 {channelTopic}
               </p>
             )}
@@ -795,10 +795,7 @@ export function ChatView({
               background: "rgba(var(--center-channel-color-rgb), 0.04)",
             }}
           >
-            <span
-              className="min-w-0 truncate"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <span className="min-w-0 truncate" style={{ color: "var(--text-secondary)" }}>
               Replying to{" "}
               {profiles.get(replyTo.user_id)?.display_name ?? replyTo.user_id.slice(0, 8)}
             </span>

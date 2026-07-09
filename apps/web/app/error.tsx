@@ -20,10 +20,7 @@ export default function Error({
       <h1 className="text-2xl font-bold" style={{ color: "var(--center-channel-color)" }}>
         Something went wrong
       </h1>
-      <p
-        className="max-w-md text-sm"
-        style={{ color: "var(--text-secondary)" }}
-      >
+      <p className="max-w-md text-sm" style={{ color: "var(--text-secondary)" }}>
         An unexpected error occurred. Please try again.
       </p>
       <Button onClick={() => reset()}>Try Again</Button>

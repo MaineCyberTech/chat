@@ -63,9 +63,7 @@ export function CreateWorkspaceDialog({ onCreated, children }: Props) {
           onClick={() => setOpen(true)}
           className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors"
           style={{
-            color: triggerHovered
-              ? "var(--center-channel-color)"
-              : "var(--text-tertiary)",
+            color: triggerHovered ? "var(--center-channel-color)" : "var(--text-tertiary)",
             backgroundColor: triggerHovered
               ? "rgba(var(--center-channel-color-rgb), 0.08)"
               : undefined,

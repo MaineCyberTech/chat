@@ -121,10 +121,7 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
                 <p className="text-sm font-medium text-[var(--center-channel-color)]">
                   Notifications Enabled
                 </p>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
                   You'll receive push notifications for replies and mentions.
                 </p>
               </div>

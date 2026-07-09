@@ -69,10 +69,7 @@ export function UserPickerModal({
         </div>
 
         {description && (
-          <p
-            className="px-4 pt-2 text-xs"
-            style={{ color: "var(--text-secondary)" }}
-          >
+          <p className="px-4 pt-2 text-xs" style={{ color: "var(--text-secondary)" }}>
             {description}
           </p>
         )}
@@ -128,9 +125,7 @@ export function UserPickerModal({
         </div>
 
         <div className="max-h-56 overflow-y-auto p-1">
-          {filtered.length === 0 && (
-            <EmptyState description="No users found" className="!py-0" />
-          )}
+          {filtered.length === 0 && <EmptyState description="No users found" className="!py-0" />}
           {filtered.map((u) => {
             const isSelected = selectedIds.has(u.id);
             return (
@@ -187,10 +182,7 @@ export function UserPickerModal({
           className="border-t px-4 py-3"
           style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
         >
-          <div
-            className="mb-2 text-xs"
-            style={{ color: "var(--text-tertiary)" }}
-          >
+          <div className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
             {selectedIds.size > 0
               ? `${selectedIds.size} user${selectedIds.size > 1 ? "s" : ""} selected`
               : "No users selected"}

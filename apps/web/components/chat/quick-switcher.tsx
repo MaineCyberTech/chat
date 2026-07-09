@@ -151,11 +151,7 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
           className="flex items-center gap-2 px-3 py-2"
           style={{ borderBottom: "1px solid rgba(var(--center-channel-color-rgb), 0.16)" }}
         >
-          <Search
-            size={16}
-            className="shrink-0"
-            style={{ color: "var(--text-tertiary)" }}
-          />
+          <Search size={16} className="shrink-0" style={{ color: "var(--text-tertiary)" }} />
           <input
             ref={inputRef}
             type="text"
@@ -178,7 +174,10 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
         </div>
         <div className="max-h-72 overflow-y-auto p-1">
           {totalItems === 0 && (
-            <EmptyState description={query ? "No results found" : "No channels available"} className="!py-0" />
+            <EmptyState
+              description={query ? "No results found" : "No channels available"}
+              className="!py-0"
+            />
           )}
           {filteredChannels.length > 0 && (
             <>
@@ -207,11 +206,7 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
                     color: "var(--center-channel-color)",
                   }}
                 >
-                  <Hash
-                    size={14}
-                    className="shrink-0"
-                    style={{ color: "var(--text-tertiary)" }}
-                  />
+                  <Hash size={14} className="shrink-0" style={{ color: "var(--text-tertiary)" }} />
                   <span className="min-w-0 truncate font-medium">{ch.name}</span>
                   {ch.topic && (
                     <span

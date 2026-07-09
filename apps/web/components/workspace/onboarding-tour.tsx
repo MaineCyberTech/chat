@@ -170,10 +170,7 @@ export function OnboardingTour() {
               }}
             />
           </div>
-          <span
-            className="text-xs font-medium"
-            style={{ color: "var(--text-secondary)" }}
-          >
+          <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
             {completedCount}/{totalTasks}
           </span>
         </div>
@@ -226,10 +223,7 @@ export function OnboardingTour() {
                     >
                       {task.label}
                     </p>
-                    <p
-                      className="mt-0.5 text-[11px]"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
+                    <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-tertiary)" }}>
                       {task.description}
                     </p>
                   </div>

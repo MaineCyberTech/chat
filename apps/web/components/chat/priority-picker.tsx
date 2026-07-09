@@ -71,20 +71,14 @@ export function PriorityPicker({ priority: current, show, onSelect, onClose: _on
         >
           <span
             style={{
-              color:
-                current === opt.key
-                  ? "var(--button-bg)"
-                  : "var(--text-tertiary)",
+              color: current === opt.key ? "var(--button-bg)" : "var(--text-tertiary)",
             }}
           >
             {opt.icon}
           </span>
           <div className="flex flex-col">
             <span className="text-xs font-medium">{opt.label}</span>
-            <span
-              className="text-[10px]"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
               {opt.description}
             </span>
           </div>

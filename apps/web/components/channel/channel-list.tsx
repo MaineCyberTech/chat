@@ -533,10 +533,7 @@ export function ChannelList({
             <h3 className="text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
               Delete channel?
             </h3>
-            <p
-              className="mt-1 text-xs"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>
               This will permanently delete the channel and all its messages.
             </p>
             {deleteError && (

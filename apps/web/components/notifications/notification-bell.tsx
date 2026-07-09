@@ -212,17 +212,11 @@ export function NotificationBell() {
                     {n.title}
                   </p>
                   {n.body && (
-                    <p
-                      className="mt-0.5 text-xs"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
+                    <p className="mt-0.5 text-xs" style={{ color: "var(--text-secondary)" }}>
                       {n.body}
                     </p>
                   )}
-                  <p
-                    className="mt-1 text-[10px]"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
+                  <p className="mt-1 text-[10px]" style={{ color: "var(--text-tertiary)" }}>
                     {new Date(n.created_at).toLocaleDateString()}
                   </p>
                 </div>

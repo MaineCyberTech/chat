@@ -16,7 +16,8 @@
       "description": "Run ESLint across all packages/apps. No dependencies on builds."
     },
     "typecheck": {
-      "description": "Run TypeScript type-checking (tsc --noEmit) across all packages/apps."
+      "description": "Run TypeScript type-checking (tsc --noEmit) across all packages/apps.",
+      "dependsOn": ["^build"]
     },
     "test": {
       "description": "Run test suites (vitest/jest). Depends on build to ensure compiled output exists.",

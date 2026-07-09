@@ -50,7 +50,7 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
   }
 
   if (workspaces.length === 0) {
-    return <EmptyState description="No workspaces yet" className="!py-0 px-2" />;
+    return <EmptyState description="No workspaces yet" className="px-2 !py-0" />;
   }
 
   return (
@@ -77,10 +77,7 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
                 className="mr-1 flex h-6 w-6 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
                 aria-label={`Delete workspace ${ws.name}`}
               >
-                <Trash2
-                  size={12}
-                  style={{ color: "var(--text-tertiary)" }}
-                />
+                <Trash2 size={12} style={{ color: "var(--text-tertiary)" }} />
               </button>
             </div>
           </li>
@@ -97,10 +94,7 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
             <h3 className="text-sm font-semibold text-[var(--center-channel-color)]">
               Delete workspace?
             </h3>
-            <p
-              className="mt-1 text-xs"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>
               This will permanently delete the workspace and all its channels and messages. This
               cannot be undone.
             </p>

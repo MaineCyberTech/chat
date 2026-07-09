@@ -10,10 +10,7 @@ export default function WorkspaceNotFound() {
       <h1 className="text-2xl font-bold" style={{ color: "var(--center-channel-color)" }}>
         Workspace not found
       </h1>
-      <p
-        className="max-w-md text-sm"
-        style={{ color: "var(--text-secondary)" }}
-      >
+      <p className="max-w-md text-sm" style={{ color: "var(--text-secondary)" }}>
         This workspace does not exist or you may not have access to it.
       </p>
       <Link href="/">

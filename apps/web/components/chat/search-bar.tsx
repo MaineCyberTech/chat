@@ -320,9 +320,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 background: showOperatorHint
                   ? "var(--button-bg)"
                   : "rgba(var(--center-channel-color-rgb), 0.08)",
-                color: showOperatorHint
-                  ? "var(--button-color)"
-                  : "var(--text-secondary)",
+                color: showOperatorHint ? "var(--button-color)" : "var(--text-secondary)",
                 borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
                 borderBottom: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
               }}
@@ -339,9 +337,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 background: showFilters
                   ? "var(--button-bg)"
                   : "rgba(var(--center-channel-color-rgb), 0.08)",
-                color: showFilters
-                  ? "var(--button-color)"
-                  : "var(--text-secondary)",
+                color: showFilters ? "var(--button-color)" : "var(--text-secondary)",
               }}
               aria-label="Toggle search filters"
               aria-pressed={showFilters}
@@ -401,10 +397,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 top: "100%",
               }}
             >
-              <p
-                className="mb-1 text-xs font-medium"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="mb-1 text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
                 File type suggestions
               </p>
               <div className="space-y-0.5">
@@ -441,9 +434,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                       >
                         {ext}
                       </code>
-                      <span style={{ color: "var(--text-tertiary)" }}>
-                        {desc}
-                      </span>
+                      <span style={{ color: "var(--text-tertiary)" }}>{desc}</span>
                     </button>
                   ))}
               </div>
@@ -459,10 +450,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 top: "100%",
               }}
             >
-              <p
-                className="mb-1 text-xs font-medium"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="mb-1 text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
                 File extension suggestions
               </p>
               <div className="space-y-1">
@@ -555,10 +543,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 top: "100%",
               }}
             >
-              <p
-                className="mb-1 text-xs font-medium"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="mb-1 text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
                 Search operators
               </p>
               <div className="space-y-0.5">
@@ -587,9 +572,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                     >
                       {op}
                     </code>
-                    <span style={{ color: "var(--text-tertiary)" }}>
-                      {desc}
-                    </span>
+                    <span style={{ color: "var(--text-tertiary)" }}>{desc}</span>
                   </button>
                 ))}
               </div>
@@ -600,10 +583,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       {showFilters && (
         <div className="mt-1 flex flex-wrap gap-2">
           <div className="min-w-[120px] flex-1">
-            <label
-              className="mb-0.5 block text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <label className="mb-0.5 block text-xs" style={{ color: "var(--text-tertiary)" }}>
               From
             </label>
             <input
@@ -619,10 +599,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             />
           </div>
           <div className="min-w-[120px] flex-1">
-            <label
-              className="mb-0.5 block text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <label className="mb-0.5 block text-xs" style={{ color: "var(--text-tertiary)" }}>
               To
             </label>
             <input
@@ -638,10 +615,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             />
           </div>
           <div className="min-w-[120px] flex-1">
-            <label
-              className="mb-0.5 block text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <label className="mb-0.5 block text-xs" style={{ color: "var(--text-tertiary)" }}>
               Author ID
             </label>
             <input
@@ -743,10 +717,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               }}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors"
               style={{
-                color:
-                  searchType === "messages"
-                    ? "var(--button-bg)"
-                    : "var(--text-tertiary)",
+                color: searchType === "messages" ? "var(--button-bg)" : "var(--text-tertiary)",
                 borderBottom:
                   searchType === "messages"
                     ? "2px solid var(--button-bg)"
@@ -765,10 +736,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               }}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors"
               style={{
-                color:
-                  searchType === "files"
-                    ? "var(--button-bg)"
-                    : "var(--text-tertiary)",
+                color: searchType === "files" ? "var(--button-bg)" : "var(--text-tertiary)",
                 borderBottom:
                   searchType === "files" ? "2px solid var(--button-bg)" : "2px solid transparent",
               }}
@@ -814,10 +782,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 <p className="text-sm break-words">
                   {highlightText(r.content.slice(0, 200), query)}
                 </p>
-                <p
-                  className="mt-0.5 text-xs"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <p className="mt-0.5 text-xs" style={{ color: "var(--text-tertiary)" }}>
                   {new Date(r.created_at).toLocaleDateString()}
                 </p>
               </Link>

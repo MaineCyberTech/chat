@@ -87,10 +87,7 @@ export function NotificationPreferencesModal({
         <h3 className="mb-2 text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
           Notification Preferences
         </h3>
-        <p
-          className="mb-4 text-xs"
-          style={{ color: "var(--text-secondary)" }}
-        >
+        <p className="mb-4 text-xs" style={{ color: "var(--text-secondary)" }}>
           Configure notifications for this channel
         </p>
 
@@ -121,10 +118,7 @@ export function NotificationPreferencesModal({
               </span>
               <div>
                 <div className="font-medium">{opt.label}</div>
-                <div
-                  className="text-xs"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                   {opt.desc}
                 </div>
               </div>

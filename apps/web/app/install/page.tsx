@@ -24,10 +24,7 @@ export default function InstallPage() {
           <h1 className="text-3xl font-bold tracking-tight text-[var(--center-channel-color)]">
             Already Installed
           </h1>
-          <p
-            className="max-w-md text-base"
-            style={{ color: "var(--text-secondary)" }}
-          >
+          <p className="max-w-md text-base" style={{ color: "var(--text-secondary)" }}>
             MaineCyberTech Chat is already installed on your device. You can open it from your home
             screen or app launcher.
           </p>
@@ -67,10 +64,7 @@ export default function InstallPage() {
                 >
                   {index + 1}
                 </span>
-                <p
-                  className="pt-0.5"
-                  style={{ color: "var(--text-secondary)" }}
-                >
+                <p className="pt-0.5" style={{ color: "var(--text-secondary)" }}>
                   {step}
                 </p>
               </div>
@@ -85,10 +79,7 @@ export default function InstallPage() {
 
           {!isInstallable && (
             <div className="text-center">
-              <p
-                className="text-sm"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
                 Your browser doesn&apos;t support automatic installation prompts. Follow the manual
                 steps above for your platform ({platform}).
               </p>
@@ -99,10 +90,7 @@ export default function InstallPage() {
             className="border-t pt-4"
             style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
           >
-            <p
-              className="text-center text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <p className="text-center text-xs" style={{ color: "var(--text-tertiary)" }}>
               <Link href="/" className="underline hover:text-[var(--center-channel-color)]">
                 â† Back to MaineCyberTech Chat
               </Link>

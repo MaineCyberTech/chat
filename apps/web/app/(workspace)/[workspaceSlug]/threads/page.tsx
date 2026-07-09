@@ -93,10 +93,7 @@ export default function ThreadsPage() {
   if (error) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
-        <p
-          className="mb-3 text-sm"
-          style={{ color: "var(--text-secondary)" }}
-        >
+        <p className="mb-3 text-sm" style={{ color: "var(--text-secondary)" }}>
           {error}
         </p>
         <button
@@ -122,7 +119,10 @@ export default function ThreadsPage() {
       </h1>
 
       {threads.length === 0 ? (
-        <EmptyState description="No threads yet. Reply to a message to start a thread." className="!py-0" />
+        <EmptyState
+          description="No threads yet. Reply to a message to start a thread."
+          className="!py-0"
+        />
       ) : (
         <div className="space-y-2">
           {threads.map((t) => {

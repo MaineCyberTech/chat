@@ -41,19 +41,14 @@ export function CodeBlock({ code, language }: Props) {
           backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)",
         }}
       >
-        <span
-          className="text-xs font-medium"
-          style={{ color: "var(--text-tertiary)" }}
-        >
+        <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
           {detectedLang}
         </span>
         <button
           onClick={handleCopy}
           className="flex items-center gap-1 rounded px-2 py-0.5 text-xs opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
           style={{
-            color: btnHovered
-              ? "var(--center-channel-color)"
-              : "var(--text-tertiary)",
+            color: btnHovered ? "var(--center-channel-color)" : "var(--text-tertiary)",
           }}
           onMouseEnter={() => setBtnHovered(true)}
           onMouseLeave={() => setBtnHovered(false)}

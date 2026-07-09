@@ -299,10 +299,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
       <div className="flex-1 overflow-y-auto px-1 py-1" style={{ scrollBehavior: "smooth" }}>
         {!search && category === null && recentEmojis.length > 0 && (
           <div className="mb-1">
-            <p
-              className="px-2 text-xs font-medium"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <p className="px-2 text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
               Recent
             </p>
             <div className="flex flex-wrap gap-0.5 px-1">

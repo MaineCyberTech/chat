@@ -46,10 +46,7 @@ export function InstallPrompt({ isOpen, onClose, userEmail }: InstallPromptProps
               >
                 {index + 1}
               </span>
-              <p
-                className="pt-0.5"
-                style={{ color: "var(--text-secondary)" }}
-              >
+              <p className="pt-0.5" style={{ color: "var(--text-secondary)" }}>
                 {step}
               </p>
             </div>
@@ -63,10 +60,7 @@ export function InstallPrompt({ isOpen, onClose, userEmail }: InstallPromptProps
         )}
 
         {userEmail && !isInstallable && !instructions.showButton && (
-          <p
-            className="text-center text-xs"
-            style={{ color: "var(--text-tertiary)" }}
-          >
+          <p className="text-center text-xs" style={{ color: "var(--text-tertiary)" }}>
             Already installed or using a browser that doesn't support installation prompts.
             {userEmail && " You're signed in, so your data will sync automatically."}
           </p>

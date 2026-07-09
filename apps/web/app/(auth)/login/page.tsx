@@ -60,9 +60,7 @@ export default function LoginPage() {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
         <div className="flex flex-col items-center gap-3 text-center">
-          <p style={{ color: "var(--text-secondary)" }}>
-            Unable to load your workspaces.
-          </p>
+          <p style={{ color: "var(--text-secondary)" }}>Unable to load your workspaces.</p>
           <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
             Please try refreshing the page.
           </p>
@@ -75,9 +73,7 @@ export default function LoginPage() {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
         <div className="flex flex-col items-center gap-3">
-          <p style={{ color: "var(--text-secondary)" }}>
-            Redirecting to your workspace...
-          </p>
+          <p style={{ color: "var(--text-secondary)" }}>Redirecting to your workspace...</p>
           <div
             className="h-1 w-32 overflow-hidden rounded-full"
             style={{ backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)" }}

@@ -92,10 +92,7 @@ export function AvatarUpload() {
               className="border-b px-4 py-2"
               style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
             >
-              <p
-                className="mb-1 text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="mb-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
                 Preview
               </p>
               <Image

@@ -203,9 +203,7 @@ export default function SearchPage() {
               background: showFilters
                 ? "var(--button-bg)"
                 : "rgba(var(--center-channel-color-rgb), 0.08)",
-              color: showFilters
-                ? "var(--button-color)"
-                : "var(--text-secondary)",
+              color: showFilters ? "var(--button-color)" : "var(--text-secondary)",
             }}
             aria-label="Toggle filters"
           >
@@ -288,10 +286,7 @@ export default function SearchPage() {
 
       {error ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <p
-            className="mb-3 text-sm"
-            style={{ color: "var(--text-secondary)" }}
-          >
+          <p className="mb-3 text-sm" style={{ color: "var(--text-secondary)" }}>
             {error}
           </p>
           <button
@@ -407,10 +402,7 @@ export default function SearchPage() {
               >
                 <SearchIcon size={24} style={{ color: "var(--button-bg)" }} />
               </div>
-              <p
-                className="text-sm"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
                 Type at least 2 characters to search
               </p>
             </div>

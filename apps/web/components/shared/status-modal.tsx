@@ -25,7 +25,18 @@ interface Props {
   onStatusChange: (status: StatusData | null) => void;
 }
 
-const PRESET_EMOJIS = ["ðŸ’¼", "ðŸ–ï¸", "ðŸš´", "ðŸ•", "ðŸ“ž", "ðŸŽ§", "âœˆï¸", "ðŸ ", "ðŸ’Š", "ðŸŽ‰"];
+const PRESET_EMOJIS = [
+  "ðŸ’¼",
+  "ðŸ–ï¸",
+  "ðŸš´",
+  "ðŸ•",
+  "ðŸ“ž",
+  "ðŸŽ§",
+  "âœˆï¸",
+  "ðŸ ",
+  "ðŸ’Š",
+  "ðŸŽ‰",
+];
 
 export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
   const [emoji, setEmoji] = useState(currentStatus?.emoji ?? "ðŸ’¬");
@@ -126,10 +137,7 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
           ))}
         </div>
         <div className="mb-3">
-          <p
-            className="mb-1 text-xs font-medium"
-            style={{ color: "var(--text-tertiary)" }}
-          >
+          <p className="mb-1 text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
             Clear after
           </p>
           <div className="flex flex-wrap gap-1">

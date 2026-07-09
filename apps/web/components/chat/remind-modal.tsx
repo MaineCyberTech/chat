@@ -85,10 +85,7 @@ export function RemindModal({ messageId, onClose }: Props) {
           className="mt-3 border-t pt-3"
           style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
         >
-          <p
-            className="mb-1 text-xs"
-            style={{ color: "var(--text-tertiary)" }}
-          >
+          <p className="mb-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
             Custom date/time
           </p>
           <input

@@ -277,10 +277,7 @@ export function LoginForm() {
 
       {isDev && (
         <div className="pt-2">
-          <p
-            className="mb-2 text-center text-xs"
-            style={{ color: "var(--text-tertiary)" }}
-          >
+          <p className="mb-2 text-center text-xs" style={{ color: "var(--text-tertiary)" }}>
             {t("auth.devNotice", "Local dev â€” no test accounts in production")}
           </p>
         </div>

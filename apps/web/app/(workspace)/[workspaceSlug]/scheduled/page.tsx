@@ -92,7 +92,10 @@ export default function ScheduledPostsPage() {
       </h1>
 
       {posts.length === 0 ? (
-        <EmptyState description="No scheduled messages. Schedule a message by clicking the clock icon in the message input." className="!py-0" />
+        <EmptyState
+          description="No scheduled messages. Schedule a message by clicking the clock icon in the message input."
+          className="!py-0"
+        />
       ) : (
         <div className="space-y-3">
           {posts.map((post) => {

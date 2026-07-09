@@ -10,10 +10,7 @@ export default function NotFound() {
       <h1 className="text-2xl font-bold" style={{ color: "var(--center-channel-color)" }}>
         Page not found
       </h1>
-      <p
-        className="max-w-md text-sm"
-        style={{ color: "var(--text-secondary)" }}
-      >
+      <p className="max-w-md text-sm" style={{ color: "var(--text-secondary)" }}>
         The page you are looking for does not exist.
       </p>
       <Link href="/">

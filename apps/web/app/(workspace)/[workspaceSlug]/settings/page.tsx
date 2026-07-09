@@ -288,10 +288,7 @@ export default function SettingsPage() {
   if (error) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
-        <p
-          className="mb-3 text-sm"
-          style={{ color: "var(--text-secondary)" }}
-        >
+        <p className="mb-3 text-sm" style={{ color: "var(--text-secondary)" }}>
           {error}
         </p>
         <button
@@ -510,10 +507,7 @@ export default function SettingsPage() {
             >
               Trigger words
             </label>
-            <p
-              className="mb-2 text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
               Get notified when these words are mentioned in any channel
             </p>
             <div className="mb-3 flex gap-2">
@@ -544,10 +538,7 @@ export default function SettingsPage() {
               </Button>
             </div>
             {triggerLoading ? (
-              <p
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                 Loading...
               </p>
             ) : triggerWords.length === 0 ? (
@@ -580,10 +571,7 @@ export default function SettingsPage() {
       </SidebarGroup>
 
       <SidebarGroup title="Auto-Responder" defaultOpen={false}>
-        <p
-          className="mb-2 text-xs"
-          style={{ color: "var(--text-tertiary)" }}
-        >
+        <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
           Auto-reply to direct messages when you&apos;re away or busy.
         </p>
         <div className="space-y-3">
@@ -649,10 +637,7 @@ export default function SettingsPage() {
       </Button>
 
       <SidebarGroup title="Per-Channel Notifications" defaultOpen={false}>
-        <p
-          className="mb-2 text-xs"
-          style={{ color: "var(--text-tertiary)" }}
-        >
+        <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
           Configure notification preferences for individual channels.
         </p>
         <div className="space-y-1">
@@ -678,9 +663,7 @@ export default function SettingsPage() {
                       : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
                   }`}
                   style={{
-                    color: notify
-                      ? "var(--button-bg)"
-                      : "var(--text-tertiary)",
+                    color: notify ? "var(--button-bg)" : "var(--text-tertiary)",
                   }}
                   aria-label={notify ? `Mute ${ch.name}` : `Unmute ${ch.name}`}
                 >
@@ -693,10 +676,7 @@ export default function SettingsPage() {
       </SidebarGroup>
 
       <SidebarGroup title="Danger Zone" defaultOpen={false}>
-        <p
-          className="mb-2 text-xs"
-          style={{ color: "var(--text-tertiary)" }}
-        >
+        <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
           Destructive actions that cannot be undone.
         </p>
         <div className="space-y-3">
@@ -707,10 +687,7 @@ export default function SettingsPage() {
             <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
               Reset all preferences
             </p>
-            <p
-              className="mt-1 text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
               Restore all settings to their default values.
             </p>
             <Button
@@ -730,10 +707,7 @@ export default function SettingsPage() {
             <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
               Delete account
             </p>
-            <p
-              className="mt-1 text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
               Permanently delete your account and all associated data.
             </p>
             <Button
@@ -768,10 +742,7 @@ export default function SettingsPage() {
             >
               Reset preferences?
             </h3>
-            <p
-              className="mt-2 text-center text-xs"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <p className="mt-2 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
               All your settings will be restored to their default values. This cannot be undone.
             </p>
             <div className="mt-4 flex justify-end gap-2">
@@ -814,10 +785,7 @@ export default function SettingsPage() {
             >
               Delete account?
             </h3>
-            <p
-              className="mt-2 text-center text-xs"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <p className="mt-2 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
               This will permanently delete your account and all associated data, including messages,
               channels, and workspaces. This cannot be undone.
             </p>

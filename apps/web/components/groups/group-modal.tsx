@@ -327,10 +327,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
               <AlertTriangle size={20} style={{ color: "var(--dnd-indicator)" }} />
               <div>
                 <p className="text-sm font-medium">Delete @{group?.name}?</p>
-                <p
-                  className="text-xs"
-                  style={{ color: "var(--text-secondary)" }}
-                >
+                <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
                   This will permanently remove this group and all member associations. Members will
                   no longer be mentionable as @{group?.name}. This action cannot be undone.
                 </p>
@@ -363,20 +360,14 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
         {mode === "detail" && (
           <div className="space-y-3">
             <div>
-              <p
-                className="text-xs"
-                style={{ color: "var(--text-secondary)" }}
-              >
+              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
                 Description
               </p>
               <p className="text-sm">{group?.description || "No description"}</p>
             </div>
             <div>
               <div className="mb-1 flex items-center justify-between">
-                <p
-                  className="text-xs font-medium"
-                  style={{ color: "var(--text-secondary)" }}
-                >
+                <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
                   Members ({groupMembers.length})
                 </p>
                 <button

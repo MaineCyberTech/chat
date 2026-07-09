@@ -675,10 +675,7 @@ export function MessageInput({
                     className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${i === colonIndex ? "bg-[rgba(var(--center-channel-color-rgb),0.08)]" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"}`}
                   >
                     <span className="text-base">{emoji.c}</span>
-                    <span
-                      className="text-xs"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
+                    <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                       :{emoji.n}:
                     </span>
                   </button>
@@ -713,10 +710,7 @@ export function MessageInput({
                     <span className="font-medium" style={{ color: "var(--button-bg)" }}>
                       {cmd.command}
                     </span>
-                    <span
-                      className="text-xs"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
+                    <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                       {cmd.description}
                     </span>
                   </button>
@@ -753,10 +747,7 @@ export function MessageInput({
                     <span className="font-medium">
                       {member.display_name ?? member.email.split("@")[0]}
                     </span>
-                    <span
-                      className="text-xs"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
+                    <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                       {member.email}
                     </span>
                   </button>
@@ -864,9 +855,7 @@ export function MessageInput({
                 onClick={() => setShowSchedulePicker(!showSchedulePicker)}
                 className={`flex h-8 w-8 items-center justify-center rounded ${showSchedulePicker || scheduledAt ? "" : ""}`}
                 style={{
-                  color: scheduledAt
-                    ? "var(--button-bg)"
-                    : "var(--text-tertiary)",
+                  color: scheduledAt ? "var(--button-bg)" : "var(--text-tertiary)",
                   background: showSchedulePicker
                     ? "rgba(var(--button-bg-rgb), 0.12)"
                     : "transparent",
@@ -897,10 +886,7 @@ export function MessageInput({
                 <span
                   className="text-[10px] tabular-nums"
                   style={{
-                    color:
-                      content.length > 4000
-                        ? "var(--dnd-indicator)"
-                        : "var(--text-tertiary)",
+                    color: content.length > 4000 ? "var(--dnd-indicator)" : "var(--text-tertiary)",
                   }}
                 >
                   {content.length}
@@ -951,10 +937,7 @@ export function MessageInput({
             <h2 className="text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
               Notify all channel members?
             </h2>
-            <p
-              className="mt-2 text-xs"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <p className="mt-2 text-xs" style={{ color: "var(--text-secondary)" }}>
               Your message contains <strong>@everyone</strong> or <strong>@here</strong>, which will
               notify all members.
             </p>
@@ -1000,10 +983,7 @@ export function MessageInput({
             >
               Send with {priority === "urgent" ? "Urgent" : "Critical"} priority?
             </h2>
-            <p
-              className="mt-2 text-center text-xs"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <p className="mt-2 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
               {priority === "critical"
                 ? "This message will be marked as critical and recipients will be notified immediately."
                 : "This message will be marked as urgent and recipients will see it prominently."}

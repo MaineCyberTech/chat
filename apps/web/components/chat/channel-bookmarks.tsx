@@ -232,10 +232,7 @@ export function ChannelBookmarks({ channelId }: Props) {
             <h3 className="text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
               Delete bookmark?
             </h3>
-            <p
-              className="mt-1 text-xs"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>
               This cannot be undone.
             </p>
             <div className="mt-4 flex justify-end gap-2">
@@ -273,10 +270,7 @@ export function ChannelBookmarks({ channelId }: Props) {
         <div>
           {(bookmarks.length > 0 || reorderMode) && (
             <div className="flex items-center justify-between px-3 py-1.5">
-              <span
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                 {bookmarks.length} bookmark{bookmarks.length !== 1 ? "s" : ""}
               </span>
               <button
@@ -337,10 +331,7 @@ export function ChannelBookmarks({ channelId }: Props) {
                       {bm.title}
                     </p>
                     {bm.url && (
-                      <p
-                        className="truncate text-[10px]"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
+                      <p className="truncate text-[10px]" style={{ color: "var(--text-tertiary)" }}>
                         {bm.url}
                       </p>
                     )}
@@ -372,10 +363,7 @@ export function ChannelBookmarks({ channelId }: Props) {
               >
                 <Link size={18} style={{ color: "var(--button-bg)" }} />
               </div>
-              <p
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                 No bookmarks yet
               </p>
               <button

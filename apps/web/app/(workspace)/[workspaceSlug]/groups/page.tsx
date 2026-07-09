@@ -149,10 +149,7 @@ export default function UserGroupsPage() {
   if (error) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
-        <p
-          className="mb-3 text-sm"
-          style={{ color: "var(--text-secondary)" }}
-        >
+        <p className="mb-3 text-sm" style={{ color: "var(--text-secondary)" }}>
           {error}
         </p>
         <button
@@ -187,7 +184,10 @@ export default function UserGroupsPage() {
       </div>
 
       {groups.length === 0 ? (
-        <EmptyState description="No groups yet. Create groups to mention multiple people at once with @groupname." className="!py-0" />
+        <EmptyState
+          description="No groups yet. Create groups to mention multiple people at once with @groupname."
+          className="!py-0"
+        />
       ) : (
         <div className="space-y-2">
           {groups.map((g) => (
@@ -217,18 +217,12 @@ export default function UserGroupsPage() {
                   >
                     @{g.name}
                   </code>
-                  <span
-                    className="text-xs"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
+                  <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                     {g.user_group_members?.[0]?.count ?? 0} members
                   </span>
                 </div>
                 {g.description && (
-                  <p
-                    className="mt-0.5 text-xs"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
+                  <p className="mt-0.5 text-xs" style={{ color: "var(--text-secondary)" }}>
                     {g.description}
                   </p>
                 )}

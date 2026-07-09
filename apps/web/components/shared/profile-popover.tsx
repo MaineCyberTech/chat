@@ -144,16 +144,10 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
         </div>
       </div>
       <div className="mt-3 space-y-1.5">
-        <div
-          className="flex items-center gap-2 text-xs"
-          style={{ color: "var(--text-tertiary)" }}
-        >
+        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
           <Mail size={12} /> {profile.email ?? "No email"}
         </div>
-        <div
-          className="flex items-center gap-2 text-xs"
-          style={{ color: "var(--text-tertiary)" }}
-        >
+        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
           <Calendar size={12} /> Joined {"Unknown"}
         </div>
       </div>

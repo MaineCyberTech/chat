@@ -426,10 +426,7 @@ export default function AdminPage() {
     if (error) {
       return (
         <div className="flex flex-col items-center justify-center py-12">
-          <p
-            className="mb-3 text-sm"
-            style={{ color: "var(--text-secondary)" }}
-          >
+          <p className="mb-3 text-sm" style={{ color: "var(--text-secondary)" }}>
             {error}
           </p>
           <button
@@ -518,10 +515,7 @@ export default function AdminPage() {
             <div className="text-2xl font-bold" style={{ color: "var(--center-channel-color)" }}>
               {card.value?.toLocaleString() ?? "-"}
             </div>
-            <div
-              className="text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
               {card.label}
             </div>
           </div>
@@ -587,10 +581,7 @@ export default function AdminPage() {
                 >
                   {u.display_name || u.email.split("@")[0]}
                 </div>
-                <div
-                  className="text-xs"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                   {u.email} &middot; Joined {new Date(u.created_at).toLocaleDateString()}
                 </div>
               </div>
@@ -652,19 +643,12 @@ export default function AdminPage() {
               background: "var(--center-channel-bg)",
             }}
           >
-            <Hash
-              size={16}
-              className="shrink-0"
-              style={{ color: "var(--text-tertiary)" }}
-            />
+            <Hash size={16} className="shrink-0" style={{ color: "var(--text-tertiary)" }} />
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
                 {ch.name}
               </div>
-              <div
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                 {ch.workspaces?.name} &middot; Created{" "}
                 {new Date(ch.created_at).toLocaleDateString()}
               </div>
@@ -727,10 +711,7 @@ export default function AdminPage() {
               <div className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
                 {ws.name}
               </div>
-              <div
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                 /{ws.slug} &middot; {ws.workspace_members?.[0]?.count ?? 0} members
               </div>
             </div>
@@ -755,19 +736,12 @@ export default function AdminPage() {
               background: "var(--center-channel-bg)",
             }}
           >
-            <Webhook
-              size={16}
-              className="shrink-0"
-              style={{ color: "var(--text-tertiary)" }}
-            />
+            <Webhook size={16} className="shrink-0" style={{ color: "var(--text-tertiary)" }} />
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
                 {i.name}
               </div>
-              <div
-                className="truncate text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <div className="truncate text-xs" style={{ color: "var(--text-tertiary)" }}>
                 {i.url} &middot; {i.workspaces?.name}
               </div>
             </div>
@@ -786,10 +760,7 @@ export default function AdminPage() {
               Export Data
             </h2>
             <div className="flex items-center gap-2">
-              <span
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
+              <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                 Format:
               </span>
               {(["csv", "json"] as const).map((f) => (
@@ -843,10 +814,7 @@ export default function AdminPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium">{item.label}</div>
-                  <div
-                    className="text-xs"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
+                  <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                     Download as {exportFormat.toUpperCase()}
                   </div>
                 </div>
@@ -945,10 +913,7 @@ export default function AdminPage() {
                 className="rounded-md border p-2"
                 style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}
               >
-                <p
-                  className="mb-1 text-xs font-medium"
-                  style={{ color: "var(--text-secondary)" }}
-                >
+                <p className="mb-1 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
                   Preview (first {csvPreview.length} rows):
                 </p>
                 <div className="overflow-x-auto">
@@ -997,11 +962,7 @@ export default function AdminPage() {
                     </p>
                     <ul className="mt-1 space-y-0.5">
                       {importResult.errors.map((err, i) => (
-                        <li
-                          key={i}
-                          className="text-xs"
-                          style={{ color: "var(--text-secondary)" }}
-                        >
+                        <li key={i} className="text-xs" style={{ color: "var(--text-secondary)" }}>
                           {err}
                         </li>
                       ))}
@@ -1060,10 +1021,7 @@ export default function AdminPage() {
                 <span className="text-sm" style={{ color: "var(--center-channel-color)" }}>
                   {rl.name}
                 </span>
-                <span
-                  className="font-mono text-xs"
-                  style={{ color: "var(--text-secondary)" }}
-                >
+                <span className="font-mono text-xs" style={{ color: "var(--text-secondary)" }}>
                   {rl.limit} {rl.unit}
                 </span>
               </div>
@@ -1114,10 +1072,7 @@ export default function AdminPage() {
               },
             ].map((item) => (
               <div key={item.label}>
-                <div
-                  className="text-xs"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                   {item.label}
                 </div>
                 <div
@@ -1139,10 +1094,7 @@ export default function AdminPage() {
       <div>
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <label
-              className="text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <label className="text-xs" style={{ color: "var(--text-tertiary)" }}>
               Action:
             </label>
             <input
@@ -1159,10 +1111,7 @@ export default function AdminPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <label
-              className="text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <label className="text-xs" style={{ color: "var(--text-tertiary)" }}>
               From:
             </label>
             <input
@@ -1178,10 +1127,7 @@ export default function AdminPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <label
-              className="text-xs"
-              style={{ color: "var(--text-tertiary)" }}
-            >
+            <label className="text-xs" style={{ color: "var(--text-tertiary)" }}>
               To:
             </label>
             <input
@@ -1231,10 +1177,7 @@ export default function AdminPage() {
                     {log.entity_type}
                   </span>
                 </div>
-                <div
-                  className="mt-0.5 text-xs"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <div className="mt-0.5 text-xs" style={{ color: "var(--text-tertiary)" }}>
                   {log.auth_users?.email ?? log.actor_user_id ?? "system"}
                   {log.entity_id ? ` \u00b7 ${log.entity_id}` : ""}
                   {log.organization_id
@@ -1304,10 +1247,7 @@ export default function AdminPage() {
                 <span className="text-sm" style={{ color: "var(--center-channel-color)" }}>
                   Uptime
                 </span>
-                <span
-                  className="font-mono text-sm"
-                  style={{ color: "var(--text-secondary)" }}
-                >
+                <span className="font-mono text-sm" style={{ color: "var(--text-secondary)" }}>
                   {formatUptime(health.uptime)}
                 </span>
               </div>
@@ -1319,10 +1259,7 @@ export default function AdminPage() {
                 >
                   <div className="flex items-center gap-2">
                     {key === "database" ? (
-                      <Database
-                        size={14}
-                        style={{ color: "var(--text-tertiary)" }}
-                      />
+                      <Database size={14} style={{ color: "var(--text-tertiary)" }} />
                     ) : null}
                     <span
                       className="text-sm capitalize"
@@ -1367,10 +1304,7 @@ export default function AdminPage() {
                         className="rounded-md px-3 py-2 text-center"
                         style={{ background: "rgba(var(--center-channel-color-rgb), 0.04)" }}
                       >
-                        <div
-                          className="text-xs"
-                          style={{ color: "var(--text-tertiary)" }}
-                        >
+                        <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                           {name}
                         </div>
                         <div
@@ -1413,10 +1347,7 @@ export default function AdminPage() {
                 { label: "Last Check", value: new Date(system.timestamp).toLocaleString() },
               ].map((item) => (
                 <div key={item.label}>
-                  <div
-                    className="text-xs"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
+                  <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                     {item.label}
                   </div>
                   <div
@@ -1456,10 +1387,7 @@ export default function AdminPage() {
               { label: "Environment", value: siteConfig.environment },
             ].map((item) => (
               <div key={item.label}>
-                <div
-                  className="text-xs"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                   {item.label}
                 </div>
                 <div
@@ -1491,10 +1419,7 @@ export default function AdminPage() {
                 className="flex items-center justify-between rounded-md px-3 py-2"
                 style={{ background: "rgba(var(--center-channel-color-rgb), 0.04)" }}
               >
-                <span
-                  className="text-xs"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
+                <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                   {item.label}
                 </span>
                 <code className="text-xs" style={{ color: "var(--center-channel-color)" }}>
@@ -1540,10 +1465,7 @@ export default function AdminPage() {
     return (
       <div>
         <div className="mb-4 flex items-center gap-3">
-          <span
-            className="text-xs"
-            style={{ color: "var(--text-tertiary)" }}
-          >
+          <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
             Level:
           </span>
           {["", "error", "warn"].map((l) => (
