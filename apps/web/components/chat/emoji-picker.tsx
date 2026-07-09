@@ -67,6 +67,32 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
   const pickerRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [activeIdx, setActiveIdx] = useState(-1);
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap
+  useEffect(() => {
+    const el = focusTrapRef.current;
+    if (!el) return;
+    const trapEl = el;
+    function trapTab(e: KeyboardEvent) {
+      if (e.key !== "Tab") return;
+      const focusable = trapEl.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (first && e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (last && !e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    }
+    document.addEventListener("keydown", trapTab);
+    return () => document.removeEventListener("keydown", trapTab);
+  }, []);
 
   // Position picker relative to anchor
   useEffect(() => {
@@ -153,12 +179,12 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
 
   return (
     <div
-      ref={pickerRef}
+      ref={(node) => { pickerRef.current = node; focusTrapRef.current = node; }}
       role="dialog"
       aria-label="Emoji picker"
       className="fixed z-50 flex flex-col overflow-hidden rounded-xl border shadow-lg"
       style={{
-        width: 340,
+        width: "min(340px, calc(100vw - 16px))",
         maxHeight: 440,
         background: "var(--center-channel-bg)",
         borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",

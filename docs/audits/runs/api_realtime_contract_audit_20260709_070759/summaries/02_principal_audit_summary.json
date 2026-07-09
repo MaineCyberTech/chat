@@ -1,0 +1,55 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "api_realtime_contract_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-09T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 1,
+    "P3": 2
+  },
+  "category_scores": {
+    "pagination": 70,
+    "contract_stability": 85,
+    "realtime_behavior": 90,
+    "idempotency": 75,
+    "payload_validation": 80
+  },
+  "readiness": 82,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "pagination",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "line": 422,
+      "issue": "Channel export endpoint fetches all messages without pagination or limit",
+      "impact": "GET /channels/:channelId/export fetches ALL messages in a channel using .select() with no limit or offset. For channels with thousands of messages, this causes unbounded memory allocation, slow response times, and potential OOM crashes on both server and client side.",
+      "fix": "Add pagination with streaming or chunked responses. Implement max limit cap (e.g., 1000 per request) and cursor-based pagination similar to the main message list endpoint.",
+      "endpoint": "GET /channels/:channelId/export"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "resilience",
+      "file": "apps/api/src/lib/idempotency.ts",
+      "line": 34,
+      "issue": "In-memory idempotency fallback Map is not shared across instances",
+      "impact": "When Redis is unavailable, idempotency keys fall back to an in-process Map. In multi-instance deployments, each instance has its own Map, so duplicate message creation or channel creation is possible if requests route to different instances during Redis failure.",
+      "fix": "For multi-instance safety, consider a shared fallback (e.g., database-backed idempotency with upsert) or document that single-instance mode is required when Redis is down.",
+      "endpoint": "POST /channels/:channelId/messages"
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "contract_validation",
+      "file": "apps/api/src/route-registry.ts",
+      "line": 1,
+      "issue": "No response schema validation for any API endpoint",
+      "impact": "While request validation exists (zod schemas), no endpoint validates response payloads against a schema. Contract drift between frontend expectations and actual API responses cannot be caught during development or CI. A backend change that removes or renames a field breaks frontend silently.",
+      "fix": "Add response validation schemas for all endpoints. Integrate into route registry with optional strict mode for CI validation."
+    }
+  ],
+  "run_id": "api_realtime_contract_audit_20260709_070759"
+}

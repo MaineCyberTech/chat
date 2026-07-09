@@ -294,7 +294,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
                           className="flex h-5 w-5 items-center justify-center rounded text-xs"
                           style={{
                             background: isSel ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.16)",
-                            color: "#fff",
+                            color: "var(--button-color)",
                           }}
                         >
                           {isSel ? <Check size={10} /> : null}

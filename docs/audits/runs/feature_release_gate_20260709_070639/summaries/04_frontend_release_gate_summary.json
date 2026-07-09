@@ -1,0 +1,78 @@
+{
+  "stage": "frontend_release_gate",
+  "prompt_name": "feature_release_gate",
+  "decision": "GO",
+  "generated_at": "2026-07-09T15:00:00Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 3,
+    "P3": 3
+  },
+  "category_scores": {
+    "e2e_coverage": 40,
+    "visual_regression": 35,
+    "rollback_readiness": 75,
+    "feature_flag_coverage": 70,
+    "release_automation": 70,
+    "operator_handoff": 65
+  },
+  "readiness": 63,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "E2E Coverage \u2014 Core Journeys",
+      "file": "apps/web/e2e/comprehensive.spec.ts (24 of 28 tests skipped), tests/e2e/ (depends on external credentials)",
+      "issue": "No automated regression validation of core user journeys in CI \u2014 sign-in, workspace creation, channel creation, message send, and real-time delivery all lack reliable automated testing",
+      "impact": "Every release requires manual full-regression testing for the core value proposition (auth -> workspace -> channel -> message). The skip pattern has been present since test files were created with no resolution plan. External credential dependency blocks CI execution",
+      "fix": "Provision a test Supabase project or local emulator with CI credentials. Create seed SQL for test workspaces, channels, users, and messages. Add CI job: migrate -> seed -> run E2E -> teardown. Remove all test.skip() and implement real assertions against seeded data"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Visual Regression \u2014 Baseline Coverage",
+      "file": "apps/web/e2e/visual-snapshot.spec.ts",
+      "issue": "Visual snapshot coverage limited to 3 pages (login, settings, 404) with no authenticated states, no workspace layout, no channel view, no dark mode",
+      "impact": "Only login page, settings page (unauthenticated), and 404 page have snapshot tests. No coverage for the workspace layout, channel view, message list, thread panel, emoji picker, or dark mode. Critical visual regressions in these areas are undetectable in CI",
+      "fix": "Add visual snapshots for: workspace layout with sidebar, channel view with messages, message input with formatting toolbar, emoji picker open, thread panel, settings page dark mode, mobile breakpoint (375px) for key pages. Use mock API responses for deterministic snapshots"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Rollback Readiness \u2014 Migration Testing",
+      "file": "supabase/rollback/ (rollback scripts exist but no automated migration rollback test in CI)",
+      "issue": "Rollback scripts exist for database migrations but there is no automated CI validation that rollbacks execute cleanly and restore previous state",
+      "impact": "While migration rollback scripts exist, they are verified only through CI checking their existence, not through actual execution. In a real rollback scenario, operators cannot be confident that rollback scripts will succeed without data loss",
+      "fix": "Add CI job that applies pending migrations, creates test data, then executes rollback scripts and verifies: (1) rollback SQL completes without error, (2) previous schema is restored, (3) test data integrity is verified. Integrate into the deployment pipeline"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "Release Automation \u2014 Artifact Versioning",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Docker images tagged with :dev and :latest tags but no semantic versioning or git SHA tagging that allows traceability between release artifacts and source code",
+      "impact": "In a rollback scenario, operators cannot easily determine which image tag corresponds to the previous working release. The :latest tag is mutable and overwritten. There's no immutable reference linking artifacts to specific git commits",
+      "fix": "Tag Docker images with git SHA (e.g., :sha-abc1234) in addition to :dev/:latest. Store the mapping in a deployment manifest. Update deploy workflows to reference SHA-tagged images explicitly"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "Rollback Readiness \u2014 Kill Switches",
+      "file": "apps/api/src/modules/feature-flags/__tests__/feature-flags.test.ts",
+      "issue": "Feature flag tests exist but no production kill-switch mechanism is documented or tested for rapid feature disablement without code deployment",
+      "impact": "Critical features (file upload, notifications, AI rewrite, search) do not have emergency stop paths that can be activated without a code deployment. If a feature causes production issues, the only recovery path is rollback or hotfix deployment",
+      "fix": "Expose a feature flag management API endpoint (PATCH /v1/feature-flags/:name) that can be toggled remotely. Add dashboard UI for operators. Document kill-switch activation procedure in runbook"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "Operator Handoff \u2014 Runbook Completeness",
+      "file": "docs/runbooks/ (check for deployment rollback runbook)",
+      "issue": "Deployment rollback runbook exists but lacks specific validation steps for data integrity, cache invalidation, and WebSocket connection drain procedures",
+      "impact": "Operators following the rollback runbook may miss critical post-rollback validation steps. Incomplete drain of WebSocket connections could cause message loss. Cache inconsistency after rollback could show stale data",
+      "fix": "Update deployment rollback runbook with: (1) WebSocket drain and reconnect verification after rollback, (2) cache invalidation steps (Redis flush if schema changed), (3) data integrity SQL queries to run before/after rollback, (4) smoke test checklist for operator"
+    }
+  ],
+  "run_id": "feature_release_gate_20260709_070639"
+}

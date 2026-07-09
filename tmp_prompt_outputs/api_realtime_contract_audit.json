@@ -3,95 +3,53 @@
   "domain": "api",
   "stage": "principal_audit",
   "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-08T12:00:00.000Z",
+  "generated_at": "2026-07-09T12:00:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 1,
-    "P2": 5,
+    "P1": 0,
+    "P2": 1,
     "P3": 2
   },
   "category_scores": {
-    "rest_contract": 75,
-    "realtime_contract": 65,
-    "reconnect_resync": 60,
     "pagination": 70,
-    "idempotency": 80,
-    "caching": 75,
-    "error_consistency": 85
+    "contract_stability": 85,
+    "realtime_behavior": 90,
+    "idempotency": 75,
+    "payload_validation": 80
   },
-  "readiness": 73,
+  "readiness": 82,
   "findings": [
-    {
-      "severity": "P1",
-      "domain": "api",
-      "category": "realtime_contract",
-      "file": "apps/api/src/lib/socket.ts",
-      "issue": "Presence state flickers offline\u2192online on every reconnect (no graceful reconnect window)",
-      "impact": "On every disconnect/reconnect, presence toggles from online\u2192offline\u2192online in rapid succession. Other users see the user flicker offline briefly, causing confusion and unnecessary UI updates. Active users may appear briefly offline to others during network hiccups",
-      "fix": "Add a disconnect grace period (e.g., 30s delay before setting presence to offline). Use a 'last_seen_at' timestamp updated on heartbeat, and only mark offline after the grace period expires without a new heartbeat. Socket events should emit presence:away during the grace window instead of offline"
-    },
-    {
-      "severity": "P2",
-      "domain": "api",
-      "category": "realtime_contract",
-      "file": "apps/api/src/lib/socket.ts",
-      "issue": "No rate limiting on socket events after authentication",
-      "impact": "Once a socket is authenticated, events like typing:start, channel:join, channel:leave have no per-user rate limiting. A compromised or malicious client can flood the server with events, causing excessive DB writes and broadcast storms to all connected clients",
-      "fix": "Implement per-user rate limiting on socket events (e.g., max 10 typing events per second per user, max 5 channel joins per second). Use an in-memory counter with sliding window per userId"
-    },
     {
       "severity": "P2",
       "domain": "api",
       "category": "pagination",
       "file": "apps/api/src/modules/messages/routes.ts",
-      "issue": "Inconsistent pagination approaches \u2014 cursor-based for message listing, offset-based for search and other endpoints",
-      "impact": "Cursor-based pagination (message listing) and offset-based pagination (search, channels, admin endpoints) create two different client pagination patterns, increasing frontend complexity. Offset-based pagination also has well-known issues with data shifting during page navigation",
-      "fix": "Standardize on cursor-based pagination for all list endpoints. For admin/export endpoints where offset is acceptable, document the tradeoffs. Implement a shared pagination utility that supports both cursor and offset modes"
-    },
-    {
-      "severity": "P2",
-      "domain": "api",
-      "category": "rest_contract",
-      "file": "apps/api/src/modules/webhooks/routes.ts",
-      "issue": "Webhook GET /webhooks requires workspace_id query param but PATCH /webhooks/:id uses URL param \u2014 inconsistent resource identification",
-      "impact": "The workspace_id query param pattern for GET /webhooks is inconsistent with the URL-based resource identification used by other endpoints (PATCH, DELETE). This creates confusion for API consumers and SDK authors who expect consistent resource addressing",
-      "fix": "Move GET /webhooks to /workspaces/:workspaceId/webhooks path, or accept workspace_id in both query param and URL param consistently. Document the workspace scoping pattern clearly"
-    },
-    {
-      "severity": "P2",
-      "domain": "api",
-      "category": "rest_contract",
-      "file": "apps/api/src/modules/admin/routes.ts",
-      "issue": "Admin and regular modules both define /webhooks/deliveries route \u2014 potential route collision",
-      "impact": "Both admin/routes.ts and webhooks/routes.ts define GET /webhooks/deliveries. Depending on route registration order in route-registry.ts, one may shadow the other. The admin version is for super-users while the regular version uses workspace_id query param \u2014 clients may hit the wrong endpoint",
-      "fix": "Prefix admin webhook routes with /admin (e.g., /v1/admin/webhooks/deliveries) to avoid collision. The admin route is already mounted at /v1/admin, so this may be fine \u2014 but verify route precedence and document both endpoints"
-    },
-    {
-      "severity": "P2",
-      "domain": "api",
-      "category": "rest_contract",
-      "file": "apps/api/src/modules/reactions/routes.ts",
-      "issue": "Reactions batch endpoint lacks authentication on the user \u2014 no requireMessageAccess middleware",
-      "impact": "GET /reactions/batch has no requireMessageAccess middleware \u2014 any authenticated user can query reactions for any set of message IDs without verifying channel membership. Could leak channel conversation patterns via reaction presence",
-      "fix": "Add requireMessageAccess validation for each message ID, or restrict the batch endpoint to only return reactions for messages the user can access"
+      "line": 422,
+      "issue": "Channel export endpoint fetches all messages without pagination or limit",
+      "impact": "GET /channels/:channelId/export fetches ALL messages in a channel using .select() with no limit or offset. For channels with thousands of messages, this causes unbounded memory allocation, slow response times, and potential OOM crashes on both server and client side.",
+      "fix": "Add pagination with streaming or chunked responses. Implement max limit cap (e.g., 1000 per request) and cursor-based pagination similar to the main message list endpoint.",
+      "endpoint": "GET /channels/:channelId/export"
     },
     {
       "severity": "P3",
       "domain": "api",
-      "category": "rest_contract",
-      "file": "apps/api/src/modules/auth/routes.ts",
-      "issue": "GDPR export returns full message content as raw JSON download with no encryption or expiry",
-      "impact": "The GDPR data export endpoint returns a downloadable JSON containing all user messages, notifications, preferences, and push subscription data. The download link has no authentication after the initial request and no expiry \u2014 if intercepted, all user data is exposed",
-      "fix": "Generate a short-lived signed URL (e.g., 5 minutes) for the export, or stream the response directly with proper Content-Disposition headers already implemented. Consider encrypting the export payload at rest"
+      "category": "resilience",
+      "file": "apps/api/src/lib/idempotency.ts",
+      "line": 34,
+      "issue": "In-memory idempotency fallback Map is not shared across instances",
+      "impact": "When Redis is unavailable, idempotency keys fall back to an in-process Map. In multi-instance deployments, each instance has its own Map, so duplicate message creation or channel creation is possible if requests route to different instances during Redis failure.",
+      "fix": "For multi-instance safety, consider a shared fallback (e.g., database-backed idempotency with upsert) or document that single-instance mode is required when Redis is down.",
+      "endpoint": "POST /channels/:channelId/messages"
     },
     {
       "severity": "P3",
       "domain": "api",
-      "category": "rest_contract",
-      "file": "apps/api/src/lib/pagination.ts",
-      "issue": "Pagination helper silently caps limit at maxLimit without notifying the caller",
-      "impact": "When a client requests a limit larger than maxLimit, the value is silently capped. The response doesn't indicate the original requested value vs actual limit, which can confuse API consumers about pagination behavior",
-      "fix": "Include both requested_limit and actual_limit in paginated responses, or return a warning header when the limit is capped"
+      "category": "contract_validation",
+      "file": "apps/api/src/route-registry.ts",
+      "line": 1,
+      "issue": "No response schema validation for any API endpoint",
+      "impact": "While request validation exists (zod schemas), no endpoint validates response payloads against a schema. Contract drift between frontend expectations and actual API responses cannot be caught during development or CI. A backend change that removes or renames a field breaks frontend silently.",
+      "fix": "Add response validation schemas for all endpoints. Integrate into route registry with optional strict mode for CI validation."
     }
   ]
 }

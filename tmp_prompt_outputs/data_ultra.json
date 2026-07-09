@@ -1,87 +1,55 @@
 {
   "prompt_name": "data_ultra",
   "domain": "data",
-  "stage": "principal_audit",
+  "stage": "reconciliation",
   "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-08T12:00:00.000Z",
+  "generated_at": "2026-07-09T12:00:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 2,
-    "P2": 3,
-    "P3": 2
+    "P1": 0,
+    "P2": 2,
+    "P3": 1
   },
   "category_scores": {
-    "schema_migration_alignment": 85,
-    "relational_integrity": 75,
-    "concurrency_safety": 80,
-    "transaction_coverage": 65,
-    "orphan_prevention": 70,
-    "indexing": 80
+    "data_isolation": 72,
+    "data_export": 75,
+    "data_retention": 85,
+    "gdpr_compliance": 78
   },
-  "readiness": 76,
+  "readiness": 77,
   "findings": [
     {
-      "severity": "P1",
-      "domain": "data",
-      "category": "concurrency_safety",
-      "file": "apps/api/src/modules/channels/service.ts",
-      "issue": "Channel update uses optimistic locking version check but reorderChannel does sequential row updates without version check or transaction",
-      "impact": "Concurrent reorder operations can interleave \u2014 two admins reordering channels simultaneously can get partial interleaved results. Some channels may end up with duplicate sort_order values or incorrect order. The updates are sequential without isolation, so a crash mid-reorder leaves inconsistent state",
-      "fix": "Wrap reorder in a single transaction (Supabase RPC with BEGIN/COMMIT/ROLLBACK) and accept a version parameter for the entire workspace's channel ordering to prevent concurrent reorder conflicts"
-    },
-    {
-      "severity": "P1",
-      "domain": "data",
-      "category": "relational_integrity",
-      "file": "apps/api/src/modules/auth/routes.ts",
-      "issue": "GDPR account deletion at DELETE /account does not delete consent_logs, leaving orphaned user references",
-      "impact": "The consent_logs table has ON DELETE CASCADE referencing auth.users(id), but if users are deleted via the GDPR endpoint (which uses supabase.auth.admin.deleteUser), the cascade should clean up consent_logs. However, the trigger-based cleanup at 20260707000002 also handles this. But the GDPR endpoint at auth/routes.ts:212-230 does NOT call the trigger path \u2014 it manually deletes specific tables. consent_logs is not included in the manual delete list, so consent records for the deleted user remain as orphans",
-      "fix": "Add DELETE FROM consent_logs WHERE user_id = $userId to the GDPR deletion sequence in auth/routes.ts, after the notifications delete and before the users table delete"
-    },
-    {
       "severity": "P2",
       "domain": "data",
-      "category": "orphan_prevention",
-      "file": "apps/api/src/modules/messages/service.ts",
-      "issue": "Message hard-delete via remove() breaks referential integrity for child records despite CASCADE",
-      "impact": "When a message is hard-deleted via messageService.remove() (line 328), CASCADE deletes on reactions, message_flags, and message_edit_history will clean up child records. However, the soft-delete RLS only filters deleted_at IS NULL \u2014 hard-deleted messages disappear from view but their brief existence is acknowledged by the CASCADE behavior on child tables. Inconsistency between soft-delete strategy and hard-delete implementation can lead to unexpected disappearances of reactions or flags",
-      "fix": "Standardize on soft-delete for messages (UPDATE deleted_at = NOW()) to match the RLS strategy. Only hard-delete in a background cleanup job after the retention period has passed"
-    },
-    {
-      "severity": "P2",
-      "domain": "data",
-      "category": "transaction_coverage",
-      "file": "apps/api/src/modules/channels/service.ts",
-      "issue": "createGroupChannel writes to channels, channel_members, and dm_members tables sequentially without transaction isolation",
-      "impact": "If the server crashes after creating the channel but before adding members to channel_members and dm_members, an orphan channel with no members is created. Subsequent attempts to create the same DM will fail (if the duplicate detection finds the existing channel) or create duplicates, leading to inconsistent DM state",
-      "fix": "Wrap the multi-table channel creation + member additions in a Supabase RPC with BEGIN/COMMIT/ROLLBACK transaction to ensure atomicity"
-    },
-    {
-      "severity": "P2",
-      "domain": "data",
-      "category": "relational_integrity",
+      "category": "data_isolation",
       "file": "supabase/policies/06_reactions.sql",
-      "issue": "Reactions SELECT policy allows any authenticated user to read all reactions without channel membership check \u2014 cross-tenant reaction enumeration",
-      "impact": "Any authenticated user can enumerate all reactions across the entire system by querying GET /messages/:id/reactions (which uses requireMessageAccess) or via direct Supabase API access, as the RLS policy does not filter by channel membership. This leaks user reaction patterns across workspace/tenant boundaries",
-      "fix": "Update the reactions SELECT RLS policy to only return reactions for messages that are in channels the user can access (join to messages \u2192 channels \u2192 workspace_members)"
+      "line": 7,
+      "issue": "Cross-tenant reaction visibility: reactions SELECT policy allows all authenticated users to read reactions across all workspaces",
+      "impact": "Reaction data (emoji + user_id mappings) is visible across tenant boundaries. While low-sensitivity, this violates the strict tenant isolation model used by all other tables. Combined with other data points, it enables cross-tenant user activity correlation.",
+      "fix": "Scope reactions RLS to workspace membership via messages -> channels -> workspace_members join chain.",
+      "scenario": "User A in Workspace X can enumerate reactions on messages in Workspace Y by guessing message IDs, discovering user-emoji relationships across tenants."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "data_export",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "line": 422,
+      "issue": "Channel export endpoint fetches unbounded message data without pagination",
+      "impact": "GET /channels/:channelId/export loads ALL messages into memory and returns them as a single JSON/CSV response. Channels with >10K messages cause memory exhaustion on both server and client. No rate limiting or size cap on this endpoint.",
+      "fix": "Add pagination with max limit (e.g., 1000 per page), streaming response, or document-based export with chunking.",
+      "endpoint": "GET /channels/:channelId/export",
+      "scenario": "A channel with 50K messages hit the export endpoint: API server allocates ~100MB+ for the response, Node.js hits memory limit, process crashes."
     },
     {
       "severity": "P3",
       "domain": "data",
-      "category": "indexing",
-      "file": "supabase/migrations",
-      "issue": "No composite index on channel_bookmarks(channel_id, sort_order) despite frequent ordered queries",
-      "impact": "The channel bookmarks endpoint orders by sort_order within a channel. With many bookmarks per channel, the absence of a composite index on (channel_id, sort_order) will cause sequential scans for the ORDER BY + WHERE clause",
-      "fix": "Add CREATE INDEX IF NOT EXISTS idx_channel_bookmarks_channel_sort ON public.channel_bookmarks(channel_id, sort_order)"
-    },
-    {
-      "severity": "P3",
-      "domain": "data",
-      "category": "schema_migration_alignment",
-      "file": "supabase/migrations/20260627000001_add_missing_indexes.sql",
-      "issue": "idx_workspace_members_user_role index exists but is unused by common query patterns",
-      "impact": "The index idx_workspace_members_user_role on (user_id, role) supports the admin check query pattern (user_id + role filter), but the common workspace membership check queries filter on (workspace_id, user_id) which has no dedicated composite index. The workspace_members table has a PK on (workspace_id, user_id) which covers this, so no additional index is needed, but the user_role index may be redundant",
-      "fix": "Consider removing idx_workspace_members_user_role if query analysis shows it is never used, to reduce write overhead. Or keep it for admin queries that filter by role across workspaces"
+      "category": "gdpr_compliance",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "line": 182,
+      "issue": "GDPR data export uses getSupabaseAdmin() bypassing RLS for data collection",
+      "impact": "GDPR export endpoint uses service_role key (admin client) to collect user data. While user_id is constrained to req.userId, this pattern centralizes data access authority. If a bug in user_id handling occurs, or if the endpoint is called before full authentication, other users' data could leak. Service_role key exposure amplifies this risk.",
+      "fix": "Use per-user Supabase client (req.supabase) where RLS policies enforce user scoping. Only fall back to admin client for auth.admin operations that require service_role."
     }
   ]
 }

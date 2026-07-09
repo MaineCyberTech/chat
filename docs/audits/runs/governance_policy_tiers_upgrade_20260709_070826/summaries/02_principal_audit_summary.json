@@ -1,0 +1,62 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "governance_policy_tiers_upgrade",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-09T03:06:59Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 2,
+    "P3": 1
+  },
+  "category_scores": {},
+  "readiness": 65,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "governance",
+      "category": "policy_tiers",
+      "file": ".github/workflows/",
+      "issue": "No formalized policy tier architecture - dev, RC, prod, and hotfix releases all use same workflow patterns with no graduated approval gates",
+      "impact": "Hotfix and release-candidate releases use same CI/CD path as dev; no staging environment to validate before prod",
+      "fix": "Define policy tiers (dev/RC/prod/hotfix) with graduated approval gates: dev=auto, RC=status checks, prod=environment approval, hotfix=emergency bypass with post-action review"
+    },
+    {
+      "severity": "P1",
+      "domain": "governance",
+      "category": "hotfix_policy",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "Hotfix bypass is manual workflow_dispatch with no compensating controls - any user with write access can trigger prod deploy with inputs.rollback_sha",
+      "impact": "No mandatory PR review, status check, or post-deploy audit trail for emergency hotfixes",
+      "fix": "Add hotfix-specific job that requires PR approval from code owners, enforces status checks, and logs all hotfix activity to audit API"
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "policy_file_structure",
+      "file": ".github/workflows/",
+      "issue": "No policy configuration files - all governance is implicit in workflow files",
+      "impact": "Policy changes require editing workflow YAML; no centralized policy declaration or versioning separate from CI config",
+      "fix": "Create governance/policies/ directory with tier definitions (dev.yaml, rc.yaml, prod.yaml, hotfix.yaml) and a CI step that validates workflow triggers against declared policy"
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "auditability",
+      "file": ".github/workflows/",
+      "issue": "Policy changes are not independently tracked - changing workflow triggers, approval gates, or environment protections is not logged separately from code changes",
+      "impact": "Cannot audit when or why release policy was modified without manual git log inspection",
+      "fix": "Add policy change log in governance/CHANGELOG.md and require PR description to tag when policy-affecting files are modified"
+    },
+    {
+      "severity": "P3",
+      "domain": "governance",
+      "category": "workflow_wiring",
+      "file": ".github/workflows/governance.yml",
+      "issue": "governance.yml is deprecated (v5, superseded by platform.yml v6) but still dispatchable - no cleanup or migration enforcement",
+      "impact": "Stale workflow may be triggered accidentally, producing misleading results",
+      "fix": "Add deprecation notice in workflow description or remove after confirming platform.yml covers all use cases"
+    }
+  ],
+  "run_id": "governance_policy_tiers_upgrade_20260709_070826"
+}

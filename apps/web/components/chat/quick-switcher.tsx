@@ -97,14 +97,40 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
     [filteredChannels, filteredUsers, selectedIndex, totalItems, workspaceSlug, router, onClose],
   );
 
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+
+  const handleFocusTrap = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== "Tab" || !focusTrapRef.current) return;
+    const focusable = focusTrapRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }, []);
+
   if (!open) return null;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-[rgba(0,0,0,0.5)] pt-[15vh]"
       onClick={onClose}
+      onKeyDown={handleFocusTrap}
     >
       <div
+        ref={focusTrapRef}
         className="w-full max-w-md rounded-lg border shadow-[var(--elevation-5)]"
         style={{
           background: "var(--center-channel-bg)",

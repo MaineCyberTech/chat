@@ -3,125 +3,85 @@
   "domain": "frontend",
   "stage": "principal_audit",
   "decision": "GO",
-  "generated_at": "2026-07-08T00:00:00Z",
+  "generated_at": "2026-07-09T15:00:00Z",
+  "readiness": 72,
   "severity_counts": {
     "P0": 0,
-    "P1": 1,
-    "P2": 7,
-    "P3": 3
+    "P1": 0,
+    "P2": 3,
+    "P3": 4
   },
   "category_scores": {
-    "F1_Design_System": 90,
-    "F2_Layout_Navigation": 75,
-    "F3_Chat_UX": 80,
-    "F4_State_Management": 70,
-    "F5_Accessibility": 65,
-    "F6_Responsive_Design": 75,
-    "F7_Performance": 60,
-    "F8_Interaction_Quality": 70,
-    "F9_Visual_Consistency": 85,
-    "F10_Component_Architecture": 65
+    "error_handling": 60,
+    "component_architecture": 70,
+    "performance": 75,
+    "design_system": 80,
+    "accessibility": 65,
+    "observability": 55
   },
-  "readiness": 73.5,
   "findings": [
     {
       "severity": "P2",
       "domain": "frontend",
-      "category": "F2 \u2014 Layout & Navigation",
-      "file": "apps/web/app/globals.css",
-      "issue": "Sticky bottom navigation overlaps content on mobile beyond post-create container",
-      "impact": "Settings, admin, and channel info panels lack bottom padding compensation for fixed bottom nav, causing content to be hidden behind nav bar on mobile.",
-      "fix": "Apply uniform bottom padding to all main content areas (.app__content) using var(--bottom-nav-height) + safe-area. Replace page-specific overrides with a global content wrapper class."
+      "category": "error_handling",
+      "file": "apps/web/components/chat/chat-view.tsx:63, apps/web/components/chat/message-input.tsx:215, apps/web/components/workspace/app-sidebar.tsx:205, and 36+ similar instances",
+      "issue": "39 silent catch blocks using console.warn() with no structured logging across all web components",
+      "impact": "Failures in critical paths (profile loading, socket setup, API calls, member fetching, file operations) go undetected in production with no structured logging, no error aggregation, and no user feedback for recoverable errors",
+      "fix": "Replace all console.warn() catch blocks with a centralized logger service (e.g., capture scope in Sentry or equivalent) and expose user-facing non-sensitive error messages where appropriate. Add error boundary fallbacks for critical failure paths."
     },
     {
       "severity": "P2",
       "domain": "frontend",
-      "category": "F3 \u2014 Chat UX",
-      "file": "apps/web/components/chat/message-list.tsx",
-      "issue": "Message list renders all messages as DOM nodes with no virtualization",
-      "impact": "Channels with 500+ messages render 500+ DOM nodes plus reactions, context menus, and modals. Performance degrades significantly on low-power mobile devices and long chat sessions.",
-      "fix": "Add @tanstack/react-virtual to render only visible messages (~30-50 DOM nodes). Preserve scroll position on message prepend for infinite scroll. Implement estimated row heights for variable content."
+      "category": "component_architecture",
+      "file": "apps/web/components/chat/thread-panel.tsx:319",
+      "issue": "Thread reply editor uses plain HTML textarea instead of TipTap rich text editor, lacking formatting toolbar, @mention autocomplete, emoji picker, and slash commands",
+      "impact": "Users composing thread replies have a degraded editing experience compared to main channel messages. Inconsistent UX between main channel and thread replies with no formatting, no mentions, no emoji autocomplete, and no slash commands",
+      "fix": "Replace the textarea at thread-panel.tsx:319 with the shared TipTapEditor component used in MessageInput, adding the formatting toolbar, mention autocomplete, emoji picker, and slash command support for thread replies"
     },
     {
       "severity": "P2",
       "domain": "frontend",
-      "category": "F4 \u2014 State Management & Data Flow",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "Optimistic echo deduplication leaves ghost messages after reconnection before server confirmation",
-      "impact": "If a socket reconnects before the API confirms a message, the optimistic temp message persists permanently as a ghost until page reload. Users see duplicate or phantom messages.",
-      "fix": "Track pending message IDs in a Set ref. On initial channel load, reconcile against confirmed IDs. Remove temp IDs that match confirmed server IDs from the pending set. Clear stale temps on reconnect."
-    },
-    {
-      "severity": "P2",
-      "domain": "frontend",
-      "category": "F5 \u2014 Accessibility",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "8 icon-only buttons lack descriptive accessible names",
-      "impact": "Screen reader users cannot distinguish buttons like 'Export', 'Channel menu', 'Priority picker', 'Schedule message', 'Collapse sidebar', 'Add category', 'New DM', and 'Add channel'. These are critical navigation and action elements.",
-      "fix": "Audit all icon-only buttons for aria-label correctness. Use context-specific labels: 'Export channel' instead of 'Export', 'Set message priority' instead of 'Set priority'. Add aria-describedby for toolbar groupings."
-    },
-    {
-      "severity": "P2",
-      "domain": "frontend",
-      "category": "F5 \u2014 Accessibility",
-      "file": "apps/web/components/chat/message-input.tsx",
-      "issue": "Overlay modals do not auto-focus first interactive element on open",
-      "impact": "The @everyone warning, priority warning, and schedule picker modals trap keyboard focus but do not programmatically move focus to the first button. Keyboard and screen reader users must tab blind to locate the dialog content.",
-      "fix": "Add useEffect on modal mount that calls .focus() on the first focusable button (Cancel/Send). Ensure focus is restored to the triggering element when the modal closes."
-    },
-    {
-      "severity": "P1",
-      "domain": "frontend",
-      "category": "F5 \u2014 Accessibility",
-      "file": "apps/web/app/(workspace)/layout.tsx",
-      "issue": "Ctrl+K shortcut conflicts with browser default and TipTap link insertion",
-      "impact": "Pressing Ctrl+K in the message editor triggers QuickSwitcher AND may insert a TipTap link simultaneously. The browser may also open its own search. This creates confusing and inconsistent behavior for power users relying on keyboard shortcuts.",
-      "fix": "Suppress global Ctrl+K handler when the active element is an input/textarea/editor. Use Ctrl+Shift+K for QuickSwitcher when inside the editor. Keep Ctrl+K for TipTap link insertion as users expect."
-    },
-    {
-      "severity": "P2",
-      "domain": "frontend",
-      "category": "F6 \u2014 Responsive Design",
-      "file": "apps/web/components/workspace/app-sidebar.tsx",
-      "issue": "Sidebar auto-collapse state at tablet widths is not persisted across page loads",
-      "impact": "Users who manually expand the sidebar at tablet width lose their preference on every page navigation. The auto-collapse logic resets, forcing a manual re-expand each time.",
-      "fix": "Save the userToggledRef state to localStorage. On mount, check localStorage before applying auto-collapse. Respect user's explicit choice until they toggle again or clear storage."
+      "category": "component_architecture",
+      "file": "apps/web/components/chat/message-list/context-menu.tsx:177,191",
+      "issue": "Context menu ref array index overlap for conditional items causing focus management issues \u00e2\u20ac\u201d Forward and Pin reuse indices 4-5 which overlap with Edit and Delete",
+      "impact": "When conditional menu items (Forward, Pin, Edit, Delete) are shown/hidden, menuItemsRef indices overlap. Arrow key navigation may skip or double-focus items. Focus management breaks when editing permissions or feature flags change available actions",
+      "fix": "Remove fixed array indexing from menuItemsRef. Use a dynamic counter that increments conditionally, or use a Map<key, ref> approach that only assigns indices for rendered items. Ensure autoFocus and arrow-key navigation only reference actually-mounted elements"
     },
     {
       "severity": "P3",
       "domain": "frontend",
-      "category": "F7 \u2014 Performance",
-      "file": "apps/web/components/chat/emoji-picker.tsx",
-      "issue": "3357 emoji entries are statically imported adding ~150KB to client bundle",
-      "impact": "The emoji-data.ts is always bundled with the chat chunk regardless of whether the emoji picker is opened. Increases initial JS payload and parse time for all users.",
-      "fix": "Lazy-load emoji-data.ts via dynamic import when EmojiPicker first mounts. Use React.lazy or next/dynamic for the picker component itself. Cache the loaded data in a module-level variable."
+      "category": "accessibility",
+      "file": "apps/web/components/chat/message-list/message-item.tsx:472-476",
+      "issue": "Reaction tooltips use native HTML title attribute \u00e2\u20ac\u201d not keyboard accessible, no user names shown",
+      "impact": "Reaction tooltips ('You and X others') cannot be triggered by keyboard users and do not display the names of who reacted. Screen readers only get minimal count info without detailed participant context",
+      "fix": "Add a proper tooltip component listing names of users who reacted on hover/focus, or use aria-label with aggregated count and names. Consider a small popover listing reactors on click"
     },
     {
       "severity": "P3",
       "domain": "frontend",
-      "category": "F8 \u2014 Interaction Quality",
-      "file": "apps/web/components/workspace/app-sidebar.tsx",
-      "issue": "Category drag-and-drop reorder uses HTML5 DnD API with no touch support",
-      "impact": "Mobile and tablet users cannot reorder sidebar categories because native HTML5 drag-and-drop does not work on touch devices. This feature is desktop-only despite the app being responsive.",
-      "fix": "Add touch event handlers (touchstart/touchmove/touchend) that mirror the drag logic. Alternatively, use a pointer-events-based approach or a lightweight library like @dnd-kit/core."
+      "category": "accessibility",
+      "file": "apps/web/components/chat/message-list/message-item.tsx:421-457",
+      "issue": "Post-menu action buttons (post-menu__item) have 28px height/width which is below WCAG 2.5.5 minimum 44px touch target size on mobile",
+      "impact": "Users on small touch screens may struggle to accurately tap 28px icon buttons on mobile devices, especially the reaction, bookmark, edit, and delete action buttons in the post-menu",
+      "fix": "Increase post-menu__item min-width and min-height to 44px on touch devices via CSS media query (hover: none). Add adequate padding/spacing between adjacent buttons"
     },
     {
       "severity": "P3",
       "domain": "frontend",
-      "category": "F9 \u2014 Visual Consistency",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "Inline styles use hardcoded color values instead of CSS custom properties",
-      "impact": "Hardcoded colors (#fff, rgba(0,0,0,0.4)) in ConnectionBanner, overlay, and button elements break dark mode consistency and make theme customization harder. Minor visual drift between themed and un-themed elements.",
-      "fix": "Replace hardcoded colors with CSS variables: use var(--banner-bg) for connection banner, var(--overlay-bg) for modals. Add fallback values for backwards compatibility."
+      "category": "accessibility",
+      "file": "apps/web/components/chat/thread-panel.tsx:294-306",
+      "issue": "Thread panel inline delete confirmation dialog lacks focus trap and keyboard navigation",
+      "impact": "Keyboard users can tab outside the inline delete confirmation in the thread panel, breaking the modal interaction pattern. Unlike the main DeleteDialog component which has proper focus trapping, the thread version is a raw overlay with no focus management",
+      "fix": "Add focus trap (Tab cycle) to the inline delete dialog in thread-panel.tsx using same pattern as DeleteDialog's handleTab, or extract shared DeleteDialog component for use in both contexts"
     },
     {
-      "severity": "P2",
+      "severity": "P3",
       "domain": "frontend",
-      "category": "F10 \u2014 Component Architecture",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "ChatView component exceeds 890 lines with 8+ mixed responsibilities",
-      "impact": "Single component handles socket lifecycle, optimistic updates, file uploads, typing, presence, notifications, media room, replies, threads, and channel info. Hard to test, maintain, or reason about. Changes risk breaking unrelated features.",
-      "fix": "Extract: useChannelSocket (socket join/leave/events), useChannelNotifications (sound + desktop + prefs), useTypingIndicator (emit + display). ChatView should only compose these hooks with JSX."
+      "category": "observability",
+      "file": "apps/web/components/chat/chat-view.tsx:63, apps/web/components/chat/message-input.tsx:215, apps/web/components/workspace/app-sidebar.tsx:205 (representative of 39 instances)",
+      "issue": "Vague console.warn messages lack error context, request IDs, and component names across 39 catch blocks",
+      "impact": "Reduced debuggability of production errors; no way to correlate warnings to specific operations, users, or API calls. When a warning appears in logs, there's insufficient context to identify the root cause",
+      "fix": "Include component name, operation context, and error details in every console.warn call. Route through structured logging service that captures stack traces, component hierarchy, and request context"
     }
   ]
 }

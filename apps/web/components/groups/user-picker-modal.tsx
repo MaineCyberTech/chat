@@ -155,7 +155,7 @@ export function UserPickerModal({
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
                   style={
                     isSelected
-                      ? { backgroundColor: "var(--button-bg)", color: "#fff" }
+                        ? { backgroundColor: "var(--button-bg)", color: "var(--button-color)" }
                       : {
                           backgroundColor: "var(--color-avatar-bg, #e8e8e8)",
                           color: "var(--color-avatar-fg, #333)",

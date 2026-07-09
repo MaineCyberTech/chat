@@ -1,0 +1,71 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "environment_drift_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-09T03:06:59Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 3,
+    "P3": 2
+  },
+  "category_scores": {},
+  "readiness": 85,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "security_headers",
+      "file": "infra/docker/Caddyfile",
+      "issue": "Dev Caddyfile missing HSTS and Permissions-Policy headers present in prod Caddyfile",
+      "impact": "Development environment less secure; security testing may miss HSTS/Permissions-Policy issues before prod deploy",
+      "fix": "Add same security headers (Strict-Transport-Security, Permissions-Policy) to dev Caddyfile"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "caddy_tls",
+      "file": "infra/docker/Caddyfile.prod",
+      "issue": "Prod Caddyfile missing /healthz route \u00e2\u20ac\u201d only /health is routed",
+      "impact": "Full health check (including DB check) not available via Caddy on prod; direct API access needed",
+      "fix": "Add @healthz path block in prod Caddyfile routing to api:4000"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "compose_drift",
+      "file": "infra/docker/docker-compose.devremote.yml : docker-compose.prod.yml",
+      "issue": "Prod compose file missing env_file: .env reference on web service (dev has it)",
+      "impact": "Prod web service may not pick up all env vars consistently",
+      "fix": "Add env_file: .env to web service in docker-compose.prod.yml"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "health_check",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose file missing healthcheck on web service (dev has one)",
+      "impact": "Deploy health check only validates API, not web service availability",
+      "fix": "Add healthcheck block to web service in docker-compose.prod.yml matching dev compose"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "domain_cookie",
+      "file": "infra/docker/Caddyfile : Caddyfile.prod",
+      "issue": "Dev Caddyfile uses .us domain via internal certs, prod uses .com via CF origin cert \u00e2\u20ac\u201d drift expected but no documentation of domain-specific cookie config",
+      "impact": "Auth cookies set on .us domain won't work on .com; operators must be aware of this during promotion",
+      "fix": "Document required auth cookie domain changes in environment promotion runbook"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "livekit_config",
+      "file": "infra/docker/docker-compose.devremote.yml : docker-compose.prod.yml",
+      "issue": "Dev LiveKit uses turn.domain: localhost; prod uses $DOMAIN variable \u00e2\u20ac\u201d TURN TLS port 5349 only in prod",
+      "impact": "TURN/STUN not fully functional in dev for WebRTC behind NAT",
+      "fix": "Document that LiveKit TURN requires production domain for full functionality"
+    }
+  ],
+  "run_id": "environment_drift_audit_20260709_070724"
+}

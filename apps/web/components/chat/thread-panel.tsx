@@ -3,8 +3,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Avatar, Button, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
-import { X, ChevronDown, ChevronRight } from "lucide-react";
+import { X, ChevronDown, ChevronRight, Smile } from "lucide-react";
+import { EmojiPicker } from "./emoji-picker";
 import type { Message, UserProfile } from "@chat/db";
+
+interface Reaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
+}
 
 interface Props {
   parentMessage: Message;
@@ -52,6 +60,8 @@ export function ThreadPanel({
   const [deleteError, setDeleteError] = useState("");
   const [participants, setParticipants] = useState<ParticipantInfo[]>([]);
   const [collapsed, setCollapsed] = useState(false);
+  const [reactions, setReactions] = useState<Map<string, Reaction[]>>(new Map());
+  const [pickerMessageId, setPickerMessageId] = useState<string | null>(null);
   const { addToast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
   const replyRef = useRef<HTMLTextAreaElement>(null);
@@ -68,6 +78,47 @@ export function ThreadPanel({
   }, [parentMessage.id, replies.length]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [replies.length]);
+
+  // Fetch reactions for all replies
+  useEffect(() => {
+    const ids = replies.map((r) => r.id);
+    if (ids.length === 0) return;
+    const CHUNK_SIZE = 20;
+    const chunks: string[][] = [];
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) chunks.push(ids.slice(i, i + CHUNK_SIZE));
+    Promise.all(
+      chunks.map((chunk) =>
+        api
+          .get<{ reactions: Record<string, Reaction[]> }>(`/reactions/batch?message_ids=${chunk.join(",")}`)
+          .then((res) => Object.entries(res.reactions).map(([id, r]) => ({ id, reactions: r })))
+          .catch(() => Promise.all(chunk.map((id) => api.get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`).then((r) => ({ id, reactions: r.reactions })).catch(() => ({ id, reactions: [] }))))),
+      ),
+    ).then((chunkResults) => {
+      setReactions((prev) => {
+        const next = new Map(prev);
+        chunkResults.flat().forEach((r) => next.set(r.id, r.reactions));
+        return next;
+      });
+    });
+  }, [replies]);
+
+  async function toggleReaction(messageId: string, emoji: string) {
+    try {
+      const res = await api.post<{ reaction: Reaction; removed: boolean }>(`/messages/${messageId}/reactions`, { emoji });
+      setReactions((prev) => {
+        const next = new Map(prev);
+        const existing = next.get(messageId) ?? [];
+        if (res.removed) {
+          next.set(messageId, existing.filter((r) => !(r.user_id === currentUserId && r.emoji === emoji)));
+        } else {
+          next.set(messageId, [...existing, res.reaction]);
+        }
+        return next;
+      });
+    } catch {
+      addToast({ title: "Error", description: "Failed to toggle reaction", variant: "error" });
+    }
+  }
 
   useEffect(() => {
     if (replyRef.current) { replyRef.current.style.height = "auto"; replyRef.current.style.height = `${Math.min(replyRef.current.scrollHeight, 120)}px`; }
@@ -184,6 +235,44 @@ export function ThreadPanel({
                             </p>
                           )}
                           {reply.edited_at && <p className="mt-0.5 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>(edited)</p>}
+                          {/* Reactions */}
+                          {(() => {
+                            const replyReactions = reactions.get(reply.id);
+                            const grouped = replyReactions ? replyReactions.reduce<Record<string, Reaction[]>>((acc, r) => { (acc[r.emoji] ??= []).push(r); return acc; }, {}) : {};
+                            return (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {Object.entries(grouped).map(([emoji, reactors]) => (
+                                  <button
+                                    key={emoji}
+                                    onClick={() => toggleReaction(reply.id, emoji)}
+                                    className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs transition-colors hover:bg-[rgba(var(--button-bg-rgb),0.08)]"
+                                    style={{
+                                      background: reactors.some((r) => r.user_id === currentUserId)
+                                        ? "rgba(var(--button-bg-rgb), 0.12)"
+                                        : "rgba(var(--center-channel-color-rgb), 0.06)",
+                                    }}
+                                    aria-label={`${reactors.length} ${reactors.length === 1 ? "reaction" : "reactions"}`}
+                                  >
+                                    <span>{emoji}</span>
+                                    <span style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>{reactors.length}</span>
+                                  </button>
+                                ))}
+                                <button
+                                  onClick={() => setPickerMessageId(pickerMessageId === reply.id ? null : reply.id)}
+                                  className="flex h-5 w-5 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                                  aria-label="Add reaction"
+                                >
+                                  <Smile size={12} style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }} />
+                                </button>
+                                {pickerMessageId === reply.id && (
+                                  <EmojiPicker
+                                    onSelect={(emoji) => { toggleReaction(reply.id, emoji); setPickerMessageId(null); }}
+                                    onClose={() => setPickerMessageId(null)}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })()}
                           {isOwn && !isEditing && (
                             <div className="mt-0.5 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
                               <button onClick={() => { setEditingId(reply.id); setEditContent(reply.content); }} className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }} aria-label="Edit reply">Edit</button>

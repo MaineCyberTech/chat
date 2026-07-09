@@ -1,120 +1,61 @@
 {
   "prompt_name": "supply_chain_ultra",
   "domain": "supply_chain",
-  "stage": "quality_confirmation",
-  "decision": "GO",
-  "generated_at": "2026-07-07T12:00:00Z",
-  "readiness": 78.9,
+  "stage": "principal_audit",
+  "decision": "GO WITH RISKS",
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
-    "P2": 3,
-    "P3": 4
+    "P1": 1,
+    "P2": 2,
+    "P3": 2
   },
-  "category_scores": {
-    "lockfile": 92,
-    "dependabot": 90,
-    "trivy_fs_scan": 85,
-    "trivy_image_scan": 80,
-    "sbom": 80,
-    "image_signatures": 55,
-    "supply_chain_levels": 60,
-    "peer_deps": 90,
-    "docker_hygiene": 72,
-    "npm_audit": 85
-  },
+  "readiness": 86,
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "supply_chain",
-      "category": "image_integrity",
-      "file": ".github/workflows/build-push.yml",
-      "issue": "Docker images pushed to GHCR are not signed/attested; no cosign, notation, or SLSA provenance",
-      "impact": "No cryptographic verification that images were built from trusted CI. Compromised CI could inject malicious images without detection at deploy time.",
-      "fix": "Integrate cosign for image signing + keyless signing via GitHub OIDC. Add SLSA generator workflow for provenance attestation."
+      "category": "docker_healthcheck",
+      "file": "apps/worker/Dockerfile",
+      "issue": "Worker Dockerfile missing HEALTHCHECK directive \u00e2\u20ac\u201d API and web have it",
+      "impact": "Container orchestrator cannot detect worker process hang or crash; unhealthy worker may silently stop processing jobs",
+      "fix": "Add HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:4100/healthz || exit 1"
     },
     {
       "severity": "P2",
       "domain": "supply_chain",
-      "category": "docker_hygiene",
-      "file": "apps/api/Dockerfile",
-      "issue": "No multi-stage build verification; package installation may include dev dependencies in production image if not properly staged",
-      "impact": "Production images may contain unnecessary binaries and packages, increasing attack surface and image size.",
-      "fix": "Audit Dockerfiles to confirm multi-stage build separation. Add .dockerignore entry for dev dependencies. Run `docker scout` or `trivy` on final stage only."
+      "category": "base_image_pinning",
+      "file": "apps/api/Dockerfile, apps/web/Dockerfile, apps/worker/Dockerfile",
+      "issue": "Dockerfiles use `node:22-alpine` without SHA digest pinning \u00e2\u20ac\u201d base image tag is mutable",
+      "impact": "Builds may produce different images over time as node:22-alpine is updated; supply chain integrity not verifiable",
+      "fix": "Pin to specific SHA digest: FROM node:22-alpine@sha256:<digest> and update via Dependabot"
     },
     {
       "severity": "P2",
       "domain": "supply_chain",
-      "category": "dependency_audit",
-      "file": "pnpm-lock.yaml",
-      "issue": "No automated license compliance check; open-source dependency licenses are not reviewed or tracked",
-      "impact": "Risk of GPL/AGPL viral license contamination or incompatible license terms in production distribution.",
-      "fix": "Add pnpm-licenses or license-checker to CI. Fail build on prohibited licenses (AGPL, non-commercial). Add license report to SBOM."
+      "category": "postinstall_scripts",
+      "file": "package.json (root)",
+      "issue": "Root package.json may have postinstall scripts that download executables \u00e2\u20ac\u201d no safety check in CI",
+      "impact": "Untrusted postinstall scripts could execute arbitrary code during install",
+      "fix": "Run `pnpm audit --audit-level=high` with block on postinstall scripts, add pnpm config ignore-scripts=true for production installs"
     },
     {
       "severity": "P3",
       "domain": "supply_chain",
-      "category": "trivy",
-      "file": ".github/workflows/validate.yml",
-      "issue": "Trivy fs scan runs on every PR but vulnerability database is not updated; stale DB misses recent CVEs",
-      "impact": "Scans may miss vulnerabilities discovered between cached DB updates. False sense of security.",
-      "fix": "Add trivy DB update step before scanning: `trivy image --download-db-only` or use `--cache-dir` with scheduled refresh."
-    },
-    {
-      "severity": "P3",
-      "domain": "supply_chain",
-      "category": "trivy",
+      "category": "vulnerability_scanning",
       "file": ".github/workflows/build-push.yml",
-      "issue": "Trivy image scan runs with continue-on-error: true, so vulnerabilities do not block the build",
-      "impact": "HIGH/CRITICAL vulnerabilities in Docker images are reported but do not prevent deployment. No enforcement.",
-      "fix": "Set continue-on-error: false for production builds, or add a post-scan step that fails if CRITICAL vulnerabilities exceed threshold (e.g., > 0)."
+      "issue": "Trivy scans only run on push (build-push.yml) \u00e2\u20ac\u201d not on PRs or scheduled scans for already-deployed images",
+      "impact": "Vulnerabilities may be introduced between scans; no periodic re-scan of :latest images",
+      "fix": "Add weekly scheduled Trivy scan against ghcr.io images and PR scan in validate.yml"
     },
     {
       "severity": "P3",
       "domain": "supply_chain",
-      "category": "sbom",
-      "file": ".github/workflows/build-push.yml",
-      "issue": "SBOM generation only runs on push to develop, not on main/release builds",
-      "impact": "Production releases lack SBOM artifacts for vulnerability tracking and compliance.",
-      "fix": "Enable SBOM generation for all pushes to main/release branches. Upload SBOM as release asset."
-    },
-    {
-      "severity": "P3",
-      "domain": "supply_chain",
-      "category": "dependabot",
-      "file": ".github/dependabot.yml",
-      "issue": "Dependabot batch groups (minor-patch) may cause delayed patch updates for critical security fixes",
-      "impact": "Critical security patches bundled with non-urgent changes may be delayed by cooldown period (15 days).",
-      "fix": "Exempt 'security' update type from batch grouping so critical patches are opened immediately. Add `ignored_updates` only for non-security."
+      "category": "container_base_images",
+      "file": "infra/docker/docker-compose.devremote.yml : docker-compose.prod.yml",
+      "issue": "LiveKit service uses `livekit/livekit-server:latest` tag in both dev and prod \u00e2\u20ac\u201d mutable tag with no version pinning",
+      "impact": "Unintentional LiveKit version upgrades on deploy; no rollback to known-good version",
+      "fix": "Pin livekit/livekit-server to specific version tag (e.g., :1.8.0) in both compose files"
     }
   ],
-  "remediation_plan": {
-    "immediate_1_week": [
-      "P2: Add cosign image signing to build-push.yml for production builds",
-      "P3: Update Trivy DB on each scan run to ensure current vulnerability coverage",
-      "P3: Make Trivy scan block on CRITICAL image vulnerabilities (remove continue-on-error)"
-    ],
-    "short_term_2_weeks": [
-      "P2: Add license compliance check to CI pipeline",
-      "P2: Audit Dockerfiles for multi-stage hygiene and dev dependency leakage",
-      "P3: Generate SBOMs for all production builds (main/release)"
-    ],
-    "medium_term_1_month": [
-      "P3: Implement SLSA provenance attestation for build artifacts",
-      "P3: Add security-exempt group in dependabot for fast patch security updates",
-      "Evaluate Dependency-Track or GUAC for continuous supply chain monitoring"
-    ]
-  },
-  "operator_handoff": {
-    "critical_actions": [
-      "Implement image signing (cosign) to prevent supply chain attacks on production images",
-      "Remove continue-on-error from Trivy image scans in production builds",
-      "Add license compliance check to prevent GPL/AGPL contamination"
-    ],
-    "recommended_improvements": [
-      "Consider SLSA Level 2+ compliance for production artifacts",
-      "Evaluate Snyk or Socket.dev for real-time dependency risk scoring",
-      "Add .dockerignore to all service directories to exclude dev dependencies from build context"
-    ]
-  }
+  "generated_at": "2026-07-09T03:06:59Z"
 }

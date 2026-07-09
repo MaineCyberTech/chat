@@ -83,7 +83,7 @@ function ConnectionBanner() {
       className="px-4 py-1.5 text-center text-xs font-medium"
       style={{
         background: status === "reconnecting" ? "var(--warning-text)" : "var(--error-text)",
-        color: "#fff",
+        color: "var(--button-color)",
       }}
       role="alert"
     >
@@ -786,7 +786,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               className="animate-slide-in-right absolute top-0 right-0 bottom-0 flex w-full max-w-md flex-col"
               style={{
                 background: "var(--center-channel-bg)",
-                boxShadow: "-4px 0 12px rgba(0,0,0,0.15)",
+                boxShadow: "var(--elevation-4)",
               }}
             >
               <div
@@ -848,7 +848,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
               className="animate-slide-in-right absolute top-0 right-0 bottom-0 flex w-full max-w-sm flex-col"
               style={{
                 background: "var(--center-channel-bg)",
-                boxShadow: "-4px 0 12px rgba(0,0,0,0.15)",
+                boxShadow: "var(--elevation-4)",
               }}
             >
               <div

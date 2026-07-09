@@ -1,0 +1,62 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "supply_chain_ultra",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-09T03:06:59Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 2,
+    "P3": 2
+  },
+  "category_scores": {},
+  "readiness": 86,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "supply_chain",
+      "category": "docker_healthcheck",
+      "file": "apps/worker/Dockerfile",
+      "issue": "Worker Dockerfile missing HEALTHCHECK directive \u00e2\u20ac\u201d API and web have it",
+      "impact": "Container orchestrator cannot detect worker process hang or crash; unhealthy worker may silently stop processing jobs",
+      "fix": "Add HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:4100/healthz || exit 1"
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "base_image_pinning",
+      "file": "apps/api/Dockerfile, apps/web/Dockerfile, apps/worker/Dockerfile",
+      "issue": "Dockerfiles use `node:22-alpine` without SHA digest pinning \u00e2\u20ac\u201d base image tag is mutable",
+      "impact": "Builds may produce different images over time as node:22-alpine is updated; supply chain integrity not verifiable",
+      "fix": "Pin to specific SHA digest: FROM node:22-alpine@sha256:<digest> and update via Dependabot"
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "postinstall_scripts",
+      "file": "package.json (root)",
+      "issue": "Root package.json may have postinstall scripts that download executables \u00e2\u20ac\u201d no safety check in CI",
+      "impact": "Untrusted postinstall scripts could execute arbitrary code during install",
+      "fix": "Run `pnpm audit --audit-level=high` with block on postinstall scripts, add pnpm config ignore-scripts=true for production installs"
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "vulnerability_scanning",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Trivy scans only run on push (build-push.yml) \u00e2\u20ac\u201d not on PRs or scheduled scans for already-deployed images",
+      "impact": "Vulnerabilities may be introduced between scans; no periodic re-scan of :latest images",
+      "fix": "Add weekly scheduled Trivy scan against ghcr.io images and PR scan in validate.yml"
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "container_base_images",
+      "file": "infra/docker/docker-compose.devremote.yml : docker-compose.prod.yml",
+      "issue": "LiveKit service uses `livekit/livekit-server:latest` tag in both dev and prod \u00e2\u20ac\u201d mutable tag with no version pinning",
+      "impact": "Unintentional LiveKit version upgrades on deploy; no rollback to known-good version",
+      "fix": "Pin livekit/livekit-server to specific version tag (e.g., :1.8.0) in both compose files"
+    }
+  ],
+  "run_id": "supply_chain_ultra_20260709_070725"
+}

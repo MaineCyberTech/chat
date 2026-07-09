@@ -3,96 +3,76 @@
   "domain": "release",
   "stage": "frontend_release_gate",
   "decision": "GO",
-  "generated_at": "2026-07-08T00:00:00Z",
+  "generated_at": "2026-07-09T15:00:00Z",
+  "readiness": 63,
   "severity_counts": {
     "P0": 0,
-    "P1": 2,
-    "P2": 4,
-    "P3": 2
+    "P1": 0,
+    "P2": 3,
+    "P3": 3
   },
   "category_scores": {
-    "Security": 70,
-    "Testing": 40,
-    "Resilience": 65,
-    "Rollback_Readiness": 75,
-    "Observability": 70,
-    "Performance": 80,
-    "Accessibility": 65,
-    "CI_CD": 70
+    "e2e_coverage": 40,
+    "visual_regression": 35,
+    "rollback_readiness": 75,
+    "feature_flag_coverage": 70,
+    "release_automation": 70,
+    "operator_handoff": 65
   },
-  "readiness": 66.8,
   "findings": [
     {
-      "severity": "P1",
+      "severity": "P2",
       "domain": "release",
-      "category": "Security \u2014 Content Security Policy",
-      "file": "apps/web/app/layout.tsx",
-      "issue": "CSP includes 'unsafe-eval' which is unnecessary and 'unsafe-inline' for all scripts",
-      "impact": "Unsafe-eval enables XSS via eval() calls even though TipTap and Next.js do not require it. Unsafe-inline on all scripts means any injected script executes. Production CSP should use nonces or hashes for inline scripts.",
-      "fix": "Remove 'unsafe-eval' from script-src. Move 3 inline scripts (theme, viewport, reduced-motion) to nonce-based execution by generating a nonce in middleware. Add 'strict-dynamic' for fallback. Test all third-party script integrations."
-    },
-    {
-      "severity": "P1",
-      "domain": "release",
-      "category": "Testing \u2014 E2E Coverage",
-      "file": "apps/web/e2e/comprehensive.spec.ts",
-      "issue": "88% of E2E tests are skipped due to missing Supabase test project",
-      "impact": "No automated validation of sign-in, workspace creation, channel CRUD, message operations, file upload, WebSocket messaging, presence, notifications, or authorization. Releases cannot be certified via CI. Manual testing is the only gate.",
-      "fix": "Provision a Supabase test project with seed data. Create CI job for migrations + seed. Use test user credentials stored as CI secrets. Remove all test.skip() calls and implement proper assertions with fixtures."
+      "category": "E2E Coverage \u00e2\u20ac\u201d Core Journeys",
+      "file": "apps/web/e2e/comprehensive.spec.ts (24 of 28 tests skipped), tests/e2e/ (depends on external credentials)",
+      "issue": "No automated regression validation of core user journeys in CI \u00e2\u20ac\u201d sign-in, workspace creation, channel creation, message send, and real-time delivery all lack reliable automated testing",
+      "impact": "Every release requires manual full-regression testing for the core value proposition (auth -> workspace -> channel -> message). The skip pattern has been present since test files were created with no resolution plan. External credential dependency blocks CI execution",
+      "fix": "Provision a test Supabase project or local emulator with CI credentials. Create seed SQL for test workspaces, channels, users, and messages. Add CI job: migrate -> seed -> run E2E -> teardown. Remove all test.skip() and implement real assertions against seeded data"
     },
     {
       "severity": "P2",
       "domain": "release",
-      "category": "Testing \u2014 Visual Regression",
+      "category": "Visual Regression \u00e2\u20ac\u201d Baseline Coverage",
       "file": "apps/web/e2e/visual-snapshot.spec.ts",
-      "issue": "No committed visual snapshot baselines exist in the repository",
-      "impact": "Playwright toHaveScreenshot assertions will pass on first run (auto-creating baselines) but subsequent runs compare against those auto-generated images. Without review, visual regressions go undetected. No baseline review process exists.",
-      "fix": "Generate baseline screenshots on a known-good commit. Review each for visual correctness. Commit baseline PNGs to the repo. Add CI step that fails if visual diff exceeds 1% threshold. Add a PR comment with diff images."
+      "issue": "Visual snapshot coverage limited to 3 pages (login, settings, 404) with no authenticated states, no workspace layout, no channel view, no dark mode",
+      "impact": "Only login page, settings page (unauthenticated), and 404 page have snapshot tests. No coverage for the workspace layout, channel view, message list, thread panel, emoji picker, or dark mode. Critical visual regressions in these areas are undetectable in CI",
+      "fix": "Add visual snapshots for: workspace layout with sidebar, channel view with messages, message input with formatting toolbar, emoji picker open, thread panel, settings page dark mode, mobile breakpoint (375px) for key pages. Use mock API responses for deterministic snapshots"
     },
     {
       "severity": "P2",
       "domain": "release",
-      "category": "Resilience \u2014 WebSocket",
-      "file": "apps/web/lib/socket.ts",
-      "issue": "No feature flag or kill-switch to disable WebSocket connections during incidents",
-      "impact": "If Socket.io misbehaves (reconnect storm, high memory, backend failure), operators have no way to disable real-time connections without a full deployment. Users get stuck in reconnect loops with no graceful fallback.",
-      "fix": "Add getSocket() check against /v1/feature-flags endpoint. When 'realtime_disabled' flag is active, return a no-op socket that fires events to /dev/null. Show persistent banner: 'Real-time unavailable \u2014 page reload may be required.'"
-    },
-    {
-      "severity": "P2",
-      "domain": "release",
-      "category": "Rollback Readiness \u2014 Database Migrations",
-      "file": "supabase/rollback/",
-      "issue": "CI does not test migration rollback scripts in automated pipeline",
-      "impact": "Down migration scripts exist for most migrations but are never verified in CI. A migration with a broken rollback could prevent production rollback, forcing a maintenance window or data restore from backup.",
-      "fix": "Add CI job that runs all pending migrations up, verifies schema, runs all rollbacks down, verifies schema matches pre-migration state, and reports any errors. Fail CI if any rollback fails."
+      "category": "Rollback Readiness \u00e2\u20ac\u201d Migration Testing",
+      "file": "supabase/rollback/ (rollback scripts exist but no automated migration rollback test in CI)",
+      "issue": "Rollback scripts exist for database migrations but there is no automated CI validation that rollbacks execute cleanly and restore previous state",
+      "impact": "While migration rollback scripts exist, they are verified only through CI checking their existence, not through actual execution. In a real rollback scenario, operators cannot be confident that rollback scripts will succeed without data loss",
+      "fix": "Add CI job that applies pending migrations, creates test data, then executes rollback scripts and verifies: (1) rollback SQL completes without error, (2) previous schema is restored, (3) test data integrity is verified. Integrate into the deployment pipeline"
     },
     {
       "severity": "P3",
       "domain": "release",
-      "category": "Performance \u2014 Bundle Analysis",
-      "file": "apps/web/next.config.ts",
-      "issue": "No bundle size regression check in CI pipeline",
-      "impact": "Large dependencies can be added without visibility into their impact on initial load JS. No alerting when bundle grows beyond acceptable thresholds. Users on slow connections may experience degradation without team awareness.",
-      "fix": "Add @next/bundle-analyzer. Configure CI step to generate bundle report on main and PR. Set size budget (300KB gzip for initial route JS). Fail CI if budget exceeded. Post bundle diff comment on PRs."
+      "category": "Release Automation \u00e2\u20ac\u201d Artifact Versioning",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Docker images tagged with :dev and :latest tags but no semantic versioning or git SHA tagging that allows traceability between release artifacts and source code",
+      "impact": "In a rollback scenario, operators cannot easily determine which image tag corresponds to the previous working release. The :latest tag is mutable and overwritten. There's no immutable reference linking artifacts to specific git commits",
+      "fix": "Tag Docker images with git SHA (e.g., :sha-abc1234) in addition to :dev/:latest. Store the mapping in a deployment manifest. Update deploy workflows to reference SHA-tagged images explicitly"
     },
     {
       "severity": "P3",
       "domain": "release",
-      "category": "Observability \u2014 Error Reporting",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "Multiple catch blocks use console.warn instead of structured error reporting to Sentry",
-      "impact": "Socket initialization failures, profile load errors, and message load failures are silently logged to console.warn. In production, these errors are invisible to operators. Sentry is initialized but these specific errors bypass it.",
-      "fix": "Create a structured logger utility that prefixes component/operation context. Route important failures to Sentry.captureException or Sentry.captureMessage with appropriate level. Keep console.warn only for low-severity debug info."
+      "category": "Rollback Readiness \u00e2\u20ac\u201d Kill Switches",
+      "file": "apps/api/src/modules/feature-flags/__tests__/feature-flags.test.ts",
+      "issue": "Feature flag tests exist but no production kill-switch mechanism is documented or tested for rapid feature disablement without code deployment",
+      "impact": "Critical features (file upload, notifications, AI rewrite, search) do not have emergency stop paths that can be activated without a code deployment. If a feature causes production issues, the only recovery path is rollback or hotfix deployment",
+      "fix": "Expose a feature flag management API endpoint (PATCH /v1/feature-flags/:name) that can be toggled remotely. Add dashboard UI for operators. Document kill-switch activation procedure in runbook"
     },
     {
-      "severity": "P2",
+      "severity": "P3",
       "domain": "release",
-      "category": "Accessibility \u2014 Focus Indicator",
-      "file": "apps/web/app/globals.css",
-      "issue": "Custom interactive elements lack consistent focus-visible indicators",
-      "impact": "Keyboard users navigating the app cannot see which element is focused on mm-button-icon buttons, sidebar items, and action toolbar buttons. The CSS reset removes browser default outlines but custom focus styles are only on the skip link.",
-      "fix": "Add global focus-visible style: [data-focus-visible-added] or :focus-visible { outline: 2px solid var(--button-bg); outline-offset: 2px; }. Apply to all interactive elements. Ensure 3:1 minimum contrast ratio for focus indicators."
+      "category": "Operator Handoff \u00e2\u20ac\u201d Runbook Completeness",
+      "file": "docs/runbooks/ (check for deployment rollback runbook)",
+      "issue": "Deployment rollback runbook exists but lacks specific validation steps for data integrity, cache invalidation, and WebSocket connection drain procedures",
+      "impact": "Operators following the rollback runbook may miss critical post-rollback validation steps. Incomplete drain of WebSocket connections could cause message loss. Cache inconsistency after rollback could show stale data",
+      "fix": "Update deployment rollback runbook with: (1) WebSocket drain and reconnect verification after rollback, (2) cache invalidation steps (Redis flush if schema changed), (3) data integrity SQL queries to run before/after rollback, (4) smoke test checklist for operator"
     }
   ]
 }

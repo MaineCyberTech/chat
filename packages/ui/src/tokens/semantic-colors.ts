@@ -11,9 +11,9 @@ export const semanticColors = {
   foreground: {
     primary: colorTokens.neutral[950],
     secondary: colorTokens.neutral[600],
-    tertiary: colorTokens.neutral[400],
+    tertiary: colorTokens.neutral[500],
     inverse: colorTokens.base.white,
-    muted: colorTokens.neutral[400],
+    muted: colorTokens.neutral[500],
   },
   border: {
     primary: colorTokens.neutral[200],

@@ -25,8 +25,10 @@ interface Props {
   onStatusChange: (status: StatusData | null) => void;
 }
 
+const PRESET_EMOJIS = ["💼", "🏖️", "🚴", "🍕", "📞", "🎧", "✈️", "🏠", "💊", "🎉"];
+
 export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
-  const [emoji] = useState(currentStatus?.emoji ?? "??");
+  const [emoji, setEmoji] = useState(currentStatus?.emoji ?? "💬");
   const [text, setText] = useState(currentStatus?.text ?? "");
   const [duration, setDuration] = useState<string>("1h");
   const [saving, setSaving] = useState(false);
@@ -88,8 +90,10 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
         </div>
         <div className="mb-3 flex gap-2">
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-lg border bg-[var(--center-channel-bg)] text-lg"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border bg-[var(--center-channel-bg)] text-lg cursor-pointer"
             style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+            onClick={() => { const r = PRESET_EMOJIS[Math.floor(Math.random() * PRESET_EMOJIS.length)]; if (r) setEmoji(r); }}
+            title="Click to change emoji"
           >
             {emoji}
           </div>
@@ -102,6 +106,20 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
             maxLength={100}
             autoFocus
           />
+        </div>
+        <div className="mb-3 flex flex-wrap gap-1">
+          {PRESET_EMOJIS.map((e) => (
+            <button
+              key={e}
+              onClick={() => setEmoji(e)}
+              className={`flex h-7 w-7 items-center justify-center rounded text-sm transition-colors ${
+                emoji === e ? "ring-2 ring-[var(--button-bg)]" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+              }`}
+              title={e}
+            >
+              {e}
+            </button>
+          ))}
         </div>
         <div className="mb-3">
           <p

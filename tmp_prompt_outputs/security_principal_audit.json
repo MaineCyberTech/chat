@@ -3,96 +3,75 @@
   "domain": "security",
   "stage": "principal_audit",
   "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-08T12:00:00.000Z",
+  "generated_at": "2026-07-09T12:00:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 3,
+    "P1": 1,
     "P2": 3,
-    "P3": 2
+    "P3": 1
   },
   "category_scores": {
-    "authentication": 85,
-    "authorization": 70,
-    "secret_handling": 90,
-    "cors_csrf": 60,
-    "input_validation": 75,
-    "rate_limiting": 85,
-    "logging_audit": 80,
-    "dependency_security": 85
+    "auth": 85,
+    "authorization": 78,
+    "secret_handling": 65,
+    "rls": 72,
+    "csp": 50
   },
-  "readiness": 79,
+  "readiness": 72,
   "findings": [
     {
       "severity": "P1",
       "domain": "security",
+      "category": "secret_handling",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "line": 27,
+      "issue": "WEBHOOK_ENCRYPTION_KEY falls back to JWT_SECRET for AES-256-GCM encryption",
+      "impact": "If WEBHOOK_ENCRYPTION_KEY is not configured, getEncryptionKey() derives AES key from JWT_SECRET via SHA-256. JWT_SECRET is designed for JWT signing, not encryption. Compromise of JWT_SECRET reveals all encrypted webhook secrets. No key rotation mechanism exists.",
+      "fix": "Make WEBHOOK_ENCRYPTION_KEY required in env schema. Remove JWT_SECRET fallback. Add key rotation support with version-prefixed encrypted values.",
+      "exploit_chain": "Attacker who obtains JWT_SECRET (via env leak, CI/CD exposure, or SSRF) can decrypt all stored webhook secrets using the derived key. With decrypted secrets, attacker can forge webhook signatures or hijack active webhook endpoints."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "rls",
+      "file": "supabase/policies/06_reactions.sql",
+      "line": 7,
+      "issue": "Reactions SELECT policy uses using(true) allowing all authenticated users cross-tenant access",
+      "impact": "Any authenticated user can enumerate reactions (emoji + user_id pairs) on any message across all workspaces. Leaks user activity patterns and workspace relationships.",
+      "fix": "Replace with scoped policy checking workspace membership via messages -> channels -> workspace_members join chain",
+      "exploit_chain": "Attacker creates account, authenticates, queries GET /v1/messages/:id/reactions for arbitrary message IDs. Without workspace membership check, they can map user-emoji relationships across the entire platform."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "csp",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "line": 5,
+      "issue": "CSP script-src 'self' without nonce or hash blocks Next.js inline hydration scripts",
+      "impact": "Next.js production builds inject inline script elements for page hydration. Current CSP blocks these, causing frontend JavaScript failure. Forces CSP to be disabled, negating XSS protection.",
+      "fix": "Add nonce generation in middleware or use 'strict-dynamic' for Next.js compatibility",
+      "exploit_chain": "Without a working CSP, XSS vulnerabilities in user-generated content become exploitable across all pages."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
       "category": "authorization",
-      "file": "apps/api/src/modules/consent/routes.ts",
-      "issue": "Consent GET endpoint returns all consent_logs without user_id filter \u2014 RLS restricts to own records but query pattern invites future mistakes",
-      "impact": "While RLS prevents cross-user data leak, the code pattern selects all rows without explicit filtering, making it fragile if RLS is ever disabled or bypassed",
-      "fix": "Add explicit .eq('user_id', req.userId) filter to the consent_logs query on line 11 of consent/routes.ts"
-    },
-    {
-      "severity": "P1",
-      "domain": "security",
-      "category": "data_lifecycle",
-      "file": "apps/api/src/modules/auth/routes.ts",
-      "issue": "GDPR account deletion does not clean up all user data \u2014 consent_logs, sidebar_categories, channel_bookmarks, audit_logs may leak",
-      "impact": "User account deletion via DELETE /account leaves orphaned PII in consent_logs, sidebar data, bookmarks, and audit log actor references, violating GDPR right to erasure",
-      "fix": "Add deletes for consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, and message_reminders before deleting the user in auth/routes.ts"
-    },
-    {
-      "severity": "P1",
-      "domain": "security",
-      "category": "authorization",
-      "file": "apps/api/src/modules/admin/routes.ts",
-      "issue": "Admin compliance export uses getSupabaseAdmin() which bypasses RLS with no workspace-level filtering",
-      "impact": "Admin compliance export returns ALL user PII, messages, channels, and audit logs for all workspaces in a single downloadable JSON \u2014 a compromised admin token leaks all tenant data",
-      "fix": "If workspace_id is specified, scope all queries to that workspace; otherwise paginate the export and add audit logging for every compliance export. For full-workspace exports, require explicit admin confirmation or second-factor"
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "authentication",
-      "file": "apps/api/src/modules/status/routes.ts",
-      "issue": "Status routes use global getSupabase() instead of per-request req.supabase client",
-      "impact": "GET, PUT, DELETE /status and batch endpoints use the global anon client, bypassing RLS user-scoping and potentially leaking user status data across tenants",
-      "fix": "Replace all getSupabase() calls in status/routes.ts with req.supabase from the per-user client"
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "input_validation",
-      "file": "apps/api/src/middleware/input-sanitizer.ts",
-      "issue": "Input sanitizer SQL injection patterns have high false-positive rate blocking legitimate content with common words",
-      "impact": "SQL injection pattern matching blocks words like 'select', 'insert', 'union', 'drop', 'alter' and sequences like '--', blocking legitimate messages about SQL or database topics",
-      "fix": "Remove SQL injection pattern matching from the global middleware; Supabase's parameterized queries are immune to SQL injection. Keep XSS pattern detection for non-content fields"
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "authentication",
-      "file": "apps/api/src/modules/notifications/routes.ts",
-      "issue": "Notification preference routes use global getSupabase() instead of per-request client",
-      "impact": "GET/PUT/DELETE /channels/:id/notification-preference use global anon client, bypassing RLS user context \u2014 could leak or allow modification of other users' preferences",
-      "fix": "Replace getSupabase() with req.supabase in notifications/routes.ts"
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "line": 24,
+      "issue": "GET /reactions/batch endpoint lacks message access validation",
+      "impact": "Batch reactions endpoint accepts arbitrary message_ids without checking user's workspace/channel membership. User can fetch reactions for messages in channels they don't belong to.",
+      "fix": "Add requireMessageAccess validation or verify each message_id against accessible channels server-side before returning reactions.",
+      "exploit_chain": "Hitting GET /v1/reactions/batch with message IDs from inaccessible channels returns reaction data, leaking user-emoji associations."
     },
     {
       "severity": "P3",
       "domain": "security",
-      "category": "observability",
-      "file": "apps/api/src/middleware/error-handler.ts",
-      "issue": "SHOW_STACK_TRACES env var conditionally exposes stack traces in error responses",
-      "impact": "If SHOW_STACK_TRACES is accidentally set to 'true' in production, full stack traces with internal paths may be returned to API consumers",
-      "fix": "Consider removing stack trace exposure entirely in non-development environments, or gate it behind NODE_ENV check in addition to the env var"
-    },
-    {
-      "severity": "P3",
-      "domain": "security",
-      "category": "dependency",
-      "file": "apps/api/src/modules/messages/routes.ts",
-      "issue": "DOMPurify sanitization strips all HTML tags from content including safe formatting",
-      "impact": "DOMPurify is configured with ALLOWED_TAGS: [] and ALLOWED_ATTR: [], stripping ALL HTML from message content \u2014 users cannot use any rich text including bold, lists, or links",
-      "fix": "Allow safe HTML tags (b, i, a, code, pre, blockquote, ul, ol, li) through DOMPurify to support rich text while preventing XSS"
+      "category": "logging",
+      "file": "apps/api/src/modules/admin/error-buffer.ts",
+      "line": 1,
+      "issue": "In-memory error buffer may expose sensitive data via admin logs endpoint",
+      "impact": "Error buffer stores unredacted error messages containing user IDs, IPs, paths. Any admin user can read GET /admin/logs. Buffer limited to 200 entries but sensitive data may accumulate.",
+      "fix": "Add PII redaction before pushError(). Filter sensitive fields from error entries. Consider time-based TTL."
     }
   ]
 }

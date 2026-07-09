@@ -3,10 +3,32 @@
 import React, { useState } from "react";
 import { useAuth } from "./auth-context";
 import { Button, Input } from "@chat/ui";
+import { t } from "@/lib/i18n";
 
 type Mode = "signin" | "signup";
 
 const isDev = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+
+function userSafeError(err: unknown): string {
+  if (typeof err !== "string") return t("common.somethingWentWrong", "Something went wrong. Please try again.");
+  const msg = err.toLowerCase();
+  if (msg.includes("invalid login credentials") || msg.includes("invalid email")) {
+    return t("auth.invalidCredentials", "Invalid email or password");
+  }
+  if (msg.includes("email not confirmed") || msg.includes("email not verified")) {
+    return t("auth.emailNotVerified", "Email not verified. Check your inbox.");
+  }
+  if (msg.includes("rate limit") || msg.includes("too many requests")) {
+    return t("auth.rateLimited", "Too many attempts. Please wait a moment.");
+  }
+  if (msg.includes("user already registered") || msg.includes("already exists")) {
+    return t("auth.emailAlreadyExists", "An account with this email already exists");
+  }
+  if (msg.includes("invalid otp") || msg.includes("invalid token")) {
+    return t("auth.invalidLink", "This link is invalid or has expired");
+  }
+  return t("common.somethingWentWrong", "Something went wrong. Please try again.");
+}
 
 export function LoginForm() {
   const { signIn, signUp, signInWithGoogle, signInWithGithub } = useAuth();
@@ -24,16 +46,16 @@ export function LoginForm() {
     if (mode === "signup") {
       if (!password) {
         setStatus("error");
-        setMessage("Password is required for sign-up.");
+        setMessage(t("auth.passwordRequired", "Password is required for sign-up."));
         return;
       }
       const result = await signUp(email, password);
       if (result.error) {
         setStatus("error");
-        setMessage(result.error);
+        setMessage(userSafeError(result.error));
       } else {
         setStatus("signedup");
-        setMessage("Account created! Check your email to confirm.");
+        setMessage(t("auth.accountCreated", "Account created! Check your email to confirm."));
       }
       return;
     }
@@ -42,19 +64,19 @@ export function LoginForm() {
       const result = await signIn(email, password);
       if (result.error) {
         setStatus("error");
-        setMessage(result.error);
+        setMessage(userSafeError(result.error));
       } else {
         setStatus("sent");
-        setMessage("Signed in successfully.");
+        setMessage(t("auth.signedIn", "Signed in successfully."));
       }
     } else {
       const result = await signIn(email);
       if (result.error) {
         setStatus("error");
-        setMessage(result.error);
+        setMessage(userSafeError(result.error));
       } else {
         setStatus("sent");
-        setMessage("Check your email for a magic link.");
+        setMessage(t("auth.magicLinkSent", "Check your email for a magic link."));
       }
     }
   }
@@ -91,7 +113,7 @@ export function LoginForm() {
             setMessage("");
           }}
           className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-            mode === "signin" ? "text-[#fff]" : "hover:text-[var(--center-channel-color)]"
+            mode === "signin" ? "text-[var(--button-color)]" : "hover:text-[var(--center-channel-color)]"
           }`}
           style={
             mode === "signin"
@@ -102,7 +124,7 @@ export function LoginForm() {
                 }
           }
         >
-          Sign In
+          {t("auth.signIn", "Sign In")}
         </button>
         <button
           onClick={() => {
@@ -111,7 +133,7 @@ export function LoginForm() {
             setMessage("");
           }}
           className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-            mode === "signup" ? "text-[#fff]" : "hover:text-[var(--center-channel-color)]"
+            mode === "signup" ? "text-[var(--button-color)]" : "hover:text-[var(--center-channel-color)]"
           }`}
           style={
             mode === "signup"
@@ -122,28 +144,28 @@ export function LoginForm() {
                 }
           }
         >
-          Sign Up
+          {t("auth.signUp", "Sign Up")}
         </button>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           id="email"
-          label="Email address"
+          label={t("auth.emailLabel", "Email address")}
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
+          placeholder={t("auth.emailPlaceholder", "you@example.com")}
         />
         <Input
           id="password"
-          label={mode === "signin" ? "Password (optional for magic link)" : "Password"}
+          label={mode === "signin" ? t("auth.passwordOptional", "Password (optional for magic link)") : t("auth.passwordLabel", "Password")}
           type="password"
           required={mode === "signup"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter your password"
+          placeholder={t("auth.passwordPlaceholder", "Enter your password")}
         />
         {status === "error" && (
           <p className="text-sm" style={{ color: "var(--dnd-indicator)" }} role="alert">
@@ -154,16 +176,16 @@ export function LoginForm() {
           {status === "loading" ? (
             <span className="flex items-center gap-2">
               <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />{" "}
-              Signing in...
+              {t("auth.signingIn", "Signing in...")}
             </span>
           ) : mode === "signin" ? (
             password ? (
-              "Sign In"
+              t("auth.signIn", "Sign In")
             ) : (
-              "Send Magic Link"
+              t("auth.sendMagicLink", "Send Magic Link")
             )
           ) : (
-            "Create Account"
+            t("auth.createAccount", "Create Account")
           )}
         </Button>
       </form>
@@ -180,7 +202,7 @@ export function LoginForm() {
             className="bg-[var(--center-channel-bg)] px-2"
             style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
           >
-            or continue with
+            {t("auth.orContinueWith", "or continue with")}
           </span>
         </div>
       </div>
@@ -230,7 +252,7 @@ export function LoginForm() {
             className="mb-2 text-center text-xs"
             style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
           >
-            Local dev — no test accounts in production
+            {t("auth.devNotice", "Local dev — no test accounts in production")}
           </p>
         </div>
       )}

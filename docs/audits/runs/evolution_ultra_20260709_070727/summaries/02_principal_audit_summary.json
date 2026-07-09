@@ -1,0 +1,89 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "evolution_ultra",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-09T03:06:59Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 3,
+    "P3": 3
+  },
+  "category_scores": {},
+  "readiness": 72,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "evolution",
+      "category": "metadata",
+      "file": "apps/web/app/",
+      "issue": "Only the root layout.tsx exports metadata \u00e2\u20ac\u201d none of the 14 page.tsx files have export const metadata or generateMetadata",
+      "impact": "All pages have generic browser tab title and no SEO/OpenGraph metadata; page titles are indistinguishable",
+      "fix": "Add export const metadata with appropriate title and description to each page.tsx \u00e2\u20ac\u201d at minimum: login, workspace, admin, search, settings, threads, saved, scheduled"
+    },
+    {
+      "severity": "P1",
+      "domain": "evolution",
+      "category": "loading_states",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/",
+      "issue": "No loading.tsx for workspaceSlug route group \u00e2\u20ac\u201d only root, workspace, and auth have loading states",
+      "impact": "Channel switching, search, admin, settings, and other sub-routes show blank page during loading",
+      "fix": "Add loading.tsx to (workspace)/[workspaceSlug]/ route group with skeleton matching each sub-route layout"
+    },
+    {
+      "severity": "P2",
+      "domain": "evolution",
+      "category": "empty_states",
+      "file": "apps/web/components/",
+      "issue": "No EmptyState component exists \u00e2\u20ac\u201d search results, channel lists, thread views, and other empty data states render blank content",
+      "impact": "Users see empty/blank areas with no guidance on what to do next",
+      "fix": "Create EmptyState component with icon, title, description, and action prop; use in search page, channel-info, thread-panel, scheduled, saved pages"
+    },
+    {
+      "severity": "P2",
+      "domain": "evolution",
+      "category": "n+1_queries",
+      "file": "apps/api/src/modules/",
+      "issue": "No explicit batching or DataLoader pattern for related entity queries (messages fetch user profiles, channels fetch members list)",
+      "impact": "List endpoints may exhibit N+1 query patterns under load, degrading API response times",
+      "fix": "Add DataLoader or batch-loading pattern for common N+1 patterns: user profiles in message lists, member info in channel lists"
+    },
+    {
+      "severity": "P2",
+      "domain": "evolution",
+      "category": "error_boundaries",
+      "file": "apps/web/components/",
+      "issue": "error.tsx exists at route group level but no component-level error boundaries in reusable components (message-list, channel-list, search-bar)",
+      "impact": "Error in a single component can crash the entire page layout",
+      "fix": "Add error boundaries to: message-list.tsx, chat-view.tsx, app-sidebar.tsx, search-bar.tsx \u00e2\u20ac\u201d each wraps its content with catch/retry"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "category": "loading_skeletons",
+      "file": "apps/web/app/(auth)/",
+      "issue": "Auth loading.tsx uses spinner instead of skeleton matching page layout",
+      "impact": "Visual jarring when transitioning from spinner to auth form layout",
+      "fix": "Replace auth loading spinner with page-shaped skeleton matching login form structure"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "category": "worker_health_endpoint",
+      "file": "apps/worker/src/",
+      "issue": "Worker has no HTTP health endpoint for external monitoring \u00e2\u20ac\u201d compose healthcheck uses kill -0 which only checks process is running, not that it's healthy",
+      "impact": "Cannot distinguish between process-alive and process-processing-jobs; a hung worker appears healthy",
+      "fix": "Add /healthz HTTP endpoint to worker that checks Redis connection, queue connectivity, and last-processed timestamp"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "category": "stale_ci_data",
+      "file": ".github/workflows/governance.yml",
+      "issue": "governance.yml workflow is marked as superseded by platform.yml but references non-existent scripts/automation/run_full.ps1",
+      "impact": "Running stale workflow would fail with script-not-found error",
+      "fix": "Either update scripts path or remove governance.yml workflow"
+    }
+  ],
+  "run_id": "evolution_ultra_20260709_070727"
+}

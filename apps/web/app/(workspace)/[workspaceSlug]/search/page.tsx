@@ -150,8 +150,8 @@ export default function SearchPage() {
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`shrink-0 rounded-lg px-3 text-xs font-medium transition-colors ${showFilters ? "text-white" : ""}`}
-            style={{ background: showFilters ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.08)", color: showFilters ? "#fff" : "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            className={`shrink-0 rounded-lg px-3 text-xs font-medium transition-colors ${showFilters ? "" : ""}`}
+            style={{ background: showFilters ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.08)", color: showFilters ? "var(--button-color)" : "rgba(var(--center-channel-color-rgb), 0.72)" }}
             aria-label="Toggle filters"
           >
             <Filter size={16} />

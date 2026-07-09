@@ -985,7 +985,7 @@ export function MessageInput({
                 className={`flex h-7 w-7 items-center justify-center rounded text-xs font-medium ${showFormatting ? "text-white" : ""}`}
                 style={{
                   background: showFormatting ? "var(--button-bg)" : "transparent",
-                  color: showFormatting ? "#fff" : "rgba(var(--center-channel-color-rgb), 0.56)",
+                  color: showFormatting ? "var(--button-color)" : "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))",
                 }}
                 aria-label="Toggle formatting toolbar"
                 title="Formatting"
@@ -997,7 +997,7 @@ export function MessageInput({
                 className={`flex h-7 w-7 items-center justify-center rounded text-xs font-medium ${showPreview ? "text-white" : ""}`}
                 style={{
                   background: showPreview ? "var(--button-bg)" : "transparent",
-                  color: showPreview ? "#fff" : "rgba(var(--center-channel-color-rgb), 0.56)",
+                  color: showPreview ? "var(--button-color)" : "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))",
                 }}
                 aria-label={showPreview ? "Hide preview" : "Show preview"}
               >
@@ -1185,7 +1185,7 @@ export function MessageInput({
                     <button
                       onClick={() => setShowSchedulePicker(false)}
                       className="rounded px-2 py-1 text-xs font-medium"
-                      style={{ background: "var(--button-bg)", color: "#fff" }}
+                      style={{ background: "var(--button-bg)", color: "var(--button-color)" }}
                     >
                       Done
                     </button>
@@ -1194,13 +1194,27 @@ export function MessageInput({
               )}
             </div>
 
-            <Button
-              size="md"
-              onClick={handleSubmit}
-              disabled={sending || (!content.trim() && files.length === 0)}
-            >
-              {scheduledAt ? <Clock size={18} /> : <Send size={18} />}
-            </Button>
+            <div className="flex items-center gap-1">
+              {content.length > 0 && (
+                <span
+                  className="text-[10px] tabular-nums"
+                  style={{
+                    color: content.length > 4000
+                      ? "var(--dnd-indicator)"
+                      : "rgba(var(--center-channel-color-rgb), 0.56)",
+                  }}
+                >
+                  {content.length}
+                </span>
+              )}
+              <Button
+                size="md"
+                onClick={handleSubmit}
+                disabled={sending || (!content.trim() && files.length === 0)}
+              >
+                {scheduledAt ? <Clock size={18} /> : <Send size={18} />}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

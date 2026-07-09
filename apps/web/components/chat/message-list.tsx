@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useToast } from "@chat/ui";
 import { api } from "@/lib/api";
 import { RemindModal } from "./remind-modal";
@@ -160,35 +161,32 @@ export function MessageList({
       });
     }
 
-    if (newIds.length <= 20) {
-      api
-        .get<{ reactions: Record<string, Reaction[]> }>(
-          `/reactions/batch?message_ids=${newIds.join(",")}`,
-        )
-        .then((res) => {
-          const entries = Object.entries(res.reactions).map(([id, r]) => ({ id, reactions: r }));
-          mergeResults(entries);
-        })
-        .catch(() => {
-          Promise.all(
-            newIds.map((id) =>
-              api
-                .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
-                .then((res) => ({ id, reactions: res.reactions }))
-                .catch(() => ({ id, reactions: [] as Reaction[] })),
-            ),
-          ).then(mergeResults);
-        });
-    } else {
-      Promise.all(
-        newIds.map((id) =>
-          api
-            .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
-            .then((res) => ({ id, reactions: res.reactions }))
-            .catch(() => ({ id, reactions: [] as Reaction[] })),
-        ),
-      ).then(mergeResults);
+    const CHUNK_SIZE = 20;
+    const chunks: string[][] = [];
+    for (let i = 0; i < newIds.length; i += CHUNK_SIZE) {
+      chunks.push(newIds.slice(i, i + CHUNK_SIZE));
     }
+    Promise.all(
+      chunks.map((chunk) =>
+        api
+          .get<{ reactions: Record<string, Reaction[]> }>(
+            `/reactions/batch?message_ids=${chunk.join(",")}`,
+          )
+          .then((res) =>
+            Object.entries(res.reactions).map(([id, r]) => ({ id, reactions: r })),
+          )
+          .catch(() =>
+            Promise.all(
+              chunk.map((id) =>
+                api
+                  .get<{ reactions: Reaction[] }>(`/messages/${id}/reactions`)
+                  .then((res) => ({ id, reactions: res.reactions }))
+                  .catch(() => ({ id, reactions: [] as Reaction[] })),
+              ),
+            ),
+          ),
+      ),
+    ).then((chunkResults) => mergeResults(chunkResults.flat()));
   }, [messages]);
 
   function startEdit(msg: Message) {
@@ -224,13 +222,23 @@ export function MessageList({
 
   const handleContextMenu = useCallback((e: React.MouseEvent, msg: Message) => {
     e.preventDefault();
-    setContextMenu({ x: e.clientX, y: e.clientY, message: msg });
+    const menuW = 180;
+    const menuH = 240;
+    const x = Math.min(e.clientX, window.innerWidth - menuW - 8);
+    const y = Math.min(e.clientY, window.innerHeight - menuH - 8);
+    setContextMenu({ x: Math.max(8, x), y: Math.max(8, y), message: msg });
   }, []);
 
   const handleTouchStart = useCallback((e: React.TouchEvent, msg: Message) => {
     longPressTimer.current = setTimeout(() => {
       const touch = e.touches[0];
-      if (touch) setContextMenu({ x: touch.clientX, y: touch.clientY, message: msg });
+      if (touch) {
+        const menuW = 180;
+        const menuH = 240;
+        const x = Math.min(touch.clientX, window.innerWidth - menuW - 8);
+        const y = Math.min(touch.clientY, window.innerHeight - menuH - 8);
+        setContextMenu({ x: Math.max(8, x), y: Math.max(8, y), message: msg });
+      }
     }, 500);
   }, []);
 
@@ -295,7 +303,15 @@ export function MessageList({
   const scrollRestoreRef = useRef<{ prevScrollHeight: number; prevScrollTop: number } | null>(null);
   const initialLoadRef = useRef(true);
 
-  const handleScroll = useCallback(() => {
+  // Virtualizer
+  const virtualizer = useVirtualizer({
+    count: messagesWithMeta.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 60,
+    overscan: 10,
+  });
+
+  const handleScrollOverride = useCallback(() => {
     const el = listRef.current;
     if (!el) return;
     const { scrollTop, scrollHeight, clientHeight } = el;
@@ -319,9 +335,13 @@ export function MessageList({
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
+    el.addEventListener("scroll", handleScrollOverride, { passive: true });
+    return () => el.removeEventListener("scroll", handleScrollOverride);
+  }, [handleScrollOverride]);
+
+  const scrollToBottom = useCallback(() => {
+    virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+  }, [virtualizer, messagesWithMeta.length]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -339,17 +359,9 @@ export function MessageList({
   useLayoutEffect(() => {
     if (messages.length > 0 && initialLoadRef.current) {
       initialLoadRef.current = false;
-      if (listRef.current && listRef.current.scrollHeight > listRef.current.clientHeight) {
-        listRef.current.scrollTop = listRef.current.scrollHeight;
-      }
+      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
     }
-  }, [messages.length]);
-
-  function scrollToBottom() {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-    setShowJumpButton(false);
-    setUnreadCount(0);
-  }
+  }, [messages.length, messagesWithMeta.length, virtualizer]);
 
   if (messages.length === 0) {
     return (
@@ -375,54 +387,72 @@ export function MessageList({
 
   return (
     <>
-    <div id="post-list" ref={listRef}>
-      {loadingOlder && (
-          <div className="flex justify-center py-3">
-            <div
-              className="h-5 w-5 animate-spin rounded-full border-2"
-              style={{
-                borderColor: "rgba(var(--center-channel-color-rgb), 0.3)",
-                borderTopColor: "transparent",
-              }}
-            />
+      <div id="post-list" ref={listRef} style={{ overflow: "auto", flex: 1 }}>
+        {loadingOlder && (
+            <div className="flex justify-center py-3">
+              <div
+                className="h-5 w-5 animate-spin rounded-full border-2"
+                style={{
+                  borderColor: "rgba(var(--center-channel-color-rgb), 0.3)",
+                  borderTopColor: "transparent",
+                }}
+              />
+            </div>
+          )}
+          <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const msg = messagesWithMeta[virtualRow.index];
+              if (!msg) return null;
+              return (
+                <div
+                  key={msg.id}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: virtualRow.size,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  ref={virtualizer.measureElement}
+                >
+                  <MessageItem
+                    msg={msg}
+                    currentUserId={currentUserId}
+                    profiles={profiles}
+                    editingId={editingId}
+                    editContent={editContent}
+                    reactions={reactions}
+                    pickerMessageId={pickerMessageId}
+                    editError={editError}
+                    replyCounts={replyCounts ?? new Map()}
+                    sendingIds={sendingIds}
+                    flaggedMessages={flaggedMsgs}
+                    onReply={onReply}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onThreadOpen={onThreadOpen}
+                    onStartEdit={(m) => startEdit(m)}
+                    onMessageContextMenu={handleContextMenu}
+                    onMessageTouchStart={handleTouchStart}
+                    onMessageTouchEnd={handleTouchEnd}
+                    onMessageTouchMove={handleTouchMove}
+                    onSubmitEdit={submitEdit}
+                    onCancelEdit={handleCancelEdit}
+                    onSetEditContent={setEditContent}
+                    onToggleReaction={toggleReaction}
+                    onToggleFlag={toggleFlag}
+                    onSetPickerMessageId={setPickerMessageId}
+                    onSetDeleteConfirmId={handleSetDeleteConfirmId}
+                    sendErrors={sendErrors}
+                    onRetry={onRetry}
+                  />
+                </div>
+              );
+            })}
           </div>
-        )}
-        {messagesWithMeta.map((msg) => (
-          <MessageItem
-            key={msg.id}
-            msg={msg}
-            currentUserId={currentUserId}
-            profiles={profiles}
-            editingId={editingId}
-            editContent={editContent}
-            reactions={reactions}
-            pickerMessageId={pickerMessageId}
-            editError={editError}
-            replyCounts={replyCounts ?? new Map()}
-            sendingIds={sendingIds}
-            flaggedMessages={flaggedMsgs}
-            onReply={onReply}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onThreadOpen={onThreadOpen}
-            onStartEdit={(m) => startEdit(m)}
-            onMessageContextMenu={handleContextMenu}
-            onMessageTouchStart={handleTouchStart}
-            onMessageTouchEnd={handleTouchEnd}
-            onMessageTouchMove={handleTouchMove}
-            onSubmitEdit={submitEdit}
-            onCancelEdit={handleCancelEdit}
-            onSetEditContent={setEditContent}
-            onToggleReaction={toggleReaction}
-            onToggleFlag={toggleFlag}
-            onSetPickerMessageId={setPickerMessageId}
-            onSetDeleteConfirmId={handleSetDeleteConfirmId}
-            sendErrors={sendErrors}
-            onRetry={onRetry}
-          />
-        ))}
-        <div ref={bottomRef} />
-      </div>
+          <div ref={bottomRef} />
+        </div>
 
       {showJumpButton && (
         <button

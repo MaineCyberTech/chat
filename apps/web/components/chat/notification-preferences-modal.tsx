@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
+import { useToast } from "@chat/ui";
 
 interface Props {
   channelId: string;
@@ -31,6 +32,7 @@ export function NotificationPreferencesModal({
   const [notifyEveryone, setNotifyEveryone] = useState<boolean>(currentNotifyEveryone ?? true);
   const [saving, setSaving] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const { addToast } = useToast();
 
   useEffect(() => {
     const el = dialogRef.current;
@@ -56,7 +58,7 @@ export function NotificationPreferencesModal({
       onSave?.({ notify, sound, notifyEveryone });
       onClose();
     } catch {
-      console.warn("Failed to save notification preferences");
+      addToast({ title: "Error", description: "Failed to save notification preferences", variant: "error" });
       setSaving(false);
     }
   }
@@ -104,7 +106,7 @@ export function NotificationPreferencesModal({
                       ? "var(--button-bg)"
                       : "rgba(var(--center-channel-color-rgb), 0.3)",
                   background: notify === opt.value ? "var(--button-bg)" : "transparent",
-                  color: notify === opt.value ? "#fff" : "transparent",
+                  color: notify === opt.value ? "var(--button-color)" : "transparent",
                 }}
               >
                 {notify === opt.value ? "\u2713" : ""}

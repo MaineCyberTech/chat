@@ -1,0 +1,77 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "security_principal_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-09T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 3,
+    "P3": 1
+  },
+  "category_scores": {
+    "auth": 85,
+    "authorization": 78,
+    "secret_handling": 65,
+    "rls": 72,
+    "csp": 50
+  },
+  "readiness": 72,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "secret_handling",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "line": 27,
+      "issue": "WEBHOOK_ENCRYPTION_KEY falls back to JWT_SECRET for AES-256-GCM encryption",
+      "impact": "If WEBHOOK_ENCRYPTION_KEY is not configured, getEncryptionKey() derives AES key from JWT_SECRET via SHA-256. JWT_SECRET is designed for JWT signing, not encryption. Compromise of JWT_SECRET reveals all encrypted webhook secrets. No key rotation mechanism exists.",
+      "fix": "Make WEBHOOK_ENCRYPTION_KEY required in env schema. Remove JWT_SECRET fallback. Add key rotation support with version-prefixed encrypted values.",
+      "exploit_chain": "Attacker who obtains JWT_SECRET (via env leak, CI/CD exposure, or SSRF) can decrypt all stored webhook secrets using the derived key. With decrypted secrets, attacker can forge webhook signatures or hijack active webhook endpoints."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "rls",
+      "file": "supabase/policies/06_reactions.sql",
+      "line": 7,
+      "issue": "Reactions SELECT policy uses using(true) allowing all authenticated users cross-tenant access",
+      "impact": "Any authenticated user can enumerate reactions (emoji + user_id pairs) on any message across all workspaces. Leaks user activity patterns and workspace relationships.",
+      "fix": "Replace with scoped policy checking workspace membership via messages -> channels -> workspace_members join chain",
+      "exploit_chain": "Attacker creates account, authenticates, queries GET /v1/messages/:id/reactions for arbitrary message IDs. Without workspace membership check, they can map user-emoji relationships across the entire platform."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "csp",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "line": 5,
+      "issue": "CSP script-src 'self' without nonce or hash blocks Next.js inline hydration scripts",
+      "impact": "Next.js production builds inject inline script elements for page hydration. Current CSP blocks these, causing frontend JavaScript failure. Forces CSP to be disabled, negating XSS protection.",
+      "fix": "Add nonce generation in middleware or use 'strict-dynamic' for Next.js compatibility",
+      "exploit_chain": "Without a working CSP, XSS vulnerabilities in user-generated content become exploitable across all pages."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authorization",
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "line": 24,
+      "issue": "GET /reactions/batch endpoint lacks message access validation",
+      "impact": "Batch reactions endpoint accepts arbitrary message_ids without checking user's workspace/channel membership. User can fetch reactions for messages in channels they don't belong to.",
+      "fix": "Add requireMessageAccess validation or verify each message_id against accessible channels server-side before returning reactions.",
+      "exploit_chain": "Hitting GET /v1/reactions/batch with message IDs from inaccessible channels returns reaction data, leaking user-emoji associations."
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "logging",
+      "file": "apps/api/src/modules/admin/error-buffer.ts",
+      "line": 1,
+      "issue": "In-memory error buffer may expose sensitive data via admin logs endpoint",
+      "impact": "Error buffer stores unredacted error messages containing user IDs, IPs, paths. Any admin user can read GET /admin/logs. Buffer limited to 200 entries but sensitive data may accumulate.",
+      "fix": "Add PII redaction before pushError(). Filter sensitive fields from error entries. Consider time-based TTL."
+    }
+  ],
+  "run_id": "security_principal_audit_20260709_070758"
+}

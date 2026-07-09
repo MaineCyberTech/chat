@@ -27,7 +27,7 @@ const themeScript = `
 (function(){var t=localStorage.getItem("chat-theme")||"system";if(t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme:dark)").matches))document.documentElement.classList.add("dark")})()`;
 
 const viewportScript =
-  "!function(){function u(){var h=window.innerHeight;document.documentElement.style.setProperty('--vh',(h/100)+'px')}u();window.addEventListener('resize',u);window.addEventListener('orientationchange',function(){setTimeout(u,100)})}()";
+  "!function(){function u(){var v=window.visualViewport;if(v){document.documentElement.style.setProperty('--vh',(v.height/100)+'px')}else{var h=window.innerHeight;document.documentElement.style.setProperty('--vh',(h/100)+'px')}}u();if(window.visualViewport){window.visualViewport.addEventListener('resize',u)}else{window.addEventListener('resize',u)}window.addEventListener('orientationchange',function(){setTimeout(u,100)})}()";
 
 const reducedMotionScript =
   "!function(){var m=window.matchMedia('(prefers-reduced-motion:reduce)');if(m.matches)document.documentElement.setAttribute('data-reduced-motion','true');m.addEventListener('change',function(e){if(e.matches)document.documentElement.setAttribute('data-reduced-motion','true');else document.documentElement.removeAttribute('data-reduced-motion')})}()";
@@ -48,13 +48,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="MaineCyberTech Chat" />
         <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: ws: wss:; frame-src 'self' https:; manifest-src 'self'; media-src 'self' data: https: blob:; worker-src 'self' blob:;" />
         <style>{"html,body{background:#fff}html.dark,body.dark{background:#1a1a1a}"}</style>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
       <body
         className="flex h-screen min-h-0 flex-col overflow-hidden antialiased"

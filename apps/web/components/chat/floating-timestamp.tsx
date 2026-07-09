@@ -79,8 +79,7 @@ export function FloatingTimestamp({ containerRef }: Props) {
         style={{
           background: "var(--center-channel-bg)",
           color: "rgba(var(--center-channel-color-rgb), 0.56)",
-          boxShadow:
-            "0 1px 2px rgba(0,0,0,0.05), 0 0 0 1px rgba(var(--center-channel-color-rgb), 0.08)",
+          boxShadow: "var(--elevation-2)",
         }}
       >
         {timestamp}

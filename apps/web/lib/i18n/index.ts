@@ -18,15 +18,17 @@ type Messages = typeof en;
 let currentMessages: Messages = en;
 let currentLocale: Locale = "en";
 
-export function t(key: string, params?: Record<string, string | number>): string {
+export function t(key: string, defaultValue?: string | Record<string, string | number>): string {
   const keys = key.split(".");
   let value: unknown = currentMessages;
   for (const k of keys) {
     value = (value as Record<string, unknown>)?.[k];
   }
-  if (typeof value !== "string") return key;
-  if (!params) return value;
-  return value.replace(/\{(\w+)\}/g, (_, p) => String(params[p] ?? `{${p}}`));
+  if (typeof value !== "string") {
+    return (defaultValue ?? key) as string;
+  }
+  if (!defaultValue || typeof defaultValue === "string") return value;
+  return value.replace(/\{(\w+)\}/g, (_, p) => String((defaultValue as Record<string, string | number>)[p] ?? `{${p}}`));
 }
 
 export function tn(key: string, count: number, params?: Record<string, string | number>): string {

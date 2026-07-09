@@ -1,88 +1,79 @@
 {
   "prompt_name": "resilience_chaos_ultra",
   "domain": "resilience",
-  "stage": "quality_confirmation",
-  "decision": "GO",
-  "generated_at": "2026-07-07T03:42:00Z",
+  "stage": "principal_audit",
+  "decision": "GO WITH RISKS",
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
-    "P2": 5,
-    "P3": 2
+    "P1": 2,
+    "P2": 4,
+    "P3": 1
   },
-  "category_scores": {
-    "circuit_breaker": 85,
-    "retry_logic": 80,
-    "idempotency": 75,
-    "timeout_handling": 85,
-    "graceful_degradation": 70,
-    "bulkhead_isolation": 55,
-    "chaos_testing": 55
-  },
-  "readiness": 72.14,
+  "readiness": 75,
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "resilience",
-      "category": "bulkhead_isolation",
-      "file": "apps/worker/src/main.ts",
-      "issue": "No bulkhead or isolation pattern between different queue processors sharing the same Redis connection",
-      "impact": "A single misbehaving queue processor (e.g., blocked webhook delivery) can exhaust the Redis connection pool and starve other processors (notifications, search indexing).",
-      "fix": "Use separate Redis connection pools per queue processor, or configure max concurrency per processor independently. Monitor Redis connection usage per processor."
-    },
-    {
-      "severity": "P2",
-      "domain": "resilience",
-      "category": "circuit_breaker",
-      "file": "apps/api/src/lib/circuit-breaker.ts",
-      "issue": "Circuit breaker metrics are tracked but not exposed via the /metrics endpoint for monitoring",
-      "impact": "Operators cannot monitor circuit breaker state (open/closed/half-open) in dashboards or alert on cascading circuit breaker failures.",
-      "fix": "Integrate circuit breaker stats into the Prometheus metrics endpoint. Expose breaker status, failure rate, and request volume as gauges."
-    },
-    {
-      "severity": "P2",
-      "domain": "resilience",
-      "category": "graceful_degradation",
+      "category": "supabase_circuit_breaker",
       "file": "apps/api/src/lib/supabase.ts",
-      "issue": "No database connection pool health monitoring; Supabase client retries internally but application has no visibility into pool exhaustion",
-      "impact": "If Supabase connection pool is exhausted, requests silently hang until timeout with no operator visibility into the pool utilization.",
-      "fix": "Add a database pool health gauge metric. Implement a connection pool timeout alert. Consider adding a readiness check that verifies database connection pool availability."
+      "issue": "Supabase client uses AbortSignal timeout wrapper but no circuit breaker \u00e2\u20ac\u201d cannot degrade gracefully when Supabase is slow/failing",
+      "impact": "A slow Supabase instance causes cascading timeouts across all API routes; no fail-fast or degraded response",
+      "fix": "Wrap supabase from() calls with executeWithCircuitBreaker or add circuit breaker proxy to createLoggedClient"
+    },
+    {
+      "severity": "P1",
+      "domain": "resilience",
+      "category": "worker_task_timeout",
+      "file": "apps/worker/src/processors/data-retention.ts : cleanup.ts : search-indexer.ts : reminder.ts",
+      "issue": "Worker processors lack per-task timeout \u00e2\u20ac\u201d webhook-delivery.ts and notification.ts have timeouts but data-retention, cleanup, search-indexer, and reminder do not",
+      "impact": "A stuck task could block the worker queue indefinitely, stalling all subsequent jobs",
+      "fix": "Add AbortSignal.timeout() wrapper or BullMQ `timeout` job option to all processor handlers (data-retention, cleanup, search-indexer, reminder)"
     },
     {
       "severity": "P2",
       "domain": "resilience",
-      "category": "idempotency",
-      "file": "apps/api/src/lib/idempotency.ts",
-      "issue": "In-memory idempotency fallback limited to single process \u2014 resets on restart, not shared across instances",
-      "impact": "In a multi-instance deployment, idempotency keys stored in-memory on one instance are invisible to another. A restart loses all idempotency state, potentially allowing duplicate message processing.",
-      "fix": "Add a database-backed idempotency store as a secondary fallback. Document that in-memory fallback is single-instance-only and provide a migration path to Redis."
+      "category": "bulk_operations",
+      "file": "apps/api/src/routes/",
+      "issue": "No bulk endpoints return per-item ok/error results \u00e2\u20ac\u201d bulk operations fail or succeed as a unit with no partial success",
+      "impact": "Batch operations (user import, channel creation, message batch operations) provide no granular error feedback; partial failures invisible to user",
+      "fix": "Standardize bulk response format: { results: [{ ok: boolean, id?: string, error?: string }] } on all bulk endpoints"
     },
     {
       "severity": "P2",
       "domain": "resilience",
-      "category": "chaos_testing",
-      "file": "docs/prompts/testing/failure_injection_chaos_pack_prompt.md",
-      "issue": "Chaos engineering prompt exists but no actual chaos tests are executed or integrated into CI/CD",
-      "impact": "Resilience characteristics (circuit breaker behavior, graceful degradation, fallback paths) are untested. Failures in production may behave differently than expected.",
-      "fix": "Implement chaos testing scenarios: Redis failure, database latency injection, queue worker crash, and API service restart. Add a scheduled chaos test workflow."
+      "category": "ui_false_success",
+      "file": "apps/web/components/",
+      "issue": "No consistent pattern for handling partial success in UI \u00e2\u20ac\u201d operations that affect multiple items show blanket success toast",
+      "impact": "User sees success confirmation when some items actually failed silently",
+      "fix": "Add 'summary' response to bulk mutations; show 'X of Y succeeded' toast with failure details when partial results differ"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "websocket_reconnect",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "Socket.io has reconnection settings but no exponential backoff or jitter on reconnect attempts",
+      "impact": "All clients reconnect simultaneously after server restart \u00e2\u20ac\u201d thundering herd on socket initialization",
+      "fix": "Add exponential backoff with jitter to socket reconnection: initialDelay=1s, maxDelay=30s, randomizationFactor=0.3"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "webhook_idempotency_coverage",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "issue": "Webhook delivery generates idempotency keys but receiver-side dedup relies on external system honoring X-Idempotency-Key header \u00e2\u20ac\u201d no server-side dedup for webhook processing",
+      "impact": "If webhook receiver does not support idempotency, duplicate webhooks will cause duplicate actions",
+      "fix": "Add server-side idempotency check in webhook receive handler using idempotency.ts library (same pattern as workspace/message routes)"
     },
     {
       "severity": "P3",
       "domain": "resilience",
-      "category": "idempotency",
-      "file": "apps/worker/src/processors/webhook-delivery.ts",
-      "issue": "Webhook delivery uses randomUUID as idempotency key instead of deterministic hash of payload",
-      "impact": "Random idempotency keys do not prevent duplicate deliveries for identical payloads because each retry generates a new key.",
-      "fix": "Generate idempotency key as SHA-256 hash of (event + payload + webhookId) to ensure identical payloads produce identical keys. Use the delivery.id for tracking."
-    },
-    {
-      "severity": "P3",
-      "domain": "resilience",
-      "category": "retry_logic",
-      "file": "apps/api/src/services/audit.ts",
-      "issue": "Audit log retry queue is purely in-memory with no persistence \u2014 lost on process restart",
-      "impact": "If the API process restarts while audit entries are queued for retry, those entries are lost permanently with no record.",
-      "fix": "Persist failed audit entries to a database table (audit_log_retry_queue) or use BullMQ for the audit queue. Add a startup recovery job that retries unprocessed entries."
+      "category": "circuit_breaker_metrics",
+      "file": "apps/api/src/lib/metrics.ts",
+      "issue": "Circuit breaker Prometheus gauge exists (circuitBreakerStatus) but no alert threshold or dashboard configured",
+      "impact": "Circuit breaker state changes are logged but not actionable \u00e2\u20ac\u201d operator won't know circuit is open without checking logs",
+      "fix": "Configure Sentry alert or Prometheus alert rule when circuitBreakerStatus > 0 for any named breaker for > 5 minutes"
     }
-  ]
+  ],
+  "generated_at": "2026-07-09T03:06:59Z"
 }

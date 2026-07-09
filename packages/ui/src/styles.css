@@ -181,7 +181,7 @@
   --focus-ring-success: var(--color-border-success);
 }
 
-@media (prefers-color-scheme: dark) {
+html.dark {
   @theme {
     --color-background-primary: #0a0a0a;
     --color-background-secondary: #171717;

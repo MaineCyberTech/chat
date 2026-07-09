@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Reply, Copy, Clock, Pencil, Trash2 } from "lucide-react";
+import React, { useEffect, useRef } from "react";
+import { Reply, Copy, Clock, Pencil, Trash2, Share2, Pin } from "lucide-react";
 import { useToast } from "@chat/ui";
 import type { Message } from "@chat/db";
 
@@ -22,6 +22,8 @@ export function MessageContextMenu({
   onStartEdit,
   onSetDeleteConfirmId,
   onSetRemindMessageId,
+  onForward,
+  onPin,
 }: {
   contextMenu: ContextMenuState;
   currentUserId?: string;
@@ -33,8 +35,48 @@ export function MessageContextMenu({
   onStartEdit: (msg: Message) => void;
   onSetDeleteConfirmId: (id: string | null) => void;
   onSetRemindMessageId: (id: string | null) => void;
+  onForward?: (message: Message) => void;
+  onPin?: (message: Message) => void;
 }) {
   const { addToast } = useToast();
+
+  const menuItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Auto-focus first menu item on open
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      menuItemsRef.current[0]?.focus();
+    });
+  }, []);
+
+  function handleMenuKeyDown(e: React.KeyboardEvent) {
+    const items = menuItemsRef.current.filter(Boolean) as HTMLButtonElement[];
+    const currentIdx = items.indexOf(document.activeElement as HTMLButtonElement);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = (currentIdx + 1) % items.length;
+      items[next]?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = (currentIdx - 1 + items.length) % items.length;
+      items[prev]?.focus();
+    } else if (e.key === "Tab") {
+      const focusable = menuRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
 
   return (
     <div
@@ -51,8 +93,10 @@ export function MessageContextMenu({
       }}
       role="menu"
       aria-label="Message actions"
+      onKeyDown={handleMenuKeyDown}
     >
       <button
+        ref={(el) => { menuItemsRef.current[0] = el; }}
         onClick={() => {
           onReply?.(contextMenu.message);
           onClose();
@@ -64,6 +108,7 @@ export function MessageContextMenu({
         <Reply size={14} /> Reply
       </button>
       <button
+        ref={(el) => { menuItemsRef.current[1] = el; }}
         onClick={() => {
           navigator.clipboard
             .writeText(contextMenu.message.content)
@@ -78,6 +123,7 @@ export function MessageContextMenu({
         <Copy size={14} /> Copy text
       </button>
       <button
+        ref={(el) => { menuItemsRef.current[2] = el; }}
         onClick={() => {
           const permalink = `${window.location.origin}/pl/${contextMenu.message.id}`;
           navigator.clipboard
@@ -93,6 +139,7 @@ export function MessageContextMenu({
         <Copy size={14} /> Copy link
       </button>
       <button
+        ref={(el) => { menuItemsRef.current[3] = el; }}
         onClick={() => {
           onSetRemindMessageId(contextMenu.message.id);
           onClose();
@@ -103,8 +150,31 @@ export function MessageContextMenu({
       >
         <Clock size={14} /> Remind me
       </button>
+      {onForward && (
+        <button
+          ref={(el) => { menuItemsRef.current[4] = el; }}
+          onClick={() => { onForward(contextMenu.message); onClose(); }}
+          className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+          style={{ color: "var(--center-channel-color)" }}
+          role="menuitem"
+        >
+          <Share2 size={14} /> Forward
+        </button>
+      )}
+      {onPin && (
+        <button
+          ref={(el) => { menuItemsRef.current[5] = el; }}
+          onClick={() => { onPin(contextMenu.message); onClose(); }}
+          className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+          style={{ color: "var(--center-channel-color)" }}
+          role="menuitem"
+        >
+          <Pin size={14} /> Pin
+        </button>
+      )}
       {contextMenu.message.user_id === currentUserId && onEdit && (
         <button
+          ref={(el) => { menuItemsRef.current[4] = el; }}
           onClick={() => {
             onStartEdit(contextMenu.message);
             onClose();
@@ -118,6 +188,7 @@ export function MessageContextMenu({
       )}
       {contextMenu.message.user_id === currentUserId && onDelete && (
         <button
+          ref={(el) => { menuItemsRef.current[5] = el; }}
           onClick={() => {
             onSetDeleteConfirmId(contextMenu.message.id);
             onClose();

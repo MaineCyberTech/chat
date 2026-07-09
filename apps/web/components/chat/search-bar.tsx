@@ -318,7 +318,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 background: showOperatorHint
                   ? "var(--button-bg)"
                   : "rgba(var(--center-channel-color-rgb), 0.08)",
-                color: showOperatorHint ? "#fff" : "rgba(var(--center-channel-color-rgb), 0.72)",
+                color: showOperatorHint ? "var(--button-color)" : "rgba(var(--center-channel-color-rgb), 0.72)",
                 borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
                 borderBottom: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
               }}
@@ -335,7 +335,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 background: showFilters
                   ? "var(--button-bg)"
                   : "rgba(var(--center-channel-color-rgb), 0.08)",
-                color: showFilters ? "#fff" : "rgba(var(--center-channel-color-rgb), 0.72)",
+                color: showFilters ? "var(--button-color)" : "rgba(var(--center-channel-color-rgb), 0.72)",
               }}
               aria-label="Toggle search filters"
               aria-pressed={showFilters}

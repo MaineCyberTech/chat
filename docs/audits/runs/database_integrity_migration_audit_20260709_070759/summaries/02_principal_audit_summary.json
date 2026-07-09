@@ -1,0 +1,43 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "database_integrity_migration_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-09T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 2,
+    "P3": 0
+  },
+  "category_scores": {
+    "migration_safety": 85,
+    "rollback_readiness": 70,
+    "rls_posture": 72,
+    "indexing": 90,
+    "schema_integrity": 88
+  },
+  "readiness": 81,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "rollback_readiness",
+      "file": "supabase/migrations/20260709000001_add_auto_responder.sql",
+      "line": 1,
+      "issue": "Missing rollback script for migration 20260709000001_add_auto_responder",
+      "impact": "55 migrations exist but only 54 rollback scripts are present. Migration 20260709000001 (adds auto_responders table) has no corresponding down migration. If this migration needs to be rolled back in production, the auto_responders table will remain orphaned, causing schema drift between environments.",
+      "fix": "Create supabase/rollback/20260709000001_add_auto_responder_down.sql with DROP TABLE IF EXISTS public.auto_responders CASCADE;"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "rls",
+      "file": "supabase/policies/06_reactions.sql",
+      "line": 7,
+      "issue": "Reactions SELECT policy uses using(true) with no tenant/workspace scoping",
+      "impact": "The reactions table RLS policy allows all authenticated users to select all reactions across all workspaces. While reactions contain only emoji + user_id pairs, this violates the tenant isolation model used by all other tables and leaks user activity data across workspace boundaries.",
+      "fix": "Replace using(true) with a policy that joins through messages -> channels -> workspace_members to verify workspace membership before allowing reaction reads."
+    }
+  ],
+  "run_id": "database_integrity_migration_audit_20260709_070759"
+}

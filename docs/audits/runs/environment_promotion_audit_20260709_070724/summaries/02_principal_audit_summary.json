@@ -1,0 +1,62 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "environment_promotion_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-09T03:06:59Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 3,
+    "P3": 1
+  },
+  "category_scores": {},
+  "readiness": 82,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "environment",
+      "category": "health_check",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Web service (Next.js) missing healthcheck in prod compose \u00e2\u20ac\u201d dev compose has healthcheck",
+      "impact": "Deploy health check only validates API container; web container crash won't be detected",
+      "fix": "Add healthcheck: test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000'] to web service in prod compose"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "caddy_routes",
+      "file": "infra/docker/Caddyfile.prod",
+      "issue": "Prod Caddyfile missing /healthz route \u00e2\u20ac\u201d only /health is routed to API",
+      "impact": "Full health check (DB, Redis) not accessible via Caddy on prod; requires direct API access",
+      "fix": "Add @healthz path block routing to api:4000 in Caddyfile.prod"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "compose_env",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose web service lacks env_file: .env \u00e2\u20ac\u201d dev compose has it",
+      "impact": "Web prod container may miss required env vars; dev and prod env injection differs",
+      "fix": "Add env_file: .env to web service in docker-compose.prod.yml"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "image_tags",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose uses :latest tags (not SHA-pinned) for all images \u00e2\u20ac\u201d rollback races could pull wrong version",
+      "impact": "Concurrent deploys may cause race condition where :latest tag points to different SHA during rollback",
+      "fix": "Pin prod image tags to SHA digest after pull in deploy-production.yml deploy step"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "mem_limits",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose has same mem_limit values as dev compose (e.g. api: 192m, web: 256m)",
+      "impact": "Production may need higher memory limits under real load \u00e2\u20ac\u201d potential OOM risk",
+      "fix": "Review and increase prod memory limits based on load testing: api: 512m, web: 512m, worker: 256m recommended"
+    }
+  ],
+  "run_id": "environment_promotion_audit_20260709_070724"
+}

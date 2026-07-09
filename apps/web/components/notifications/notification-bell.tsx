@@ -21,6 +21,21 @@ export function NotificationBell() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const [markingAllRead, setMarkingAllRead] = useState(false);
+
+  async function markAllRead() {
+    setMarkingAllRead(true);
+    try {
+      await api.post("/notifications/read-all", {});
+      setNotifications([]);
+      setUnread(0);
+    } catch {
+      console.warn("Failed to mark all as read");
+    } finally {
+      setMarkingAllRead(false);
+    }
+  }
+
   const handleClose = useCallback(() => {
     setOpen(false);
     triggerRef.current?.focus();
@@ -153,12 +168,22 @@ export function NotificationBell() {
           style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
         >
           <div
-            className="border-b px-4 py-2"
+            className="flex items-center justify-between border-b px-4 py-2"
             style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
           >
             <p className="text-sm font-semibold text-[var(--center-channel-color)]">
               Notifications
             </p>
+            {unread > 0 && (
+              <button
+                onClick={markAllRead}
+                disabled={markingAllRead}
+                className="text-xs font-medium transition-opacity hover:opacity-80 disabled:opacity-50"
+                style={{ color: "var(--button-bg)" }}
+              >
+                {markingAllRead ? "Marking..." : "Mark all read"}
+              </button>
+            )}
           </div>
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (

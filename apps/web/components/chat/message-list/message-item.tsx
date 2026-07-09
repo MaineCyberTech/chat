@@ -22,16 +22,14 @@ function authorName(userId: string, profiles: Map<string, UserProfile>): string 
   return p?.display_name ?? p?.email?.split("@")[0] ?? userId.slice(0, 8);
 }
 
+import { formatDate as localeFormatDate } from "@/lib/i18n";
+
 function formatTime(dateString: string): string {
-  return new Date(dateString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return localeFormatDate(dateString, { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return localeFormatDate(dateString, { month: "short", day: "numeric", year: "numeric" });
 }
 
 function avatarUrl(userId: string, profiles: Map<string, UserProfile>): string | undefined {

@@ -39,7 +39,40 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
     popover.style.top = `${rect.bottom + 4}px`;
   }, [anchorEl, loading]);
 
-  // Close on click outside and Escape
+  // Auto-focus close button on open
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      const btn = popoverRef.current?.querySelector<HTMLButtonElement>('[aria-label="Close profile"]');
+      btn?.focus();
+    });
+  }, []);
+
+  // Focus trap
+  useEffect(() => {
+    const el = popoverRef.current;
+    if (!el) return;
+    const trapEl = el;
+    function trapTab(e: KeyboardEvent) {
+      if (e.key !== "Tab") return;
+      const focusable = trapEl.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (first && e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (last && !e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    }
+    document.addEventListener("keydown", trapTab);
+    return () => document.removeEventListener("keydown", trapTab);
+  }, []);
+
+  // Close on click outside and Escape, return focus to anchor
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (
@@ -51,7 +84,10 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
       }
     }
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        anchorEl.focus();
+        onClose();
+      }
     }
     document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleKey);

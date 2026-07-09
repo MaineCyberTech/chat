@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { Skeleton } from "@chat/ui";
+import { Skeleton, useToast } from "@chat/ui";
 
 import {
   Shield,
@@ -195,11 +195,14 @@ export default function AdminPage() {
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logLevel, setLogLevel] = useState<string>("");
+  const { addToast } = useToast();
 
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importEndpoint, setImportEndpoint] = useState<"workspaces" | "users">("workspaces");
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; errors?: string[] } | null>(null);
+  const [csvPreview, setCsvPreview] = useState<string[][] | null>(null);
+  const [showCsvConfirm, setShowCsvConfirm] = useState(false);
   const [exportFormat, setExportFormat] = useState<"csv" | "json">("csv");
 
   async function downloadExport(path: string) {
@@ -226,6 +229,22 @@ export default function AdminPage() {
     }
   }
 
+  async function handleFileSelect(file: File | null) {
+    setImportFile(file);
+    setCsvPreview(null);
+    setShowCsvConfirm(false);
+    setImportResult(null);
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const lines = text.split("\n").filter(Boolean);
+      const rows = lines.slice(0, 6).map((l) => l.split(",").map((c) => c.trim()));
+      setCsvPreview(rows);
+    } catch {
+      /* ignore */
+    }
+  }
+
   async function handleImport() {
     if (!importFile) return;
     setImporting(true);
@@ -238,10 +257,20 @@ export default function AdminPage() {
         { csv: text },
       );
       setImportResult(res);
+      setShowCsvConfirm(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import failed");
     }
     setImporting(false);
+  }
+
+  async function handleUserRoleChange(userId: string, role: string) {
+    try {
+      await api.put(`/admin/users/${userId}/role`, { role });
+      addToast({ title: "Role updated", variant: "success", duration: 3000 });
+    } catch {
+      addToast({ title: "Error", description: "Failed to update role", variant: "error" });
+    }
   }
 
   const fetchTab = useCallback(async (t: Tab) => {
@@ -449,14 +478,25 @@ export default function AdminPage() {
             <div key={u.id} className="flex items-center gap-3 rounded-lg border p-3"
               style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)", background: "var(--center-channel-bg)" }}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                style={{ background: "var(--button-bg)" }}>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                style={{ background: "var(--button-bg)", color: "var(--button-color)" }}>
                 {(u.display_name ?? u.email).charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>{u.display_name || u.email.split("@")[0]}</div>
                 <div className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>{u.email} &middot; Joined {new Date(u.created_at).toLocaleDateString()}</div>
               </div>
+              <select
+                defaultValue="member"
+                onChange={(e) => handleUserRoleChange(u.id, e.target.value)}
+                className="rounded border px-2 py-1 text-xs focus:outline-none"
+                style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)", color: "var(--center-channel-color)", background: "var(--center-channel-bg)" }}
+                aria-label={`Role for ${u.display_name ?? u.email}`}
+              >
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+                <option value="owner">Owner</option>
+              </select>
             </div>
           ))}
         </div>
@@ -556,7 +596,7 @@ export default function AdminPage() {
               {(["csv", "json"] as const).map((f) => (
                 <button key={f} onClick={() => setExportFormat(f)}
                   className="rounded-md px-3 py-1 text-xs font-medium uppercase transition-colors"
-                  style={{ background: exportFormat === f ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.08)", color: exportFormat === f ? "#fff" : "var(--center-channel-color)" }}>{f}</button>
+                  style={{ background: exportFormat === f ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.08)", color: exportFormat === f ? "var(--button-color)" : "var(--center-channel-color)" }}>{f}</button>
               ))}
             </div>
           </div>
@@ -597,14 +637,40 @@ export default function AdminPage() {
               <label className="flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"
                 style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)", color: "var(--center-channel-color)" }}>
                 <Upload size={16} />{importFile ? importFile.name : "Choose CSV file"}
-                <input type="file" accept=".csv,.txt" onChange={(e) => { setImportFile(e.target.files?.[0] ?? null); setImportResult(null); }} className="hidden" />
+                <input type="file" accept=".csv,.txt" onChange={(e) => { handleFileSelect(e.target.files?.[0] ?? null); }} className="hidden" />
               </label>
-              <button onClick={handleImport} disabled={!importFile || importing}
-                className="rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
-                style={{ background: "var(--button-bg)" }}>
-                {importing ? "Importing..." : "Import"}
-              </button>
+              {!showCsvConfirm ? (
+                <button onClick={() => { if (csvPreview) setShowCsvConfirm(true); else handleImport(); }} disabled={!importFile || importing}
+                  className="rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+                  style={{ background: "var(--button-bg)" }}>
+                  {importing ? "Importing..." : "Import"}
+                </button>
+              ) : (
+                <button onClick={handleImport} disabled={importing}
+                  className="rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+                  style={{ background: "var(--dnd-indicator)" }}>
+                  {importing ? "Importing..." : `Confirm import ${importEndpoint}`}
+                </button>
+              )}
             </div>
+            {csvPreview && !showCsvConfirm && importFile && (
+              <div className="rounded-md border p-2" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}>
+                <p className="mb-1 text-xs font-medium" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>Preview (first {csvPreview.length} rows):</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {csvPreview.map((row, i) => (
+                        <tr key={i}>
+                          {row.map((cell, j) => (
+                            <td key={j} className="max-w-[200px] truncate border px-2 py-1" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)", color: "var(--center-channel-color)" }}>{cell}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
             {importResult && (
               <div className="rounded-md border p-3 text-sm" style={{
                 borderColor: importResult.errors?.length ? "rgba(var(--dnd-indicator-rgb,214,66,66),0.3)" : "rgba(var(--online-indicator-rgb,48,186,120),0.3)",
@@ -915,7 +981,7 @@ export default function AdminPage() {
               className="rounded-md px-3 py-1 text-xs font-medium transition-colors"
               style={{
                 background: logLevel === l ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.08)",
-                color: logLevel === l ? "#fff" : "var(--center-channel-color)",
+                color: logLevel === l ? "var(--button-color)" : "var(--center-channel-color)",
               }}>
               {l || "all"}
             </button>

@@ -2,86 +2,69 @@
   "prompt_name": "privacy_ultra",
   "domain": "privacy",
   "stage": "principal_audit",
-  "decision": "GO",
-  "generated_at": "2026-07-07T03:42:00Z",
+  "decision": "GO WITH RISKS",
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
-    "P2": 4,
-    "P3": 3
+    "P1": 1,
+    "P2": 3,
+    "P3": 2
   },
-  "category_scores": {
-    "consent_management": 75,
-    "data_retention": 80,
-    "pii_handling": 70,
-    "compliance_export": 85,
-    "cookie_compliance": 60,
-    "data_subject_rights": 50
-  },
-  "readiness": 70,
+  "readiness": 78,
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "privacy",
-      "category": "consent_management",
-      "file": "apps/web/components/cookie-banner.tsx",
-      "issue": "Cookie banner offers only binary choice (Accept all / Essential only) with no granular per-category opt-in",
-      "impact": "Users cannot individually control analytics vs. marketing vs. functional cookies, which may violate GDPR ePrivacy Directive requirements for granular consent.",
-      "fix": "Implement a tiered consent dialog allowing separate toggles for 'essential', 'analytics', and 'marketing' categories. Store each consent_type independently."
+      "category": "pii_storage",
+      "file": "supabase/migrations/",
+      "issue": "PII columns (email, phone, full_name, avatar_url) in profiles table stored without explicit encryption-at-rest annotation or column-level encryption",
+      "impact": "PII readable by anyone with database access (service_role key compromise would expose all PII)",
+      "fix": "Document that Supabase provides encryption at rest (AWS KMS); add column-level encryption for email/phone using pgcrypto or Vault, or document compensating controls (RLS, admin-only access)"
     },
     {
       "severity": "P2",
       "domain": "privacy",
-      "category": "consent_management",
-      "file": "apps/api/src/modules/consent/routes.ts",
-      "issue": "Marketing consent type is accepted and stored but no marketing functionality exists to honor the preference",
-      "impact": "Consent is collected for 'marketing' purposes without any marketing feature (emails, ads) to respect that preference, creating an audit gap if marketing features are added later without consent re-collection.",
-      "fix": "Either remove the 'marketing' consent_type until marketing features exist, or add a consent usage audit that maps consent types to actual data processing activities."
+      "category": "pii_access_review",
+      "file": "apps/api/src/",
+      "issue": "No documented PII access review mechanism \u00e2\u20ac\u201d no audit of who reads PII columns and when",
+      "impact": "Cannot detect unauthorized PII access by internal users or compromised accounts",
+      "fix": "Add audit trigger on profiles table for SELECT on email/phone columns, log to audit_logs; create PII access review runbook"
     },
     {
       "severity": "P2",
       "domain": "privacy",
-      "category": "data_subject_rights",
-      "file": "apps/api/src/modules/admin/routes.ts",
-      "issue": "No data subject access request (DSAR) workflow for individual user data export or deletion",
-      "impact": "Users cannot request a copy of their personal data or request deletion under GDPR Article 15/17. The compliance export is admin-only and workspace-scoped.",
-      "fix": "Implement a user-facing 'Export my data' and 'Delete my account' flow in the settings page. Add a DSAR queue endpoint that collects user data across all tables."
-    },
-    {
-      "severity": "P2",
-      "domain": "privacy",
-      "category": "pii_handling",
+      "category": "retention_policy",
       "file": "apps/worker/src/processors/data-retention.ts",
-      "issue": "Consent log data retention deletes records but does not anonymize them first for audit chain integrity",
-      "impact": "Hard-deleting consent logs destroys the audit trail proving consent was given, which may be required by GDPR Article 7(1).",
-      "fix": "Implement anonymization (nullify IP, user_agent, user_id) before hard-deleting consent logs. Retain a minimal anonymized record permanently."
+      "issue": "Data retention job exists but retention periods are hardcoded in processor (audit_logs=90d, consent_logs=730d, etc.) \u00e2\u20ac\u201d not configurable via env vars",
+      "impact": "Retention periods cannot be adjusted without code deploy; no way to comply with varying jurisdictional requirements",
+      "fix": "Extract retention periods to env vars: AUDIT_LOG_RETENTION_DAYS=90, CONSENT_LOG_RETENTION_DAYS=730, etc."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_logging",
+      "file": "apps/api/src/lib/logger.ts : apps/worker/src/",
+      "issue": "No automated PII redaction in structured logging \u00e2\u20ac\u201d logger allows any field to be logged without filtering",
+      "impact": "Developer error could log PII fields (email, phone) to production logs with no guardrail",
+      "fix": "Add PII field allowlist/blocklist to logger that redacts known PII field patterns from log output"
     },
     {
       "severity": "P3",
       "domain": "privacy",
-      "category": "pii_handling",
-      "file": "apps/api/src/modules/consent/routes.ts",
-      "issue": "IP address and user agent stored in plain text in consent_logs without anonymization",
-      "impact": "PII (IP address, user-agent string) is stored in the database. While useful for security audits, it creates additional GDPR data minimization risk.",
-      "fix": "Hash or truncate the IP address (e.g., store /24 prefix only). User agent can be stored but should be flagged as PII in data inventory."
+      "category": "gdpr_export",
+      "file": "apps/api/src/modules/",
+      "issue": "No GDPR data export endpoint \u00e2\u20ac\u201d user data export requires direct DB queries",
+      "impact": "Cannot fulfill data subject access requests without operator intervention",
+      "fix": "Add GET /v1/users/:id/export endpoint that collects all user data (profile, messages, channels, sessions) in JSON format"
     },
     {
       "severity": "P3",
       "domain": "privacy",
-      "category": "cookie_compliance",
-      "file": "apps/web/components/cookie-banner.tsx",
-      "issue": "No consent revocation UI \u2014 once accepted, users cannot change or withdraw consent",
-      "impact": "GDPR requires that withdrawing consent be as easy as giving it. Users have no way to revoke analytics or cookies consent after initial acceptance.",
-      "fix": "Add a 'Privacy settings' link in the sidebar or settings page that re-opens the consent dialog. Also clear server-side consent when revoked."
-    },
-    {
-      "severity": "P3",
-      "domain": "privacy",
-      "category": "consent_management",
-      "file": "apps/web/components/cookie-banner.tsx",
-      "issue": "Consent acceptance silently fails on network error; user sees banner dismissed even if server-side record fails",
-      "impact": "If the POST to /consent fails, the banner disappears but the server has no record of consent. User believes consent was recorded when it was not.",
-      "fix": "Show an error state or retry mechanism if consent persistence fails. Only dismiss the banner after server confirms the consent record."
+      "category": "gdpr_delete",
+      "file": "apps/api/src/modules/",
+      "issue": "No GDPR right-to-erasure endpoint that cascades deletes across all user data",
+      "impact": "Cannot programmatically fulfill deletion requests; manual DB cleanup required",
+      "fix": "Add DELETE /v1/users/:id/erase endpoint that cascades: messages (anonymize), channels (remove member), profiles (delete), sessions (revoke)"
     }
-  ]
+  ],
+  "generated_at": "2026-07-09T03:06:59Z"
 }

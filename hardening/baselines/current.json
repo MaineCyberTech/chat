@@ -1,1085 +1,963 @@
 {
-  "run_id": "full_audit_consolidated_20260709_034125",
-  "generated_at": "2026-07-09T03:41:36+00:00",
+  "run_id": "full_audit_consolidated_20260709_070901",
+  "generated_at": "2026-07-09T07:09:09+00:00",
   "decision": "GO WITH RISKS",
   "severity_totals": {
     "P0": 0,
-    "P1": 12,
-    "P2": 66,
-    "P3": 41
+    "P1": 19,
+    "P2": 48,
+    "P3": 36
   },
-  "finding_count": 119,
+  "finding_count": 103,
   "findings": [
-    {
-      "severity": "P1",
-      "domain": "api",
-      "category": "realtime_contract",
-      "file": "apps/api/src/lib/socket.ts",
-      "issue": "Presence state flickers offline\u2192online on every reconnect (no graceful reconnect window)",
-      "impact": "On every disconnect/reconnect, presence toggles from online\u2192offline\u2192online in rapid succession. Other users see the user flicker offline briefly, causing confusion and unnecessary UI updates. Active users may appear briefly offline to others during network hiccups",
-      "fix": "Add a disconnect grace period (e.g., 30s delay before setting presence to offline). Use a 'last_seen_at' timestamp updated on heartbeat, and only mark offline after the grace period expires without a new heartbeat. Socket events should emit presence:away during the grace window instead of offline"
-    },
-    {
-      "severity": "P2",
-      "domain": "api",
-      "category": "realtime_contract",
-      "file": "apps/api/src/lib/socket.ts",
-      "issue": "No rate limiting on socket events after authentication",
-      "impact": "Once a socket is authenticated, events like typing:start, channel:join, channel:leave have no per-user rate limiting. A compromised or malicious client can flood the server with events, causing excessive DB writes and broadcast storms to all connected clients",
-      "fix": "Implement per-user rate limiting on socket events (e.g., max 10 typing events per second per user, max 5 channel joins per second). Use an in-memory counter with sliding window per userId"
-    },
     {
       "severity": "P2",
       "domain": "api",
       "category": "pagination",
       "file": "apps/api/src/modules/messages/routes.ts",
-      "issue": "Inconsistent pagination approaches \u2014 cursor-based for message listing, offset-based for search and other endpoints",
-      "impact": "Cursor-based pagination (message listing) and offset-based pagination (search, channels, admin endpoints) create two different client pagination patterns, increasing frontend complexity. Offset-based pagination also has well-known issues with data shifting during page navigation",
-      "fix": "Standardize on cursor-based pagination for all list endpoints. For admin/export endpoints where offset is acceptable, document the tradeoffs. Implement a shared pagination utility that supports both cursor and offset modes"
-    },
-    {
-      "severity": "P2",
-      "domain": "api",
-      "category": "rest_contract",
-      "file": "apps/api/src/modules/webhooks/routes.ts",
-      "issue": "Webhook GET /webhooks requires workspace_id query param but PATCH /webhooks/:id uses URL param \u2014 inconsistent resource identification",
-      "impact": "The workspace_id query param pattern for GET /webhooks is inconsistent with the URL-based resource identification used by other endpoints (PATCH, DELETE). This creates confusion for API consumers and SDK authors who expect consistent resource addressing",
-      "fix": "Move GET /webhooks to /workspaces/:workspaceId/webhooks path, or accept workspace_id in both query param and URL param consistently. Document the workspace scoping pattern clearly"
-    },
-    {
-      "severity": "P2",
-      "domain": "api",
-      "category": "rest_contract",
-      "file": "apps/api/src/modules/admin/routes.ts",
-      "issue": "Admin and regular modules both define /webhooks/deliveries route \u2014 potential route collision",
-      "impact": "Both admin/routes.ts and webhooks/routes.ts define GET /webhooks/deliveries. Depending on route registration order in route-registry.ts, one may shadow the other. The admin version is for super-users while the regular version uses workspace_id query param \u2014 clients may hit the wrong endpoint",
-      "fix": "Prefix admin webhook routes with /admin (e.g., /v1/admin/webhooks/deliveries) to avoid collision. The admin route is already mounted at /v1/admin, so this may be fine \u2014 but verify route precedence and document both endpoints"
-    },
-    {
-      "severity": "P2",
-      "domain": "api",
-      "category": "rest_contract",
-      "file": "apps/api/src/modules/reactions/routes.ts",
-      "issue": "Reactions batch endpoint lacks authentication on the user \u2014 no requireMessageAccess middleware",
-      "impact": "GET /reactions/batch has no requireMessageAccess middleware \u2014 any authenticated user can query reactions for any set of message IDs without verifying channel membership. Could leak channel conversation patterns via reaction presence",
-      "fix": "Add requireMessageAccess validation for each message ID, or restrict the batch endpoint to only return reactions for messages the user can access"
+      "line": 422,
+      "issue": "Channel export endpoint fetches all messages without pagination or limit",
+      "impact": "GET /channels/:channelId/export fetches ALL messages in a channel using .select() with no limit or offset. For channels with thousands of messages, this causes unbounded memory allocation, slow response times, and potential OOM crashes on both server and client side.",
+      "fix": "Add pagination with streaming or chunked responses. Implement max limit cap (e.g., 1000 per request) and cursor-based pagination similar to the main message list endpoint.",
+      "endpoint": "GET /channels/:channelId/export"
     },
     {
       "severity": "P3",
       "domain": "api",
-      "category": "rest_contract",
-      "file": "apps/api/src/modules/auth/routes.ts",
-      "issue": "GDPR export returns full message content as raw JSON download with no encryption or expiry",
-      "impact": "The GDPR data export endpoint returns a downloadable JSON containing all user messages, notifications, preferences, and push subscription data. The download link has no authentication after the initial request and no expiry \u2014 if intercepted, all user data is exposed",
-      "fix": "Generate a short-lived signed URL (e.g., 5 minutes) for the export, or stream the response directly with proper Content-Disposition headers already implemented. Consider encrypting the export payload at rest"
+      "category": "resilience",
+      "file": "apps/api/src/lib/idempotency.ts",
+      "line": 34,
+      "issue": "In-memory idempotency fallback Map is not shared across instances",
+      "impact": "When Redis is unavailable, idempotency keys fall back to an in-process Map. In multi-instance deployments, each instance has its own Map, so duplicate message creation or channel creation is possible if requests route to different instances during Redis failure.",
+      "fix": "For multi-instance safety, consider a shared fallback (e.g., database-backed idempotency with upsert) or document that single-instance mode is required when Redis is down.",
+      "endpoint": "POST /channels/:channelId/messages"
     },
     {
       "severity": "P3",
       "domain": "api",
-      "category": "rest_contract",
-      "file": "apps/api/src/lib/pagination.ts",
-      "issue": "Pagination helper silently caps limit at maxLimit without notifying the caller",
-      "impact": "When a client requests a limit larger than maxLimit, the value is silently capped. The response doesn't indicate the original requested value vs actual limit, which can confuse API consumers about pagination behavior",
-      "fix": "Include both requested_limit and actual_limit in paginated responses, or return a warning header when the limit is capped"
+      "category": "contract_validation",
+      "file": "apps/api/src/route-registry.ts",
+      "line": 1,
+      "issue": "No response schema validation for any API endpoint",
+      "impact": "While request validation exists (zod schemas), no endpoint validates response payloads against a schema. Contract drift between frontend expectations and actual API responses cannot be caught during development or CI. A backend change that removes or renames a field breaks frontend silently.",
+      "fix": "Add response validation schemas for all endpoints. Integrate into route registry with optional strict mode for CI validation."
     },
     {
       "severity": "P1",
-      "domain": "data",
-      "category": "concurrency_safety",
-      "file": "apps/api/src/modules/channels/service.ts",
-      "issue": "Channel update uses optimistic locking version check but reorderChannel does sequential row updates without version check or transaction",
-      "impact": "Concurrent reorder operations can interleave \u2014 two admins reordering channels simultaneously can get partial interleaved results. Some channels may end up with duplicate sort_order values or incorrect order. The updates are sequential without isolation, so a crash mid-reorder leaves inconsistent state",
-      "fix": "Wrap reorder in a single transaction (Supabase RPC with BEGIN/COMMIT/ROLLBACK) and accept a version parameter for the entire workspace's channel ordering to prevent concurrent reorder conflicts"
+      "domain": "ci_cd",
+      "category": "secrets_in_run",
+      "file": ".github/workflows/supabase-migrations.yml:28",
+      "issue": "Secrets injected inline in run: command via heredoc",
+      "impact": "Secrets visible in CI logs if command fails or debug enabled",
+      "fix": "Move SUPABASE_PROJECT_REF to env: block instead of inline in run: supabase link command"
     },
     {
       "severity": "P1",
-      "domain": "data",
-      "category": "relational_integrity",
-      "file": "apps/api/src/modules/auth/routes.ts",
-      "issue": "GDPR account deletion at DELETE /account does not delete consent_logs, leaving orphaned user references",
-      "impact": "The consent_logs table has ON DELETE CASCADE referencing auth.users(id), but if users are deleted via the GDPR endpoint (which uses supabase.auth.admin.deleteUser), the cascade should clean up consent_logs. However, the trigger-based cleanup at 20260707000002 also handles this. But the GDPR endpoint at auth/routes.ts:212-230 does NOT call the trigger path \u2014 it manually deletes specific tables. consent_logs is not included in the manual delete list, so consent records for the deleted user remain as orphans",
-      "fix": "Add DELETE FROM consent_logs WHERE user_id = $userId to the GDPR deletion sequence in auth/routes.ts, after the notifications delete and before the users table delete"
+      "domain": "ci_cd",
+      "category": "permissions",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "No explicit GITHUB_TOKEN permissions block \u00e2\u20ac\u201d uses default write-all",
+      "impact": "Deploy workflow has full write scope to all resources unnecessarily",
+      "fix": "Add permissions: contents: read, packages: write at top of workflow"
+    },
+    {
+      "severity": "P1",
+      "domain": "ci_cd",
+      "category": "permissions",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No explicit GITHUB_TOKEN permissions block \u00e2\u20ac\u201d uses default write-all",
+      "impact": "Production deploy workflow has full write scope to all resources",
+      "fix": "Add permissions: contents: read, packages: write, id-token: write at top of workflow"
     },
     {
       "severity": "P2",
-      "domain": "data",
-      "category": "orphan_prevention",
-      "file": "apps/api/src/modules/messages/service.ts",
-      "issue": "Message hard-delete via remove() breaks referential integrity for child records despite CASCADE",
-      "impact": "When a message is hard-deleted via messageService.remove() (line 328), CASCADE deletes on reactions, message_flags, and message_edit_history will clean up child records. However, the soft-delete RLS only filters deleted_at IS NULL \u2014 hard-deleted messages disappear from view but their brief existence is acknowledged by the CASCADE behavior on child tables. Inconsistency between soft-delete strategy and hard-delete implementation can lead to unexpected disappearances of reactions or flags",
-      "fix": "Standardize on soft-delete for messages (UPDATE deleted_at = NOW()) to match the RLS strategy. Only hard-delete in a background cleanup job after the retention period has passed"
+      "domain": "ci_cd",
+      "category": "permissions",
+      "file": ".github/workflows/",
+      "issue": "16 of 20 workflows lack explicit GITHUB_TOKEN permissions block",
+      "impact": "Default permissive token scope on most workflows (write-all on contents, packages, etc.)",
+      "fix": "Add explicit permissions: block to each workflow with least-privilege scopes"
     },
     {
       "severity": "P2",
-      "domain": "data",
-      "category": "transaction_coverage",
-      "file": "apps/api/src/modules/channels/service.ts",
-      "issue": "createGroupChannel writes to channels, channel_members, and dm_members tables sequentially without transaction isolation",
-      "impact": "If the server crashes after creating the channel but before adding members to channel_members and dm_members, an orphan channel with no members is created. Subsequent attempts to create the same DM will fail (if the duplicate detection finds the existing channel) or create duplicates, leading to inconsistent DM state",
-      "fix": "Wrap the multi-table channel creation + member additions in a Supabase RPC with BEGIN/COMMIT/ROLLBACK transaction to ensure atomicity"
+      "domain": "ci_cd",
+      "category": "path_filtering",
+      "file": ".github/workflows/ci.yml",
+      "issue": "ci.yml triggers on push to main/develop but no path filter on schedule",
+      "impact": "Scheduled runs trigger full CI stack even with no code changes",
+      "fix": "Add path filter to schedule trigger or use paths-ignore for docs-only changes"
     },
     {
       "severity": "P2",
-      "domain": "data",
-      "category": "relational_integrity",
+      "domain": "ci_cd",
+      "category": "secrets_in_run",
+      "file": ".github/workflows/deploy-development.yml:50-58",
+      "issue": "DO_API_TOKEN and other secrets used inline in run: commands via heredoc style",
+      "impact": "Secrets could leak in logs if curl commands fail",
+      "fix": "Pass DO_API_TOKEN and CF_API_TOKEN via env: block, reference as $DO_API_TOKEN in scripts"
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "artifact_retention",
+      "file": ".github/workflows/validate.yml",
+      "issue": "No explicit retention period set on test results and coverage artifacts",
+      "impact": "Artifacts stored indefinitely, accumulating storage costs",
+      "fix": "Add retention-days: 30 to upload-artifact steps"
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "path_filtering",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "build-push.yml triggers on PR to develop and main \u00e2\u20ac\u201d builds images on every PR even for doc-only changes",
+      "impact": "Unnecessary image builds consuming CI minutes",
+      "fix": "Add paths-ignore: ['docs/**', '*.md', 'AGENTS.md'] to PR trigger"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "rollback_readiness",
+      "file": "supabase/migrations/20260709000001_add_auto_responder.sql",
+      "line": 1,
+      "issue": "Missing rollback script for migration 20260709000001_add_auto_responder",
+      "impact": "55 migrations exist but only 54 rollback scripts are present. Migration 20260709000001 (adds auto_responders table) has no corresponding down migration. If this migration needs to be rolled back in production, the auto_responders table will remain orphaned, causing schema drift between environments.",
+      "fix": "Create supabase/rollback/20260709000001_add_auto_responder_down.sql with DROP TABLE IF EXISTS public.auto_responders CASCADE;"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "rls",
       "file": "supabase/policies/06_reactions.sql",
-      "issue": "Reactions SELECT policy allows any authenticated user to read all reactions without channel membership check \u2014 cross-tenant reaction enumeration",
-      "impact": "Any authenticated user can enumerate all reactions across the entire system by querying GET /messages/:id/reactions (which uses requireMessageAccess) or via direct Supabase API access, as the RLS policy does not filter by channel membership. This leaks user reaction patterns across workspace/tenant boundaries",
-      "fix": "Update the reactions SELECT RLS policy to only return reactions for messages that are in channels the user can access (join to messages \u2192 channels \u2192 workspace_members)"
-    },
-    {
-      "severity": "P3",
-      "domain": "data",
-      "category": "indexing",
-      "file": "supabase/migrations",
-      "issue": "No composite index on channel_bookmarks(channel_id, sort_order) despite frequent ordered queries",
-      "impact": "The channel bookmarks endpoint orders by sort_order within a channel. With many bookmarks per channel, the absence of a composite index on (channel_id, sort_order) will cause sequential scans for the ORDER BY + WHERE clause",
-      "fix": "Add CREATE INDEX IF NOT EXISTS idx_channel_bookmarks_channel_sort ON public.channel_bookmarks(channel_id, sort_order)"
-    },
-    {
-      "severity": "P3",
-      "domain": "data",
-      "category": "schema_migration_alignment",
-      "file": "supabase/migrations/20260627000001_add_missing_indexes.sql",
-      "issue": "idx_workspace_members_user_role index exists but is unused by common query patterns",
-      "impact": "The index idx_workspace_members_user_role on (user_id, role) supports the admin check query pattern (user_id + role filter), but the common workspace membership check queries filter on (workspace_id, user_id) which has no dedicated composite index. The workspace_members table has a PK on (workspace_id, user_id) which covers this, so no additional index is needed, but the user_role index may be redundant",
-      "fix": "Consider removing idx_workspace_members_user_role if query analysis shows it is never used, to reduce write overhead. Or keep it for admin queries that filter by role across workspaces"
+      "line": 7,
+      "issue": "Reactions SELECT policy uses using(true) with no tenant/workspace scoping",
+      "impact": "The reactions table RLS policy allows all authenticated users to select all reactions across all workspaces. While reactions contain only emoji + user_id pairs, this violates the tenant isolation model used by all other tables and leaks user activity data across workspace boundaries.",
+      "fix": "Replace using(true) with a policy that joins through messages -> channels -> workspace_members to verify workspace membership before allowing reaction reads."
     },
     {
       "severity": "P1",
-      "domain": "database",
-      "category": "data_lifecycle",
-      "file": "apps/api/src/modules/auth/routes.ts",
-      "issue": "GDPR account deletion does not clean up consent_logs, sidebar_categories, channel_bookmarks, or audit_logs",
-      "impact": "When a user deletes their account via DELETE /account at auth/routes.ts:212, user data is deleted from notifications, push_subscriptions, messages, reactions, channel_members, workspace_members, user_preferences, and users \u2014 but consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, message_reminders, and audit_logs are left behind, violating GDPR right to erasure and leaving orphaned PII",
-      "fix": "Add delete operations for consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, message_reminders, and audit_logs (or anonymize actor_user_id in audit_logs)"
+      "domain": "environment",
+      "category": "security_headers",
+      "file": "infra/docker/Caddyfile",
+      "issue": "Dev Caddyfile missing HSTS and Permissions-Policy headers present in prod Caddyfile",
+      "impact": "Development environment less secure; security testing may miss HSTS/Permissions-Policy issues before prod deploy",
+      "fix": "Add same security headers (Strict-Transport-Security, Permissions-Policy) to dev Caddyfile"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "caddy_tls",
+      "file": "infra/docker/Caddyfile.prod",
+      "issue": "Prod Caddyfile missing /healthz route \u00e2\u20ac\u201d only /health is routed",
+      "impact": "Full health check (including DB check) not available via Caddy on prod; direct API access needed",
+      "fix": "Add @healthz path block in prod Caddyfile routing to api:4000"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "compose_drift",
+      "file": "infra/docker/docker-compose.devremote.yml : docker-compose.prod.yml",
+      "issue": "Prod compose file missing env_file: .env reference on web service (dev has it)",
+      "impact": "Prod web service may not pick up all env vars consistently",
+      "fix": "Add env_file: .env to web service in docker-compose.prod.yml"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "health_check",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose file missing healthcheck on web service (dev has one)",
+      "impact": "Deploy health check only validates API, not web service availability",
+      "fix": "Add healthcheck block to web service in docker-compose.prod.yml matching dev compose"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "domain_cookie",
+      "file": "infra/docker/Caddyfile : Caddyfile.prod",
+      "issue": "Dev Caddyfile uses .us domain via internal certs, prod uses .com via CF origin cert \u00e2\u20ac\u201d drift expected but no documentation of domain-specific cookie config",
+      "impact": "Auth cookies set on .us domain won't work on .com; operators must be aware of this during promotion",
+      "fix": "Document required auth cookie domain changes in environment promotion runbook"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "livekit_config",
+      "file": "infra/docker/docker-compose.devremote.yml : docker-compose.prod.yml",
+      "issue": "Dev LiveKit uses turn.domain: localhost; prod uses $DOMAIN variable \u00e2\u20ac\u201d TURN TLS port 5349 only in prod",
+      "impact": "TURN/STUN not fully functional in dev for WebRTC behind NAT",
+      "fix": "Document that LiveKit TURN requires production domain for full functionality"
     },
     {
       "severity": "P1",
-      "domain": "database",
-      "category": "migration_safety",
-      "file": "supabase/migrations/20260707000002_cleanup_deleted_users.sql",
-      "issue": "Migration 20260707000002 adds a trigger on auth.users DELETE but cannot be rolled back (no down migration)",
-      "impact": "If the cleanup trigger needs to be modified or reverted, there is no rollback script. The TRIGGER on_auth_user_deleted and FUNCTION handle_user_deletion remain in the database permanently after deployment, making it impossible to cleanly roll back this migration in CI or production rollback scenarios",
-      "fix": "Create supabase/rollback/20260707000002_cleanup_deleted_users_down.sql that DROP TRIGGER on_auth_user_deleted and DROP FUNCTION handle_user_deletion"
+      "domain": "environment",
+      "category": "health_check",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Web service (Next.js) missing healthcheck in prod compose \u00e2\u20ac\u201d dev compose has healthcheck",
+      "impact": "Deploy health check only validates API container; web container crash won't be detected",
+      "fix": "Add healthcheck: test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000'] to web service in prod compose"
     },
     {
       "severity": "P2",
-      "domain": "database",
-      "category": "migration_safety",
-      "file": "apps/api/src/modules/messages/service.ts",
-      "issue": "Message remove() performs hard DELETE instead of soft-delete, inconsistent with soft-delete strategy",
-      "impact": "The message remove() in messages/service.ts:328 does a hard DELETE from the messages table, bypassing the soft-delete column (deleted_at). Messages deleted via the API are permanently removed, cannot be restored, and break referential integrity for child records (reactions, flags, edit history) despite CASCADE. This is inconsistent with the soft-delete RLS policy that filters by deleted_at IS NULL",
-      "fix": "Change message remove() to soft-delete (UPDATE deleted_at = NOW()) instead of hard DELETE. Reserve hard delete for a separate admin purge endpoint or data retention job"
+      "domain": "environment",
+      "category": "caddy_routes",
+      "file": "infra/docker/Caddyfile.prod",
+      "issue": "Prod Caddyfile missing /healthz route \u00e2\u20ac\u201d only /health is routed to API",
+      "impact": "Full health check (DB, Redis) not accessible via Caddy on prod; requires direct API access",
+      "fix": "Add @healthz path block routing to api:4000 in Caddyfile.prod"
     },
     {
       "severity": "P2",
-      "domain": "database",
-      "category": "schema_integrity",
-      "file": "supabase/migrations/20260703000001_add_message_features.sql",
-      "issue": "message_flags table has UNIQUE(user_id, message_id) constraint but no explicit index matching the unique constraint",
-      "impact": "While a unique constraint implicitly creates a btree index, there is no explicit composite index on (user_id, message_id) for the common query pattern filtering by user_id only. The separate indexes idx_message_flags_user and idx_message_flags_message are single-column and less efficient for the upsert pattern with onConflict",
-      "fix": "The implicit unique index is sufficient for the constraint, but consider adding a covering index with INCLUDE (created_at) for the getFlagged query which joins message_flags \u2192 messages by user_id"
+      "domain": "environment",
+      "category": "compose_env",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose web service lacks env_file: .env \u00e2\u20ac\u201d dev compose has it",
+      "impact": "Web prod container may miss required env vars; dev and prod env injection differs",
+      "fix": "Add env_file: .env to web service in docker-compose.prod.yml"
     },
     {
       "severity": "P2",
-      "domain": "database",
-      "category": "schema_integrity",
-      "file": "apps/api/src/modules/channels/service.ts",
-      "issue": "Channel reordering updates individual rows sequentially with no transaction wrapping \u2014 partial updates possible",
-      "impact": "The reorderChannel method in channels/service.ts:48-64 updates each channel's sort_order in a loop without a database transaction. If the process fails mid-way, channels will have inconsistent sort_order values, leaving some updated and others not",
-      "fix": "Wrap the sort_order updates in a Supabase RPC with BEGIN/COMMIT/ROLLBACK transaction, or use a batch update approach with a single query"
-    },
-    {
-      "severity": "P2",
-      "domain": "database",
-      "category": "rls_posture",
-      "file": "supabase/migrations/20260625000008_create_reactions.sql",
-      "issue": "Reactions SELECT RLS policy allows all authenticated users to read any reaction without channel membership check",
-      "impact": "The policy 'reactions_select' at line 12-14 allows SELECT for all authenticated users (USING (true)). This means any authenticated user can enumerate reactions across all messages in all channels, leaking which users reacted to which content even in private channels they don't belong to",
-      "fix": "Restrict reactions SELECT policy to only return reactions for messages in channels the user can access via workspace/channel membership, matching the messages_select_member pattern"
+      "domain": "environment",
+      "category": "image_tags",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose uses :latest tags (not SHA-pinned) for all images \u00e2\u20ac\u201d rollback races could pull wrong version",
+      "impact": "Concurrent deploys may cause race condition where :latest tag points to different SHA during rollback",
+      "fix": "Pin prod image tags to SHA digest after pull in deploy-production.yml deploy step"
     },
     {
       "severity": "P3",
-      "domain": "database",
-      "category": "schema_integrity",
-      "file": "supabase/migrations/20260627000002_enforce_data_retention.sql",
-      "issue": "Data retention enforcement uses pg_cron setup documented in a separate runbook rather than a migration",
-      "impact": "The data retention policy for consent_logs and old messages requires manual pg_cron setup. This is not automatically applied during deployment, creating a gap between migration state and actual enforcement",
-      "fix": "Either include the pg_cron job creation SQL directly in the migration (gated by IF pg_cron extension exists), or integrate the setup into the deployment pipeline script"
-    },
-    {
-      "severity": "P3",
-      "domain": "database",
-      "category": "indexing",
-      "file": "supabase/migrations/20260626000025_consent_logs.sql",
-      "issue": "consent_logs indexes only cover user_id but not consent_type or created_at for audit queries",
-      "impact": "The idx_consent_logs_user_id index supports user-specific lookups, but audit queries filtering by consent_type or date range will require full table scans",
-      "fix": "Consider adding a composite index on (consent_type, created_at) if audit queries against consent_logs are expected at scale"
-    },
-    {
-      "severity": "P3",
-      "domain": "database",
-      "category": "rls_posture",
-      "file": "supabase/policies/09_webhooks.sql",
-      "issue": "Webhook RLS policies allow workspace members to read webhook_endpoints including encrypted secrets",
-      "impact": "While the API masks secrets at the application layer (webhooks/routes.ts:106-108), the RLS policy allows any workspace member to SELECT from webhook_endpoints, which includes the encrypted_secret column. If an attacker gains direct DB access (via SQL injection or exposed anon key), they could extract encrypted webhook secrets",
-      "fix": "Restrict webhook_endpoints RLS to only expose non-secret columns, or use a VIEW that excludes the secret column for regular users"
-    },
-    {
-      "severity": "P2",
-      "domain": "frontend",
-      "category": "F2 \u2014 Layout & Navigation",
-      "file": "apps/web/app/globals.css",
-      "issue": "Sticky bottom navigation overlaps content on mobile beyond post-create container",
-      "impact": "Settings, admin, and channel info panels lack bottom padding compensation for fixed bottom nav, causing content to be hidden behind nav bar on mobile.",
-      "fix": "Apply uniform bottom padding to all main content areas (.app__content) using var(--bottom-nav-height) + safe-area. Replace page-specific overrides with a global content wrapper class."
-    },
-    {
-      "severity": "P2",
-      "domain": "frontend",
-      "category": "F3 \u2014 Chat UX",
-      "file": "apps/web/components/chat/message-list.tsx",
-      "issue": "Message list renders all messages as DOM nodes with no virtualization",
-      "impact": "Channels with 500+ messages render 500+ DOM nodes plus reactions, context menus, and modals. Performance degrades significantly on low-power mobile devices and long chat sessions.",
-      "fix": "Add @tanstack/react-virtual to render only visible messages (~30-50 DOM nodes). Preserve scroll position on message prepend for infinite scroll. Implement estimated row heights for variable content."
-    },
-    {
-      "severity": "P2",
-      "domain": "frontend",
-      "category": "F4 \u2014 State Management & Data Flow",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "Optimistic echo deduplication leaves ghost messages after reconnection before server confirmation",
-      "impact": "If a socket reconnects before the API confirms a message, the optimistic temp message persists permanently as a ghost until page reload. Users see duplicate or phantom messages.",
-      "fix": "Track pending message IDs in a Set ref. On initial channel load, reconcile against confirmed IDs. Remove temp IDs that match confirmed server IDs from the pending set. Clear stale temps on reconnect."
-    },
-    {
-      "severity": "P2",
-      "domain": "frontend",
-      "category": "F5 \u2014 Accessibility",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "8 icon-only buttons lack descriptive accessible names",
-      "impact": "Screen reader users cannot distinguish buttons like 'Export', 'Channel menu', 'Priority picker', 'Schedule message', 'Collapse sidebar', 'Add category', 'New DM', and 'Add channel'. These are critical navigation and action elements.",
-      "fix": "Audit all icon-only buttons for aria-label correctness. Use context-specific labels: 'Export channel' instead of 'Export', 'Set message priority' instead of 'Set priority'. Add aria-describedby for toolbar groupings."
-    },
-    {
-      "severity": "P2",
-      "domain": "frontend",
-      "category": "F5 \u2014 Accessibility",
-      "file": "apps/web/components/chat/message-input.tsx",
-      "issue": "Overlay modals do not auto-focus first interactive element on open",
-      "impact": "The @everyone warning, priority warning, and schedule picker modals trap keyboard focus but do not programmatically move focus to the first button. Keyboard and screen reader users must tab blind to locate the dialog content.",
-      "fix": "Add useEffect on modal mount that calls .focus() on the first focusable button (Cancel/Send). Ensure focus is restored to the triggering element when the modal closes."
+      "domain": "environment",
+      "category": "mem_limits",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose has same mem_limit values as dev compose (e.g. api: 192m, web: 256m)",
+      "impact": "Production may need higher memory limits under real load \u00e2\u20ac\u201d potential OOM risk",
+      "fix": "Review and increase prod memory limits based on load testing: api: 512m, web: 512m, worker: 256m recommended"
     },
     {
       "severity": "P1",
-      "domain": "frontend",
-      "category": "F5 \u2014 Accessibility",
-      "file": "apps/web/app/(workspace)/layout.tsx",
-      "issue": "Ctrl+K shortcut conflicts with browser default and TipTap link insertion",
-      "impact": "Pressing Ctrl+K in the message editor triggers QuickSwitcher AND may insert a TipTap link simultaneously. The browser may also open its own search. This creates confusing and inconsistent behavior for power users relying on keyboard shortcuts.",
-      "fix": "Suppress global Ctrl+K handler when the active element is an input/textarea/editor. Use Ctrl+Shift+K for QuickSwitcher when inside the editor. Keep Ctrl+K for TipTap link insertion as users expect."
+      "domain": "evolution",
+      "category": "metadata",
+      "file": "apps/web/app/",
+      "issue": "Only the root layout.tsx exports metadata \u00e2\u20ac\u201d none of the 14 page.tsx files have export const metadata or generateMetadata",
+      "impact": "All pages have generic browser tab title and no SEO/OpenGraph metadata; page titles are indistinguishable",
+      "fix": "Add export const metadata with appropriate title and description to each page.tsx \u00e2\u20ac\u201d at minimum: login, workspace, admin, search, settings, threads, saved, scheduled"
+    },
+    {
+      "severity": "P1",
+      "domain": "evolution",
+      "category": "loading_states",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/",
+      "issue": "No loading.tsx for workspaceSlug route group \u00e2\u20ac\u201d only root, workspace, and auth have loading states",
+      "impact": "Channel switching, search, admin, settings, and other sub-routes show blank page during loading",
+      "fix": "Add loading.tsx to (workspace)/[workspaceSlug]/ route group with skeleton matching each sub-route layout"
+    },
+    {
+      "severity": "P2",
+      "domain": "evolution",
+      "category": "empty_states",
+      "file": "apps/web/components/",
+      "issue": "No EmptyState component exists \u00e2\u20ac\u201d search results, channel lists, thread views, and other empty data states render blank content",
+      "impact": "Users see empty/blank areas with no guidance on what to do next",
+      "fix": "Create EmptyState component with icon, title, description, and action prop; use in search page, channel-info, thread-panel, scheduled, saved pages"
+    },
+    {
+      "severity": "P2",
+      "domain": "evolution",
+      "category": "n+1_queries",
+      "file": "apps/api/src/modules/",
+      "issue": "No explicit batching or DataLoader pattern for related entity queries (messages fetch user profiles, channels fetch members list)",
+      "impact": "List endpoints may exhibit N+1 query patterns under load, degrading API response times",
+      "fix": "Add DataLoader or batch-loading pattern for common N+1 patterns: user profiles in message lists, member info in channel lists"
+    },
+    {
+      "severity": "P2",
+      "domain": "evolution",
+      "category": "error_boundaries",
+      "file": "apps/web/components/",
+      "issue": "error.tsx exists at route group level but no component-level error boundaries in reusable components (message-list, channel-list, search-bar)",
+      "impact": "Error in a single component can crash the entire page layout",
+      "fix": "Add error boundaries to: message-list.tsx, chat-view.tsx, app-sidebar.tsx, search-bar.tsx \u00e2\u20ac\u201d each wraps its content with catch/retry"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "category": "loading_skeletons",
+      "file": "apps/web/app/(auth)/",
+      "issue": "Auth loading.tsx uses spinner instead of skeleton matching page layout",
+      "impact": "Visual jarring when transitioning from spinner to auth form layout",
+      "fix": "Replace auth loading spinner with page-shaped skeleton matching login form structure"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "category": "worker_health_endpoint",
+      "file": "apps/worker/src/",
+      "issue": "Worker has no HTTP health endpoint for external monitoring \u00e2\u20ac\u201d compose healthcheck uses kill -0 which only checks process is running, not that it's healthy",
+      "impact": "Cannot distinguish between process-alive and process-processing-jobs; a hung worker appears healthy",
+      "fix": "Add /healthz HTTP endpoint to worker that checks Redis connection, queue connectivity, and last-processed timestamp"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "category": "stale_ci_data",
+      "file": ".github/workflows/governance.yml",
+      "issue": "governance.yml workflow is marked as superseded by platform.yml but references non-existent scripts/automation/run_full.ps1",
+      "impact": "Running stale workflow would fail with script-not-found error",
+      "fix": "Either update scripts path or remove governance.yml workflow"
     },
     {
       "severity": "P2",
       "domain": "frontend",
-      "category": "F6 \u2014 Responsive Design",
-      "file": "apps/web/components/workspace/app-sidebar.tsx",
-      "issue": "Sidebar auto-collapse state at tablet widths is not persisted across page loads",
-      "impact": "Users who manually expand the sidebar at tablet width lose their preference on every page navigation. The auto-collapse logic resets, forcing a manual re-expand each time.",
-      "fix": "Save the userToggledRef state to localStorage. On mount, check localStorage before applying auto-collapse. Respect user's explicit choice until they toggle again or clear storage."
-    },
-    {
-      "severity": "P3",
-      "domain": "frontend",
-      "category": "F7 \u2014 Performance",
-      "file": "apps/web/components/chat/emoji-picker.tsx",
-      "issue": "3357 emoji entries are statically imported adding ~150KB to client bundle",
-      "impact": "The emoji-data.ts is always bundled with the chat chunk regardless of whether the emoji picker is opened. Increases initial JS payload and parse time for all users.",
-      "fix": "Lazy-load emoji-data.ts via dynamic import when EmojiPicker first mounts. Use React.lazy or next/dynamic for the picker component itself. Cache the loaded data in a module-level variable."
-    },
-    {
-      "severity": "P3",
-      "domain": "frontend",
-      "category": "F8 \u2014 Interaction Quality",
-      "file": "apps/web/components/workspace/app-sidebar.tsx",
-      "issue": "Category drag-and-drop reorder uses HTML5 DnD API with no touch support",
-      "impact": "Mobile and tablet users cannot reorder sidebar categories because native HTML5 drag-and-drop does not work on touch devices. This feature is desktop-only despite the app being responsive.",
-      "fix": "Add touch event handlers (touchstart/touchmove/touchend) that mirror the drag logic. Alternatively, use a pointer-events-based approach or a lightweight library like @dnd-kit/core."
-    },
-    {
-      "severity": "P3",
-      "domain": "frontend",
-      "category": "F9 \u2014 Visual Consistency",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "Inline styles use hardcoded color values instead of CSS custom properties",
-      "impact": "Hardcoded colors (#fff, rgba(0,0,0,0.4)) in ConnectionBanner, overlay, and button elements break dark mode consistency and make theme customization harder. Minor visual drift between themed and un-themed elements.",
-      "fix": "Replace hardcoded colors with CSS variables: use var(--banner-bg) for connection banner, var(--overlay-bg) for modals. Add fallback values for backwards compatibility."
+      "category": "error_handling",
+      "file": "apps/web/components/chat/chat-view.tsx:63, apps/web/components/chat/message-input.tsx:215, apps/web/components/workspace/app-sidebar.tsx:205, and 36+ similar instances",
+      "issue": "39 silent catch blocks using console.warn() with no structured logging across all web components",
+      "impact": "Failures in critical paths (profile loading, socket setup, API calls, member fetching, file operations) go undetected in production with no structured logging, no error aggregation, and no user feedback for recoverable errors",
+      "fix": "Replace all console.warn() catch blocks with a centralized logger service (e.g., capture scope in Sentry or equivalent) and expose user-facing non-sensitive error messages where appropriate. Add error boundary fallbacks for critical failure paths."
     },
     {
       "severity": "P2",
       "domain": "frontend",
-      "category": "F10 \u2014 Component Architecture",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "ChatView component exceeds 890 lines with 8+ mixed responsibilities",
-      "impact": "Single component handles socket lifecycle, optimistic updates, file uploads, typing, presence, notifications, media room, replies, threads, and channel info. Hard to test, maintain, or reason about. Changes risk breaking unrelated features.",
-      "fix": "Extract: useChannelSocket (socket join/leave/events), useChannelNotifications (sound + desktop + prefs), useTypingIndicator (emit + display). ChatView should only compose these hooks with JSX."
+      "category": "component_architecture",
+      "file": "apps/web/components/chat/thread-panel.tsx:319",
+      "issue": "Thread reply editor uses plain HTML textarea instead of TipTap rich text editor, lacking formatting toolbar, @mention autocomplete, emoji picker, and slash commands",
+      "impact": "Users composing thread replies have a degraded editing experience compared to main channel messages. Inconsistent UX between main channel and thread replies with no formatting, no mentions, no emoji autocomplete, and no slash commands",
+      "fix": "Replace the textarea at thread-panel.tsx:319 with the shared TipTapEditor component used in MessageInput, adding the formatting toolbar, mention autocomplete, emoji picker, and slash command support for thread replies"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "component_architecture",
+      "file": "apps/web/components/chat/message-list/context-menu.tsx:177,191",
+      "issue": "Context menu ref array index overlap for conditional items causing focus management issues \u00e2\u20ac\u201d Forward and Pin reuse indices 4-5 which overlap with Edit and Delete",
+      "impact": "When conditional menu items (Forward, Pin, Edit, Delete) are shown/hidden, menuItemsRef indices overlap. Arrow key navigation may skip or double-focus items. Focus management breaks when editing permissions or feature flags change available actions",
+      "fix": "Remove fixed array indexing from menuItemsRef. Use a dynamic counter that increments conditionally, or use a Map<key, ref> approach that only assigns indices for rendered items. Ensure autoFocus and arrow-key navigation only reference actually-mounted elements"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "accessibility",
+      "file": "apps/web/components/chat/message-list/message-item.tsx:472-476",
+      "issue": "Reaction tooltips use native HTML title attribute \u00e2\u20ac\u201d not keyboard accessible, no user names shown",
+      "impact": "Reaction tooltips ('You and X others') cannot be triggered by keyboard users and do not display the names of who reacted. Screen readers only get minimal count info without detailed participant context",
+      "fix": "Add a proper tooltip component listing names of users who reacted on hover/focus, or use aria-label with aggregated count and names. Consider a small popover listing reactors on click"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "accessibility",
+      "file": "apps/web/components/chat/message-list/message-item.tsx:421-457",
+      "issue": "Post-menu action buttons (post-menu__item) have 28px height/width which is below WCAG 2.5.5 minimum 44px touch target size on mobile",
+      "impact": "Users on small touch screens may struggle to accurately tap 28px icon buttons on mobile devices, especially the reaction, bookmark, edit, and delete action buttons in the post-menu",
+      "fix": "Increase post-menu__item min-width and min-height to 44px on touch devices via CSS media query (hover: none). Add adequate padding/spacing between adjacent buttons"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "accessibility",
+      "file": "apps/web/components/chat/thread-panel.tsx:294-306",
+      "issue": "Thread panel inline delete confirmation dialog lacks focus trap and keyboard navigation",
+      "impact": "Keyboard users can tab outside the inline delete confirmation in the thread panel, breaking the modal interaction pattern. Unlike the main DeleteDialog component which has proper focus trapping, the thread version is a raw overlay with no focus management",
+      "fix": "Add focus trap (Tab cycle) to the inline delete dialog in thread-panel.tsx using same pattern as DeleteDialog's handleTab, or extract shared DeleteDialog component for use in both contexts"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "observability",
+      "file": "apps/web/components/chat/chat-view.tsx:63, apps/web/components/chat/message-input.tsx:215, apps/web/components/workspace/app-sidebar.tsx:205 (representative of 39 instances)",
+      "issue": "Vague console.warn messages lack error context, request IDs, and component names across 39 catch blocks",
+      "impact": "Reduced debuggability of production errors; no way to correlate warnings to specific operations, users, or API calls. When a warning appears in logs, there's insufficient context to identify the root cause",
+      "fix": "Include component name, operation context, and error details in every console.warn call. Route through structured logging service that captures stack traces, component hierarchy, and request context"
+    },
+    {
+      "severity": "P1",
+      "domain": "governance",
+      "category": "policy_tiers",
+      "file": ".github/workflows/",
+      "issue": "No formalized policy tier architecture - dev, RC, prod, and hotfix releases all use same workflow patterns with no graduated approval gates",
+      "impact": "Hotfix and release-candidate releases use same CI/CD path as dev; no staging environment to validate before prod",
+      "fix": "Define policy tiers (dev/RC/prod/hotfix) with graduated approval gates: dev=auto, RC=status checks, prod=environment approval, hotfix=emergency bypass with post-action review"
+    },
+    {
+      "severity": "P1",
+      "domain": "governance",
+      "category": "hotfix_policy",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "Hotfix bypass is manual workflow_dispatch with no compensating controls - any user with write access can trigger prod deploy with inputs.rollback_sha",
+      "impact": "No mandatory PR review, status check, or post-deploy audit trail for emergency hotfixes",
+      "fix": "Add hotfix-specific job that requires PR approval from code owners, enforces status checks, and logs all hotfix activity to audit API"
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "policy_file_structure",
+      "file": ".github/workflows/",
+      "issue": "No policy configuration files - all governance is implicit in workflow files",
+      "impact": "Policy changes require editing workflow YAML; no centralized policy declaration or versioning separate from CI config",
+      "fix": "Create governance/policies/ directory with tier definitions (dev.yaml, rc.yaml, prod.yaml, hotfix.yaml) and a CI step that validates workflow triggers against declared policy"
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "auditability",
+      "file": ".github/workflows/",
+      "issue": "Policy changes are not independently tracked - changing workflow triggers, approval gates, or environment protections is not logged separately from code changes",
+      "impact": "Cannot audit when or why release policy was modified without manual git log inspection",
+      "fix": "Add policy change log in governance/CHANGELOG.md and require PR description to tag when policy-affecting files are modified"
+    },
+    {
+      "severity": "P3",
+      "domain": "governance",
+      "category": "workflow_wiring",
+      "file": ".github/workflows/governance.yml",
+      "issue": "governance.yml is deprecated (v5, superseded by platform.yml v6) but still dispatchable - no cleanup or migration enforcement",
+      "impact": "Stale workflow may be triggered accidentally, producing misleading results",
+      "fix": "Add deprecation notice in workflow description or remove after confirming platform.yml covers all use cases"
+    },
+    {
+      "severity": "P1",
+      "domain": "observability",
+      "category": "trace_correlation",
+      "file": "apps/web/: apps/api/src/middleware/request-id.ts",
+      "issue": "No frontend-to-API trace ID propagation \u00e2\u20ac\u201d browser does not send x-request-id header",
+      "impact": "Cannot correlate frontend errors with API request logs; debugging client-side issues requires manual log digging",
+      "fix": "Add request ID generation to Next.js middleware or BFF route handler, propagate x-request-id header on all API calls"
     },
     {
       "severity": "P2",
       "domain": "observability",
-      "category": "distributed_tracing",
-      "file": "apps/api/src/lib/logger.ts",
-      "issue": "No trace/correlation ID propagation across API, worker, and database tiers",
-      "impact": "Cannot trace a request end-to-end across service boundaries. Correlating logs from API \u2192 Worker \u2192 DB requires manual grep, slowing root cause analysis.",
-      "fix": "Implement OpenTelemetry instrumentation or inject a requestId header through all service calls. Add traceId/spanId to all structured log entries."
+      "category": "alerting",
+      "file": ".github/",
+      "issue": "No automated alerting configured for any failure mode",
+      "impact": "Operators rely on manual health check polling; no push notifications for degraded DB, worker failure, or API down",
+      "fix": "Configure Sentry alert rules for error thresholds, add uptime monitoring with PagerDuty/webhook integration, add DO monitoring alerts for CPU/memory/disk"
     },
     {
       "severity": "P2",
       "domain": "observability",
       "category": "structured_logging",
-      "file": "apps/api/src/lib/logger.ts",
-      "issue": "Logger does not automatically include request context (requestId, userId, route) in structured metadata",
-      "impact": "Log entries lack correlation context, making it difficult to filter or aggregate per-request during incident triage.",
-      "fix": "Add a middleware that creates a child logger with requestId, userId, and route bound automatically, and make it available via req.log."
-    },
-    {
-      "severity": "P2",
-      "domain": "observability",
-      "category": "health_checks",
-      "file": "apps/api/src/modules/health/service.ts",
-      "issue": "Health endpoint does not check Redis, queue, or external dependency health",
-      "impact": "Health check can report 'healthy' while critical dependencies (Redis, BullMQ) are down, giving false confidence for deployment decisions.",
-      "fix": "Add Redis ping, queue health (BullMQ), and LiveKit connectivity checks to getFullHealth(). Report unhealthy status when any critical dependency fails."
-    },
-    {
-      "severity": "P2",
-      "domain": "observability",
-      "category": "metrics",
-      "file": "apps/api/src/lib/sentry.ts",
-      "issue": "Sentry tracesSampleRate set to 1.0 in development environment, risking excessive event volume",
-      "impact": "In shared dev/staging environments with traffic, 100% tracing generates unnecessary cost and noise, potentially masking real issues.",
-      "fix": "Set tracesSampleRate to 0.1 for development and 0.2 for production. Use a separate DSN or disable Sentry in non-production unless explicitly enabled."
+      "file": "apps/api/src/: apps/worker/src/",
+      "issue": "No structured error taxonomy or error codes \u00e2\u20ac\u201d errors are strings not grouped by category",
+      "impact": "Cannot easily aggregate or alert on specific error types across services",
+      "fix": "Define AppError codes enum (AUTH_xxx, VALIDATION_xxx, DB_xxx, RATE_xxx) and enforce in all route handlers and services"
     },
     {
       "severity": "P3",
       "domain": "observability",
-      "category": "metrics",
+      "category": "metrics_export",
       "file": "apps/api/src/lib/metrics.ts",
-      "issue": "Metrics endpoint (/metrics) not exposed or documented in routes",
-      "impact": "Prometheus cannot scrape metrics because no /metrics route is registered in the route registry.",
-      "fix": "Add a GET /metrics route registered in route-registry.ts that serves register.metrics(). Protect behind authentication or firewall."
+      "issue": "Prometheus metrics endpoint exists but no metrics export from worker service",
+      "impact": "Worker health and throughput not visible in monitoring dashboards",
+      "fix": "Expose /metrics endpoint in worker HTTP server with BullMQ queue stats and job counters"
     },
     {
       "severity": "P3",
       "domain": "observability",
-      "category": "incident_response",
-      "file": "apps/worker/src/main.ts",
-      "issue": "Worker health check on separate port (4100) not documented in runbook or deployment config",
-      "impact": "Operators and load balancers may not know the worker exposes a health endpoint, leading to undetected worker failures.",
-      "fix": "Document HEALTH_PORT in environment schema and add to the deployment health check configuration. Standardize worker health to use a known path rather than a separate port."
+      "category": "runbooks",
+      "file": "docs/runbooks/",
+      "issue": "No incident response runbook covering worker failure, API crash, or database degradation scenarios",
+      "impact": "Operators lack documented playbooks for common failure modes, increasing MTTR",
+      "fix": "Create incident response runbook covering: worker crash recovery, API restart procedure, DB connection pool exhaustion, Redis failure fallback"
+    },
+    {
+      "severity": "P1",
+      "domain": "privacy",
+      "category": "pii_storage",
+      "file": "supabase/migrations/",
+      "issue": "PII columns (email, phone, full_name, avatar_url) in profiles table stored without explicit encryption-at-rest annotation or column-level encryption",
+      "impact": "PII readable by anyone with database access (service_role key compromise would expose all PII)",
+      "fix": "Document that Supabase provides encryption at rest (AWS KMS); add column-level encryption for email/phone using pgcrypto or Vault, or document compensating controls (RLS, admin-only access)"
     },
     {
       "severity": "P2",
       "domain": "privacy",
-      "category": "consent_management",
-      "file": "apps/web/components/cookie-banner.tsx",
-      "issue": "Cookie banner offers only binary choice (Accept all / Essential only) with no granular per-category opt-in",
-      "impact": "Users cannot individually control analytics vs. marketing vs. functional cookies, which may violate GDPR ePrivacy Directive requirements for granular consent.",
-      "fix": "Implement a tiered consent dialog allowing separate toggles for 'essential', 'analytics', and 'marketing' categories. Store each consent_type independently."
+      "category": "pii_access_review",
+      "file": "apps/api/src/",
+      "issue": "No documented PII access review mechanism \u00e2\u20ac\u201d no audit of who reads PII columns and when",
+      "impact": "Cannot detect unauthorized PII access by internal users or compromised accounts",
+      "fix": "Add audit trigger on profiles table for SELECT on email/phone columns, log to audit_logs; create PII access review runbook"
     },
     {
       "severity": "P2",
       "domain": "privacy",
-      "category": "consent_management",
-      "file": "apps/api/src/modules/consent/routes.ts",
-      "issue": "Marketing consent type is accepted and stored but no marketing functionality exists to honor the preference",
-      "impact": "Consent is collected for 'marketing' purposes without any marketing feature (emails, ads) to respect that preference, creating an audit gap if marketing features are added later without consent re-collection.",
-      "fix": "Either remove the 'marketing' consent_type until marketing features exist, or add a consent usage audit that maps consent types to actual data processing activities."
-    },
-    {
-      "severity": "P2",
-      "domain": "privacy",
-      "category": "data_subject_rights",
-      "file": "apps/api/src/modules/admin/routes.ts",
-      "issue": "No data subject access request (DSAR) workflow for individual user data export or deletion",
-      "impact": "Users cannot request a copy of their personal data or request deletion under GDPR Article 15/17. The compliance export is admin-only and workspace-scoped.",
-      "fix": "Implement a user-facing 'Export my data' and 'Delete my account' flow in the settings page. Add a DSAR queue endpoint that collects user data across all tables."
-    },
-    {
-      "severity": "P2",
-      "domain": "privacy",
-      "category": "pii_handling",
+      "category": "retention_policy",
       "file": "apps/worker/src/processors/data-retention.ts",
-      "issue": "Consent log data retention deletes records but does not anonymize them first for audit chain integrity",
-      "impact": "Hard-deleting consent logs destroys the audit trail proving consent was given, which may be required by GDPR Article 7(1).",
-      "fix": "Implement anonymization (nullify IP, user_agent, user_id) before hard-deleting consent logs. Retain a minimal anonymized record permanently."
+      "issue": "Data retention job exists but retention periods are hardcoded in processor (audit_logs=90d, consent_logs=730d, etc.) \u00e2\u20ac\u201d not configurable via env vars",
+      "impact": "Retention periods cannot be adjusted without code deploy; no way to comply with varying jurisdictional requirements",
+      "fix": "Extract retention periods to env vars: AUDIT_LOG_RETENTION_DAYS=90, CONSENT_LOG_RETENTION_DAYS=730, etc."
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_logging",
+      "file": "apps/api/src/lib/logger.ts : apps/worker/src/",
+      "issue": "No automated PII redaction in structured logging \u00e2\u20ac\u201d logger allows any field to be logged without filtering",
+      "impact": "Developer error could log PII fields (email, phone) to production logs with no guardrail",
+      "fix": "Add PII field allowlist/blocklist to logger that redacts known PII field patterns from log output"
     },
     {
       "severity": "P3",
       "domain": "privacy",
-      "category": "pii_handling",
-      "file": "apps/api/src/modules/consent/routes.ts",
-      "issue": "IP address and user agent stored in plain text in consent_logs without anonymization",
-      "impact": "PII (IP address, user-agent string) is stored in the database. While useful for security audits, it creates additional GDPR data minimization risk.",
-      "fix": "Hash or truncate the IP address (e.g., store /24 prefix only). User agent can be stored but should be flagged as PII in data inventory."
+      "category": "gdpr_export",
+      "file": "apps/api/src/modules/",
+      "issue": "No GDPR data export endpoint \u00e2\u20ac\u201d user data export requires direct DB queries",
+      "impact": "Cannot fulfill data subject access requests without operator intervention",
+      "fix": "Add GET /v1/users/:id/export endpoint that collects all user data (profile, messages, channels, sessions) in JSON format"
     },
     {
       "severity": "P3",
       "domain": "privacy",
-      "category": "cookie_compliance",
-      "file": "apps/web/components/cookie-banner.tsx",
-      "issue": "No consent revocation UI \u2014 once accepted, users cannot change or withdraw consent",
-      "impact": "GDPR requires that withdrawing consent be as easy as giving it. Users have no way to revoke analytics or cookies consent after initial acceptance.",
-      "fix": "Add a 'Privacy settings' link in the sidebar or settings page that re-opens the consent dialog. Also clear server-side consent when revoked."
-    },
-    {
-      "severity": "P3",
-      "domain": "privacy",
-      "category": "consent_management",
-      "file": "apps/web/components/cookie-banner.tsx",
-      "issue": "Consent acceptance silently fails on network error; user sees banner dismissed even if server-side record fails",
-      "impact": "If the POST to /consent fails, the banner disappears but the server has no record of consent. User believes consent was recorded when it was not.",
-      "fix": "Show an error state or retry mechanism if consent persistence fails. Only dismiss the banner after server confirms the consent record."
+      "category": "gdpr_delete",
+      "file": "apps/api/src/modules/",
+      "issue": "No GDPR right-to-erasure endpoint that cascades deletes across all user data",
+      "impact": "Cannot programmatically fulfill deletion requests; manual DB cleanup required",
+      "fix": "Add DELETE /v1/users/:id/erase endpoint that cascades: messages (anonymize), channels (remove member), profiles (delete), sessions (revoke)"
     },
     {
       "severity": "P1",
+      "domain": "resilience",
+      "category": "supabase_circuit_breaker",
+      "file": "apps/api/src/lib/supabase.ts",
+      "issue": "Supabase client uses AbortSignal timeout wrapper but no circuit breaker \u00e2\u20ac\u201d cannot degrade gracefully when Supabase is slow/failing",
+      "impact": "A slow Supabase instance causes cascading timeouts across all API routes; no fail-fast or degraded response",
+      "fix": "Wrap supabase from() calls with executeWithCircuitBreaker or add circuit breaker proxy to createLoggedClient"
+    },
+    {
+      "severity": "P1",
+      "domain": "resilience",
+      "category": "worker_task_timeout",
+      "file": "apps/worker/src/processors/data-retention.ts : cleanup.ts : search-indexer.ts : reminder.ts",
+      "issue": "Worker processors lack per-task timeout \u00e2\u20ac\u201d webhook-delivery.ts and notification.ts have timeouts but data-retention, cleanup, search-indexer, and reminder do not",
+      "impact": "A stuck task could block the worker queue indefinitely, stalling all subsequent jobs",
+      "fix": "Add AbortSignal.timeout() wrapper or BullMQ `timeout` job option to all processor handlers (data-retention, cleanup, search-indexer, reminder)"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "bulk_operations",
+      "file": "apps/api/src/routes/",
+      "issue": "No bulk endpoints return per-item ok/error results \u00e2\u20ac\u201d bulk operations fail or succeed as a unit with no partial success",
+      "impact": "Batch operations (user import, channel creation, message batch operations) provide no granular error feedback; partial failures invisible to user",
+      "fix": "Standardize bulk response format: { results: [{ ok: boolean, id?: string, error?: string }] } on all bulk endpoints"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "ui_false_success",
+      "file": "apps/web/components/",
+      "issue": "No consistent pattern for handling partial success in UI \u00e2\u20ac\u201d operations that affect multiple items show blanket success toast",
+      "impact": "User sees success confirmation when some items actually failed silently",
+      "fix": "Add 'summary' response to bulk mutations; show 'X of Y succeeded' toast with failure details when partial results differ"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "websocket_reconnect",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "Socket.io has reconnection settings but no exponential backoff or jitter on reconnect attempts",
+      "impact": "All clients reconnect simultaneously after server restart \u00e2\u20ac\u201d thundering herd on socket initialization",
+      "fix": "Add exponential backoff with jitter to socket reconnection: initialDelay=1s, maxDelay=30s, randomizationFactor=0.3"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "webhook_idempotency_coverage",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "issue": "Webhook delivery generates idempotency keys but receiver-side dedup relies on external system honoring X-Idempotency-Key header \u00e2\u20ac\u201d no server-side dedup for webhook processing",
+      "impact": "If webhook receiver does not support idempotency, duplicate webhooks will cause duplicate actions",
+      "fix": "Add server-side idempotency check in webhook receive handler using idempotency.ts library (same pattern as workspace/message routes)"
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "circuit_breaker_metrics",
+      "file": "apps/api/src/lib/metrics.ts",
+      "issue": "Circuit breaker Prometheus gauge exists (circuitBreakerStatus) but no alert threshold or dashboard configured",
+      "impact": "Circuit breaker state changes are logged but not actionable \u00e2\u20ac\u201d operator won't know circuit is open without checking logs",
+      "fix": "Configure Sentry alert or Prometheus alert rule when circuitBreakerStatus > 0 for any named breaker for > 5 minutes"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "secret_handling",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "line": 27,
+      "issue": "WEBHOOK_ENCRYPTION_KEY falls back to JWT_SECRET for AES-256-GCM encryption",
+      "impact": "If WEBHOOK_ENCRYPTION_KEY is not configured, getEncryptionKey() derives AES key from JWT_SECRET via SHA-256. JWT_SECRET is designed for JWT signing, not encryption. Compromise of JWT_SECRET reveals all encrypted webhook secrets. No key rotation mechanism exists.",
+      "fix": "Make WEBHOOK_ENCRYPTION_KEY required in env schema. Remove JWT_SECRET fallback. Add key rotation support with version-prefixed encrypted values.",
+      "exploit_chain": "Attacker who obtains JWT_SECRET (via env leak, CI/CD exposure, or SSRF) can decrypt all stored webhook secrets using the derived key. With decrypted secrets, attacker can forge webhook signatures or hijack active webhook endpoints."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "rls",
+      "file": "supabase/policies/06_reactions.sql",
+      "line": 7,
+      "issue": "Reactions SELECT policy uses using(true) allowing all authenticated users cross-tenant access",
+      "impact": "Any authenticated user can enumerate reactions (emoji + user_id pairs) on any message across all workspaces. Leaks user activity patterns and workspace relationships.",
+      "fix": "Replace with scoped policy checking workspace membership via messages -> channels -> workspace_members join chain",
+      "exploit_chain": "Attacker creates account, authenticates, queries GET /v1/messages/:id/reactions for arbitrary message IDs. Without workspace membership check, they can map user-emoji relationships across the entire platform."
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "csp",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "line": 5,
+      "issue": "CSP script-src 'self' without nonce or hash blocks Next.js inline hydration scripts",
+      "impact": "Next.js production builds inject inline script elements for page hydration. Current CSP blocks these, causing frontend JavaScript failure. Forces CSP to be disabled, negating XSS protection.",
+      "fix": "Add nonce generation in middleware or use 'strict-dynamic' for Next.js compatibility",
+      "exploit_chain": "Without a working CSP, XSS vulnerabilities in user-generated content become exploitable across all pages."
+    },
+    {
+      "severity": "P2",
       "domain": "security",
       "category": "authorization",
-      "file": "apps/api/src/modules/consent/routes.ts",
-      "issue": "Consent GET endpoint returns all consent_logs without user_id filter \u2014 RLS restricts to own records but query pattern invites future mistakes",
-      "impact": "While RLS prevents cross-user data leak, the code pattern selects all rows without explicit filtering, making it fragile if RLS is ever disabled or bypassed",
-      "fix": "Add explicit .eq('user_id', req.userId) filter to the consent_logs query on line 11 of consent/routes.ts"
-    },
-    {
-      "severity": "P1",
-      "domain": "security",
-      "category": "data_lifecycle",
-      "file": "apps/api/src/modules/auth/routes.ts",
-      "issue": "GDPR account deletion does not clean up all user data \u2014 consent_logs, sidebar_categories, channel_bookmarks, audit_logs may leak",
-      "impact": "User account deletion via DELETE /account leaves orphaned PII in consent_logs, sidebar data, bookmarks, and audit log actor references, violating GDPR right to erasure",
-      "fix": "Add deletes for consent_logs, sidebar_categories, sidebar_channel_assignments, channel_bookmarks, and message_reminders before deleting the user in auth/routes.ts"
-    },
-    {
-      "severity": "P1",
-      "domain": "security",
-      "category": "authorization",
-      "file": "apps/api/src/modules/admin/routes.ts",
-      "issue": "Admin compliance export uses getSupabaseAdmin() which bypasses RLS with no workspace-level filtering",
-      "impact": "Admin compliance export returns ALL user PII, messages, channels, and audit logs for all workspaces in a single downloadable JSON \u2014 a compromised admin token leaks all tenant data",
-      "fix": "If workspace_id is specified, scope all queries to that workspace; otherwise paginate the export and add audit logging for every compliance export. For full-workspace exports, require explicit admin confirmation or second-factor"
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "authentication",
-      "file": "apps/api/src/modules/status/routes.ts",
-      "issue": "Status routes use global getSupabase() instead of per-request req.supabase client",
-      "impact": "GET, PUT, DELETE /status and batch endpoints use the global anon client, bypassing RLS user-scoping and potentially leaking user status data across tenants",
-      "fix": "Replace all getSupabase() calls in status/routes.ts with req.supabase from the per-user client"
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "input_validation",
-      "file": "apps/api/src/middleware/input-sanitizer.ts",
-      "issue": "Input sanitizer SQL injection patterns have high false-positive rate blocking legitimate content with common words",
-      "impact": "SQL injection pattern matching blocks words like 'select', 'insert', 'union', 'drop', 'alter' and sequences like '--', blocking legitimate messages about SQL or database topics",
-      "fix": "Remove SQL injection pattern matching from the global middleware; Supabase's parameterized queries are immune to SQL injection. Keep XSS pattern detection for non-content fields"
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "authentication",
-      "file": "apps/api/src/modules/notifications/routes.ts",
-      "issue": "Notification preference routes use global getSupabase() instead of per-request client",
-      "impact": "GET/PUT/DELETE /channels/:id/notification-preference use global anon client, bypassing RLS user context \u2014 could leak or allow modification of other users' preferences",
-      "fix": "Replace getSupabase() with req.supabase in notifications/routes.ts"
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "line": 24,
+      "issue": "GET /reactions/batch endpoint lacks message access validation",
+      "impact": "Batch reactions endpoint accepts arbitrary message_ids without checking user's workspace/channel membership. User can fetch reactions for messages in channels they don't belong to.",
+      "fix": "Add requireMessageAccess validation or verify each message_id against accessible channels server-side before returning reactions.",
+      "exploit_chain": "Hitting GET /v1/reactions/batch with message IDs from inaccessible channels returns reaction data, leaking user-emoji associations."
     },
     {
       "severity": "P3",
       "domain": "security",
-      "category": "observability",
-      "file": "apps/api/src/middleware/error-handler.ts",
-      "issue": "SHOW_STACK_TRACES env var conditionally exposes stack traces in error responses",
-      "impact": "If SHOW_STACK_TRACES is accidentally set to 'true' in production, full stack traces with internal paths may be returned to API consumers",
-      "fix": "Consider removing stack trace exposure entirely in non-development environments, or gate it behind NODE_ENV check in addition to the env var"
-    },
-    {
-      "severity": "P3",
-      "domain": "security",
-      "category": "dependency",
-      "file": "apps/api/src/modules/messages/routes.ts",
-      "issue": "DOMPurify sanitization strips all HTML tags from content including safe formatting",
-      "impact": "DOMPurify is configured with ALLOWED_TAGS: [] and ALLOWED_ATTR: [], stripping ALL HTML from message content \u2014 users cannot use any rich text including bold, lists, or links",
-      "fix": "Allow safe HTML tags (b, i, a, code, pre, blockquote, ul, ol, li) through DOMPurify to support rich text while preventing XSS"
-    },
-    {
-      "severity": "P2",
-      "domain": "uxui",
-      "category": "Chat UX \u2014 Message Search",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "In-channel message filter does not highlight matching text or scroll to first result",
-      "impact": "Users must visually scan the filtered message list to find where the search term appears. No visual indication of why each message matched. In channels with hundreds of messages, this makes the filter nearly useless for finding specific content.",
-      "fix": "Add <mark> element highlighting around matching substrings in MessageItem when a filterQuery is present. Scroll the message list to the first match on filter change. Show match count indicator."
-    },
-    {
-      "severity": "P2",
-      "domain": "uxui",
-      "category": "Chat UX \u2014 Message Deletion",
-      "file": "apps/web/components/chat/message-list.tsx",
-      "issue": "No undo capability after message deletion confirmation",
-      "impact": "Accidental message deletion is permanent. Unlike Slack, Discord, and other chat apps that offer a 5-second 'Undo' toast, this app offers no recovery path. A mistaken delete requires admin database intervention.",
-      "fix": "Implement soft-delete with ephemeral undo window. After delete API succeeds, show toast 'Message deleted. Undo' for 5 seconds. Call a restore API endpoint if undo is clicked. Add a deleted_at grace period in the message model."
-    },
-    {
-      "severity": "P3",
-      "domain": "uxui",
-      "category": "Chat UX \u2014 Bookmarks",
-      "file": "apps/web/components/chat/channel-bookmarks.tsx",
-      "issue": "Channel bookmarks show blank area when no bookmarks exist",
-      "impact": "Users who click the bookmark icon see an empty panel with no guidance. They may think the feature is broken or not know how to create bookmarks. Reduces discoverability of the pin-to-bookmark flow.",
-      "fix": "Add empty state message: 'No bookmarks yet. Pin a message to add it as a bookmark.' Include a brief illustration and link to instructions."
-    },
-    {
-      "severity": "P2",
-      "domain": "uxui",
-      "category": "Chat UX \u2014 Pinned Messages",
-      "file": "apps/web/components/chat/message-list.tsx",
-      "issue": "Pinned messages in the message list lack any visual indicator",
-      "impact": "Users cannot tell which messages are pinned without checking the channel info sidebar. The is_pinned flag exists in the data model and API but is not rendered in the UI. Reduces the value of the pinning feature.",
-      "fix": "Add a pin icon (\ud83d\udccc or Pin icon from lucide-react) to the message metadata area when is_pinned is true. Style the message background with a subtle highlight. Add filter option to show only pinned messages."
-    },
-    {
-      "severity": "P3",
-      "domain": "uxui",
-      "category": "Chat UX \u2014 Thread Navigation",
-      "file": "apps/web/components/chat/thread-panel.tsx",
-      "issue": "No way to navigate from thread panel to the parent message in the main list",
-      "impact": "Users viewing a thread cannot easily locate the parent message in the main channel view. The parent message is displayed inline in the thread panel but scrolling in the main list to find related context is cumbersome.",
-      "fix": "Add a 'Jump to message' link/button in the thread header. When clicked, close the thread panel, scroll the main list to the parent message, and briefly highlight it with a yellow flash animation."
-    },
-    {
-      "severity": "P2",
-      "domain": "uxui",
-      "category": "Chat UX \u2014 Scheduling",
-      "file": "apps/web/components/chat/message-input.tsx",
-      "issue": "Scheduling confirmation toast does not include the scheduled time",
-      "impact": "After scheduling a message, users see 'Message scheduled' but not when it will be sent. They must reopen the schedule picker to verify the datetime. Creates uncertainty about whether the correct time was saved.",
-      "fix": "Update success toast to include formatted datetime: 'Message scheduled for Apr 12, 3:30 PM'. Include timezone indicator. Add the scheduled time to the toast's description field."
-    },
-    {
-      "severity": "P2",
-      "domain": "uxui",
-      "category": "Chat UX \u2014 Onboarding",
-      "file": "apps/web/components/workspace/onboarding-tour.tsx",
-      "issue": "Onboarding tour steps are not independently resolvable leading to stale state",
-      "impact": "If a user creates a channel before the tour reaches step 2, the tour shows a 'Create Channel' step that is already done. Users must complete it again or dismiss the tour. This causes frustration for proactive users and reduces tour credibility.",
-      "fix": "Make each onboarding step independently checkable. Query channel/workspace state to auto-advance steps that the user has already completed. Allow manual skip on any step without breaking future steps."
+      "category": "logging",
+      "file": "apps/api/src/modules/admin/error-buffer.ts",
+      "line": 1,
+      "issue": "In-memory error buffer may expose sensitive data via admin logs endpoint",
+      "impact": "Error buffer stores unredacted error messages containing user IDs, IPs, paths. Any admin user can read GET /admin/logs. Buffer limited to 200 entries but sensitive data may accumulate.",
+      "fix": "Add PII redaction before pushError(). Filter sensitive fields from error entries. Consider time-based TTL."
     },
     {
       "severity": "P1",
-      "domain": "release",
-      "category": "Security \u2014 Content Security Policy",
-      "file": "apps/web/app/layout.tsx",
-      "issue": "CSP includes 'unsafe-eval' which is unnecessary and 'unsafe-inline' for all scripts",
-      "impact": "Unsafe-eval enables XSS via eval() calls even though TipTap and Next.js do not require it. Unsafe-inline on all scripts means any injected script executes. Production CSP should use nonces or hashes for inline scripts.",
-      "fix": "Remove 'unsafe-eval' from script-src. Move 3 inline scripts (theme, viewport, reduced-motion) to nonce-based execution by generating a nonce in middleware. Add 'strict-dynamic' for fallback. Test all third-party script integrations."
+      "domain": "supply_chain",
+      "category": "docker_healthcheck",
+      "file": "apps/worker/Dockerfile",
+      "issue": "Worker Dockerfile missing HEALTHCHECK directive \u00e2\u20ac\u201d API and web have it",
+      "impact": "Container orchestrator cannot detect worker process hang or crash; unhealthy worker may silently stop processing jobs",
+      "fix": "Add HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:4100/healthz || exit 1"
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "base_image_pinning",
+      "file": "apps/api/Dockerfile, apps/web/Dockerfile, apps/worker/Dockerfile",
+      "issue": "Dockerfiles use `node:22-alpine` without SHA digest pinning \u00e2\u20ac\u201d base image tag is mutable",
+      "impact": "Builds may produce different images over time as node:22-alpine is updated; supply chain integrity not verifiable",
+      "fix": "Pin to specific SHA digest: FROM node:22-alpine@sha256:<digest> and update via Dependabot"
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "postinstall_scripts",
+      "file": "package.json (root)",
+      "issue": "Root package.json may have postinstall scripts that download executables \u00e2\u20ac\u201d no safety check in CI",
+      "impact": "Untrusted postinstall scripts could execute arbitrary code during install",
+      "fix": "Run `pnpm audit --audit-level=high` with block on postinstall scripts, add pnpm config ignore-scripts=true for production installs"
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "vulnerability_scanning",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Trivy scans only run on push (build-push.yml) \u00e2\u20ac\u201d not on PRs or scheduled scans for already-deployed images",
+      "impact": "Vulnerabilities may be introduced between scans; no periodic re-scan of :latest images",
+      "fix": "Add weekly scheduled Trivy scan against ghcr.io images and PR scan in validate.yml"
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "container_base_images",
+      "file": "infra/docker/docker-compose.devremote.yml : docker-compose.prod.yml",
+      "issue": "LiveKit service uses `livekit/livekit-server:latest` tag in both dev and prod \u00e2\u20ac\u201d mutable tag with no version pinning",
+      "impact": "Unintentional LiveKit version upgrades on deploy; no rollback to known-good version",
+      "fix": "Pin livekit/livekit-server to specific version tag (e.g., :1.8.0) in both compose files"
     },
     {
       "severity": "P1",
-      "domain": "release",
-      "category": "Testing \u2014 E2E Coverage",
-      "file": "apps/web/e2e/comprehensive.spec.ts",
-      "issue": "88% of E2E tests are skipped due to missing Supabase test project",
-      "impact": "No automated validation of sign-in, workspace creation, channel CRUD, message operations, file upload, WebSocket messaging, presence, notifications, or authorization. Releases cannot be certified via CI. Manual testing is the only gate.",
-      "fix": "Provision a Supabase test project with seed data. Create CI job for migrations + seed. Use test user credentials stored as CI secrets. Remove all test.skip() calls and implement proper assertions with fixtures."
+      "domain": "uxui",
+      "category": "form_validation",
+      "file": "apps/web/components/auth/login-form.tsx:43",
+      "issue": "Auth E2E tests (tests/e2e/auth.spec.ts:17,22) expect 'Please enter a valid email' and 'Email is required' error messages that don't exist in the login form \u00e2\u20ac\u201d form silently returns on empty/invalid email submission",
+      "impact": "Login form provides no client-side validation feedback for empty or invalid email inputs. Users who click submit without typing an email see no error message or visual feedback. The auth E2E smoke tests would fail against the real code",
+      "fix": "Add email format regex validation with inline error messages using aria-describedby. Show 'Email is required' for empty submission and 'Please enter a valid email' for invalid format, matching the E2E test expectations. Ensure form submission is disabled until valid"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/chat/message-input.tsx:874-911",
+      "issue": "No feedback when @mention query matches no channel members \u00e2\u20ac\u201d autocomplete panel simply doesn't appear with no indication",
+      "impact": "Users who type @username for a non-existent or mistyped member name receive no visual feedback. The autocomplete quietly shows nothing, and users may be confused about why it's not responding",
+      "fix": "Show 'No members found matching query' message below the input area when filteredMembers is empty and mentionQuery is active, with the same styling as the autocomplete list but showing a disabled/empty state message"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "responsive",
+      "file": "apps/web/components/chat/chat-view.tsx:672",
+      "issue": "Search bar placeholder text may overflow on narrow mobile screens \u00e2\u20ac\u201d 'Search channels and users...' exceeds available width on very narrow viewports",
+      "impact": "Minor visual overflow on very narrow viewports where search bar max-width is constrained, causing placeholder text to be clipped or overflow its container",
+      "fix": "Use shorter placeholder on mobile viewports (e.g., 'Search...') via CSS or responsive component logic, or remove max-width constraint on small screens to allow the input to use available space"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:1099",
+      "issue": "Status picker positioned with hardcoded bottom:48px offset relative to sidebar container instead of dynamic position relative to trigger button",
+      "impact": "Status picker may render at wrong position if sidebar footer layout height changes due to different content, user status text, or viewport size. The hardcoded offset doesn't account for dynamic footer content",
+      "fix": "Position status picker relative to the avatar button using a portal-based approach with dynamic top calculation, or use a floating UI library (Floating UI/Popper) for proper anchor-based positioning"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "onboarding",
+      "file": "apps/web/app/(workspace)/layout.tsx:394",
+      "issue": "OnboardingTour component always rendered via layout but trigger condition logic may not activate for new users",
+      "impact": "New users may miss guided onboarding if the tour trigger condition is not properly configured or if the check for onboarding completion fails silently. The component is rendered unconditionally but activation logic is unclear",
+      "fix": "Verify onboarding tour trigger is functional and appears for newly created user accounts on first workspace visit. Add logging to track activation events. Consider a simpler 'first visit' flag on user profile that the tour checks"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "ux",
+      "file": "apps/web/components/chat/message-list.tsx:366-386",
+      "issue": "Empty channel state styling shows an empty heading (h2 with empty content) leaving a large empty space above the 'No messages yet' text",
+      "impact": "The empty channel state renders an empty h2 element with large letter-spacing styling at line 372-378, creating an unnecessary empty gap above the start message. The visual presentation looks unbalanced",
+      "fix": "Remove the empty h2 element entirely or add contextual content like channel purpose/description. The empty-state rendering should guide users to start the conversation without awkward empty space"
+    },
+    {
+      "severity": "P3",
+      "domain": "uxui",
+      "category": "feedback_states",
+      "file": "apps/web/components/chat/message-list.tsx:366-386",
+      "issue": "No loading skeleton for DM channel list or member list while API fetches \u00e2\u20ac\u201d shows empty state before data arrives",
+      "impact": "Flash of 'No messages yet' or 'No channels available' before API calls complete degrades perceived performance. Users may briefly see empty states before content loads",
+      "fix": "Add skeleton loading states while DM channels, member lists, message lists are being fetched via API. Use Suspense boundaries or loading state checks to show skeletons instead of empty state text during initial load"
     },
     {
       "severity": "P2",
       "domain": "release",
-      "category": "Testing \u2014 Visual Regression",
+      "category": "E2E Coverage \u00e2\u20ac\u201d Core Journeys",
+      "file": "apps/web/e2e/comprehensive.spec.ts (24 of 28 tests skipped), tests/e2e/ (depends on external credentials)",
+      "issue": "No automated regression validation of core user journeys in CI \u00e2\u20ac\u201d sign-in, workspace creation, channel creation, message send, and real-time delivery all lack reliable automated testing",
+      "impact": "Every release requires manual full-regression testing for the core value proposition (auth -> workspace -> channel -> message). The skip pattern has been present since test files were created with no resolution plan. External credential dependency blocks CI execution",
+      "fix": "Provision a test Supabase project or local emulator with CI credentials. Create seed SQL for test workspaces, channels, users, and messages. Add CI job: migrate -> seed -> run E2E -> teardown. Remove all test.skip() and implement real assertions against seeded data"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Visual Regression \u00e2\u20ac\u201d Baseline Coverage",
       "file": "apps/web/e2e/visual-snapshot.spec.ts",
-      "issue": "No committed visual snapshot baselines exist in the repository",
-      "impact": "Playwright toHaveScreenshot assertions will pass on first run (auto-creating baselines) but subsequent runs compare against those auto-generated images. Without review, visual regressions go undetected. No baseline review process exists.",
-      "fix": "Generate baseline screenshots on a known-good commit. Review each for visual correctness. Commit baseline PNGs to the repo. Add CI step that fails if visual diff exceeds 1% threshold. Add a PR comment with diff images."
+      "issue": "Visual snapshot coverage limited to 3 pages (login, settings, 404) with no authenticated states, no workspace layout, no channel view, no dark mode",
+      "impact": "Only login page, settings page (unauthenticated), and 404 page have snapshot tests. No coverage for the workspace layout, channel view, message list, thread panel, emoji picker, or dark mode. Critical visual regressions in these areas are undetectable in CI",
+      "fix": "Add visual snapshots for: workspace layout with sidebar, channel view with messages, message input with formatting toolbar, emoji picker open, thread panel, settings page dark mode, mobile breakpoint (375px) for key pages. Use mock API responses for deterministic snapshots"
     },
     {
       "severity": "P2",
       "domain": "release",
-      "category": "Resilience \u2014 WebSocket",
-      "file": "apps/web/lib/socket.ts",
-      "issue": "No feature flag or kill-switch to disable WebSocket connections during incidents",
-      "impact": "If Socket.io misbehaves (reconnect storm, high memory, backend failure), operators have no way to disable real-time connections without a full deployment. Users get stuck in reconnect loops with no graceful fallback.",
-      "fix": "Add getSocket() check against /v1/feature-flags endpoint. When 'realtime_disabled' flag is active, return a no-op socket that fires events to /dev/null. Show persistent banner: 'Real-time unavailable \u2014 page reload may be required.'"
-    },
-    {
-      "severity": "P2",
-      "domain": "release",
-      "category": "Rollback Readiness \u2014 Database Migrations",
-      "file": "supabase/rollback/",
-      "issue": "CI does not test migration rollback scripts in automated pipeline",
-      "impact": "Down migration scripts exist for most migrations but are never verified in CI. A migration with a broken rollback could prevent production rollback, forcing a maintenance window or data restore from backup.",
-      "fix": "Add CI job that runs all pending migrations up, verifies schema, runs all rollbacks down, verifies schema matches pre-migration state, and reports any errors. Fail CI if any rollback fails."
+      "category": "Rollback Readiness \u00e2\u20ac\u201d Migration Testing",
+      "file": "supabase/rollback/ (rollback scripts exist but no automated migration rollback test in CI)",
+      "issue": "Rollback scripts exist for database migrations but there is no automated CI validation that rollbacks execute cleanly and restore previous state",
+      "impact": "While migration rollback scripts exist, they are verified only through CI checking their existence, not through actual execution. In a real rollback scenario, operators cannot be confident that rollback scripts will succeed without data loss",
+      "fix": "Add CI job that applies pending migrations, creates test data, then executes rollback scripts and verifies: (1) rollback SQL completes without error, (2) previous schema is restored, (3) test data integrity is verified. Integrate into the deployment pipeline"
     },
     {
       "severity": "P3",
       "domain": "release",
-      "category": "Performance \u2014 Bundle Analysis",
-      "file": "apps/web/next.config.ts",
-      "issue": "No bundle size regression check in CI pipeline",
-      "impact": "Large dependencies can be added without visibility into their impact on initial load JS. No alerting when bundle grows beyond acceptable thresholds. Users on slow connections may experience degradation without team awareness.",
-      "fix": "Add @next/bundle-analyzer. Configure CI step to generate bundle report on main and PR. Set size budget (300KB gzip for initial route JS). Fail CI if budget exceeded. Post bundle diff comment on PRs."
+      "category": "Release Automation \u00e2\u20ac\u201d Artifact Versioning",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Docker images tagged with :dev and :latest tags but no semantic versioning or git SHA tagging that allows traceability between release artifacts and source code",
+      "impact": "In a rollback scenario, operators cannot easily determine which image tag corresponds to the previous working release. The :latest tag is mutable and overwritten. There's no immutable reference linking artifacts to specific git commits",
+      "fix": "Tag Docker images with git SHA (e.g., :sha-abc1234) in addition to :dev/:latest. Store the mapping in a deployment manifest. Update deploy workflows to reference SHA-tagged images explicitly"
     },
     {
       "severity": "P3",
       "domain": "release",
-      "category": "Observability \u2014 Error Reporting",
-      "file": "apps/web/components/chat/chat-view.tsx",
-      "issue": "Multiple catch blocks use console.warn instead of structured error reporting to Sentry",
-      "impact": "Socket initialization failures, profile load errors, and message load failures are silently logged to console.warn. In production, these errors are invisible to operators. Sentry is initialized but these specific errors bypass it.",
-      "fix": "Create a structured logger utility that prefixes component/operation context. Route important failures to Sentry.captureException or Sentry.captureMessage with appropriate level. Keep console.warn only for low-severity debug info."
+      "category": "Rollback Readiness \u00e2\u20ac\u201d Kill Switches",
+      "file": "apps/api/src/modules/feature-flags/__tests__/feature-flags.test.ts",
+      "issue": "Feature flag tests exist but no production kill-switch mechanism is documented or tested for rapid feature disablement without code deployment",
+      "impact": "Critical features (file upload, notifications, AI rewrite, search) do not have emergency stop paths that can be activated without a code deployment. If a feature causes production issues, the only recovery path is rollback or hotfix deployment",
+      "fix": "Expose a feature flag management API endpoint (PATCH /v1/feature-flags/:name) that can be toggled remotely. Add dashboard UI for operators. Document kill-switch activation procedure in runbook"
     },
     {
-      "severity": "P2",
+      "severity": "P3",
       "domain": "release",
-      "category": "Accessibility \u2014 Focus Indicator",
-      "file": "apps/web/app/globals.css",
-      "issue": "Custom interactive elements lack consistent focus-visible indicators",
-      "impact": "Keyboard users navigating the app cannot see which element is focused on mm-button-icon buttons, sidebar items, and action toolbar buttons. The CSS reset removes browser default outlines but custom focus styles are only on the skip link.",
-      "fix": "Add global focus-visible style: [data-focus-visible-added] or :focus-visible { outline: 2px solid var(--button-bg); outline-offset: 2px; }. Apply to all interactive elements. Ensure 3:1 minimum contrast ratio for focus indicators."
+      "category": "Operator Handoff \u00e2\u20ac\u201d Runbook Completeness",
+      "file": "docs/runbooks/ (check for deployment rollback runbook)",
+      "issue": "Deployment rollback runbook exists but lacks specific validation steps for data integrity, cache invalidation, and WebSocket connection drain procedures",
+      "impact": "Operators following the rollback runbook may miss critical post-rollback validation steps. Incomplete drain of WebSocket connections could cause message loss. Cache inconsistency after rollback could show stale data",
+      "fix": "Update deployment rollback runbook with: (1) WebSocket drain and reconnect verification after rollback, (2) cache invalidation steps (Redis flush if schema changed), (3) data integrity SQL queries to run before/after rollback, (4) smoke test checklist for operator"
     },
     {
       "severity": "P2",
-      "domain": "ci_cd",
-      "category": "workflow_correctness",
-      "file": ".github/workflows/validate.yml",
-      "issue": "test job runs before build via turbo dependency chain (turbo test depends on build), but the test job in validate.yml runs before the build job without building first",
-      "impact": "pnpm test may fail in CI because it depends on build artifacts that don't exist yet. The test step runs in parallel with build rather than sequentially.",
-      "fix": "Add a build step before pnpm test, or configure turbo.json test task to not depend on build, or restructure validate.yml jobs in proper dependency order."
+      "domain": "data",
+      "category": "data_isolation",
+      "file": "supabase/policies/06_reactions.sql",
+      "line": 7,
+      "issue": "Cross-tenant reaction visibility: reactions SELECT policy allows all authenticated users to read reactions across all workspaces",
+      "impact": "Reaction data (emoji + user_id mappings) is visible across tenant boundaries. While low-sensitivity, this violates the strict tenant isolation model used by all other tables. Combined with other data points, it enables cross-tenant user activity correlation.",
+      "fix": "Scope reactions RLS to workspace membership via messages -> channels -> workspace_members join chain.",
+      "scenario": "User A in Workspace X can enumerate reactions on messages in Workspace Y by guessing message IDs, discovering user-emoji relationships across tenants."
     },
     {
       "severity": "P2",
-      "domain": "ci_cd",
-      "category": "workflow_correctness",
-      "file": ".github/workflows/validate.yml",
-      "issue": "diff-coverage job uses pnpm test -- --changed --coverage but the --changed flag runs tests for changed files only; coverage thresholds apply to total project, not diff",
-      "impact": "False sense of coverage compliance: 40% line coverage on the entire project does not protect against untested new code in a PR.",
-      "fix": "Replace with a proper diff-coverage tool (e.g., istanbul ignore patterns) that checks coverage on only the lines changed in the PR. Consider using codecov or coveralls."
-    },
-    {
-      "severity": "P2",
-      "domain": "ci_cd",
-      "category": "secrets_handling",
-      "file": ".github/workflows/validate.yml",
-      "issue": "Supabase anon key hardcoded as fallback in workflow YAML: 'NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'eyJ...' }}'",
-      "impact": "The plaintext fallback key is visible to anyone with read access to the repo. Exposes anon key in CI logs and YAML.",
-      "fix": "Remove hardcoded fallback. Fail CI if SUPABASE_ANON_KEY secret is not set."
-    },
-    {
-      "severity": "P2",
-      "domain": "ci_cd",
-      "category": "workflow_correctness",
-      "file": ".github/workflows/deploy-development.yml",
-      "issue": "Database migrations run before the droplet SSH setup; if supabase link fails, migration runs but droplet may not exist yet",
-      "impact": "Race condition: migrations could fail on non-existent project while deploy proceeds, or migrations succeed but deploy fails, leaving state inconsistent.",
-      "fix": "Move database migrations after droplet setup, or add supabase link verification before migration."
+      "domain": "data",
+      "category": "data_export",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "line": 422,
+      "issue": "Channel export endpoint fetches unbounded message data without pagination",
+      "impact": "GET /channels/:channelId/export loads ALL messages into memory and returns them as a single JSON/CSV response. Channels with >10K messages cause memory exhaustion on both server and client. No rate limiting or size cap on this endpoint.",
+      "fix": "Add pagination with max limit (e.g., 1000 per page), streaming response, or document-based export with chunking.",
+      "endpoint": "GET /channels/:channelId/export",
+      "scenario": "A channel with 50K messages hit the export endpoint: API server allocates ~100MB+ for the response, Node.js hits memory limit, process crashes."
     },
     {
       "severity": "P3",
-      "domain": "ci_cd",
-      "category": "workflow_duplication",
-      "file": ".github/workflows/",
-      "issue": "Redundant workflows: hardening.yml and hardening-automation-runner.yml both run the same hardening pipeline. governance.yml and platform.yml both call run_full.ps1.",
-      "impact": "Workflow sprawl (20 files) increases maintenance burden. Operators unsure which workflow to trigger.",
-      "fix": "Consolidate: keep hardening-automation-runner.yml, remove hardening.yml. Consolidate governance and platform into one."
-    },
-    {
-      "severity": "P3",
-      "domain": "ci_cd",
-      "category": "audit_workflows",
-      "file": ".github/workflows/audit-badges-autocommit.yml",
-      "issue": "audit-badges-autocommit and audit-ci-autocommit both auto-commit changes on push to develop/main, potentially causing commit loops with CI re-triggers",
-      "impact": "Auto-commits trigger new CI runs, creating cascading pipeline executions. Wastes compute and pollutes git history.",
-      "fix": "Use [skip ci] in auto-commit messages, or reduce scope to workflow_dispatch only. Add path filters to avoid triggering deploy on badge changes."
-    },
-    {
-      "severity": "P3",
-      "domain": "ci_cd",
-      "category": "branch_protection",
-      "file": ".github/workflows/validate.yml",
-      "issue": "branch-protection check runs on every PR from any actor, but the check doesn't enforce anything \u2014 it only reports",
-      "impact": "Informational only; no actual enforcement of branch protection rules. Provides false confidence in CI output.",
-      "fix": "Either enforce by failing the job on missing protection, or remove the job and rely on GitHub's native branch protection settings."
-    },
-    {
-      "severity": "P3",
-      "domain": "ci_cd",
-      "category": "deployment",
-      "file": ".github/workflows/deploy-development.yml",
-      "issue": "Deploy workflow writes secrets to .env file via inline shell script in SSH \u2014 secrets appear in plaintext in workflow run logs if script execution is verbose",
-      "impact": "Potential secret leakage in CI logs. Secrets are interpolated by GitHub Actions before SSH execution.",
-      "fix": "Use environment files (.env) passed as GitHub Actions env context, or use the droplet's secrets manager. Set set -x only where needed."
-    },
-    {
-      "severity": "P3",
-      "domain": "ci_cd",
-      "category": "ci_efficiency",
-      "file": ".github/workflows/validate.yml",
-      "issue": "Each job re-installs dependencies independently (pnpm install per lint, typecheck, test, build, e2e) \u2014 no caching across jobs",
-      "impact": "CI pipeline takes 5-8 minutes per job for dependency install on cache miss. 5+ jobs = 25-40 minutes total.",
-      "fix": "Use pnpm workspace-level caching with GitHub Actions cache action to share node_modules across jobs. Or use a single job for all checks."
+      "domain": "data",
+      "category": "gdpr_compliance",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "line": 182,
+      "issue": "GDPR data export uses getSupabaseAdmin() bypassing RLS for data collection",
+      "impact": "GDPR export endpoint uses service_role key (admin client) to collect user data. While user_id is constrained to req.userId, this pattern centralizes data access authority. If a bug in user_id handling occurs, or if the endpoint is called before full authentication, other users' data could leak. Service_role key exposure amplifies this risk.",
+      "fix": "Use per-user Supabase client (req.supabase) where RLS policies enforce user scoping. Only fall back to admin client for auth.admin operations that require service_role."
     },
     {
       "severity": "P1",
+      "domain": "reconciliation",
+      "category": "env_drift",
+      "file": "apps/web/.env.example",
+      "issue": "web .env.example missing NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as required vars (listed as NEXT_PUBLIC_* prefix \u00e2\u20ac\u201d schema mismatch with root .env.example)",
+      "impact": "Developers may miss required Supabase client-side vars when setting up frontend locally",
+      "fix": "Ensure apps/web/.env.example includes NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as required (documented) \u00e2\u20ac\u201d they exist but should be clearly marked"
+    },
+    {
+      "severity": "P1",
+      "domain": "reconciliation",
+      "category": "naming",
+      "file": "FINAL_RECONCILED_REPO_AUDIT.md, docs/audits/compare/01_INVENTORY.md, FINAL_RECONCILIATION_REPO_AUDIT_PROMPT.md, docs/audits/docs_devex_operations_audit_summary.md",
+      "issue": "4 files reference 'traefik' naming (legacy reverse proxy) \u00e2\u20ac\u201d all Caddy references should be clean",
+      "impact": "Stale documentation references cause operator confusion about actual infrastructure",
+      "fix": "Replace 'traefik' references with 'Caddy' in all documentation files \u00e2\u20ac\u201d infra/docker/ uses Caddy, not Traefik"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "dead_files",
+      "file": "docs/prompts/ops/backup_restore_verification_audit_prompt.md",
+      "issue": "Backup restore audit prompt exists but no backup/restore is configured in any compose file or workflow",
+      "impact": "Out-of-date prompt documents a capability that doesn't exist \u00e2\u20ac\u201d operators may falsely assume backup is in place",
+      "fix": "Either implement backup/restore (PG dump to S3/SCP) or update prompt to reflect current state \u00e2\u20ac\u201d no automated backup exists"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "import_errors",
+      "file": "apps/api/src/lib/supabase.ts",
+      "issue": "Supabase client initialization references config/env.js but route-registry.ts references modules directly \u00e2\u20ac\u201d no centralized service locator pattern mismatch",
+      "impact": "Refactoring risk \u00e2\u20ac\u201d changing module locations requires updating imports across multiple files",
+      "fix": "Consider adding barrel exports index.ts per module directory to reduce fragile import paths"
+    },
+    {
+      "severity": "P2",
+      "domain": "reconciliation",
+      "category": "phase_contracts",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin UI references GET /admin/health endpoint which is behind authenticate+requireAdmin middleware \u00e2\u20ac\u201d route exists but no client-side error handling if non-admin accesses",
+      "impact": "Non-admin users may see blank or broken admin page instead of proper access-denied message",
+      "fix": "Add client-side role check on admin page with fallback to 'Access Denied' message before API call"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "comment_drift",
+      "file": "apps/api/src/server.ts:16",
+      "issue": "Comment references 'Health check at GET /health (for LB / DO monitoring)' but actual path is /health AND /healthz",
+      "impact": "Minor documentation inconsistency \u00e2\u20ac\u201d operators could miss /healthz endpoint",
+      "fix": "Update comment to document both /health (readiness) and /healthz (full check with DB)"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "env_drift",
+      "file": "apps/api/.env.example",
+      "issue": "API .env.example lists FRONTEND_URL=http://localhost:3000 but root .env.example also has FRONTEND_URL \u00e2\u20ac\u201d no indication which takes precedence",
+      "impact": "Developers may set conflicting values in different .env files",
+      "fix": "Document precedence order (per-app .env overrides root .env) in both .env.example files"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "naming",
+      "file": "apps/api/src/config/env.js",
+      "issue": "Config env loader references environment.ts pattern but file is .js \u00e2\u20ac\u201d import paths use .js extension for TS files",
+      "impact": "Minor consistency issue \u00e2\u20ac\u201d mixed .ts/.js extension patterns in a TS codebase",
+      "fix": "Standardize on .ts extension for TypeScript source files or document that .js is used for ESM output compatibility"
+    },
+    {
+      "severity": "P3",
+      "domain": "reconciliation",
+      "category": "dead_files",
+      "file": "docs/prompts/",
+      "issue": "Multiple deprecated/superseded prompt files exist (governance.yml v5, old audit prompt versions) without clear deprecation markers",
+      "impact": "Operators may run stale prompts and get outdated results",
+      "fix": "Add OBSOLETE.md or deprecation header to superseded prompt directories referencing the replacement"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "E2E Infrastructure \u00e2\u20ac\u201d Credential Dependency",
+      "file": "tests/e2e/auth.spec.ts:5, tests/e2e/messaging.spec.ts:16",
+      "issue": "E2E tests in tests/e2e/ depend on test-signin.json credentials file that does not exist in the repository or CI \u00e2\u20ac\u201d tests will fail with fallback default credentials that won't authenticate",
+      "impact": "The Core E2E test suite (auth, messaging, navigation, search, file-upload) silently falls back to hardcoded test credentials that don't match any real Supabase project. All dependent tests will fail with authentication errors in CI. The credential file is gitignored with no setup instructions",
+      "fix": "Create a test-signin.example.json template committed to repo, add CI secret for test credentials, create a setup step that generates test-signin.json from CI secrets before test execution. Alternatively, use Supabase local emulator for CI with seed data"
+    },
+    {
+      "severity": "P2",
       "domain": "testing",
       "category": "Real-time Messaging",
-      "file": "apps/web/e2e/comprehensive.spec.ts",
-      "issue": "No E2E test for real-time message delivery via WebSocket",
-      "impact": "The app's core feature \u2014 real-time messaging \u2014 has no automated validation. Socket.io message:new events, presence updates, typing indicators, and optimistic echo deduplication are all untested in CI.",
-      "fix": "Implement multi-context E2E test: open two browser pages as different users in same channel. Send message from user A, verify it appears for user B without refresh. Test disconnect/reconnect banner. Test typing indicator visibility."
+      "file": "tests/e2e/messaging.spec.ts:122-136",
+      "issue": "WebSocket real-time E2E test exists but depends on credentials file and may not reliably assert dual-context message delivery \u00e2\u20ac\u201d lacks disconnect/reconnect and typing indicator coverage",
+      "impact": "The sole WebSocket test (multi-page message delivery) is fragile because it depends on external auth. No tests cover: socket disconnect/reconnect behavior, typing indicators, presence updates, or optimistic echo deduplication in real time",
+      "fix": "Make the WebSocket test resilient by adding mock Socket.io fallback for CI. Add E2E scenarios for: disconnect/reconnect banner visibility, typing indicator cross-page visibility, presence indicator updates. Use Socket.io debug logging in test output"
     },
     {
       "severity": "P2",
       "domain": "testing",
-      "category": "Negative Path \u2014 Error States",
-      "file": "apps/web/e2e/comprehensive.spec.ts",
-      "issue": "No E2E coverage for error states, permission denials, or offline behavior",
-      "impact": "The error state UI (loading skeletons, error messages, try-again buttons) and authorization enforcement (private channels, workspace access) are never tested. Defects in error handling or authorization would only be found in production.",
-      "fix": "Add E2E scenarios for: API 500 response shows error message and retry button, unauthorized workspace access shows 403, private channel without membership shows restricted state, offline mode shows connection banner."
+      "category": "Negative Path \u00e2\u20ac\u201d Error States",
+      "file": "tests/e2e/ (no existing tests for error states)",
+      "issue": "No E2E coverage for error states, API failures, permission denials, or offline/degraded mode behavior across any test file",
+      "impact": "The error state UI (loading skeletons, error messages, try-again buttons) and authorization enforcement (private channels, workspace access, forbidden routes) are never tested. Defects in error handling or authorization would only be discovered in production",
+      "fix": "Add E2E scenarios using Playwright route interception for: API 500 response shows error message with retry button, unauthorized workspace access shows 403/redirect, private channel without membership shows restricted state, offline mode shows connection banner. Mock specific failure responses"
     },
     {
       "severity": "P2",
       "domain": "testing",
-      "category": "Visual Regression \u2014 Baseline Coverage",
-      "file": "apps/web/e2e/visual-snapshot.spec.ts",
-      "issue": "Visual snapshot coverage limited to 3 pages with no authenticated states",
-      "impact": "Only login page, settings page, and 404 page have snapshot tests. No coverage for the workspace layout, channel view, message list, thread panel, emoji picker, or dark mode. Critical visual regressions in these areas are undetectable.",
-      "fix": "Add visual snapshots for: workspace layout with sidebar, channel view with messages, message input with formatting toolbar, emoji picker open, thread panel, settings page dark mode, mobile breakpoint (375px) for key pages."
-    },
-    {
-      "severity": "P2",
-      "domain": "testing",
-      "category": "Performance \u2014 Long Transcript",
-      "file": "apps/web/e2e/comprehensive.spec.ts",
-      "issue": "No performance test for channels with 500+ messages",
-      "impact": "The MessageList component with no virtualization may fail silently or cause browser jank with large message sets. Without a performance test, the degradation point (max messages before noticeable lag) is unknown and may surface in production.",
-      "fix": "Add a comprehensive E2E that seeds 500+ messages via API, navigates to the channel, measures initial render time, scrolls to bottom, and measures scroll jank. Set performance budget (render < 2s, scroll < 16ms frame time)."
-    },
-    {
-      "severity": "P2",
-      "domain": "testing",
-      "category": "Resilience \u2014 File Upload",
-      "file": "apps/web/e2e/comprehensive.spec.ts",
-      "issue": "No E2E test for file upload via clipboard paste or file picker",
-      "impact": "File upload is a primary feature with clipboard paste, drag-and-drop, and file picker entry points. All three paths are untested. Issues with upload URL generation, signed URL expiry, or file type validation would reach production undetected.",
-      "fix": "Implement file upload E2E: use input[type=file] to select test image, verify file appears as attachment. Test clipboard paste with DataTransfer API. Test drag-and-drop. Verify image renders as inline preview after sending."
+      "category": "Performance \u00e2\u20ac\u201d Long Transcript",
+      "file": "apps/web/e2e/ (no performance test), tests/e2e/ (no performance test)",
+      "issue": "No performance test for channels with 500+ messages \u00e2\u20ac\u201d virtualization implementation (@tanstack/react-virtual) has no automated validation of scroll performance or memory usage",
+      "impact": "The MessageList component uses @tanstack/react-virtual for windowed rendering, but the degradation point (max messages before noticeable jank) is unknown. Scroll performance, memory growth, and render time at scale are not validated",
+      "fix": "Add a performance E2E test that seeds 500+ messages via API route interception, navigates to the channel, measures initial render time, scrolls to bottom, and measures scroll jank. Set performance budget (render < 2s, scroll < 16ms frame time)"
     },
     {
       "severity": "P3",
       "domain": "testing",
       "category": "Fixture Management",
-      "file": "apps/web/e2e/",
-      "issue": "No standard test fixtures directory for files, user data, or API mocks",
-      "impact": "Each test file defines inline fixtures (MOCK_USER, TEST_EMAIL constants). There is no shared fixture library. Test files reference test data inconsistently. API mock routes are duplicated across spec files.",
-      "fix": "Create e2e/fixtures/ directory with: test-users.json, test-files/ (1KB test.png, test.pdf, test.mp3), api-mocks.ts (shared route handlers). Import fixtures consistently across all spec files."
+      "file": "tests/e2e/ and apps/web/e2e/ (no fixtures directory)",
+      "issue": "No standard test fixtures directory for files, user data, or API mocks across both e2e directories",
+      "impact": "Each test file defines inline fixtures (MOCK_USER, TEST_EMAIL constants) or references test-signin.json. There is no shared fixture library. Test files reference test data inconsistently. API mock routes are duplicated across spec files in both e2e directories",
+      "fix": "Create a shared fixtures directory with: test-users.json, test-files/ (1KB test.png, test.pdf, test.mp3), api-mocks.ts (shared route handlers). Remove inline fixture duplication. Consolidate the two e2e directories into a single location"
     },
     {
       "severity": "P3",
       "domain": "testing",
       "category": "CI Execution Tiers",
-      "file": ".github/workflows/ci.yml",
-      "issue": "E2E tests run as a single flat group with no tiered execution strategy",
-      "impact": "All E2E tests (including slow ones) run on every PR, making the CI pipeline take 15+ minutes for frontend changes. Fast smoke tests are blocked behind slow comprehensive tests. PR feedback loops are unnecessarily long.",
-      "fix": "Split E2E into 4 CI tiers: smoke (PR, ~2min), critical (main merge, ~5min), comprehensive (nightly, ~15min), nightly (scheduled, ~30min). Use GitHub Actions matrix with --grep filtering for each tier."
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "rollback_readiness",
-      "file": ".github/workflows/deploy-production.yml",
-      "issue": "CI/CD uses `:latest` image tags which overwrite previous production images, preventing rapid rollback to a known-good version",
-      "impact": "If a broken deployment is promoted to production, rolling back requires rebuilding the old image instead of redeploying a tagged version. The previous `:latest` image is lost.",
-      "fix": "Tag production images with both `:latest` and a specific SHA-based tag (e.g., `:git-sha-${GITHUB_SHA}`). Add a rollback workflow that accepts a SHA tag and deploys that version."
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "env_parity",
-      "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "Production Docker Compose uses Caddy for TLS while development uses raw ports \u2014 no parity on reverse proxy configuration",
-      "impact": "CORS, cookie security settings, and CSP headers behave differently between environments. A bug in Caddy config only manifests in production, and production TLS issues cannot be reproduced locally.",
-      "fix": "Add a local Caddyfile.dev for development that mirrors production Caddy configuration but with self-signed certs. Add a docker-compose.override.yml for local TLS testing."
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "promotion_workflow",
-      "file": ".github/workflows/deploy-development.yml",
-      "issue": "Development deployment to DigitalOcean uses same Docker Compose as production with only minor env var differences",
-      "impact": "A breaking change in Docker Compose that only manifests on the remote environment cannot be detected before promoting to production. Dev and prod should run independently as isolated stacks.",
-      "fix": "Use separate Docker Compose project names (--project-name) to isolate stacks. Add environment prefix to container names. Ensure dev and prod can coexist on the same host without conflict."
-    },
-    {
-      "severity": "P3",
-      "domain": "environment",
-      "category": "promotion_workflow",
-      "file": ".github/workflows/deploy-production.yml",
-      "issue": "No smoke test or health check validation step after production deployment completes",
-      "impact": "A deployment that starts but immediately fails health checks goes undetected by CI/CD. Operators only learn about failures through user reports.",
-      "fix": "Add a post-deploy smoke test step that: (1) hits the /health endpoint, (2) verifies 200 response, (3) checks database connectivity, (4) sends a test WebSocket message. Rollback automatically if smoke tests fail."
-    },
-    {
-      "severity": "P3",
-      "domain": "environment",
-      "category": "env_parity",
-      "file": "infra/terraform/main.tf",
-      "issue": "Terraform IaC only provisions a single droplet shared between dev and prod environments",
-      "impact": "Development and production share the same compute resources. A load test or memory leak in dev can impact production performance and vice versa.",
-      "fix": "Separate Terraform workspaces for dev and prod with isolated droplets. Add environment variable to Terraform to select target. Increase resource allocation for prod."
-    },
-    {
-      "severity": "P2",
-      "domain": "governance",
-      "category": "policy_tiers",
-      "file": "hardening/policies/governance.json",
-      "issue": "Policy structure is flat with no distinction between dev, RC, production, and hotfix release tiers",
-      "impact": "All releases are subject to the same policy thresholds, making it impossible to grant temporary exceptions for hotfixes or allow faster iteration in dev branches.",
-      "fix": "Implement tiered policy files: governance.dev.json, governance.rc.json, governance.prod.json, governance.hotfix.json. Each tier inherits from the base but can override thresholds with explicit approval gates."
-    },
-    {
-      "severity": "P2",
-      "domain": "governance",
-      "category": "policy_tiers",
-      "file": "hardening/policies/governance.json",
-      "issue": "No hotfix exception procedure defined; hotfixes would either be blocked by standard gates or bypass them without compensating controls",
-      "impact": "During a production incident requiring a rapid fix, operators have no documented procedure for granting policy exceptions with mandatory post-incident review.",
-      "fix": "Add a 'hotfix' policy tier that relaxes gating thresholds but requires: (1) documented severity justification, (2) at least one peer review, (3) post-deploy audit within 24h, (4) mandatory follow-up to re-apply standard gates."
-    },
-    {
-      "severity": "P2",
-      "domain": "governance",
-      "category": "audit_logging",
-      "file": "apps/api/src/services/audit.ts",
-      "issue": "Audit logging uses in-memory retry queue that can lose entries and has no mechanism to detect missed audit events",
-      "impact": "A restart during audit log processing can silently lose audit entries for sensitive actions (permission changes, workspace deletion), breaking the audit chain.",
-      "fix": "Add a database audit_log_retry table for persistent queuing. Implement a periodic reconciliation job that detects gaps in audit log sequences. Add an alert for audit logging failures."
-    },
-    {
-      "severity": "P2",
-      "domain": "governance",
-      "category": "policy_tiers",
-      "file": ".github/workflows/audit-pr-gate.yml",
-      "issue": "CI/CD audit gates use a single threshold regardless of branch (develop vs main vs hotfix)",
-      "impact": "A PR with P2 findings to develop is blocked with the same severity as a production release, slowing iteration velocity without proportional risk assessment.",
-      "fix": "Map CI/CD gates to policy tiers: PRs to develop allow P2/P3 with warnings, PRs to main/staging block P1+, hotfix releases allow P1 with documented exceptions."
-    },
-    {
-      "severity": "P3",
-      "domain": "governance",
-      "category": "policy_tiers",
-      "file": "hardening/policies/governance.json",
-      "issue": "Policy file lacks versioning or change history; modifications to thresholds are not auditable",
-      "impact": "Policy drift is undetectable. There is no record of when or why thresholds were changed, making governance reviews difficult.",
-      "fix": "Add a version field to policy JSON files. Enforce that policy changes go through a PR with audit trail. Consider storing policy versions alongside run artifacts."
-    },
-    {
-      "severity": "P3",
-      "domain": "governance",
-      "category": "rbac",
-      "file": "packages/db/src/permissions.ts",
-      "issue": "Permission 'workspace:delete' granted to admin role but workspace deletion should require owner-only",
-      "impact": "A workspace admin can delete a workspace, potentially causing data loss without owner consent. Admins have the same destructive permissions as owners.",
-      "fix": "Remove 'workspace:delete' from the admin role permissions list. Only 'owner' should have workspace deletion capability."
-    },
-    {
-      "severity": "P2",
-      "domain": "resilience",
-      "category": "bulkhead_isolation",
-      "file": "apps/worker/src/main.ts",
-      "issue": "No bulkhead or isolation pattern between different queue processors sharing the same Redis connection",
-      "impact": "A single misbehaving queue processor (e.g., blocked webhook delivery) can exhaust the Redis connection pool and starve other processors (notifications, search indexing).",
-      "fix": "Use separate Redis connection pools per queue processor, or configure max concurrency per processor independently. Monitor Redis connection usage per processor."
-    },
-    {
-      "severity": "P2",
-      "domain": "resilience",
-      "category": "circuit_breaker",
-      "file": "apps/api/src/lib/circuit-breaker.ts",
-      "issue": "Circuit breaker metrics are tracked but not exposed via the /metrics endpoint for monitoring",
-      "impact": "Operators cannot monitor circuit breaker state (open/closed/half-open) in dashboards or alert on cascading circuit breaker failures.",
-      "fix": "Integrate circuit breaker stats into the Prometheus metrics endpoint. Expose breaker status, failure rate, and request volume as gauges."
-    },
-    {
-      "severity": "P2",
-      "domain": "resilience",
-      "category": "graceful_degradation",
-      "file": "apps/api/src/lib/supabase.ts",
-      "issue": "No database connection pool health monitoring; Supabase client retries internally but application has no visibility into pool exhaustion",
-      "impact": "If Supabase connection pool is exhausted, requests silently hang until timeout with no operator visibility into the pool utilization.",
-      "fix": "Add a database pool health gauge metric. Implement a connection pool timeout alert. Consider adding a readiness check that verifies database connection pool availability."
-    },
-    {
-      "severity": "P2",
-      "domain": "resilience",
-      "category": "idempotency",
-      "file": "apps/api/src/lib/idempotency.ts",
-      "issue": "In-memory idempotency fallback limited to single process \u2014 resets on restart, not shared across instances",
-      "impact": "In a multi-instance deployment, idempotency keys stored in-memory on one instance are invisible to another. A restart loses all idempotency state, potentially allowing duplicate message processing.",
-      "fix": "Add a database-backed idempotency store as a secondary fallback. Document that in-memory fallback is single-instance-only and provide a migration path to Redis."
-    },
-    {
-      "severity": "P2",
-      "domain": "resilience",
-      "category": "chaos_testing",
-      "file": "docs/prompts/testing/failure_injection_chaos_pack_prompt.md",
-      "issue": "Chaos engineering prompt exists but no actual chaos tests are executed or integrated into CI/CD",
-      "impact": "Resilience characteristics (circuit breaker behavior, graceful degradation, fallback paths) are untested. Failures in production may behave differently than expected.",
-      "fix": "Implement chaos testing scenarios: Redis failure, database latency injection, queue worker crash, and API service restart. Add a scheduled chaos test workflow."
-    },
-    {
-      "severity": "P3",
-      "domain": "resilience",
-      "category": "idempotency",
-      "file": "apps/worker/src/processors/webhook-delivery.ts",
-      "issue": "Webhook delivery uses randomUUID as idempotency key instead of deterministic hash of payload",
-      "impact": "Random idempotency keys do not prevent duplicate deliveries for identical payloads because each retry generates a new key.",
-      "fix": "Generate idempotency key as SHA-256 hash of (event + payload + webhookId) to ensure identical payloads produce identical keys. Use the delivery.id for tracking."
-    },
-    {
-      "severity": "P3",
-      "domain": "resilience",
-      "category": "retry_logic",
-      "file": "apps/api/src/services/audit.ts",
-      "issue": "Audit log retry queue is purely in-memory with no persistence \u2014 lost on process restart",
-      "impact": "If the API process restarts while audit entries are queued for retry, those entries are lost permanently with no record.",
-      "fix": "Persist failed audit entries to a database table (audit_log_retry_queue) or use BullMQ for the audit queue. Add a startup recovery job that retries unprocessed entries."
-    },
-    {
-      "severity": "P2",
-      "domain": "supply_chain",
-      "category": "image_integrity",
-      "file": ".github/workflows/build-push.yml",
-      "issue": "Docker images pushed to GHCR are not signed/attested; no cosign, notation, or SLSA provenance",
-      "impact": "No cryptographic verification that images were built from trusted CI. Compromised CI could inject malicious images without detection at deploy time.",
-      "fix": "Integrate cosign for image signing + keyless signing via GitHub OIDC. Add SLSA generator workflow for provenance attestation."
-    },
-    {
-      "severity": "P2",
-      "domain": "supply_chain",
-      "category": "docker_hygiene",
-      "file": "apps/api/Dockerfile",
-      "issue": "No multi-stage build verification; package installation may include dev dependencies in production image if not properly staged",
-      "impact": "Production images may contain unnecessary binaries and packages, increasing attack surface and image size.",
-      "fix": "Audit Dockerfiles to confirm multi-stage build separation. Add .dockerignore entry for dev dependencies. Run `docker scout` or `trivy` on final stage only."
-    },
-    {
-      "severity": "P2",
-      "domain": "supply_chain",
-      "category": "dependency_audit",
-      "file": "pnpm-lock.yaml",
-      "issue": "No automated license compliance check; open-source dependency licenses are not reviewed or tracked",
-      "impact": "Risk of GPL/AGPL viral license contamination or incompatible license terms in production distribution.",
-      "fix": "Add pnpm-licenses or license-checker to CI. Fail build on prohibited licenses (AGPL, non-commercial). Add license report to SBOM."
-    },
-    {
-      "severity": "P3",
-      "domain": "supply_chain",
-      "category": "trivy",
-      "file": ".github/workflows/validate.yml",
-      "issue": "Trivy fs scan runs on every PR but vulnerability database is not updated; stale DB misses recent CVEs",
-      "impact": "Scans may miss vulnerabilities discovered between cached DB updates. False sense of security.",
-      "fix": "Add trivy DB update step before scanning: `trivy image --download-db-only` or use `--cache-dir` with scheduled refresh."
-    },
-    {
-      "severity": "P3",
-      "domain": "supply_chain",
-      "category": "trivy",
-      "file": ".github/workflows/build-push.yml",
-      "issue": "Trivy image scan runs with continue-on-error: true, so vulnerabilities do not block the build",
-      "impact": "HIGH/CRITICAL vulnerabilities in Docker images are reported but do not prevent deployment. No enforcement.",
-      "fix": "Set continue-on-error: false for production builds, or add a post-scan step that fails if CRITICAL vulnerabilities exceed threshold (e.g., > 0)."
-    },
-    {
-      "severity": "P3",
-      "domain": "supply_chain",
-      "category": "sbom",
-      "file": ".github/workflows/build-push.yml",
-      "issue": "SBOM generation only runs on push to develop, not on main/release builds",
-      "impact": "Production releases lack SBOM artifacts for vulnerability tracking and compliance.",
-      "fix": "Enable SBOM generation for all pushes to main/release branches. Upload SBOM as release asset."
-    },
-    {
-      "severity": "P3",
-      "domain": "supply_chain",
-      "category": "dependabot",
-      "file": ".github/dependabot.yml",
-      "issue": "Dependabot batch groups (minor-patch) may cause delayed patch updates for critical security fixes",
-      "impact": "Critical security patches bundled with non-urgent changes may be delayed by cooldown period (15 days).",
-      "fix": "Exempt 'security' update type from batch grouping so critical patches are opened immediately. Add `ignored_updates` only for non-security."
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "config_consistency",
-      "file": "apps/api/src/config/env.ts",
-      "issue": "API env schema uses .optional() for SUPABASE_URL and SUPABASE_ANON_KEY while worker schema requires them",
-      "impact": "Drift between environments: API starts without Supabase (degraded mode), worker crashes without Supabase. This inconsistency makes deployment expectations unclear and leads to different behavior per service.",
-      "fix": "Align API env schema with worker schema: make SUPABASE_URL and SUPABASE_ANON_KEY required. Remove the degraded-mode path or add explicit env flag for running without database."
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "health_port",
-      "file": "apps/worker/src/main.ts",
-      "issue": "HEALTH_PORT not defined in any environment schema; read directly from process.env with fallback to 4100",
-      "impact": "The worker health port is not validated or documented in the shared environment schema. Deployments that set a non-numeric HEALTH_PORT will silently use the fallback.",
-      "fix": "Add HEALTH_PORT to packages/config/env-schema.ts with number coercion. Default to 4100 in schema, not in code."
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "deployment_parity",
-      "file": "infra/docker/",
-      "issue": "No deployment preview environments exist for testing infrastructure changes before production",
-      "impact": "Infrastructure changes (Docker Compose, Caddyfile, env vars) cannot be validated in an isolated environment before reaching production, risking breaking changes to the live deployment.",
-      "fix": "Add a staging environment with a separate Docker Compose file and Caddy config. Use Terraform workspaces or separate tfvars files for staging. Wire into CI/CD for auto-deploy on PR."
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "env_tooling",
-      "file": "apps/api/src/config/env.ts",
-      "issue": "No .env.example file or env template committed to repository for onboarding",
-      "impact": "New developers must guess required environment variables by reading code. This slows onboarding and creates risk of missing required config in new environments.",
-      "fix": "Create .env.example at repo root documenting every environment variable, its type, default, and which service uses it. Add a pre-start check comparing against the schema."
-    },
-    {
-      "severity": "P3",
-      "domain": "environment",
-      "category": "env_tooling",
-      "file": "packages/config/env-schema.ts",
-      "issue": "No environment drift detection tooling to compare dev vs staging vs production env configurations",
-      "impact": "Configuration drift between environments goes undetected until a runtime failure occurs in production that cannot be reproduced locally.",
-      "fix": "Add a script (scripts/audit/env-drift-check.ts) that compares expected environment variables against actual in each deployment. Integrate into CI/CD as a pre-deploy check."
-    },
-    {
-      "severity": "P3",
-      "domain": "environment",
-      "category": "deployment_parity",
-      "file": "apps/web/lib/pwa/push-client.ts",
-      "issue": "Console.warn/error used directly in PWA push client instead of structured logging through the application logger",
-      "impact": "PWA push notification errors in production are not captured in structured logs or Sentry, making debugging push delivery failures difficult.",
-      "fix": "Replace console.warn/console.error with proper logger calls or Sentry capture. Ensure push notification errors are visible in production observability tooling."
-    },
-    {
-      "severity": "P3",
-      "domain": "environment",
-      "category": "env_tooling",
-      "file": "",
-      "issue": "Environment variable documentation does not specify which variables are required per service (api, worker, web)",
-      "impact": "Operators setting up a new deployment must reverse-engineer which env vars each service needs, increasing setup time and misconfiguration risk.",
-      "fix": "Annotate each env var in .env.example with a service tag: [api], [worker], [web], [all]. Generate per-service .env.example files from the schema."
+      "file": ".github/workflows/ci.yml (no E2E tier separation)",
+      "issue": "E2E tests (apps/web/e2e/ and tests/e2e/) are not separated into fast smoke vs. slow comprehensive tiers for CI execution",
+      "impact": "All E2E tests run as a single flat group on every PR. Fast smoke tests (auth form rendering, 404 page) are blocked behind slower comprehensive tests (file upload, search, multi-page messaging). PR feedback loops are longer than necessary",
+      "fix": "Split E2E tests into 3 CI tiers: smoke (PR gate, ~2min: auth form, navigation, 404 page), critical (merge to develop, ~5min: messaging, file upload), nightly (scheduled, ~15min: comprehensive, real-time, multi-context). Use --grep or sharding in Playwright config"
     }
   ]
 }

@@ -1,68 +1,61 @@
 {
   "prompt_name": "environment_promotion_audit",
   "domain": "environment",
-  "stage": "quality_confirmation",
-  "decision": "GO",
-  "generated_at": "2026-07-07T03:42:00Z",
+  "stage": "principal_audit",
+  "decision": "GO WITH RISKS",
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
+    "P1": 1,
     "P2": 3,
-    "P3": 2
+    "P3": 1
   },
-  "category_scores": {
-    "promotion_workflow": 70,
-    "env_parity": 60,
-    "rollback_readiness": 65,
-    "ci_cd_alignment": 75,
-    "approval_gates": 55
-  },
-  "readiness": 65,
+  "readiness": 82,
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "environment",
-      "category": "rollback_readiness",
-      "file": ".github/workflows/deploy-production.yml",
-      "issue": "CI/CD uses `:latest` image tags which overwrite previous production images, preventing rapid rollback to a known-good version",
-      "impact": "If a broken deployment is promoted to production, rolling back requires rebuilding the old image instead of redeploying a tagged version. The previous `:latest` image is lost.",
-      "fix": "Tag production images with both `:latest` and a specific SHA-based tag (e.g., `:git-sha-${GITHUB_SHA}`). Add a rollback workflow that accepts a SHA tag and deploys that version."
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "env_parity",
+      "category": "health_check",
       "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "Production Docker Compose uses Caddy for TLS while development uses raw ports \u2014 no parity on reverse proxy configuration",
-      "impact": "CORS, cookie security settings, and CSP headers behave differently between environments. A bug in Caddy config only manifests in production, and production TLS issues cannot be reproduced locally.",
-      "fix": "Add a local Caddyfile.dev for development that mirrors production Caddy configuration but with self-signed certs. Add a docker-compose.override.yml for local TLS testing."
+      "issue": "Web service (Next.js) missing healthcheck in prod compose \u00e2\u20ac\u201d dev compose has healthcheck",
+      "impact": "Deploy health check only validates API container; web container crash won't be detected",
+      "fix": "Add healthcheck: test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000'] to web service in prod compose"
     },
     {
       "severity": "P2",
       "domain": "environment",
-      "category": "promotion_workflow",
-      "file": ".github/workflows/deploy-development.yml",
-      "issue": "Development deployment to DigitalOcean uses same Docker Compose as production with only minor env var differences",
-      "impact": "A breaking change in Docker Compose that only manifests on the remote environment cannot be detected before promoting to production. Dev and prod should run independently as isolated stacks.",
-      "fix": "Use separate Docker Compose project names (--project-name) to isolate stacks. Add environment prefix to container names. Ensure dev and prod can coexist on the same host without conflict."
+      "category": "caddy_routes",
+      "file": "infra/docker/Caddyfile.prod",
+      "issue": "Prod Caddyfile missing /healthz route \u00e2\u20ac\u201d only /health is routed to API",
+      "impact": "Full health check (DB, Redis) not accessible via Caddy on prod; requires direct API access",
+      "fix": "Add @healthz path block routing to api:4000 in Caddyfile.prod"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "compose_env",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose web service lacks env_file: .env \u00e2\u20ac\u201d dev compose has it",
+      "impact": "Web prod container may miss required env vars; dev and prod env injection differs",
+      "fix": "Add env_file: .env to web service in docker-compose.prod.yml"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "image_tags",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose uses :latest tags (not SHA-pinned) for all images \u00e2\u20ac\u201d rollback races could pull wrong version",
+      "impact": "Concurrent deploys may cause race condition where :latest tag points to different SHA during rollback",
+      "fix": "Pin prod image tags to SHA digest after pull in deploy-production.yml deploy step"
     },
     {
       "severity": "P3",
       "domain": "environment",
-      "category": "promotion_workflow",
-      "file": ".github/workflows/deploy-production.yml",
-      "issue": "No smoke test or health check validation step after production deployment completes",
-      "impact": "A deployment that starts but immediately fails health checks goes undetected by CI/CD. Operators only learn about failures through user reports.",
-      "fix": "Add a post-deploy smoke test step that: (1) hits the /health endpoint, (2) verifies 200 response, (3) checks database connectivity, (4) sends a test WebSocket message. Rollback automatically if smoke tests fail."
-    },
-    {
-      "severity": "P3",
-      "domain": "environment",
-      "category": "env_parity",
-      "file": "infra/terraform/main.tf",
-      "issue": "Terraform IaC only provisions a single droplet shared between dev and prod environments",
-      "impact": "Development and production share the same compute resources. A load test or memory leak in dev can impact production performance and vice versa.",
-      "fix": "Separate Terraform workspaces for dev and prod with isolated droplets. Add environment variable to Terraform to select target. Increase resource allocation for prod."
+      "category": "mem_limits",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Prod compose has same mem_limit values as dev compose (e.g. api: 192m, web: 256m)",
+      "impact": "Production may need higher memory limits under real load \u00e2\u20ac\u201d potential OOM risk",
+      "fix": "Review and increase prod memory limits based on load testing: api: 512m, web: 512m, worker: 256m recommended"
     }
-  ]
+  ],
+  "generated_at": "2026-07-09T03:06:59Z"
 }
