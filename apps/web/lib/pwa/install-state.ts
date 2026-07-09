@@ -104,7 +104,7 @@ export function useInstallPrompt() {
           title: `Install on ${platform.charAt(0).toUpperCase() + platform.slice(1)}`,
           steps: [
             "Click the install icon in the address bar",
-            'Or use the menu → "Install Chat Platform"',
+            'Or use the menu → "Install MaineCyberTech Chat"',
             "Confirm the installation",
           ],
           showButton: true,

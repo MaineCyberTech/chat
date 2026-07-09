@@ -12,14 +12,14 @@ import { ToastProvider } from "@chat/ui/components/toast";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Chat Platform",
+  title: "MaineCyberTech Chat",
   description: "Real-time workspace communication platform",
   manifest: "/manifest.webmanifest",
   themeColor: "#ffffff",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Chat Platform",
+    title: "MaineCyberTech Chat",
   },
 };
 
@@ -52,8 +52,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Chat Platform" />
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: ws: wss:; frame-src 'self' https:; manifest-src 'self'; media-src 'self' data: https: blob:; worker-src 'self' blob:;" />
+        <meta name="apple-mobile-web-app-title" content="MaineCyberTech Chat" />
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: ws: wss:; frame-src 'self' https:; manifest-src 'self'; media-src 'self' data: https: blob:; worker-src 'self' blob:;" />
         <style>{"html,body{background:#fff}html.dark,body.dark{background:#1a1a1a}"}</style>
       </head>
       <body

@@ -103,7 +103,7 @@ self.addEventListener("push", (event) => {
     renotify: true,
   };
 
-  event.waitUntil(self.registration.showNotification(data.title || "Chat Platform", options));
+  event.waitUntil(self.registration.showNotification(data.title || "MaineCyberTech Chat", options));
 });
 
 // Notification click event

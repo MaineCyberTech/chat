@@ -1133,7 +1133,7 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
               style={{ color: "rgba(255,255,255,0.6)" }}
             >
               <Link href="/" className="hover:opacity-80">
-                Chat Platform
+                MaineCyberTech Chat
               </Link>
               <span className="ml-auto flex gap-1">
                 <button

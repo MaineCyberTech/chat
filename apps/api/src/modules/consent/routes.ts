@@ -11,6 +11,7 @@ router.get("/consent", authenticate, asyncHandler(async (req: Request, res: Resp
   const { data, error } = await supabase
     .from("consent_logs")
     .select("*")
+    .eq("user_id", req.userId!)
     .order("created_at", { ascending: false });
 
   if (error) {

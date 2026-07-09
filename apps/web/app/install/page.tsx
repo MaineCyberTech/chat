@@ -28,7 +28,7 @@ export default function InstallPage() {
             className="max-w-md text-base"
             style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
           >
-            Chat Platform is already installed on your device. You can open it from your home screen
+            MaineCyberTech Chat is already installed on your device. You can open it from your home screen
             or app launcher.
           </p>
         </div>
@@ -43,7 +43,7 @@ export default function InstallPage() {
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4 md:p-8">
       <div className="flex max-w-md flex-col items-center gap-2 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-[var(--center-channel-color)]">
-          Install Chat Platform
+          Install MaineCyberTech Chat
         </h1>
         <p className="text-base" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
           Get the full app experience: offline access, push notifications, and a home screen icon.
@@ -104,7 +104,7 @@ export default function InstallPage() {
               style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
             >
               <Link href="/" className="underline hover:text-[var(--center-channel-color)]">
-                ← Back to Chat Platform
+                ← Back to MaineCyberTech Chat
               </Link>
             </p>
           </div>

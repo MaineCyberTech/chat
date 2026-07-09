@@ -35,7 +35,7 @@ export function AppHeader() {
         className="text-sm font-semibold"
         style={{ color: "var(--center-channel-color)" }}
       >
-        Chat Platform
+        MaineCyberTech Chat
       </Link>
       <div className="flex items-center gap-3">
         <ThemeToggle />

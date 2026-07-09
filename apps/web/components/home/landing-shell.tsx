@@ -17,7 +17,7 @@ export function LandingShell({ onGetStarted, onLearnMore }: Props) {
           className="text-3xl font-bold tracking-tight md:text-4xl"
           style={{ color: "var(--center-channel-color)" }}
         >
-          Chat Platform
+          MaineCyberTech Chat
         </h1>
         <p
           className="max-w-md text-base md:text-lg"

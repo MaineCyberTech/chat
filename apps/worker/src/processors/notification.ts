@@ -160,7 +160,7 @@ async function deliverEmail(
   </tr>
   <tr>
     <td style="padding:16px 32px;background:#f5f5f5;border-radius:0 0 8px 8px;font-size:12px;color:#888;text-align:center;">
-      <p style="margin:0;">Sent from Chat Platform</p>
+      <p style="margin:0;">Sent from MaineCyberTech Chat</p>
     </td>
   </tr>
 </table>`;

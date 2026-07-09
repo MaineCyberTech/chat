@@ -214,6 +214,11 @@ router.delete("/account", authenticate, asyncHandler(async (req, res) => {
   const userId = req.userId!;
 
   // Delete user data in order (respecting FK constraints)
+  await supabase.from("consent_logs").delete().eq("user_id", userId);
+  await supabase.from("sidebar_channel_assignments").delete().eq("user_id", userId);
+  await supabase.from("sidebar_categories").delete().eq("user_id", userId);
+  await supabase.from("channel_bookmarks").delete().eq("user_id", userId);
+  await supabase.from("message_reminders").delete().eq("user_id", userId);
   await supabase.from("notifications").delete().eq("user_id", userId);
   await supabase.from("push_subscriptions").delete().eq("user_id", userId);
   await supabase.from("messages").delete().eq("user_id", userId);
