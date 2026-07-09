@@ -114,6 +114,7 @@ export const mockChannelMember: ChannelMember = {
   channel_id: "channel-1",
   user_id: "user-1",
   joined_at: "2026-01-01T00:00:00Z",
+  last_viewed_at: "2026-01-01T00:00:00Z",
 };
 
 export const mockMessage: Message = {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { getSocket, disconnectSocket, onReconnect, offReconnect } from "@/lib/socket";
+import { getSocket, onReconnect, offReconnect } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
 import { useOptimistic } from "@/lib/optimistic/use-optimistic";
@@ -216,6 +216,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
       .then((res) => setMemberCount(res.members.length))
       .catch(() => {});
 
+    api.post(`/channels/${channelId}/read`, {}).catch(() => {});
+
     api
       .get<{ preferences: { notification_prefs: Record<string, unknown> } }>("/preferences")
       .then((res) => {
@@ -262,7 +264,8 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
         setMessages((prev) => [...prev, message]);
         loadProfiles([message]);
         if (message.user_id !== user?.id) {
-          const displayName = (user?.user_metadata?.display_name as string) ?? user?.email?.split("@")[0] ?? "";
+          const displayName =
+            (user?.user_metadata?.display_name as string) ?? user?.email?.split("@")[0] ?? "";
           const isMention =
             displayName &&
             (message.content.includes(`@${displayName}`) ||
@@ -367,8 +370,6 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
     const isOpen = showChannelInfo !== false || threadMessage !== null;
     document.body.classList.toggle("rhs-mobile-open", isMobile && isOpen);
   }, [showChannelInfo, threadMessage]);
-
-
 
   const handleSend = useCallback(
     async (content: string, priority: string = "standard") => {
@@ -712,7 +713,7 @@ export function ChatView({ channelId, channelName, workspaceId, workspaceSlug }:
             aria-relevant="additions"
             aria-atomic="false"
             aria-label="Messages"
-            className="flex-1 min-h-0 overflow-y-auto"
+            className="min-h-0 flex-1 overflow-y-auto"
             style={{ padding: "14px 0 7px" }}
           >
             <MessageList

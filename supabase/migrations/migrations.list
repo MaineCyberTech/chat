@@ -53,3 +53,5 @@
 20260707000004_add_channel_notification_prefs_index.sql
 20260708000001_add_trigger_words.sql
 20260709000001_add_auto_responder.sql
+20260709000002_add_read_receipts.sql
+migrations.list

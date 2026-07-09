@@ -2106,6 +2106,98 @@
         "responses": { "200": { "description": "Rewritten text" } }
       }
     },
+    "/v1/channels/{id}/read": {
+      "post": {
+        "summary": "Mark channel as read",
+        "tags": ["Read Receipts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": { "200": { "description": "Channel marked as read" } }
+      }
+    },
+    "/v1/channels/{id}/last-viewed": {
+      "get": {
+        "summary": "Get last viewed timestamp for channel",
+        "tags": ["Read Receipts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": { "200": { "description": "Last viewed timestamp" } }
+      }
+    },
+    "/v1/messages/{id}/read": {
+      "post": {
+        "summary": "Mark message as read",
+        "tags": ["Read Receipts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["channelId"],
+                "properties": { "channelId": { "type": "string", "format": "uuid" } }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Message marked as read" } }
+      }
+    },
+    "/v1/messages/{id}/readers": {
+      "get": {
+        "summary": "Get users who read a message",
+        "tags": ["Read Receipts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": { "200": { "description": "List of readers" } }
+      }
+    },
+    "/v1/unread/counts": {
+      "get": {
+        "summary": "Get unread counts for multiple channels",
+        "tags": ["Read Receipts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "channel_ids",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "description": "Comma-separated channel IDs" }
+          }
+        ],
+        "responses": { "200": { "description": "Unread count per channel" } }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Readiness check",

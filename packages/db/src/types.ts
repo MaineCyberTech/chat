@@ -59,6 +59,15 @@ export interface ChannelMember {
   channel_id: string;
   user_id: string;
   joined_at: string;
+  last_viewed_at: string;
+}
+
+export interface MessageRead {
+  id: string;
+  message_id: string;
+  user_id: string;
+  read_at: string;
+  channel_id: string;
 }
 
 export type PostPriority = "standard" | "important" | "urgent" | "critical";

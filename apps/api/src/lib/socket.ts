@@ -31,7 +31,11 @@ declare module "socket.io" {
   }
 }
 
-function corsOriginCheck(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void, allowedOrigin: string) {
+function corsOriginCheck(
+  origin: string | undefined,
+  callback: (err: Error | null, allow?: boolean) => void,
+  allowedOrigin: string,
+) {
   if (!origin) return callback(null, true);
   if (origin === allowedOrigin) return callback(null, true);
   callback(new Error("Not allowed by CORS"));
@@ -44,7 +48,10 @@ export function initSocket(
 ): SocketServer {
   io = new SocketServer(httpServer, {
     path: "/v1/socket.io",
-    cors: { origin: (origin, callback) => corsOriginCheck(origin, callback, corsOrigin), credentials: true },
+    cors: {
+      origin: (origin, callback) => corsOriginCheck(origin, callback, corsOrigin),
+      credentials: true,
+    },
     transports: ["websocket", "polling"],
     // Reconnection/connection health settings
     pingInterval: 25000, // Send ping every 25s
@@ -178,7 +185,10 @@ export function initSocket(
             .eq("user_id", userId)
             .single();
           if (!channelMember) {
-            socket.emit("channel:join_error", { channelId, error: "Not a member of this private channel" });
+            socket.emit("channel:join_error", {
+              channelId,
+              error: "Not a member of this private channel",
+            });
             return;
           }
         }
@@ -284,6 +294,20 @@ export function getIO(): SocketServer {
     throw new Error("Socket.io not initialized. Call initSocket() first.");
   }
   return io;
+}
+
+export function emitToChannel(
+  channelId: string,
+  event: string,
+  data: Record<string, unknown>,
+): void {
+  const srv = getIO();
+  srv.to(`channel:${channelId}`).emit(event, data);
+}
+
+export function emitToUser(userId: string, event: string, data: Record<string, unknown>): void {
+  const srv = getIO();
+  srv.to(`user:${userId}`).emit(event, data);
 }
 
 export async function shutdownSocket(): Promise<void> {

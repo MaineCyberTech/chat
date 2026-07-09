@@ -17,3 +17,6 @@ export type { IReactionStore } from "./reaction-store.js";
 
 export { SupabaseNotificationStore, notificationStore } from "./notification-store.js";
 export type { INotificationStore } from "./notification-store.js";
+
+export { SupabaseReadReceiptStore, readReceiptStore } from "./read-receipt-store.js";
+export type { IReadReceiptStore, UnreadCount, MessageReaders } from "./read-receipt-store.js";

@@ -12,6 +12,9 @@ export { WebhooksClient } from "./webhooks.js";
 export { NotificationsClient } from "./notifications.js";
 export { PreferencesClient } from "./preferences.js";
 export { ReactionsClient } from "./reactions.js";
+export { ReadReceiptsClient } from "./read-receipts.js";
+
+export type { MessageReader, UnreadCountItem } from "./read-receipts.js";
 
 export type {
   Workspace,

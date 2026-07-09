@@ -1,7 +1,7 @@
 export { createSupabaseClient, getSupabaseClient } from "./config.js";
 export type { User, UserProfile } from "./types.js";
 export type { Workspace, WorkspaceMember, WorkspaceRole } from "./types.js";
-export type { Channel, ChannelMember } from "./types.js";
+export type { Channel, ChannelMember, MessageRead } from "./types.js";
 export type { Message, MessageFlag, MessageEditHistory, PostPriority } from "./types.js";
 export type { UserPreferences, ThemePreference } from "./types.js";
 export type { PushSubscription, PushSubscriptionInput } from "./types.js";
@@ -25,3 +25,10 @@ export type {
 
 export { SupabaseChannelStore, channelStore } from "./stores/channel-store.js";
 export type { IChannelStore, CreateChannelInput } from "./stores/channel-store.js";
+
+export { SupabaseReadReceiptStore, readReceiptStore } from "./stores/read-receipt-store.js";
+export type {
+  IReadReceiptStore,
+  UnreadCount,
+  MessageReaders,
+} from "./stores/read-receipt-store.js";

@@ -23,6 +23,7 @@ import exportRoutes from "./modules/export/routes.js";
 import importRoutes from "./modules/import/routes.js";
 import openApiRoutes from "./modules/openapi/routes.js";
 import aiRoutes from "./modules/ai/routes.js";
+import readReceiptRoutes from "./modules/read-receipts/routes.js";
 
 export interface RouteEndpoint {
   method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -45,7 +46,12 @@ export const routeRegistry: RouteEntry[] = [
     description: "Health check + root endpoint",
     endpoints: [
       { method: "GET", path: "/health", middleware: [], description: "Readiness check" },
-      { method: "GET", path: "/healthz", middleware: [], description: "Full health check (includes DB)" },
+      {
+        method: "GET",
+        path: "/healthz",
+        middleware: [],
+        description: "Full health check (includes DB)",
+      },
     ],
   },
   {
@@ -53,8 +59,18 @@ export const routeRegistry: RouteEntry[] = [
     router: authRoutes,
     description: "Authentication (magic link, status)",
     endpoints: [
-      { method: "POST", path: "/v1/auth/magic-link", middleware: ["rate-limit"], description: "Send magic link email" },
-      { method: "GET", path: "/v1/auth/status", middleware: ["authenticate"], description: "Get current user status" },
+      {
+        method: "POST",
+        path: "/v1/auth/magic-link",
+        middleware: ["rate-limit"],
+        description: "Send magic link email",
+      },
+      {
+        method: "GET",
+        path: "/v1/auth/status",
+        middleware: ["authenticate"],
+        description: "Get current user status",
+      },
     ],
   },
   {
@@ -62,8 +78,18 @@ export const routeRegistry: RouteEntry[] = [
     router: workspaceRoutes,
     description: "Workspace CRUD + membership",
     endpoints: [
-      { method: "GET", path: "/v1/workspaces", middleware: ["authenticate"], description: "List workspaces" },
-      { method: "POST", path: "/v1/workspaces", middleware: ["authenticate"], description: "Create workspace" },
+      {
+        method: "GET",
+        path: "/v1/workspaces",
+        middleware: ["authenticate"],
+        description: "List workspaces",
+      },
+      {
+        method: "POST",
+        path: "/v1/workspaces",
+        middleware: ["authenticate"],
+        description: "Create workspace",
+      },
     ],
   },
   { path: "/v1", router: channelRoutes, description: "Channel CRUD + members + bookmarks" },
@@ -87,4 +113,5 @@ export const routeRegistry: RouteEntry[] = [
   { path: "/v1", router: exportRoutes, description: "Admin data export (CSV/JSON)" },
   { path: "/v1", router: importRoutes, description: "Admin data import from CSV" },
   { path: "/v1/ai", router: aiRoutes, description: "AI rewrite actions" },
+  { path: "/v1", router: readReceiptRoutes, description: "Read receipts + unread counts" },
 ];

@@ -91,6 +91,11 @@ export class MessageService {
     try {
       const io = getIO();
       io.to(`channel:${input.channel_id}`).emit("message:new", { message });
+      io.to(`channel:${input.channel_id}`).emit("unread:update", {
+        channelId: input.channel_id,
+        count: 1,
+        mentions: 0,
+      });
     } catch {
       // Socket.io may not be initialized in test env
     }
