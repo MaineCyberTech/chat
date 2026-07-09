@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
+import { EmptyState } from "@chat/ui";
 import { Bell } from "lucide-react";
 
 interface Notification {
@@ -187,12 +188,7 @@ export function NotificationBell() {
           </div>
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <p
-                className="px-4 py-6 text-center text-sm"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-              >
-                No notifications
-              </p>
+              <EmptyState description="No notifications" className="!py-0" />
             ) : (
               notifications.map((n) => (
                 <div

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
-import { useToast } from "@chat/ui";
+import { EmptyState, useToast } from "@chat/ui";
 import { X, Search, Plus, UserCheck } from "lucide-react";
 
 interface MemberInfo {
@@ -140,12 +140,7 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
         </div>
         <div className="max-h-56 overflow-y-auto p-1">
           {results.length === 0 && (
-            <p
-              className="px-3 py-4 text-center text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-            >
-              No members found
-            </p>
+            <EmptyState description="No members found" className="!py-0" />
           )}
           {results.map((m) => {
             const isSelected = selected.has(m.user_id);

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
+import { EmptyState } from "@chat/ui";
 import { Clock, Trash2, ChevronRight } from "lucide-react";
 
 interface ScheduledPost {
@@ -91,9 +92,7 @@ export default function ScheduledPostsPage() {
       </h1>
 
       {posts.length === 0 ? (
-        <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-          No scheduled messages. Schedule a message by clicking the clock icon in the message input.
-        </p>
+        <EmptyState description="No scheduled messages. Schedule a message by clicking the clock icon in the message input." className="!py-0" />
       ) : (
         <div className="space-y-3">
           {posts.map((post) => {

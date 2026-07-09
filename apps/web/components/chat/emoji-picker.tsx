@@ -8,6 +8,7 @@ import {
   type EmojiEntry,
   type EmojiCat,
 } from "@/lib/emoji/emoji-data";
+import { EmptyState } from "@chat/ui";
 
 const RECENT_KEY = "chat_recent_emojis";
 const SKIN_KEY = "chat_emoji_skin";
@@ -320,12 +321,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
           </div>
         )}
         {search && filteredEmojis.length === 0 && (
-          <p
-            className="px-2 py-4 text-center text-sm"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-          >
-            No emojis found
-          </p>
+          <EmptyState description="No emojis found" className="!py-0" />
         )}
         {filteredEmojis.length > 0 && (
           <div className="flex flex-wrap gap-0.5 px-1">

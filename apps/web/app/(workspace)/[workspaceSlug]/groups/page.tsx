@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
-import { Skeleton } from "@chat/ui";
+import { EmptyState, Skeleton } from "@chat/ui";
 import { Users, Plus, Pencil, Trash2, UserPlus, Eye } from "lucide-react";
 import { GroupModal } from "@/components/groups/group-modal";
 
@@ -187,9 +187,7 @@ export default function UserGroupsPage() {
       </div>
 
       {groups.length === 0 ? (
-        <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-          No groups yet. Create groups to mention multiple people at once with @groupname.
-        </p>
+        <EmptyState description="No groups yet. Create groups to mention multiple people at once with @groupname." className="!py-0" />
       ) : (
         <div className="space-y-2">
           {groups.map((g) => (

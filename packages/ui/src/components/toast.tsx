@@ -11,6 +11,7 @@ export interface Toast {
   description?: string;
   variant?: ToastVariant;
   duration?: number;
+  action?: { label: string; onClick: () => void };
 }
 
 interface ToastContextType {
@@ -132,12 +133,28 @@ function Toast({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => vo
     >
       <div className="flex-shrink-0 text-[var(--color-foreground-primary)]">{iconMap[variant]}</div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-[var(--color-foreground-primary)]">{toast.title}</p>
-        {toast.description && (
-          <p className="mt-1 text-sm text-[var(--color-foreground-secondary)]">
-            {toast.description}
-          </p>
-        )}
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-[var(--color-foreground-primary)]">{toast.title}</p>
+            {toast.description && (
+              <p className="mt-1 text-sm text-[var(--color-foreground-secondary)]">
+                {toast.description}
+              </p>
+            )}
+          </div>
+          {toast.action && (
+            <button
+              onClick={() => {
+                toast.action!.onClick();
+                onRemove(toast.id);
+              }}
+              className="ml-auto shrink-0 rounded-md px-2 py-1 text-xs font-medium"
+              style={{ color: "var(--button-bg)" }}
+            >
+              {toast.action.label}
+            </button>
+          )}
+        </div>
       </div>
       <button
         onClick={() => onRemove(toast.id)}

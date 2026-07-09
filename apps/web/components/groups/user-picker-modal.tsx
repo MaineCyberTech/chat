@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { EmptyState } from "@chat/ui";
 import { X, Search, Check, UserPlus } from "lucide-react";
 
 interface User {
@@ -128,12 +129,7 @@ export function UserPickerModal({
 
         <div className="max-h-56 overflow-y-auto p-1">
           {filtered.length === 0 && (
-            <p
-              className="px-3 py-4 text-center text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-            >
-              No users found
-            </p>
+            <EmptyState description="No users found" className="!py-0" />
           )}
           {filtered.map((u) => {
             const isSelected = selectedIds.has(u.id);

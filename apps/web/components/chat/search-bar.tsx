@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { Skeleton } from "@chat/ui";
+import { EmptyState, Skeleton } from "@chat/ui";
 import { Settings, ChevronDown, FileText, MessageSquare, File, Image } from "lucide-react";
 
 function extractAttachments(
@@ -715,12 +715,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             </div>
           )}
           {autocompleteUsers.length === 0 && autocompleteChannels.length === 0 && (
-            <p
-              className="px-2 text-sm"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-            >
-              No suggestions
-            </p>
+            <EmptyState description="No suggestions" className="!py-0" />
           )}
         </div>
       )}
@@ -875,12 +870,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
           }}
         >
-          <p
-            className="text-center text-sm"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-          >
-            No results for &ldquo;{query}&rdquo;
-          </p>
+          <EmptyState description={`No results for "${query}"`} className="!py-0" />
         </div>
       )}
     </div>

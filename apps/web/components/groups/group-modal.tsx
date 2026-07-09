@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { useToast } from "@chat/ui";
+import { EmptyState, useToast } from "@chat/ui";
 import { X, Check, UserPlus, Trash2, AlertTriangle } from "lucide-react";
 import { UserPickerModal } from "./user-picker-modal";
 
@@ -276,12 +276,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
                   style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
                 >
                   {users.length === 0 && (
-                    <p
-                      className="px-2 py-1 text-xs"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-                    >
-                      No members available
-                    </p>
+                    <EmptyState description="No members available" className="!py-0" />
                   )}
                   {users.map((u) => {
                     const isSel = selectedMemberIds.has(u.id);
@@ -406,12 +401,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
                 style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
               >
                 {groupMembers.length === 0 && (
-                  <p
-                    className="px-2 py-2 text-xs"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-                  >
-                    No members
-                  </p>
+                  <EmptyState description="No members" className="!py-0" />
                 )}
                 {groupMembers.map((gm) => (
                   <div

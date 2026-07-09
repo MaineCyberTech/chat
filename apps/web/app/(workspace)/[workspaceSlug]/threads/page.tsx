@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { Skeleton } from "@chat/ui";
+import { EmptyState, Skeleton } from "@chat/ui";
 import { MessageSquare, ChevronRight } from "lucide-react";
 
 interface Thread {
@@ -122,9 +122,7 @@ export default function ThreadsPage() {
       </h1>
 
       {threads.length === 0 ? (
-        <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-          No threads yet. Reply to a message to start a thread.
-        </p>
+        <EmptyState description="No threads yet. Reply to a message to start a thread." className="!py-0" />
       ) : (
         <div className="space-y-2">
           {threads.map((t) => {

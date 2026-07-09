@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { Skeleton, useToast } from "@chat/ui";
+import { EmptyState, Skeleton, useToast } from "@chat/ui";
 
 import {
   Shield,
@@ -744,9 +744,7 @@ export default function AdminPage() {
     return (
       <div className="space-y-1">
         {integrations.length === 0 && (
-          <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-            No webhooks configured.
-          </p>
+          <EmptyState description="No webhooks configured." className="!py-0" />
         )}
         {integrations.map((i) => (
           <div
@@ -1253,9 +1251,7 @@ export default function AdminPage() {
             </div>
           ))}
           {auditLogs.length === 0 && (
-            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-              No audit log entries found.
-            </p>
+            <EmptyState description="No audit log entries found." className="!py-0" />
           )}
         </div>
         {auditTotal > 50 && (
@@ -1636,9 +1632,7 @@ export default function AdminPage() {
             </div>
           ))}
           {logs.length === 0 && (
-            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-              No log entries captured yet.
-            </p>
+            <EmptyState description="No log entries captured yet." className="!py-0" />
           )}
         </div>
       </div>

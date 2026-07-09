@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
+import { EmptyState } from "@chat/ui";
 import { getCallback } from "@/lib/keyboard-shortcut-registry";
 
 const SHORTCUT_CATEGORIES = [
@@ -212,12 +213,7 @@ export function KeyboardShortcuts() {
             </div>
           ))}
           {filteredCategories.length === 0 && (
-            <p
-              className="text-center text-sm"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-            >
-              No shortcuts match "{search}"
-            </p>
+            <EmptyState description={`No shortcuts match "${search}"`} className="!py-0" />
           )}
         </div>
 

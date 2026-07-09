@@ -13,6 +13,7 @@ import {
   Hash,
   ChevronDown,
 } from "lucide-react";
+import { EmptyState } from "@chat/ui";
 
 interface SearchResult {
   id: string;
@@ -332,26 +333,11 @@ export default function SearchPage() {
           )}
 
           {!loading && query.length >= 2 && results.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div
-                className="mb-3 flex h-12 w-12 items-center justify-center rounded-full"
-                style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
-              >
-                <SearchIcon
-                  size={20}
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
-                />
-              </div>
-              <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
-                No results found
-              </p>
-              <p
-                className="mt-1 text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-              >
-                Try a different search term
-              </p>
-            </div>
+            <EmptyState
+              icon={<SearchIcon size={20} />}
+              title="No results found"
+              description="Try a different search term"
+            />
           )}
 
           {!loading && results.length > 0 && (

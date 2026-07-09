@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
 import { Bookmark, MessageSquare, Trash2 } from "lucide-react";
+import { EmptyState } from "@chat/ui";
 import type { Message, UserProfile } from "@chat/db";
 
 export default function SavedMessagesPage() {
@@ -79,10 +80,7 @@ export default function SavedMessagesPage() {
         <h1 className="text-xl font-bold text-[var(--center-channel-color)]">Saved Messages</h1>
       </div>
       {messages.length === 0 && (
-        <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-          No saved messages yet. Right-click or long-press a message and select &ldquo;Copy
-          link&rdquo; or use reactions to keep track.
-        </p>
+        <EmptyState description="No saved messages yet. Right-click or long-press a message and select \u201CCopy link\u201D or use reactions to keep track." className="!py-0" />
       )}
       <div className="space-y-2">
         {messages.map((msg) => (

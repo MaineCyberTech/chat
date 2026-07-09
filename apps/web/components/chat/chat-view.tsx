@@ -443,9 +443,46 @@ export function ChatView({
     await api.patch(`/messages/${messageId}`, { content });
   }, []);
 
-  const handleDelete = useCallback(async (messageId: string) => {
-    await api.delete(`/messages/${messageId}`);
+  const pendingDeletesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const handleUndoDelete = useCallback((messageId: string) => {
+    const t = pendingDeletesRef.current.get(messageId);
+    if (t) {
+      clearTimeout(t);
+      pendingDeletesRef.current.delete(messageId);
+    }
   }, []);
+
+  const handleDelete = useCallback(async (messageId: string) => {
+    const timer = setTimeout(async () => {
+      pendingDeletesRef.current.delete(messageId);
+      try {
+        await api.delete(`/messages/${messageId}`);
+      } catch {
+        addToast({
+          title: "Error",
+          description: "Failed to delete message.",
+          variant: "error",
+        });
+      }
+    }, 5000);
+    pendingDeletesRef.current.set(messageId, timer);
+    addToast({
+      title: "Message deleted",
+      variant: "default",
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          const t = pendingDeletesRef.current.get(messageId);
+          if (t) {
+            clearTimeout(t);
+            pendingDeletesRef.current.delete(messageId);
+          }
+        },
+      },
+    });
+  }, [addToast]);
 
   const handleRetry = useCallback(
     async (messageId: string) => {
@@ -809,6 +846,7 @@ export function ChatView({
               }
               sendErrors={sendErrors}
               onRetry={handleRetry}
+              onUndoDelete={handleUndoDelete}
               channelTopic={channelTopic}
             />
           </div>

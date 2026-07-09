@@ -32,6 +32,7 @@ interface Props {
   onToggleFlag?: (messageId: string, flagged: boolean) => void;
   sendErrors?: Map<string, string>;
   onRetry?: (messageId: string) => void;
+  onUndoDelete?: (messageId: string) => void;
   channelTopic?: string;
 }
 
@@ -52,6 +53,7 @@ export function MessageList({
   onToggleFlag: _onToggleFlag,
   sendErrors,
   onRetry,
+  onUndoDelete,
   channelTopic,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -215,7 +217,6 @@ export function MessageList({
     try {
       await onDelete(deleteConfirmId);
       setDeleteConfirmId(null);
-      addToast({ title: "Message deleted", variant: "success", duration: 3000 });
     } catch {
       setDeleteError("Failed to delete message.");
       addToast({ title: "Error", description: "Failed to delete message.", variant: "error" });

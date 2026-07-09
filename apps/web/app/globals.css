@@ -273,6 +273,26 @@
   }
 }
 
+@media (prefers-contrast: high) {
+  * {
+    text-shadow: none !important;
+  }
+
+  *:focus-visible {
+    outline-width: 3px;
+  }
+
+  :root {
+    --text-secondary-alpha: 0.90;
+    --text-tertiary-alpha: 0.75;
+    --border-default: solid 1px rgba(var(--center-channel-color-rgb), 0.25);
+    --border-light: solid 1px rgba(var(--center-channel-color-rgb), 0.20);
+    --border-dark: solid 1px rgba(var(--center-channel-color-rgb), 0.35);
+    --link-color: #1a6db5;
+    --offline-indicator: rgba(175, 179, 192, 1.0);
+  }
+}
+
 /* Dark mode overrides for Mattermost-style variables */
 html.dark,
 html.dark body {

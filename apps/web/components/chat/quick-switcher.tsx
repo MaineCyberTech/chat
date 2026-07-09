@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@chat/ui";
+import { EmptyState, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
 import { Hash, Search, User, X } from "lucide-react";
 import type { Channel } from "@chat/db";
@@ -178,12 +178,7 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
         </div>
         <div className="max-h-72 overflow-y-auto p-1">
           {totalItems === 0 && (
-            <p
-              className="px-3 py-4 text-center text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-            >
-              {query ? "No results found" : "No channels available"}
-            </p>
+            <EmptyState description={query ? "No results found" : "No channels available"} className="!py-0" />
           )}
           {filteredChannels.length > 0 && (
             <>

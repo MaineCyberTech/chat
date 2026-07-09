@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
-import { Button, SidebarGroup, Skeleton, useToast } from "@chat/ui";
+import { Button, EmptyState, SidebarGroup, Skeleton, useToast } from "@chat/ui";
 import { Bell, BellOff, AlertTriangle, X, Plus } from "lucide-react";
 import type { UserPreferences, ThemePreference } from "@chat/db";
 
@@ -551,12 +551,7 @@ export default function SettingsPage() {
                 Loading...
               </p>
             ) : triggerWords.length === 0 ? (
-              <p
-                className="text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-              >
-                No trigger words added yet
-              </p>
+              <EmptyState description="No trigger words added yet" className="!py-0" />
             ) : (
               <div className="flex flex-wrap gap-2">
                 {triggerWords.map((tw) => (
@@ -662,9 +657,7 @@ export default function SettingsPage() {
         </p>
         <div className="space-y-1">
           {channels.length === 0 && (
-            <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-              No channels found
-            </p>
+            <EmptyState description="No channels found" className="!py-0" />
           )}
           {channels.map((ch) => {
             const notify = channelPrefs.get(ch.id) ?? true;

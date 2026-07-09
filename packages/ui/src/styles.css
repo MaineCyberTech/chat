@@ -313,6 +313,16 @@ body {
 }
 
 :focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-border-focus));
+  outline-offset: var(--focus-ring-offset, 2px);
+}
+
+button:focus-visible:not(:active),
+input:focus-visible:not(:active),
+select:focus-visible:not(:active),
+textarea:focus-visible:not(:active),
+a:focus-visible:not(:active),
+[tabindex]:focus-visible:not(:active):not([tabindex="-1"]) {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-border-focus));
+  outline-offset: var(--focus-ring-offset, 2px);
 }

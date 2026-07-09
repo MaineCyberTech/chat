@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Skeleton, useToast } from "@chat/ui";
+import { EmptyState, Skeleton, useToast } from "@chat/ui";
 import { Trash2 } from "lucide-react";
 import type { Workspace } from "@chat/db";
 
@@ -50,11 +50,7 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
   }
 
   if (workspaces.length === 0) {
-    return (
-      <p className="px-2 text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-        No workspaces yet
-      </p>
-    );
+    return <EmptyState description="No workspaces yet" className="!py-0 px-2" />;
   }
 
   return (
