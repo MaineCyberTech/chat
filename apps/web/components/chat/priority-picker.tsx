@@ -12,11 +12,31 @@ export const PRIORITY_CONFIG: Record<PostPriority, { color: string }> = {
   critical: { color: "#dc2626" },
 };
 
-export const PRIORITY_OPTIONS: { key: PostPriority; label: string; icon: React.ReactNode; description: string }[] = [
+export const PRIORITY_OPTIONS: {
+  key: PostPriority;
+  label: string;
+  icon: React.ReactNode;
+  description: string;
+}[] = [
   { key: "standard", label: "Standard", icon: <Flag size={16} />, description: "Normal message" },
-  { key: "important", label: "Important", icon: <AlertCircle size={16} />, description: "Needs attention" },
-  { key: "urgent", label: "Urgent", icon: <AlertTriangle size={16} />, description: "Time-sensitive" },
-  { key: "critical", label: "Critical", icon: <AlertTriangle size={16} />, description: "Requires immediate action" },
+  {
+    key: "important",
+    label: "Important",
+    icon: <AlertCircle size={16} />,
+    description: "Needs attention",
+  },
+  {
+    key: "urgent",
+    label: "Urgent",
+    icon: <AlertTriangle size={16} />,
+    description: "Time-sensitive",
+  },
+  {
+    key: "critical",
+    label: "Critical",
+    icon: <AlertTriangle size={16} />,
+    description: "Requires immediate action",
+  },
 ];
 
 interface Props {
@@ -30,8 +50,12 @@ export function PriorityPicker({ priority: current, show, onSelect, onClose: _on
   if (!show) return null;
 
   return (
-    <div className="absolute bottom-full left-0 z-30 mb-2 w-48 overflow-hidden rounded-lg border p-1 shadow-lg"
-      style={{ background: "var(--center-channel-bg)", borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+    <div
+      className="absolute bottom-full left-0 z-30 mb-2 w-48 overflow-hidden rounded-lg border p-1 shadow-lg"
+      style={{
+        background: "var(--center-channel-bg)",
+        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+      }}
     >
       {PRIORITY_OPTIONS.map((opt) => (
         <button
@@ -45,12 +69,22 @@ export function PriorityPicker({ priority: current, show, onSelect, onClose: _on
           role="option"
           aria-selected={current === opt.key}
         >
-          <span style={{ color: current === opt.key ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+          <span
+            style={{
+              color:
+                current === opt.key
+                  ? "var(--button-bg)"
+                  : "rgba(var(--center-channel-color-rgb), 0.56)",
+            }}
+          >
             {opt.icon}
           </span>
           <div className="flex flex-col">
             <span className="text-xs font-medium">{opt.label}</span>
-            <span className="text-[10px]" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+            <span
+              className="text-[10px]"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            >
               {opt.description}
             </span>
           </div>
