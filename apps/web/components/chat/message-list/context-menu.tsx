@@ -86,7 +86,7 @@ export function MessageContextMenu({
         position: "fixed",
         left: contextMenu.x,
         top: contextMenu.y,
-        zIndex: 100,
+        zIndex: "var(--z-context-menu, 80)",
         background: "var(--center-channel-bg)",
         borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
         boxShadow: "var(--elevation-4)",

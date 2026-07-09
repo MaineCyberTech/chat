@@ -368,7 +368,7 @@ export function MessageList({
 
   if (messages.length === 0) {
     return (
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-clip">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="max-w-sm text-center" style={{ padding: "120px 24px 32px" }}>
             <EmptyState description={channelTopic ?? "No messages yet. Start the conversation!"} />

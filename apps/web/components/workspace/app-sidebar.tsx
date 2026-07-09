@@ -535,14 +535,6 @@ export function AppSidebar({
           position: "relative",
         }}
       >
-        {!collapsed && (
-          <div
-            onMouseDown={handleResizeStart}
-            className="absolute top-0 right-0 bottom-0 z-50 w-1 cursor-col-resize hover:bg-[var(--sidebar-text-active-border)]"
-            style={{ background: "transparent" }}
-            aria-label="Resize sidebar"
-          />
-        )}
         {/* Team/User Header */}
         <div
           className="flex items-center gap-2 px-3 py-3"

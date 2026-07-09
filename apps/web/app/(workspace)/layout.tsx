@@ -51,6 +51,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const params = useParams<{ workspaceSlug?: string; channelId?: string }>();
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [channels, setChannels] = useState<string[]>([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -219,8 +220,18 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     );
   }
 
+  useEffect(() => {
+    if (!user && !authLoading) {
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+    }
+  }, [user, authLoading, router, pathname]);
+
   if (!user) {
-    return null;
+    return (
+      <div className="flex h-screen items-center justify-center" style={{ background: "var(--center-channel-bg)" }}>
+        <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Redirecting to login...</p>
+      </div>
+    );
   }
 
   return (
@@ -283,7 +294,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             transition: "width 200ms",
           }}
         >
-          <div style={{ width: "100%", overflow: "hidden auto" }}>
+          <div style={{ width: "100%", overflow: "clip auto" }}>
             <AppSidebar
               workspaceSlug={params.workspaceSlug}
               channelId={params.channelId}

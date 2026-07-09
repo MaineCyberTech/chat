@@ -1,10 +1,10 @@
 ﻿"use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export default function VerifyPage() {
+function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
@@ -91,5 +91,21 @@ export default function VerifyPage() {
         </button>
       </div>
     </main>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen items-center justify-center p-8">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2"
+            style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)", borderTopColor: "var(--button-bg)" }} />
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Loading...</p>
+        </div>
+      </main>
+    }>
+      <VerifyContent />
+    </Suspense>
   );
 }
