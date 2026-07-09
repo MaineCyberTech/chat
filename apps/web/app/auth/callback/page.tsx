@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -70,7 +70,7 @@ function AuthCallbackContent() {
           <button
             onClick={() => router.push("/login")}
             className="text-sm underline hover:text-[var(--center-channel-color)]"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             Back to sign in
           </button>
@@ -82,7 +82,7 @@ function AuthCallbackContent() {
   return (
     <main className="flex min-h-screen items-center justify-center p-8">
       <div className="flex flex-col items-center gap-3">
-        <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+        <p style={{ color: "var(--text-secondary)" }}>
           Completing sign in...
         </p>
         <div
@@ -112,7 +112,7 @@ export default function AuthCallbackPage() {
                 borderTopColor: "var(--button-bg)",
               }}
             />
-            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
               Completing sign in...
             </p>
           </div>

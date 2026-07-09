@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
@@ -151,7 +151,7 @@ export default function UserGroupsPage() {
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
         <p
           className="mb-3 text-sm"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           {error}
         </p>
@@ -219,7 +219,7 @@ export default function UserGroupsPage() {
                   </code>
                   <span
                     className="text-xs"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     {g.user_group_members?.[0]?.count ?? 0} members
                   </span>
@@ -227,7 +227,7 @@ export default function UserGroupsPage() {
                 {g.description && (
                   <p
                     className="mt-0.5 text-xs"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                    style={{ color: "var(--text-secondary)" }}
                   >
                     {g.description}
                   </p>
@@ -237,7 +237,7 @@ export default function UserGroupsPage() {
                 <button
                   onClick={() => openDetail(g)}
                   className="flex h-7 w-7 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                   aria-label="View group details"
                 >
                   <Eye size={14} />
@@ -245,7 +245,7 @@ export default function UserGroupsPage() {
                 <button
                   onClick={() => openAddMembers(g)}
                   className="flex h-7 w-7 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                   aria-label="Add members"
                 >
                   <UserPlus size={14} />
@@ -253,7 +253,7 @@ export default function UserGroupsPage() {
                 <button
                   onClick={() => openEdit(g)}
                   className="flex h-7 w-7 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                   aria-label="Edit group"
                 >
                   <Pencil size={14} />

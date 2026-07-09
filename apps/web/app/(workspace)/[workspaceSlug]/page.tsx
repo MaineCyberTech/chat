@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -38,7 +38,7 @@ export default function WorkspacePageClient() {
     return (
       <div
         className="flex h-full items-center justify-center"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        style={{ color: "var(--text-tertiary)" }}
       >
         Workspace not found
       </div>
@@ -59,7 +59,7 @@ export default function WorkspacePageClient() {
         <h2 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
           Welcome to {workspace.name}
         </h2>
-        <p className="max-w-md" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+        <p className="max-w-md" style={{ color: "var(--text-secondary)" }}>
           Select a channel from the sidebar or create a new one to start messaging.
         </p>
         <div key={channelRefresh}>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
@@ -213,7 +213,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
           <button
             onClick={onClose}
             className="flex h-6 w-6 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
             aria-label="Close"
           >
             <X size={14} />
@@ -226,7 +226,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
             <div>
               <label
                 className="mb-1 block text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Name
               </label>
@@ -245,7 +245,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
             <div>
               <label
                 className="mb-1 block text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Description
               </label>
@@ -267,7 +267,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
               <div>
                 <label
                   className="mb-1 block text-xs font-medium"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   Add members ({selectedMemberIds.size})
                 </label>
@@ -329,7 +329,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
                 <p className="text-sm font-medium">Delete @{group?.name}?</p>
                 <p
                   className="text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   This will permanently remove this group and all member associations. Members will
                   no longer be mentionable as @{group?.name}. This action cannot be undone.
@@ -365,7 +365,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
             <div>
               <p
                 className="text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Description
               </p>
@@ -375,7 +375,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
               <div className="mb-1 flex items-center justify-between">
                 <p
                   className="text-xs font-medium"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   Members ({groupMembers.length})
                 </p>

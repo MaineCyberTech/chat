@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -71,7 +71,7 @@ export default function ScheduledPostsPage() {
     return (
       <div
         className="flex h-full items-center justify-center"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        style={{ color: "var(--text-tertiary)" }}
       >
         <div
           className="h-6 w-6 animate-spin rounded-full border-2"
@@ -110,12 +110,12 @@ export default function ScheduledPostsPage() {
                 <Clock
                   size={16}
                   className="mt-0.5 shrink-0"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 />
                 <div className="min-w-0 flex-1">
                   <div
                     className="flex items-center gap-2 text-xs"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     {ch ? (
                       <Link

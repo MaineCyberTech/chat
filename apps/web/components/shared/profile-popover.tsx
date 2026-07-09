@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
@@ -128,7 +128,7 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
       <button
         onClick={onClose}
         className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        style={{ color: "var(--text-tertiary)" }}
         aria-label="Close profile"
       >
         <X size={14} />
@@ -146,13 +146,13 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
       <div className="mt-3 space-y-1.5">
         <div
           className="flex items-center gap-2 text-xs"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          style={{ color: "var(--text-tertiary)" }}
         >
           <Mail size={12} /> {profile.email ?? "No email"}
         </div>
         <div
           className="flex items-center gap-2 text-xs"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          style={{ color: "var(--text-tertiary)" }}
         >
           <Calendar size={12} /> Joined {"Unknown"}
         </div>

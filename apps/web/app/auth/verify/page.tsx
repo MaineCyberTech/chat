@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -60,7 +60,7 @@ export default function VerifyPage() {
         <h1 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
           Check your email
         </h1>
-        <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+        <p style={{ color: "var(--text-secondary)" }}>
           We&apos;ve sent a verification link to <strong>{email || "your email"}</strong>. Click the
           link to activate your account.
         </p>
@@ -85,7 +85,7 @@ export default function VerifyPage() {
         <button
           onClick={() => router.push("/login")}
           className="text-sm underline hover:text-[var(--center-channel-color)]"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           Back to login
         </button>

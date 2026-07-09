@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
@@ -89,7 +89,7 @@ export function NotificationPreferencesModal({
         </h3>
         <p
           className="mb-4 text-xs"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           Configure notifications for this channel
         </p>
@@ -123,7 +123,7 @@ export function NotificationPreferencesModal({
                 <div className="font-medium">{opt.label}</div>
                 <div
                   className="text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   {opt.desc}
                 </div>
@@ -184,7 +184,7 @@ export function NotificationPreferencesModal({
           <button
             onClick={onClose}
             className="rounded-md px-3 py-1.5 text-xs font-medium"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             Cancel
           </button>

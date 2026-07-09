@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -205,7 +205,7 @@ export default function SearchPage() {
                 : "rgba(var(--center-channel-color-rgb), 0.08)",
               color: showFilters
                 ? "var(--button-color)"
-                : "rgba(var(--center-channel-color-rgb), 0.72)",
+                : "var(--text-secondary)",
             }}
             aria-label="Toggle filters"
           >
@@ -290,7 +290,7 @@ export default function SearchPage() {
         <div className="flex flex-col items-center justify-center py-20">
           <p
             className="mb-3 text-sm"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             {error}
           </p>
@@ -352,7 +352,7 @@ export default function SearchPage() {
                   >
                     <div
                       className="mb-1 flex items-center gap-2 text-xs"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       {channel && (
                         <>
@@ -409,7 +409,7 @@ export default function SearchPage() {
               </div>
               <p
                 className="text-sm"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 Type at least 2 characters to search
               </p>

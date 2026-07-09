@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { Flag, AlertCircle, AlertTriangle } from "lucide-react";
@@ -6,7 +6,7 @@ import { Flag, AlertCircle, AlertTriangle } from "lucide-react";
 export type PostPriority = "standard" | "important" | "urgent" | "critical";
 
 export const PRIORITY_CONFIG: Record<PostPriority, { color: string }> = {
-  standard: { color: "rgba(var(--center-channel-color-rgb), 0.56)" },
+  standard: { color: "var(--text-tertiary)" },
   important: { color: "#f59e0b" },
   urgent: { color: "#ef4444" },
   critical: { color: "#dc2626" },
@@ -74,7 +74,7 @@ export function PriorityPicker({ priority: current, show, onSelect, onClose: _on
               color:
                 current === opt.key
                   ? "var(--button-bg)"
-                  : "rgba(var(--center-channel-color-rgb), 0.56)",
+                  : "var(--text-tertiary)",
             }}
           >
             {opt.icon}
@@ -83,7 +83,7 @@ export function PriorityPicker({ priority: current, show, onSelect, onClose: _on
             <span className="text-xs font-medium">{opt.label}</span>
             <span
               className="text-[10px]"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               {opt.description}
             </span>

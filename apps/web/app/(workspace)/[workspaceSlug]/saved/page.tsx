@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 
@@ -92,7 +92,7 @@ export default function SavedMessagesPage() {
             <MessageSquare
               size={16}
               className="mt-0.5 shrink-0"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-[var(--center-channel-color)]">
@@ -100,13 +100,13 @@ export default function SavedMessagesPage() {
               </p>
               <p
                 className="mt-0.5 line-clamp-2 text-sm"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 {msg.content}
               </p>
               <p
                 className="mt-0.5 text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 {new Date(msg.created_at).toLocaleDateString()}
               </p>
@@ -114,7 +114,7 @@ export default function SavedMessagesPage() {
             <button
               onClick={() => unflag(msg.id)}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
               aria-label="Unsave message"
             >
               <Trash2 size={14} />

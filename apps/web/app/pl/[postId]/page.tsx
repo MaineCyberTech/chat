@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -32,7 +32,7 @@ export default function PermalinkPage() {
         <h1 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
           Message not found
         </h1>
-        <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+        <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
           {error}
         </p>
       </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { LiveKitRoom, VideoConference, ControlBar } from "@livekit/components-react";
@@ -50,7 +50,7 @@ export function MediaRoom({ roomName, onLeave }: Props) {
         <div
           className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
           style={{
-            borderColor: "rgba(var(--center-channel-color-rgb), 0.56)",
+            borderColor: "var(--text-tertiary)",
             borderTopColor: "transparent",
           }}
         />

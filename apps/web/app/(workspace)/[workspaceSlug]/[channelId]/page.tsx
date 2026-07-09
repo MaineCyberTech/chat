@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
@@ -77,7 +77,7 @@ export default function ChannelPageClient() {
     return (
       <div
         className="flex h-full items-center justify-center"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        style={{ color: "var(--text-tertiary)" }}
       >
         <p>Channel not found</p>
       </div>

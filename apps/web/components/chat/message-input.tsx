@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { Button, useToast } from "@chat/ui";
@@ -677,7 +677,7 @@ export function MessageInput({
                     <span className="text-base">{emoji.c}</span>
                     <span
                       className="text-xs"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       :{emoji.n}:
                     </span>
@@ -715,7 +715,7 @@ export function MessageInput({
                     </span>
                     <span
                       className="text-xs"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       {cmd.description}
                     </span>
@@ -755,7 +755,7 @@ export function MessageInput({
                     </span>
                     <span
                       className="text-xs"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       {member.email}
                     </span>
@@ -795,7 +795,7 @@ export function MessageInput({
                   color:
                     priority !== "standard"
                       ? PRIORITY_CONFIG[priority].color
-                      : "rgba(var(--center-channel-color-rgb), 0.56)",
+                      : "var(--text-tertiary)",
                 }}
                 aria-label="Set priority"
                 title="Set priority"
@@ -840,7 +840,7 @@ export function MessageInput({
                 onClick={() => setShowAiPicker(!showAiPicker)}
                 className="flex h-8 w-8 items-center justify-center rounded"
                 style={{
-                  color: "rgba(var(--center-channel-color-rgb), 0.56)",
+                  color: "var(--text-tertiary)",
                   background: showAiPicker ? "rgba(var(--button-bg-rgb), 0.12)" : "transparent",
                 }}
                 aria-label="AI rewrite"
@@ -866,7 +866,7 @@ export function MessageInput({
                 style={{
                   color: scheduledAt
                     ? "var(--button-bg)"
-                    : "rgba(var(--center-channel-color-rgb), 0.56)",
+                    : "var(--text-tertiary)",
                   background: showSchedulePicker
                     ? "rgba(var(--button-bg-rgb), 0.12)"
                     : "transparent",
@@ -900,7 +900,7 @@ export function MessageInput({
                     color:
                       content.length > 4000
                         ? "var(--dnd-indicator)"
-                        : "rgba(var(--center-channel-color-rgb), 0.56)",
+                        : "var(--text-tertiary)",
                   }}
                 >
                   {content.length}
@@ -953,7 +953,7 @@ export function MessageInput({
             </h2>
             <p
               className="mt-2 text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               Your message contains <strong>@everyone</strong> or <strong>@here</strong>, which will
               notify all members.
@@ -1002,7 +1002,7 @@ export function MessageInput({
             </h2>
             <p
               className="mt-2 text-center text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               {priority === "critical"
                 ? "This message will be marked as critical and recipients will be notified immediately."

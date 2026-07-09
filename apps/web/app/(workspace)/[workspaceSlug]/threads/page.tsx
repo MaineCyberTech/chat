@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -95,7 +95,7 @@ export default function ThreadsPage() {
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
         <p
           className="mb-3 text-sm"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           {error}
         </p>
@@ -141,12 +141,12 @@ export default function ThreadsPage() {
                 <MessageSquare
                   size={16}
                   className="mt-0.5 shrink-0"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 />
                 <div className="min-w-0 flex-1">
                   <div
                     className="flex items-center gap-2 text-xs"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     {ch ? (
                       <span style={{ color: "var(--button-bg)" }}># {ch.name}</span>

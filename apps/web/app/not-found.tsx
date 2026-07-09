@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Button } from "@chat/ui";
 
 export default function NotFound() {
@@ -12,7 +12,7 @@ export default function NotFound() {
       </h1>
       <p
         className="max-w-md text-sm"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+        style={{ color: "var(--text-secondary)" }}
       >
         The page you are looking for does not exist.
       </p>

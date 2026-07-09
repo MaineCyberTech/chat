@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { api } from "@/lib/api";
@@ -63,7 +63,7 @@ export function RemindModal({ messageId, onClose }: Props) {
           <button
             onClick={onClose}
             className="flex h-6 w-6 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
             aria-label="Close"
           >
             <X size={14} />
@@ -76,7 +76,7 @@ export function RemindModal({ messageId, onClose }: Props) {
               onClick={() => setReminder(p.ms)}
               className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-[var(--center-channel-color)] transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
             >
-              <Clock size={14} style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }} />
+              <Clock size={14} style={{ color: "var(--text-tertiary)" }} />
               {p.label}
             </button>
           ))}
@@ -87,7 +87,7 @@ export function RemindModal({ messageId, onClose }: Props) {
         >
           <p
             className="mb-1 text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
             Custom date/time
           </p>

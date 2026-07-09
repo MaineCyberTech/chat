@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
@@ -449,7 +449,7 @@ export function ChannelList({
                 className="ml-auto"
                 style={{ color: "rgba(var(--center-channel-color-rgb),0.4)" }}
               >
-                ▶
+                â–¶
               </span>
             </button>
           )}
@@ -499,7 +499,7 @@ export function ChannelList({
             className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
             style={{ color: "var(--center-channel-color)" }}
           >
-            ← Back
+            â† Back
           </button>
           <div
             className="my-1"
@@ -535,7 +535,7 @@ export function ChannelList({
             </h3>
             <p
               className="mt-1 text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               This will permanently delete the channel and all its messages.
             </p>
@@ -551,7 +551,7 @@ export function ChannelList({
                   setDeleteError("");
                 }}
                 className="rounded-md px-3 py-1.5 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Cancel
               </button>

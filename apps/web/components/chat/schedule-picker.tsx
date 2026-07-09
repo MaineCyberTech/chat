@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { Clock } from "lucide-react";
@@ -75,7 +75,7 @@ export function SchedulePicker({
     >
       <div
         className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wider uppercase"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        style={{ color: "var(--text-tertiary)" }}
       >
         <Clock size={14} /> Schedule message
       </div>

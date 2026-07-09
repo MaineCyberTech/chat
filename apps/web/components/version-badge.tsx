@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { APP_VERSION, GIT_SHA, BUILD_TIME } from "@/lib/version";
 
@@ -12,14 +12,14 @@ export function VersionBadge() {
       style={{
         borderColor: "rgba(var(--center-channel-color-rgb), 0.08)",
         backgroundColor: "rgba(var(--center-channel-color-rgb), 0.032)",
-        color: "rgba(var(--center-channel-color-rgb), 0.56)",
+        color: "var(--text-tertiary)",
       }}
     >
       <span className="opacity-60">v</span>
       <span>{APP_VERSION}</span>
-      <span className="opacity-40">·</span>
+      <span className="opacity-40">Â·</span>
       <span title={GIT_SHA}>{shortSha}</span>
-      <span className="opacity-40">·</span>
+      <span className="opacity-40">Â·</span>
       <span title={BUILD_TIME}>{buildDate}</span>
     </div>
   );

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { useAuth } from "./auth-context";
@@ -132,7 +132,7 @@ export function LoginForm() {
               ? { backgroundColor: "var(--button-bg)" }
               : {
                   backgroundColor: "var(--center-channel-bg)",
-                  color: "rgba(var(--center-channel-color-rgb), 0.72)",
+                  color: "var(--text-secondary)",
                 }
           }
         >
@@ -154,7 +154,7 @@ export function LoginForm() {
               ? { backgroundColor: "var(--button-bg)" }
               : {
                   backgroundColor: "var(--center-channel-bg)",
-                  color: "rgba(var(--center-channel-color-rgb), 0.72)",
+                  color: "var(--text-secondary)",
                 }
           }
         >
@@ -226,7 +226,7 @@ export function LoginForm() {
         <div className="relative flex justify-center text-xs">
           <span
             className="bg-[var(--center-channel-bg)] px-2"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
             {t("auth.orContinueWith", "or continue with")}
           </span>
@@ -279,9 +279,9 @@ export function LoginForm() {
         <div className="pt-2">
           <p
             className="mb-2 text-center text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
-            {t("auth.devNotice", "Local dev — no test accounts in production")}
+            {t("auth.devNotice", "Local dev â€” no test accounts in production")}
           </p>
         </div>
       )}

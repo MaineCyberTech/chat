@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
@@ -142,7 +142,7 @@ export function NotificationBell() {
           }
         }}
         className="relative flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg p-2 transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] focus-visible:ring-2 focus-visible:ring-[rgba(var(--button-bg-rgb),0.24)] focus-visible:outline-none"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        style={{ color: "var(--text-tertiary)" }}
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
         aria-expanded={open}
         aria-haspopup="menu"
@@ -214,14 +214,14 @@ export function NotificationBell() {
                   {n.body && (
                     <p
                       className="mt-0.5 text-xs"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                      style={{ color: "var(--text-secondary)" }}
                     >
                       {n.body}
                     </p>
                   )}
                   <p
                     className="mt-1 text-[10px]"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     {new Date(n.created_at).toLocaleDateString()}
                   </p>

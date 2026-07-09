@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { Component, type ReactNode } from "react";
 import * as Sentry from "@sentry/nextjs";
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </h2>
           <p
             className="max-w-md text-sm"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             An unexpected error occurred. Please try refreshing the page.
           </p>

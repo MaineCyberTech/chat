@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 import { Button } from "@chat/ui";
@@ -22,7 +22,7 @@ export default function ChannelError({
       </h1>
       <p
         className="max-w-md text-sm"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+        style={{ color: "var(--text-secondary)" }}
       >
         An unexpected error occurred while loading this channel. Please try again.
       </p>

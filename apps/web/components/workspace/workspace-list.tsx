@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -79,7 +79,7 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
               >
                 <Trash2
                   size={12}
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 />
               </button>
             </div>
@@ -99,7 +99,7 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
             </h3>
             <p
               className="mt-1 text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               This will permanently delete the workspace and all its channels and messages. This
               cannot be undone.
@@ -116,7 +116,7 @@ export function WorkspaceList({ activeSlug }: { activeSlug?: string }) {
                   setDeleteError("");
                 }}
                 className="rounded-md px-3 py-1.5 text-xs font-medium hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Cancel
               </button>

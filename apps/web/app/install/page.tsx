@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { useInstallPrompt } from "@/lib/pwa/install-state";
@@ -19,14 +19,14 @@ export default function InstallPage() {
             className="flex h-16 w-16 items-center justify-center rounded-full text-2xl"
             style={{ backgroundColor: "rgba(var(--online-indicator-rgb,6,214,160),0.12)" }}
           >
-            ✓
+            âœ“
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-[var(--center-channel-color)]">
             Already Installed
           </h1>
           <p
             className="max-w-md text-base"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             MaineCyberTech Chat is already installed on your device. You can open it from your home
             screen or app launcher.
@@ -45,7 +45,7 @@ export default function InstallPage() {
         <h1 className="text-3xl font-bold tracking-tight text-[var(--center-channel-color)]">
           Install MaineCyberTech Chat
         </h1>
-        <p className="text-base" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+        <p className="text-base" style={{ color: "var(--text-secondary)" }}>
           Get the full app experience: offline access, push notifications, and a home screen icon.
         </p>
       </div>
@@ -69,7 +69,7 @@ export default function InstallPage() {
                 </span>
                 <p
                   className="pt-0.5"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   {step}
                 </p>
@@ -87,7 +87,7 @@ export default function InstallPage() {
             <div className="text-center">
               <p
                 className="text-sm"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 Your browser doesn&apos;t support automatic installation prompts. Follow the manual
                 steps above for your platform ({platform}).
@@ -101,10 +101,10 @@ export default function InstallPage() {
           >
             <p
               className="text-center text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               <Link href="/" className="underline hover:text-[var(--center-channel-color)]">
-                ← Back to MaineCyberTech Chat
+                â† Back to MaineCyberTech Chat
               </Link>
             </p>
           </div>

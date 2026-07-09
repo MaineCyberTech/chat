@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { Avatar, Button, useToast } from "@chat/ui";
@@ -253,7 +253,7 @@ export function ThreadPanel({
           {participants.length > 0 && (
             <span
               className="text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               {participants.length} participant{participants.length !== 1 ? "s" : ""}
             </span>
@@ -291,7 +291,7 @@ export function ThreadPanel({
                 {authorName(parentMessage.user_id, profiles)}
                 <span
                   className="ml-2"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   {formatTime(parentMessage.created_at)}
                 </span>
@@ -305,7 +305,7 @@ export function ThreadPanel({
               {parentMessage.edited_at && (
                 <p
                   className="mt-0.5 text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   (edited)
                 </p>
@@ -319,7 +319,7 @@ export function ThreadPanel({
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="mb-2 flex items-center gap-1 px-4 py-1 text-xs font-medium"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
             {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
             {replies.length} {replies.length === 1 ? "reply" : "replies"}
@@ -351,7 +351,7 @@ export function ThreadPanel({
             ) : replies.length === 0 ? (
               <p
                 className="px-4 text-center text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 No replies yet
               </p>
@@ -380,7 +380,7 @@ export function ThreadPanel({
                             {name}
                             <span
                               className="ml-2"
-                              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                              style={{ color: "var(--text-tertiary)" }}
                             >
                               {formatTime(reply.created_at)}
                             </span>
@@ -417,7 +417,7 @@ export function ThreadPanel({
                                 <button
                                   onClick={() => setEditingId(null)}
                                   className="text-xs"
-                                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                                  style={{ color: "var(--text-tertiary)" }}
                                 >
                                   Cancel
                                 </button>
@@ -436,7 +436,7 @@ export function ThreadPanel({
                           {reply.edited_at && (
                             <p
                               className="mt-0.5 text-xs"
-                              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                              style={{ color: "var(--text-tertiary)" }}
                             >
                               (edited)
                             </p>
@@ -467,7 +467,7 @@ export function ThreadPanel({
                                     <span>{emoji}</span>
                                     <span
                                       style={{
-                                        color: "rgba(var(--center-channel-color-rgb), 0.56)",
+                                        color: "var(--text-tertiary)",
                                       }}
                                     >
                                       {reactors.length}
@@ -485,7 +485,7 @@ export function ThreadPanel({
                                 >
                                   <Smile
                                     size={12}
-                                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                                    style={{ color: "var(--text-tertiary)" }}
                                   />
                                 </button>
                                 {pickerMessageId === reply.id && (
@@ -508,7 +508,7 @@ export function ThreadPanel({
                                   setEditContent(reply.content);
                                 }}
                                 className="text-xs"
-                                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                                style={{ color: "var(--text-tertiary)" }}
                                 aria-label="Edit reply"
                               >
                                 Edit
@@ -549,7 +549,7 @@ export function ThreadPanel({
               </h3>
               <p
                 className="mt-1 text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 This cannot be undone.
               </p>
@@ -565,7 +565,7 @@ export function ThreadPanel({
                     setDeleteError("");
                   }}
                   className="rounded-md px-3 py-1.5 text-xs font-medium"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   Cancel
                 </button>

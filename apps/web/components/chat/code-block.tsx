@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useMemo } from "react";
 import hljs from "highlight.js";
@@ -43,7 +43,7 @@ export function CodeBlock({ code, language }: Props) {
       >
         <span
           className="text-xs font-medium"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          style={{ color: "var(--text-tertiary)" }}
         >
           {detectedLang}
         </span>
@@ -53,7 +53,7 @@ export function CodeBlock({ code, language }: Props) {
           style={{
             color: btnHovered
               ? "var(--center-channel-color)"
-              : "rgba(var(--center-channel-color-rgb), 0.56)",
+              : "var(--text-tertiary)",
           }}
           onMouseEnter={() => setBtnHovered(true)}
           onMouseLeave={() => setBtnHovered(false)}

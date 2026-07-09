@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
@@ -617,7 +617,7 @@ export function AppSidebar({
                               background:
                                 w.slug === workspaceSlug
                                   ? "var(--button-bg)"
-                                  : "rgba(var(--center-channel-color-rgb), 0.56)",
+                                  : "var(--text-tertiary)",
                             }}
                           >
                             {w.name.charAt(0).toUpperCase()}
@@ -625,7 +625,7 @@ export function AppSidebar({
                           <span className="truncate">{w.name}</span>
                           {w.slug === workspaceSlug && (
                             <span className="ml-auto text-xs" style={{ color: "var(--button-bg)" }}>
-                              ✓
+                              âœ“
                             </span>
                           )}
                         </Link>

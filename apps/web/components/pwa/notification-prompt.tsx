@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { pushClient } from "@/lib/pwa/push-client";
@@ -92,10 +92,10 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
 
         {isSupported && !isDenied && !isSubscribed && (
           <div className="space-y-3">
-            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
               Get notified about new replies and mentions even when the app is closed.
             </p>
-            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+            <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
               You can change this later in settings.
             </p>
             {error && (
@@ -123,7 +123,7 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
                 </p>
                 <p
                   className="text-sm"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   You'll receive push notifications for replies and mentions.
                 </p>
@@ -155,7 +155,7 @@ export function NotificationPrompt({ isOpen, onClose }: NotificationPromptProps)
             <p className="text-sm" style={{ color: "var(--dnd-indicator)" }}>
               Notifications are blocked in your browser settings.
             </p>
-            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+            <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
               Please enable notifications for this site in your browser settings, then try again.
             </p>
             <Button variant="secondary" className="w-full" onClick={onClose}>

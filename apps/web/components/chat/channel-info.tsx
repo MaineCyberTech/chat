@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
@@ -75,7 +75,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
             color:
               tab === "members"
                 ? "var(--button-bg)"
-                : "rgba(var(--center-channel-color-rgb), 0.56)",
+                : "var(--text-tertiary)",
             borderColor: tab === "members" ? "var(--button-bg)" : "transparent",
           }}
         >
@@ -86,7 +86,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
           className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${tab === "pins" ? "border-b-2" : ""}`}
           style={{
             color:
-              tab === "pins" ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.56)",
+              tab === "pins" ? "var(--button-bg)" : "var(--text-tertiary)",
             borderColor: tab === "pins" ? "var(--button-bg)" : "transparent",
           }}
         >
@@ -99,7 +99,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
             color:
               tab === "bookmarks"
                 ? "var(--button-bg)"
-                : "rgba(var(--center-channel-color-rgb), 0.56)",
+                : "var(--text-tertiary)",
             borderColor: tab === "bookmarks" ? "var(--button-bg)" : "transparent",
           }}
         >
@@ -165,7 +165,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
                 </p>
                 <p
                   className="mt-0.5 text-[10px]"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   {new Date(msg.created_at).toLocaleDateString()}
                 </p>

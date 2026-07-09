@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -154,7 +154,7 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
           <Search
             size={16}
             className="shrink-0"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           />
           <input
             ref={inputRef}
@@ -170,7 +170,7 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
           <button
             onClick={onClose}
             className="flex h-6 w-6 items-center justify-center rounded"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
             aria-label="Close"
           >
             <X size={14} />
@@ -184,7 +184,7 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
             <>
               <p
                 className="px-3 py-1 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 Channels
               </p>
@@ -210,13 +210,13 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
                   <Hash
                     size={14}
                     className="shrink-0"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   />
                   <span className="min-w-0 truncate font-medium">{ch.name}</span>
                   {ch.topic && (
                     <span
                       className="ml-auto truncate text-xs"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       {ch.topic}
                     </span>
@@ -229,7 +229,7 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
             <>
               <p
                 className="px-3 py-1 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 Users
               </p>
@@ -257,7 +257,7 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
                     <User
                       size={14}
                       className="shrink-0"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      style={{ color: "var(--text-tertiary)" }}
                     />
                     <span className="min-w-0 truncate font-medium">{u.display_name}</span>
                   </button>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -41,7 +41,7 @@ export function AppHeader() {
         <ThemeToggle />
         <NotificationBell />
         <AvatarUpload />
-        <span className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+        <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
           {user.email}
         </span>
         <Button variant="ghost" size="sm" onClick={showInstallPrompt} aria-label="Install app">

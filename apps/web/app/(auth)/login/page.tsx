@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -42,7 +42,7 @@ export default function LoginPage() {
               borderTopColor: "var(--button-bg)",
             }}
           />
-          <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
             <span
               className="inline-block h-4 w-4 animate-spin rounded-full border-2"
               style={{
@@ -60,10 +60,10 @@ export default function LoginPage() {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
         <div className="flex flex-col items-center gap-3 text-center">
-          <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+          <p style={{ color: "var(--text-secondary)" }}>
             Unable to load your workspaces.
           </p>
-          <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+          <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
             Please try refreshing the page.
           </p>
         </div>
@@ -75,7 +75,7 @@ export default function LoginPage() {
     return (
       <main className="flex min-h-screen items-center justify-center p-8">
         <div className="flex flex-col items-center gap-3">
-          <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+          <p style={{ color: "var(--text-secondary)" }}>
             Redirecting to your workspace...
           </p>
           <div
@@ -96,7 +96,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-3xl font-bold">Sign In</h1>
-        <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+        <p style={{ color: "var(--text-secondary)" }}>
           Sign in with email and password, or use a magic link.
         </p>
       </div>

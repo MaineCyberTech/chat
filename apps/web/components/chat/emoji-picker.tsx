@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
@@ -235,7 +235,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
           }}
           title="Default"
         >
-          👋
+          ðŸ‘‹
         </button>
         {SKIN_TONES.map((t, i) => (
           <button
@@ -273,7 +273,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
           title="All"
           aria-label="All"
         >
-          🗂️
+          ðŸ—‚ï¸
         </button>
         {EMOJI_CATEGORIES.map((cat) => (
           <button
@@ -301,7 +301,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
           <div className="mb-1">
             <p
               className="px-2 text-xs font-medium"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               Recent
             </p>
@@ -352,7 +352,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
           className="flex items-center gap-2 px-3 py-1.5 text-xs"
           style={{
             borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.08)",
-            color: "rgba(var(--center-channel-color-rgb), 0.72)",
+            color: "var(--text-secondary)",
             minHeight: 36,
           }}
         >

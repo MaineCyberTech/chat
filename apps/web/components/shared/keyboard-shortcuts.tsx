@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import { EmptyState } from "@chat/ui";
@@ -189,7 +189,7 @@ export function KeyboardShortcuts() {
             <div key={cat.name}>
               <h3
                 className="mb-1 text-xs font-semibold tracking-wide uppercase"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 {cat.name}
               </h3>

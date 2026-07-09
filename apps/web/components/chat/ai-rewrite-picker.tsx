@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { Sparkles } from "lucide-react";
@@ -31,7 +31,7 @@ export function AiRewritePicker({ show, rewriting, onRewrite, onClose: _onClose 
     >
       <div
         className="mb-1 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+        style={{ color: "var(--text-tertiary)" }}
       >
         Rewrite with AI
       </div>
@@ -43,7 +43,7 @@ export function AiRewritePicker({ show, rewriting, onRewrite, onClose: _onClose 
           className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs transition-colors hover:bg-[rgba(0,0,0,0.04)] disabled:opacity-50"
           style={{ color: "var(--center-channel-color)" }}
         >
-          <Sparkles size={14} style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }} />
+          <Sparkles size={14} style={{ color: "var(--text-tertiary)" }} />
           {action.label}
         </button>
       ))}

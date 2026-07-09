@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { api } from "@/lib/api";
@@ -25,10 +25,10 @@ interface Props {
   onStatusChange: (status: StatusData | null) => void;
 }
 
-const PRESET_EMOJIS = ["💼", "🏖️", "🚴", "🍕", "📞", "🎧", "✈️", "🏠", "💊", "🎉"];
+const PRESET_EMOJIS = ["ðŸ’¼", "ðŸ–ï¸", "ðŸš´", "ðŸ•", "ðŸ“ž", "ðŸŽ§", "âœˆï¸", "ðŸ ", "ðŸ’Š", "ðŸŽ‰"];
 
 export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
-  const [emoji, setEmoji] = useState(currentStatus?.emoji ?? "💬");
+  const [emoji, setEmoji] = useState(currentStatus?.emoji ?? "ðŸ’¬");
   const [text, setText] = useState(currentStatus?.text ?? "");
   const [duration, setDuration] = useState<string>("1h");
   const [saving, setSaving] = useState(false);
@@ -81,7 +81,7 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
             aria-label="Close"
           >
             <X size={16} />
@@ -128,7 +128,7 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
         <div className="mb-3">
           <p
             className="mb-1 text-xs font-medium"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
             Clear after
           </p>
@@ -164,7 +164,7 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
             className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
             style={{
               borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-              color: "rgba(var(--center-channel-color-rgb), 0.72)",
+              color: "var(--text-secondary)",
             }}
           >
             Cancel

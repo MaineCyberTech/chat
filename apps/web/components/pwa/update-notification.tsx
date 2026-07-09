@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { useServiceWorker } from "@/lib/pwa/install-state";
@@ -28,7 +28,7 @@ export function UpdateNotification() {
           </p>
           <p
             className="mt-0.5 text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             A new version of the app is ready. Refresh to update.
           </p>

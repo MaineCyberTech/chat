@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
@@ -290,7 +290,7 @@ export default function SettingsPage() {
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
         <p
           className="mb-3 text-sm"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           {error}
         </p>
@@ -324,7 +324,7 @@ export default function SettingsPage() {
           <div>
             <label
               className="mb-2 block text-sm font-medium"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               Theme
             </label>
@@ -345,7 +345,7 @@ export default function SettingsPage() {
           <div>
             <label
               className="mb-2 block text-sm font-medium"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               Clock format
             </label>
@@ -369,7 +369,7 @@ export default function SettingsPage() {
           <div>
             <label
               className="mb-2 block text-sm font-medium"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               Message display
             </label>
@@ -454,7 +454,7 @@ export default function SettingsPage() {
           <div>
             <label
               className="mb-2 block text-sm font-medium"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               Notification sound
             </label>
@@ -483,7 +483,7 @@ export default function SettingsPage() {
           <div>
             <label
               className="mb-2 block text-sm font-medium"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               Email notifications
             </label>
@@ -506,13 +506,13 @@ export default function SettingsPage() {
           <div>
             <label
               className="mb-2 block text-sm font-medium"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               Trigger words
             </label>
             <p
               className="mb-2 text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               Get notified when these words are mentioned in any channel
             </p>
@@ -546,7 +546,7 @@ export default function SettingsPage() {
             {triggerLoading ? (
               <p
                 className="text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 Loading...
               </p>
@@ -582,7 +582,7 @@ export default function SettingsPage() {
       <SidebarGroup title="Auto-Responder" defaultOpen={false}>
         <p
           className="mb-2 text-xs"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          style={{ color: "var(--text-tertiary)" }}
         >
           Auto-reply to direct messages when you&apos;re away or busy.
         </p>
@@ -599,7 +599,7 @@ export default function SettingsPage() {
               <div>
                 <label
                   className="mb-1 block text-xs font-medium"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   Auto-reply message
                 </label>
@@ -651,7 +651,7 @@ export default function SettingsPage() {
       <SidebarGroup title="Per-Channel Notifications" defaultOpen={false}>
         <p
           className="mb-2 text-xs"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          style={{ color: "var(--text-tertiary)" }}
         >
           Configure notification preferences for individual channels.
         </p>
@@ -680,7 +680,7 @@ export default function SettingsPage() {
                   style={{
                     color: notify
                       ? "var(--button-bg)"
-                      : "rgba(var(--center-channel-color-rgb), 0.56)",
+                      : "var(--text-tertiary)",
                   }}
                   aria-label={notify ? `Mute ${ch.name}` : `Unmute ${ch.name}`}
                 >
@@ -695,7 +695,7 @@ export default function SettingsPage() {
       <SidebarGroup title="Danger Zone" defaultOpen={false}>
         <p
           className="mb-2 text-xs"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          style={{ color: "var(--text-tertiary)" }}
         >
           Destructive actions that cannot be undone.
         </p>
@@ -709,7 +709,7 @@ export default function SettingsPage() {
             </p>
             <p
               className="mt-1 text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               Restore all settings to their default values.
             </p>
@@ -732,7 +732,7 @@ export default function SettingsPage() {
             </p>
             <p
               className="mt-1 text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               Permanently delete your account and all associated data.
             </p>
@@ -770,7 +770,7 @@ export default function SettingsPage() {
             </h3>
             <p
               className="mt-2 text-center text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               All your settings will be restored to their default values. This cannot be undone.
             </p>
@@ -778,7 +778,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => setResetConfirmOpen(false)}
                 className="rounded-md px-3 py-1.5 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Cancel
               </button>
@@ -816,7 +816,7 @@ export default function SettingsPage() {
             </h3>
             <p
               className="mt-2 text-center text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               This will permanently delete your account and all associated data, including messages,
               channels, and workspaces. This cannot be undone.
@@ -825,7 +825,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => setDeleteConfirmOpen(false)}
                 className="rounded-md px-3 py-1.5 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Cancel
               </button>
@@ -864,7 +864,7 @@ function ToggleRow({
         <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
           {label}
         </p>
-        <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+        <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
           {description}
         </p>
       </div>

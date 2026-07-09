@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { EmptyState } from "@chat/ui";
@@ -61,7 +61,7 @@ export function UserPickerModal({
           <button
             onClick={onCancel}
             className="flex h-7 w-7 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
             aria-label="Close"
           >
             <X size={14} />
@@ -71,7 +71,7 @@ export function UserPickerModal({
         {description && (
           <p
             className="px-4 pt-2 text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             {description}
           </p>
@@ -114,7 +114,7 @@ export function UserPickerModal({
           <Search
             size={14}
             className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           />
           <input
             type="text"
@@ -175,7 +175,7 @@ export function UserPickerModal({
                   <UserPlus
                     size={14}
                     className="shrink-0"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   />
                 )}
               </button>
@@ -189,7 +189,7 @@ export function UserPickerModal({
         >
           <div
             className="mb-2 text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
             {selectedIds.size > 0
               ? `${selectedIds.size} user${selectedIds.size > 1 ? "s" : ""} selected`
@@ -203,7 +203,7 @@ export function UserPickerModal({
               submitDisabled
                 ? {
                     backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)",
-                    color: "rgba(var(--center-channel-color-rgb), 0.56)",
+                    color: "var(--text-tertiary)",
                   }
                 : { backgroundColor: "var(--button-bg)" }
             }

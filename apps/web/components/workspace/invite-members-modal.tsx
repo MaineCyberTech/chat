@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
@@ -113,7 +113,7 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
           <button
             onClick={onClose}
             className="flex h-7 w-7 items-center justify-center rounded hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
             aria-label="Close"
           >
             <X size={14} />
@@ -126,7 +126,7 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
           <Search
             size={14}
             className="absolute top-1/2 left-5 -translate-y-1/2"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           />
           <input
             type="text"
@@ -175,7 +175,7 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
                   </p>
                   <p
                     className="truncate text-xs"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     {m.email}
                   </p>
@@ -186,7 +186,7 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
                   <Plus
                     size={14}
                     className="shrink-0"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   />
                 )}
               </button>
@@ -207,7 +207,7 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
               selected.size === 0 || sending
                 ? {
                     backgroundColor: "rgba(var(--center-channel-color-rgb), 0.08)",
-                    color: "rgba(var(--center-channel-color-rgb), 0.56)",
+                    color: "var(--text-tertiary)",
                   }
                 : { backgroundColor: "var(--button-bg)" }
             }

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useRef } from "react";
 import { Reply, Pencil, X, Smile, Bookmark, AlertCircle, AlertTriangle } from "lucide-react";
@@ -132,7 +132,7 @@ export const MessageItem = React.memo(function MessageItem({
       <div className="mm-post text-center" style={{ paddingTop: 4, paddingBottom: 4 }}>
         <span
           className="text-xs italic"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          style={{ color: "var(--text-tertiary)" }}
         >
           {msg.content}
         </span>
@@ -156,7 +156,7 @@ export const MessageItem = React.memo(function MessageItem({
             className="rounded px-2 py-0.5 text-xs font-semibold"
             style={{
               background: "rgba(var(--center-channel-color-rgb), 0.08)",
-              color: "rgba(var(--center-channel-color-rgb), 0.72)",
+              color: "var(--text-secondary)",
             }}
           >
             {formatDate(msg.created_at)}
@@ -206,7 +206,7 @@ export const MessageItem = React.memo(function MessageItem({
               <span
                 style={{
                   fontSize: 11,
-                  color: "rgba(var(--center-channel-color-rgb), 0.56)",
+                  color: "var(--text-tertiary)",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -226,7 +226,7 @@ export const MessageItem = React.memo(function MessageItem({
                   {name}
                 </span>
                 <span
-                  style={{ fontSize: 11, color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ fontSize: 11, color: "var(--text-tertiary)" }}
                 >
                   {formatTime(msg.created_at)}
                 </span>
@@ -266,7 +266,7 @@ export const MessageItem = React.memo(function MessageItem({
                   <button
                     onClick={onCancelEdit}
                     className="text-xs"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     Cancel
                   </button>
@@ -288,7 +288,7 @@ export const MessageItem = React.memo(function MessageItem({
                   {msg.parent_id && (
                     <p
                       className="mb-0.5 text-xs italic"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       <Reply size={10} className="mr-0.5 inline" /> Reply
                     </p>
@@ -382,7 +382,7 @@ export const MessageItem = React.memo(function MessageItem({
                   {sendingIds?.has(msg.id) && !isFailed && (
                     <p
                       className="mt-0.5 text-xs italic"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       sending...
                     </p>
@@ -424,7 +424,7 @@ export const MessageItem = React.memo(function MessageItem({
                   )}
                 </div>
 
-                {/* Post menu — floating action bar */}
+                {/* Post menu â€” floating action bar */}
                 <div className="post-menu">
                   {onReply && (
                     <button
@@ -499,7 +499,7 @@ export const MessageItem = React.memo(function MessageItem({
                     }}
                   >
                     <span>{emoji}</span>
-                    <span style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+                    <span style={{ color: "var(--text-secondary)" }}>
                       {count}
                     </span>
                   </button>

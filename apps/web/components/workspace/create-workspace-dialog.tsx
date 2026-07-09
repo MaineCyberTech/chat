@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -65,7 +65,7 @@ export function CreateWorkspaceDialog({ onCreated, children }: Props) {
           style={{
             color: triggerHovered
               ? "var(--center-channel-color)"
-              : "rgba(var(--center-channel-color-rgb), 0.56)",
+              : "var(--text-tertiary)",
             backgroundColor: triggerHovered
               ? "rgba(var(--center-channel-color-rgb), 0.08)"
               : undefined,

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { getSocket, onReconnect, offReconnect } from "@/lib/socket";
@@ -616,7 +616,7 @@ export function ChatView({
               </svg>
             </div>
             <h2 className="text-lg font-medium">Failed to load messages</h2>
-            <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{error}</p>
+            <p style={{ color: "var(--text-secondary)" }}>{error}</p>
             <button
               onClick={() => {
                 setError(null);
@@ -690,7 +690,7 @@ export function ChatView({
             {channelTopic && (
               <p
                 className="truncate text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 {channelTopic}
               </p>
@@ -797,7 +797,7 @@ export function ChatView({
           >
             <span
               className="min-w-0 truncate"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               Replying to{" "}
               {profiles.get(replyTo.user_id)?.display_name ?? replyTo.user_id.slice(0, 8)}

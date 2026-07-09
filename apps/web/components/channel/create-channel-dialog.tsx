@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { api } from "@/lib/api";
@@ -78,7 +78,7 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
         style={{
           color: triggerHovered
             ? "var(--center-channel-color)"
-            : "rgba(var(--center-channel-color-rgb), 0.56)",
+            : "var(--text-tertiary)",
           backgroundColor: triggerHovered
             ? "rgba(var(--center-channel-color-rgb), 0.08)"
             : undefined,
@@ -106,7 +106,7 @@ export function CreateChannelDialog({ workspaceId, onCreated }: Props) {
           />
           <label
             className="flex items-center gap-2 text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             <input
               type="checkbox"

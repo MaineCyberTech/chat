@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { X, Check, Sparkles } from "lucide-react";
@@ -172,7 +172,7 @@ export function OnboardingTour() {
           </div>
           <span
             className="text-xs font-medium"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             {completedCount}/{totalTasks}
           </span>
@@ -188,7 +188,7 @@ export function OnboardingTour() {
             <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
               All set!
             </p>
-            <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+            <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
               You&apos;ve completed all onboarding tasks.
             </p>
             <button
@@ -228,7 +228,7 @@ export function OnboardingTour() {
                     </p>
                     <p
                       className="mt-0.5 text-[11px]"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       {task.description}
                     </p>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -257,7 +257,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               className="flex shrink-0 items-center gap-1 rounded-l-lg px-2 py-1.5 text-xs font-medium"
               style={{
                 background: "rgba(var(--center-channel-color-rgb), 0.08)",
-                color: "rgba(var(--center-channel-color-rgb), 0.72)",
+                color: "var(--text-secondary)",
                 borderRight: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
               }}
               aria-label="Search type"
@@ -322,7 +322,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   : "rgba(var(--center-channel-color-rgb), 0.08)",
                 color: showOperatorHint
                   ? "var(--button-color)"
-                  : "rgba(var(--center-channel-color-rgb), 0.72)",
+                  : "var(--text-secondary)",
                 borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
                 borderBottom: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
               }}
@@ -341,7 +341,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   : "rgba(var(--center-channel-color-rgb), 0.08)",
                 color: showFilters
                   ? "var(--button-color)"
-                  : "rgba(var(--center-channel-color-rgb), 0.72)",
+                  : "var(--text-secondary)",
               }}
               aria-label="Toggle search filters"
               aria-pressed={showFilters}
@@ -403,7 +403,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             >
               <p
                 className="mb-1 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 File type suggestions
               </p>
@@ -441,7 +441,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                       >
                         {ext}
                       </code>
-                      <span style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                      <span style={{ color: "var(--text-tertiary)" }}>
                         {desc}
                       </span>
                     </button>
@@ -461,7 +461,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             >
               <p
                 className="mb-1 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 File extension suggestions
               </p>
@@ -557,7 +557,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             >
               <p
                 className="mb-1 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 Search operators
               </p>
@@ -587,7 +587,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                     >
                       {op}
                     </code>
-                    <span style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                    <span style={{ color: "var(--text-tertiary)" }}>
                       {desc}
                     </span>
                   </button>
@@ -602,7 +602,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           <div className="min-w-[120px] flex-1">
             <label
               className="mb-0.5 block text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               From
             </label>
@@ -621,7 +621,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           <div className="min-w-[120px] flex-1">
             <label
               className="mb-0.5 block text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               To
             </label>
@@ -640,7 +640,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           <div className="min-w-[120px] flex-1">
             <label
               className="mb-0.5 block text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               Author ID
             </label>
@@ -672,7 +672,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             <div className="mb-1">
               <p
                 className="mb-0.5 px-2 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 Users
               </p>
@@ -695,7 +695,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             <div>
               <p
                 className="mb-0.5 px-2 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 Channels
               </p>
@@ -746,7 +746,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 color:
                   searchType === "messages"
                     ? "var(--button-bg)"
-                    : "rgba(var(--center-channel-color-rgb), 0.56)",
+                    : "var(--text-tertiary)",
                 borderBottom:
                   searchType === "messages"
                     ? "2px solid var(--button-bg)"
@@ -768,7 +768,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 color:
                   searchType === "files"
                     ? "var(--button-bg)"
-                    : "rgba(var(--center-channel-color-rgb), 0.56)",
+                    : "var(--text-tertiary)",
                 borderBottom:
                   searchType === "files" ? "2px solid var(--button-bg)" : "2px solid transparent",
               }}
@@ -816,7 +816,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 </p>
                 <p
                   className="mt-0.5 text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   {new Date(r.created_at).toLocaleDateString()}
                 </p>
@@ -828,7 +828,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               onClick={() => search(query, true)}
               disabled={loadingMore}
               className="flex w-full items-center justify-center gap-1 px-4 py-2 text-xs font-medium hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
               aria-label="Load more search results"
             >
               <ChevronDown size={14} />

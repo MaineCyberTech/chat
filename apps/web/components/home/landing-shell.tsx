@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -21,7 +21,7 @@ export function LandingShell({ onGetStarted, onLearnMore }: Props) {
         </h1>
         <p
           className="max-w-md text-base md:text-lg"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           Real-time workspace communication, inspired by the best.
         </p>

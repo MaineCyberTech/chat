@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
@@ -428,7 +428,7 @@ export default function AdminPage() {
         <div className="flex flex-col items-center justify-center py-12">
           <p
             className="mb-3 text-sm"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            style={{ color: "var(--text-secondary)" }}
           >
             {error}
           </p>
@@ -520,7 +520,7 @@ export default function AdminPage() {
             </div>
             <div
               className="text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               {card.label}
             </div>
@@ -538,7 +538,7 @@ export default function AdminPage() {
             <Search
               size={14}
               className="absolute top-1/2 left-3 -translate-y-1/2"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             />
             <input
               value={userSearch}
@@ -589,7 +589,7 @@ export default function AdminPage() {
                 </div>
                 <div
                   className="text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   {u.email} &middot; Joined {new Date(u.created_at).toLocaleDateString()}
                 </div>
@@ -615,7 +615,7 @@ export default function AdminPage() {
         {userTotal > 20 && (
           <div
             className="mt-4 flex items-center justify-center gap-2 text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
             <button
               disabled={userPage === 0}
@@ -655,7 +655,7 @@ export default function AdminPage() {
             <Hash
               size={16}
               className="shrink-0"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             />
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
@@ -663,7 +663,7 @@ export default function AdminPage() {
               </div>
               <div
                 className="text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 {ch.workspaces?.name} &middot; Created{" "}
                 {new Date(ch.created_at).toLocaleDateString()}
@@ -685,7 +685,7 @@ export default function AdminPage() {
         {channelTotal > 20 && (
           <div
             className="mt-4 flex items-center justify-center gap-2 text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
             <button disabled={channelPage === 0} onClick={() => setChannelPage((p) => p - 1)}>
               Previous
@@ -729,7 +729,7 @@ export default function AdminPage() {
               </div>
               <div
                 className="text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 /{ws.slug} &middot; {ws.workspace_members?.[0]?.count ?? 0} members
               </div>
@@ -758,7 +758,7 @@ export default function AdminPage() {
             <Webhook
               size={16}
               className="shrink-0"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             />
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
@@ -766,7 +766,7 @@ export default function AdminPage() {
               </div>
               <div
                 className="truncate text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 {i.url} &middot; {i.workspaces?.name}
               </div>
@@ -788,7 +788,7 @@ export default function AdminPage() {
             <div className="flex items-center gap-2">
               <span
                 className="text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 Format:
               </span>
@@ -845,7 +845,7 @@ export default function AdminPage() {
                   <div className="text-sm font-medium">{item.label}</div>
                   <div
                     className="text-xs"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     Download as {exportFormat.toUpperCase()}
                   </div>
@@ -853,7 +853,7 @@ export default function AdminPage() {
                 <Download
                   size={16}
                   className="shrink-0"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 />
               </button>
             ))}
@@ -947,7 +947,7 @@ export default function AdminPage() {
               >
                 <p
                   className="mb-1 text-xs font-medium"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   Preview (first {csvPreview.length} rows):
                 </p>
@@ -1000,7 +1000,7 @@ export default function AdminPage() {
                         <li
                           key={i}
                           className="text-xs"
-                          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                          style={{ color: "var(--text-secondary)" }}
                         >
                           {err}
                         </li>
@@ -1062,7 +1062,7 @@ export default function AdminPage() {
                 </span>
                 <span
                   className="font-mono text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   {rl.limit} {rl.unit}
                 </span>
@@ -1116,7 +1116,7 @@ export default function AdminPage() {
               <div key={item.label}>
                 <div
                   className="text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   {item.label}
                 </div>
@@ -1141,7 +1141,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-2">
             <label
               className="text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               Action:
             </label>
@@ -1161,7 +1161,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-2">
             <label
               className="text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               From:
             </label>
@@ -1180,7 +1180,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-2">
             <label
               className="text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               To:
             </label>
@@ -1225,7 +1225,7 @@ export default function AdminPage() {
                     className="rounded px-1.5 py-0.5 text-[10px] font-medium"
                     style={{
                       background: "rgba(var(--center-channel-color-rgb), 0.08)",
-                      color: "rgba(var(--center-channel-color-rgb), 0.56)",
+                      color: "var(--text-tertiary)",
                     }}
                   >
                     {log.entity_type}
@@ -1233,7 +1233,7 @@ export default function AdminPage() {
                 </div>
                 <div
                   className="mt-0.5 text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   {log.auth_users?.email ?? log.actor_user_id ?? "system"}
                   {log.entity_id ? ` \u00b7 ${log.entity_id}` : ""}
@@ -1257,7 +1257,7 @@ export default function AdminPage() {
         {auditTotal > 50 && (
           <div
             className="mt-4 flex items-center justify-center gap-2 text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
             <button
               disabled={auditPage === 0}
@@ -1306,7 +1306,7 @@ export default function AdminPage() {
                 </span>
                 <span
                   className="font-mono text-sm"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   {formatUptime(health.uptime)}
                 </span>
@@ -1321,7 +1321,7 @@ export default function AdminPage() {
                     {key === "database" ? (
                       <Database
                         size={14}
-                        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                        style={{ color: "var(--text-tertiary)" }}
                       />
                     ) : null}
                     <span
@@ -1356,7 +1356,7 @@ export default function AdminPage() {
                 <div className="mt-2">
                   <div
                     className="mb-2 text-xs font-medium"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     Queue Counts
                   </div>
@@ -1369,7 +1369,7 @@ export default function AdminPage() {
                       >
                         <div
                           className="text-xs"
-                          style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                          style={{ color: "var(--text-tertiary)" }}
                         >
                           {name}
                         </div>
@@ -1386,7 +1386,7 @@ export default function AdminPage() {
               )}
             </div>
           ) : (
-            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+            <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
               Could not fetch health data.
             </p>
           )}
@@ -1415,7 +1415,7 @@ export default function AdminPage() {
                 <div key={item.label}>
                   <div
                     className="text-xs"
-                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     {item.label}
                   </div>
@@ -1429,7 +1429,7 @@ export default function AdminPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+            <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
               Could not fetch system info.
             </p>
           )}
@@ -1458,7 +1458,7 @@ export default function AdminPage() {
               <div key={item.label}>
                 <div
                   className="text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   {item.label}
                 </div>
@@ -1493,7 +1493,7 @@ export default function AdminPage() {
               >
                 <span
                   className="text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   {item.label}
                 </span>
@@ -1542,7 +1542,7 @@ export default function AdminPage() {
         <div className="mb-4 flex items-center gap-3">
           <span
             className="text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
             Level:
           </span>

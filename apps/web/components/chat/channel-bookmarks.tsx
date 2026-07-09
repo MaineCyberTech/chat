@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef } from "react";
 import { api } from "@/lib/api";
@@ -138,7 +138,7 @@ export function ChannelBookmarks({ channelId }: Props) {
           <button
             onClick={() => setShowForm(true)}
             className="ml-1 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs transition-colors"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
             aria-label="Add bookmark"
           >
             <Plus size={12} />
@@ -213,7 +213,7 @@ export function ChannelBookmarks({ channelId }: Props) {
                 setNewEmoji("");
               }}
               className="rounded px-2 py-1 text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               Cancel
             </button>
@@ -234,7 +234,7 @@ export function ChannelBookmarks({ channelId }: Props) {
             </h3>
             <p
               className="mt-1 text-xs"
-              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              style={{ color: "var(--text-secondary)" }}
             >
               This cannot be undone.
             </p>
@@ -242,7 +242,7 @@ export function ChannelBookmarks({ channelId }: Props) {
               <button
                 onClick={() => setDeleteConfirm(null)}
                 className="rounded-md px-3 py-1.5 text-xs font-medium"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Cancel
               </button>
@@ -275,7 +275,7 @@ export function ChannelBookmarks({ channelId }: Props) {
             <div className="flex items-center justify-between px-3 py-1.5">
               <span
                 className="text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 {bookmarks.length} bookmark{bookmarks.length !== 1 ? "s" : ""}
               </span>
@@ -339,7 +339,7 @@ export function ChannelBookmarks({ channelId }: Props) {
                     {bm.url && (
                       <p
                         className="truncate text-[10px]"
-                        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                        style={{ color: "var(--text-tertiary)" }}
                       >
                         {bm.url}
                       </p>
@@ -359,7 +359,7 @@ export function ChannelBookmarks({ channelId }: Props) {
               <button
                 onClick={() => setShowForm(true)}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 <Plus size={14} /> Add bookmark
               </button>
@@ -374,7 +374,7 @@ export function ChannelBookmarks({ channelId }: Props) {
               </div>
               <p
                 className="text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
                 No bookmarks yet
               </p>

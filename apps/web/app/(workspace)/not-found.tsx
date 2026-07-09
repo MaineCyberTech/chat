@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Button } from "@chat/ui";
 
 export default function WorkspaceNotFound() {
@@ -12,7 +12,7 @@ export default function WorkspaceNotFound() {
       </h1>
       <p
         className="max-w-md text-sm"
-        style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+        style={{ color: "var(--text-secondary)" }}
       >
         This workspace does not exist or you may not have access to it.
       </p>

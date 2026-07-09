@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@chat/ui";
@@ -64,7 +64,7 @@ export function CookieBanner() {
       <div className="mx-auto flex max-w-4xl flex-col items-start gap-3 sm:flex-row sm:items-center">
         <p
           className="flex-1 text-sm"
-          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+          style={{ color: "var(--text-secondary)" }}
         >
           This site uses cookies for authentication and analytics. By continuing, you agree to our
           use of cookies.

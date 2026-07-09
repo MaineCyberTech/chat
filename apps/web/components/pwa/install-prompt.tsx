@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { useInstallPrompt } from "@/lib/pwa/install-state";
@@ -48,7 +48,7 @@ export function InstallPrompt({ isOpen, onClose, userEmail }: InstallPromptProps
               </span>
               <p
                 className="pt-0.5"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                style={{ color: "var(--text-secondary)" }}
               >
                 {step}
               </p>
@@ -65,7 +65,7 @@ export function InstallPrompt({ isOpen, onClose, userEmail }: InstallPromptProps
         {userEmail && !isInstallable && !instructions.showButton && (
           <p
             className="text-center text-xs"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            style={{ color: "var(--text-tertiary)" }}
           >
             Already installed or using a browser that doesn't support installation prompts.
             {userEmail && " You're signed in, so your data will sync automatically."}

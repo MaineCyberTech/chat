@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 export default function AuthError({ reset }: { error: Error; reset: () => void }) {
   return (
@@ -9,7 +9,7 @@ export default function AuthError({ reset }: { error: Error; reset: () => void }
       <h2 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
         Something went wrong
       </h2>
-      <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+      <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
         An error occurred on the authentication page.
       </p>
       <button

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 
@@ -78,7 +78,7 @@ export function FloatingTimestamp({ containerRef }: Props) {
         className="rounded-full px-3 py-1 text-xs font-medium shadow-sm backdrop-blur-sm transition-opacity"
         style={{
           background: "var(--center-channel-bg)",
-          color: "rgba(var(--center-channel-color-rgb), 0.56)",
+          color: "var(--text-tertiary)",
           boxShadow: "var(--elevation-2)",
         }}
       >
