@@ -76,8 +76,7 @@ sql_paths = [
   "./seeds/04_threads.sql",
   "./seeds/05_reactions.sql",
   "./seeds/06_notifications.sql",
-  "./seeds/07_webhooks.sql",
-  "./seeds/seed.sql"
+  "./seeds/07_webhooks.sql"
 ]
 
 [db.network_restrictions]
