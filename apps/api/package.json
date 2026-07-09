@@ -39,7 +39,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jsdom": "^21.1.7",
-    "@types/node": "^22.13.0",
+    "@types/node": "^26.0.0",
     "@types/opossum": "^8.0.1",
     "@types/web-push": "^3.6.3",
     "eslint": "^9.22.0",
