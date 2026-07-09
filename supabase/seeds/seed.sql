@@ -51,7 +51,7 @@ insert into public.workspaces (id, name, slug, owner_id, created_at, updated_at)
 values ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'E2E Workspace', 'e2e-workspace', '6adfefa6-27c2-480e-9881-6514f4e9b708', '2026-01-01 00:00:00+00', '2026-01-01 00:00:00+00');
 
 -- Workspace members
-insert into public.workspace_members (workspace_id, user_id, role, created_at)
+insert into public.workspace_members (workspace_id, user_id, role, joined_at)
 values ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', '6adfefa6-27c2-480e-9881-6514f4e9b708', 'owner', '2026-01-01 00:00:00+00'),
        ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', '817016dc-cc3b-49d1-8ee6-637f880fa0a4', 'member', '2026-01-01 00:00:00+00');
 
