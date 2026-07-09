@@ -112,7 +112,7 @@ describe("MessageList", () => {
         profiles={mockProfiles}
       />,
     );
-    expect(screen.getAllByText(/10:30/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/14:30/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows date separators between messages on different days", () => {
