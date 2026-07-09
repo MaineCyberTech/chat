@@ -146,24 +146,62 @@ async function deliverEmail(
         env.SMTP_USER && env.SMTP_PASS ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
     });
 
-    const html = `<table cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-  <tr>
-    <td style="padding:24px 32px;background:#f5f5f5;border-radius:8px 8px 0 0;border-bottom:3px solid #4f46e5;">
-      <h1 style="margin:0;font-size:18px;color:#1a1a2e;">${data.title}</h1>
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:24px 32px;background:#ffffff;">
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#333;">${data.message}</p>
-      ${data.link ? `<a href="${data.link}" style="display:inline-block;padding:10px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">View in Chat</a>` : ''}
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:16px 32px;background:#f5f5f5;border-radius:0 0 8px 8px;font-size:12px;color:#888;text-align:center;">
-      <p style="margin:0;">Sent from MaineCyberTech Chat</p>
-    </td>
-  </tr>
-</table>`;
+    const templates = await import("../templates/email.js");
+    let html: string;
+    switch (data.type) {
+      case "mention": {
+        const mentionData = data.data as Record<string, unknown>;
+        if (
+          mentionData?.channelName &&
+          mentionData?.mentionedBy &&
+          mentionData?.messagePreview &&
+          mentionData?.channelLink
+        ) {
+          html = templates.mentionTemplate({
+            channelName: mentionData.channelName as string,
+            mentionedBy: mentionData.mentionedBy as string,
+            messagePreview: mentionData.messagePreview as string,
+            channelLink: mentionData.channelLink as string,
+          });
+        } else {
+          html = templates.notificationTemplate(data.title, data.message, data.link);
+        }
+        break;
+      }
+      case "dm": {
+        const dmData = data.data as Record<string, unknown>;
+        if (dmData?.senderName && dmData?.messagePreview && dmData?.dmLink) {
+          html = templates.dmTemplate(
+            dmData.senderName as string,
+            dmData.messagePreview as string,
+            dmData.dmLink as string,
+          );
+        } else {
+          html = templates.notificationTemplate(data.title, data.message, data.link);
+        }
+        break;
+      }
+      case "digest": {
+        const digestData = data.data as Record<string, unknown>;
+        if (digestData?.date) {
+          html = templates.digestTemplate({
+            date: digestData.date as string,
+            channels: (digestData.channels ?? []) as {
+              name: string;
+              messageCount: number;
+              lastMessage: string;
+            }[],
+            mentions: (digestData.mentions ?? []) as { user: string; text: string; link: string }[],
+            unsubLink: (digestData.unsubLink as string) ?? "",
+          });
+        } else {
+          html = templates.notificationTemplate(data.title, data.message, data.link);
+        }
+        break;
+      }
+      default:
+        html = templates.notificationTemplate(data.title, data.message, data.link);
+    }
 
     await transporter.sendMail({
       from: env.SMTP_FROM,
