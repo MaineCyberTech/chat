@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS announcements (
   title TEXT NOT NULL,
   body TEXT NOT NULL,
   active BOOLEAN NOT NULL DEFAULT true,
-  created_by UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+  created_by UUID NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
