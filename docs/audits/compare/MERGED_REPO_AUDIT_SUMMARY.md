@@ -13,17 +13,17 @@ This audit compares Chat against Mattermost across 8 phases. **Key finding**: Ch
 
 ## Phase Documents
 
-| Phase | File | Status |
-|---|---|---|
-| 1 — Inventory | `01_INVENTORY.md` | ✅ Complete |
-| 2 — Mapping | `02_MAPPING.md` | ✅ Complete |
-| 3 — Findings | `03_FINDINGS.md` | ✅ Complete |
-| 4 — Risk | `04_RISK.md` | ✅ Complete |
-| 5 — Roadmap | `05_ROADMAP.md` | ✅ Complete |
-| 6 — Change Plan | `06_CHANGE_PLAN.md` | ✅ Revised July 8 |
-| 7 — Patch Sets | `07_PATCH_SETS.md` | ✅ Revised July 8 |
+| Phase                    | File                                    | Status            |
+| ------------------------ | --------------------------------------- | ----------------- |
+| 1 — Inventory            | `01_INVENTORY.md`                       | ✅ Complete       |
+| 2 — Mapping              | `02_MAPPING.md`                         | ✅ Complete       |
+| 3 — Findings             | `03_FINDINGS.md`                        | ✅ Complete       |
+| 4 — Risk                 | `04_RISK.md`                            | ✅ Complete       |
+| 5 — Roadmap              | `05_ROADMAP.md`                         | ✅ Complete       |
+| 6 — Change Plan          | `06_CHANGE_PLAN.md`                     | ✅ Revised July 8 |
+| 7 — Patch Sets           | `07_PATCH_SETS.md`                      | ✅ Revised July 8 |
 | 8 — Final Reconciliation | `AUDIT_PHASE_8_FINAL_RECONCILIATION.md` | ✅ Revised July 8 |
-| Summary | `COMPARE_AUDIT_SUMMARY.md` | ✅ Revised July 8 |
+| Summary                  | `COMPARE_AUDIT_SUMMARY.md`              | ✅ Revised July 8 |
 
 ## Key Outcome
 

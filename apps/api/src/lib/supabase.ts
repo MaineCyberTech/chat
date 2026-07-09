@@ -32,14 +32,25 @@ function wrapBuilder(builder: object, table: string, label: string): object {
         return (onfulfilled: unknown, onrejected: unknown) => {
           const start = performance.now();
           const thenFn = (target as PromiseLike<unknown>).then;
-          return thenFn.call(target,
+          return thenFn.call(
+            target,
             (result: unknown) => {
               const durationMs = performance.now() - start;
               const duration = durationMs.toFixed(1);
               if (durationMs > 1000) {
-                logger.warn("Slow DB query", { table, label, duration: `${duration}ms`, rows: (result as { data?: unknown[] })?.data?.length ?? 0 });
+                logger.warn("Slow DB query", {
+                  table,
+                  label,
+                  duration: `${duration}ms`,
+                  rows: (result as { data?: unknown[] })?.data?.length ?? 0,
+                });
               } else {
-                logger.debug("DB query", { table, label, duration: `${duration}ms`, rows: (result as { data?: unknown[] })?.data?.length ?? 0 });
+                logger.debug("DB query", {
+                  table,
+                  label,
+                  duration: `${duration}ms`,
+                  rows: (result as { data?: unknown[] })?.data?.length ?? 0,
+                });
               }
               if (typeof onfulfilled === "function") return onfulfilled(result);
               return result;
@@ -47,7 +58,12 @@ function wrapBuilder(builder: object, table: string, label: string): object {
             (error: Error) => {
               const duration = (performance.now() - start).toFixed(1);
               recordFailure(label);
-              logger.warn("DB query failed", { table, label, duration: `${duration}ms`, error: error?.message });
+              logger.warn("DB query failed", {
+                table,
+                label,
+                duration: `${duration}ms`,
+                error: error?.message,
+              });
               if (typeof onrejected === "function") return onrejected(error);
               throw error;
             },
@@ -65,7 +81,12 @@ function wrapBuilder(builder: object, table: string, label: string): object {
   });
 }
 
-function createLoggedClient(url: string, key: string, label: string, opts?: Record<string, unknown>): SupabaseClient {
+function createLoggedClient(
+  url: string,
+  key: string,
+  label: string,
+  opts?: Record<string, unknown>,
+): SupabaseClient {
   const circuitLabel = `supabase:${label}`;
   const client = createClient(url, key, {
     auth: { persistSession: false },
@@ -78,7 +99,13 @@ function createLoggedClient(url: string, key: string, label: string, opts?: Reco
         return (table: string) => {
           if (isCircuitOpen(circuitLabel)) {
             logger.warn("Supabase circuit breaker open, skipping query", { label });
-            const empty = Promise.resolve({ data: [], error: null, count: null, status: 200, statusText: "OK" });
+            const empty = Promise.resolve({
+              data: [],
+              error: null,
+              count: null,
+              status: 200,
+              statusText: "OK",
+            });
             return wrapBuilder(empty as unknown as object, table, `${label} (cb-open)`);
           }
           const builder = Reflect.apply(target.from, target, [table]);

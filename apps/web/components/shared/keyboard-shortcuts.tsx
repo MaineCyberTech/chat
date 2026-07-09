@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { getCallback } from "@/lib/keyboard-shortcut-registry";
 
 const SHORTCUT_CATEGORIES = [
-    {
+  {
     name: "Navigation",
     shortcuts: [
       { keys: "Ctrl+K", label: "Open search / command palette" },
@@ -52,8 +52,7 @@ export function KeyboardShortcuts() {
     return SHORTCUT_CATEGORIES.map((cat) => ({
       ...cat,
       shortcuts: cat.shortcuts.filter(
-        (s) =>
-          s.label.toLowerCase().includes(q) || s.keys.toLowerCase().includes(q),
+        (s) => s.label.toLowerCase().includes(q) || s.keys.toLowerCase().includes(q),
       ),
     })).filter((cat) => cat.shortcuts.length > 0);
   }, [search]);
@@ -62,8 +61,7 @@ export function KeyboardShortcuts() {
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       const target = e.target;
-      const isInput =
-        target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+      const isInput = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
       const mod = e.ctrlKey || e.metaKey;
 
       if (e.key === "?" && !mod && !isInput) {
@@ -188,7 +186,10 @@ export function KeyboardShortcuts() {
         <div className="max-h-80 space-y-4 overflow-y-auto">
           {filteredCategories.map((cat) => (
             <div key={cat.name}>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+              <h3
+                className="mb-1 text-xs font-semibold tracking-wide uppercase"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
                 {cat.name}
               </h3>
               <div className="space-y-1">
@@ -211,7 +212,10 @@ export function KeyboardShortcuts() {
             </div>
           ))}
           {filteredCategories.length === 0 && (
-            <p className="text-center text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+            <p
+              className="text-center text-sm"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+            >
               No shortcuts match "{search}"
             </p>
           )}

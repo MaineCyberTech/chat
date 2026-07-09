@@ -8,10 +8,7 @@ interface DeprecatedRouteConfig {
 
 const DEPRECATED_ROUTES = new Map<string, DeprecatedRouteConfig>();
 
-export function registerDeprecatedRoute(
-  route: string,
-  config: DeprecatedRouteConfig,
-): void {
+export function registerDeprecatedRoute(route: string, config: DeprecatedRouteConfig): void {
   DEPRECATED_ROUTES.set(route, config);
 }
 

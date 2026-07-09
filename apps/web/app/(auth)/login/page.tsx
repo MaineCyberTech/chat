@@ -43,7 +43,13 @@ export default function LoginPage() {
             }}
           />
           <p className="text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.3)", borderTopColor: "transparent" }} />
+            <span
+              className="inline-block h-4 w-4 animate-spin rounded-full border-2"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.3)",
+                borderTopColor: "transparent",
+              }}
+            />
           </p>
         </div>
       </main>

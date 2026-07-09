@@ -8,19 +8,19 @@
 
 When implementing password auth, enforce the following:
 
-| Requirement    | Value                    |
-| -------------- | ------------------------ |
-| Min length     | 8 characters             |
-| Max length     | 128 characters           |
-| Complexity     | At least 3 of 4:         |
-|                | - Uppercase (A-Z)        |
-|                | - Lowercase (a-z)        |
-|                | - Digit (0-9)            |
-|                | - Special character      |
-| Max attempts   | 5 before temporary lock  |
-| Lockout period | 15 minutes               |
-| Password reuse | No reuse of last 5       |
-| Expiry         | 90 days (optional)       |
+| Requirement    | Value                   |
+| -------------- | ----------------------- |
+| Min length     | 8 characters            |
+| Max length     | 128 characters          |
+| Complexity     | At least 3 of 4:        |
+|                | - Uppercase (A-Z)       |
+|                | - Lowercase (a-z)       |
+|                | - Digit (0-9)           |
+|                | - Special character     |
+| Max attempts   | 5 before temporary lock |
+| Lockout period | 15 minutes              |
+| Password reuse | No reuse of last 5      |
+| Expiry         | 90 days (optional)      |
 
 ## Implementation Notes
 

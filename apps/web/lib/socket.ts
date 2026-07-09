@@ -72,9 +72,14 @@ export async function getSocket(): Promise<Socket> {
 
   socket.io.on("reconnect_attempt", () => {
     reconnectAttempts++;
-    const baseDelay = Math.min(RECONNECT_BASE_DELAY * Math.pow(2, reconnectAttempts - 1), RECONNECT_MAX_DELAY);
+    const baseDelay = Math.min(
+      RECONNECT_BASE_DELAY * Math.pow(2, reconnectAttempts - 1),
+      RECONNECT_MAX_DELAY,
+    );
     const jitter = baseDelay * (0.8 + Math.random() * 0.4);
-    logger.warn(`Reconnect attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} (base: ${baseDelay}ms, jittered: ${Math.round(jitter)}ms)`);
+    logger.warn(
+      `Reconnect attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} (base: ${baseDelay}ms, jittered: ${Math.round(jitter)}ms)`,
+    );
   });
 
   socket.io.on("reconnect_failed", () => {

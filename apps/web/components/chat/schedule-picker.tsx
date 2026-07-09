@@ -7,15 +7,33 @@ const PRESETS = [
   { label: "In 30 minutes", getValue: () => new Date(Date.now() + 30 * 60 * 1000).toISOString() },
   { label: "In 1 hour", getValue: () => new Date(Date.now() + 60 * 60 * 1000).toISOString() },
   { label: "In 4 hours", getValue: () => new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString() },
-  { label: "Tomorrow morning", getValue: () => {
-    const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d.toISOString();
-  }},
-  { label: "Tomorrow afternoon", getValue: () => {
-    const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(13, 0, 0, 0); return d.toISOString();
-  }},
-  { label: "Next week", getValue: () => {
-    const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(9, 0, 0, 0); return d.toISOString();
-  }},
+  {
+    label: "Tomorrow morning",
+    getValue: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      d.setHours(9, 0, 0, 0);
+      return d.toISOString();
+    },
+  },
+  {
+    label: "Tomorrow afternoon",
+    getValue: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      d.setHours(13, 0, 0, 0);
+      return d.toISOString();
+    },
+  },
+  {
+    label: "Next week",
+    getValue: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      d.setHours(9, 0, 0, 0);
+      return d.toISOString();
+    },
+  },
 ];
 
 interface Props {
@@ -26,7 +44,13 @@ interface Props {
   onClose: () => void;
 }
 
-export function SchedulePicker({ scheduledAt, show, onSchedule, onClear, onClose: _onClose }: Props) {
+export function SchedulePicker({
+  scheduledAt,
+  show,
+  onSchedule,
+  onClear,
+  onClose: _onClose,
+}: Props) {
   const [customDate, setCustomDate] = useState("");
 
   if (!show) return null;
@@ -42,10 +66,15 @@ export function SchedulePicker({ scheduledAt, show, onSchedule, onClear, onClose
   }
 
   return (
-    <div className="absolute bottom-full left-1/2 z-30 mb-2 w-64 -translate-x-1/2 overflow-hidden rounded-lg border p-3 shadow-lg"
-      style={{ background: "var(--center-channel-bg)", borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+    <div
+      className="absolute bottom-full left-1/2 z-30 mb-2 w-64 -translate-x-1/2 overflow-hidden rounded-lg border p-3 shadow-lg"
+      style={{
+        background: "var(--center-channel-bg)",
+        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+      }}
     >
-      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider"
+      <div
+        className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wider uppercase"
         style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
       >
         <Clock size={14} /> Schedule message
@@ -64,7 +93,8 @@ export function SchedulePicker({ scheduledAt, show, onSchedule, onClear, onClose
         ))}
       </div>
 
-      <div className="flex items-center gap-2 border-t pt-2"
+      <div
+        className="flex items-center gap-2 border-t pt-2"
         style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}
       >
         <input

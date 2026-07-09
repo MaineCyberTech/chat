@@ -19,14 +19,27 @@ type MockChain = { [key: string]: any; then: (fn: (v: unknown) => unknown) => Pr
 function createChain(result: unknown): MockChain {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "in", "order", "limit", "single", "maybeSingle",
-    "insert", "update", "delete", "is", "or", "gt", "lt", "contains", "lte",
+    "select",
+    "eq",
+    "in",
+    "order",
+    "limit",
+    "single",
+    "maybeSingle",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
+    "contains",
+    "lte",
     "range",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve(result).then(onfulfilled);
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
   return chain;
 }
 
@@ -78,8 +91,22 @@ describe("user-groups routes", () => {
   describe("GET /", () => {
     it("lists groups in a workspace", async () => {
       const groups = [
-        { id: "g-1", workspace_id: "ws-1", name: "engineering", description: "Engineering team", created_by: "user-1", user_group_members: [{ count: 3 }] },
-        { id: "g-2", workspace_id: "ws-1", name: "design", description: "Design team", created_by: "user-2", user_group_members: [{ count: 2 }] },
+        {
+          id: "g-1",
+          workspace_id: "ws-1",
+          name: "engineering",
+          description: "Engineering team",
+          created_by: "user-1",
+          user_group_members: [{ count: 3 }],
+        },
+        {
+          id: "g-2",
+          workspace_id: "ws-1",
+          name: "design",
+          description: "Design team",
+          created_by: "user-2",
+          user_group_members: [{ count: 2 }],
+        },
       ];
       const chain = createChain({ data: groups, error: null });
       const from = vi.fn(() => chain);
@@ -144,7 +171,13 @@ describe("user-groups routes", () => {
 
   describe("POST /", () => {
     it("creates a group", async () => {
-      const newGroup = { id: "g-new", workspace_id: "ws-1", name: "Engineering", created_by: "user-1", description: "" };
+      const newGroup = {
+        id: "g-new",
+        workspace_id: "ws-1",
+        name: "Engineering",
+        created_by: "user-1",
+        description: "",
+      };
       const chain = createChain({ data: newGroup, error: null });
       const from = vi.fn(() => chain);
 
@@ -162,7 +195,13 @@ describe("user-groups routes", () => {
     });
 
     it("creates a group with description", async () => {
-      const newGroup = { id: "g-new", workspace_id: "ws-1", name: "Engineering", description: "Team description", created_by: "user-1" };
+      const newGroup = {
+        id: "g-new",
+        workspace_id: "ws-1",
+        name: "Engineering",
+        description: "Team description",
+        created_by: "user-1",
+      };
       const chain = createChain({ data: newGroup, error: null });
       const from = vi.fn(() => chain);
 
@@ -176,7 +215,9 @@ describe("user-groups routes", () => {
       await callHandler(handler, req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith({ group: expect.objectContaining({ description: "Team description" }) });
+      expect(res.json).toHaveBeenCalledWith({
+        group: expect.objectContaining({ description: "Team description" }),
+      });
     });
 
     it("creates a group with member_ids", async () => {
@@ -186,7 +227,8 @@ describe("user-groups routes", () => {
         error: null,
       });
       const memberInsertChain = createChain({ error: null });
-      const from = vi.fn()
+      const from = vi
+        .fn()
         .mockReturnValueOnce(membershipChain)
         .mockReturnValueOnce(insertChain)
         .mockReturnValueOnce(memberInsertChain);
@@ -353,8 +395,16 @@ describe("user-groups routes", () => {
   describe("GET /:id/members", () => {
     it("lists group members", async () => {
       const members = [
-        { group_id: "g-1", user_id: "user-2", users: { email: "user2@test.com", display_name: "User Two" } },
-        { group_id: "g-1", user_id: "user-3", users: { email: "user3@test.com", display_name: "User Three" } },
+        {
+          group_id: "g-1",
+          user_id: "user-2",
+          users: { email: "user2@test.com", display_name: "User Two" },
+        },
+        {
+          group_id: "g-1",
+          user_id: "user-3",
+          users: { email: "user3@test.com", display_name: "User Three" },
+        },
       ];
       const chain = createChain({ data: members, error: null });
       const from = vi.fn(() => chain);

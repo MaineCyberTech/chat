@@ -20,7 +20,10 @@ export const apiLimiter = rateLimit({
     logger.warn("Rate limit hit", { ip: req.ip, userId, path: req.path });
     res.setHeader("RateLimit-Limit", String(options.max));
     res.setHeader("RateLimit-Remaining", "0");
-    res.setHeader("RateLimit-Reset", String(Math.ceil(Date.now() / 1000) + options.windowMs / 1000));
+    res.setHeader(
+      "RateLimit-Reset",
+      String(Math.ceil(Date.now() / 1000) + options.windowMs / 1000),
+    );
     res.status(options.statusCode).json(options.message);
   },
 });
@@ -48,6 +51,11 @@ export const magicLinkLimiter = rateLimit({
   max: 3,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: { code: "RATE_LIMITED", message: "Too many magic link requests. Please wait before requesting another." } },
+  message: {
+    error: {
+      code: "RATE_LIMITED",
+      message: "Too many magic link requests. Please wait before requesting another.",
+    },
+  },
   keyGenerator: (req) => req.ip ?? "unknown",
 });

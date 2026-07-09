@@ -23,14 +23,27 @@ type MockChain = { [key: string]: any; then: (fn: (v: unknown) => unknown) => Pr
 function createChain(result: unknown): MockChain {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "in", "order", "limit", "single",
-    "insert", "update", "delete", "is", "or", "gt", "lt", "contains", "lte",
-    "range", "gte",
+    "select",
+    "eq",
+    "in",
+    "order",
+    "limit",
+    "single",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
+    "contains",
+    "lte",
+    "range",
+    "gte",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve(result).then(onfulfilled);
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
   return chain;
 }
 
@@ -81,8 +94,22 @@ describe("audit routes", () => {
 
   describe("GET /audit/logs", () => {
     const sampleLogs = [
-      { id: "11111111-1111-1111-1111-111111111001", action: "workspace.created", actor_user_id: "user-1", entity_type: "workspace", organization_id: "ws-1", created_at: "2026-07-01T00:00:00Z" },
-      { id: "11111111-1111-1111-1111-111111111002", action: "channel.created", actor_user_id: "user-2", entity_type: "channel", organization_id: "ws-1", created_at: "2026-07-02T00:00:00Z" },
+      {
+        id: "11111111-1111-1111-1111-111111111001",
+        action: "workspace.created",
+        actor_user_id: "user-1",
+        entity_type: "workspace",
+        organization_id: "ws-1",
+        created_at: "2026-07-01T00:00:00Z",
+      },
+      {
+        id: "11111111-1111-1111-1111-111111111002",
+        action: "channel.created",
+        actor_user_id: "user-2",
+        entity_type: "channel",
+        organization_id: "ws-1",
+        created_at: "2026-07-02T00:00:00Z",
+      },
     ];
 
     it("returns audit logs with total count", async () => {
@@ -157,7 +184,10 @@ describe("audit routes", () => {
       const from = vi.fn(() => chain);
 
       const handler = findHandler("get", "/audit/logs");
-      const req = mockReq({ query: { dateFrom: "2026-07-01T00:00:00Z", dateTo: "2026-07-01T23:59:59Z" }, supabase: { from } });
+      const req = mockReq({
+        query: { dateFrom: "2026-07-01T00:00:00Z", dateTo: "2026-07-01T23:59:59Z" },
+        supabase: { from },
+      });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -192,7 +222,11 @@ describe("audit routes", () => {
     });
 
     it("returns 500 when query fails", async () => {
-      const chain = createChain({ data: null, error: { message: "DB connection failed" }, count: 0 });
+      const chain = createChain({
+        data: null,
+        error: { message: "DB connection failed" },
+        count: 0,
+      });
       const from = vi.fn(() => chain);
 
       const handler = findHandler("get", "/audit/logs");
@@ -226,7 +260,14 @@ describe("audit routes", () => {
   });
 
   describe("GET /audit/logs/:id", () => {
-    const sampleLog = { id: "11111111-1111-1111-1111-111111111001", action: "workspace.created", actor_user_id: "user-1", entity_type: "workspace", organization_id: "ws-1", created_at: "2026-07-01T00:00:00Z" };
+    const sampleLog = {
+      id: "11111111-1111-1111-1111-111111111001",
+      action: "workspace.created",
+      actor_user_id: "user-1",
+      entity_type: "workspace",
+      organization_id: "ws-1",
+      created_at: "2026-07-01T00:00:00Z",
+    };
 
     it("returns a single audit log", async () => {
       const chain = createChain({ data: sampleLog, error: null });

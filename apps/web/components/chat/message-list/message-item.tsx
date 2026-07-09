@@ -391,10 +391,24 @@ export const MessageItem = React.memo(function MessageItem({
                     <div className="mt-1 flex items-center gap-2">
                       <span
                         className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium"
-                        style={{ background: "rgba(var(--error-text-rgb), 0.1)", color: "var(--error-text)" }}
+                        style={{
+                          background: "rgba(var(--error-text-rgb), 0.1)",
+                          color: "var(--error-text)",
+                        }}
                         role="alert"
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="15" y1="9" x2="9" y2="15" />
+                          <line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
                         {sendError}
                       </span>
                       {onRetry && (

@@ -42,13 +42,13 @@ The application is fundamentally production-ready with a solid architecture (Nex
 
 ## Biggest Production Risks
 
-| Risk | Severity | Impact |
-|------|----------|--------|
-| iOS keyboard hides message input | P0/P1 | Core messaging broken on iOS Safari — affects ~30% of mobile users |
-| Dark mode shows white interior | P1 | Users toggling dark mode see a broken UI — damages trust |
-| No virtualization in message list | P2 | Performance crash at 1000+ messages; mobile especially affected |
-| No focus traps in 5+ dialogs | P1 | Keyboard/screen reader users lose context; possible security issues |
-| Low contrast secondary text | P1 | WCAG AA failure affects all users in light mode readability |
+| Risk                              | Severity | Impact                                                              |
+| --------------------------------- | -------- | ------------------------------------------------------------------- |
+| iOS keyboard hides message input  | P0/P1    | Core messaging broken on iOS Safari — affects ~30% of mobile users  |
+| Dark mode shows white interior    | P1       | Users toggling dark mode see a broken UI — damages trust            |
+| No virtualization in message list | P2       | Performance crash at 1000+ messages; mobile especially affected     |
+| No focus traps in 5+ dialogs      | P1       | Keyboard/screen reader users lose context; possible security issues |
+| Low contrast secondary text       | P1       | WCAG AA failure affects all users in light mode readability         |
 
 ## Highest ROI Improvements
 

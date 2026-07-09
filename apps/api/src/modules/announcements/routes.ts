@@ -1,7 +1,10 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
-import { requireWorkspaceMembership, requireWorkspaceRole } from "../../middleware/require-membership.js";
+import {
+  requireWorkspaceMembership,
+  requireWorkspaceRole,
+} from "../../middleware/require-membership.js";
 import { getSupabase } from "../../lib/supabase.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";

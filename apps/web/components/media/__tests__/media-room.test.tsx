@@ -79,8 +79,6 @@ describe("MediaRoom", () => {
   it("calls api.get with correct room parameter", () => {
     const getMock = vi.mocked(api.get).mockImplementation(() => new Promise(() => {}));
     render(<MediaRoom roomName="custom-room" onLeave={vi.fn()} />);
-    expect(getMock).toHaveBeenCalledWith(
-      "/livekit/token?room=custom-room",
-    );
+    expect(getMock).toHaveBeenCalledWith("/livekit/token?room=custom-room");
   });
 });

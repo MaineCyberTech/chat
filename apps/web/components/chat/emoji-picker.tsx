@@ -179,7 +179,10 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
 
   return (
     <div
-      ref={(node) => { pickerRef.current = node; focusTrapRef.current = node; }}
+      ref={(node) => {
+        pickerRef.current = node;
+        focusTrapRef.current = node;
+      }}
       role="dialog"
       aria-label="Emoji picker"
       className="fixed z-50 flex flex-col overflow-hidden rounded-xl border shadow-lg"
@@ -257,7 +260,11 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
         style={{ borderBottom: "1px solid rgba(var(--center-channel-color-rgb), 0.08)" }}
       >
         <button
-          onClick={() => { setCategory(null); setSearch(""); setActiveIdx(-1); }}
+          onClick={() => {
+            setCategory(null);
+            setSearch("");
+            setActiveIdx(-1);
+          }}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs transition-colors"
           style={{
             background: category === null ? "rgba(var(--button-bg-rgb), 0.12)" : "transparent",

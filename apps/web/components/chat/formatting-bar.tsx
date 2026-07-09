@@ -1,14 +1,45 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Bold, Italic, Code, Link, Quote, List, ListOrdered, Strikethrough, Underline, Highlighter, AlignLeft, AlignCenter, AlignRight, Image, CheckSquare } from "lucide-react";
+import {
+  Bold,
+  Italic,
+  Code,
+  Link,
+  Quote,
+  List,
+  ListOrdered,
+  Strikethrough,
+  Underline,
+  Highlighter,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Image,
+  CheckSquare,
+} from "lucide-react";
 import { type Editor } from "@tiptap/react";
 
 interface Props {
   editorRef: React.RefObject<Editor | null>;
 }
 
-type FormatMode = "bold" | "italic" | "strike" | "underline" | "highlight" | "code" | "link" | "quote" | "ul" | "ol" | "taskList" | "alignLeft" | "alignCenter" | "alignRight" | "image";
+type FormatMode =
+  | "bold"
+  | "italic"
+  | "strike"
+  | "underline"
+  | "highlight"
+  | "code"
+  | "link"
+  | "quote"
+  | "ul"
+  | "ol"
+  | "taskList"
+  | "alignLeft"
+  | "alignCenter"
+  | "alignRight"
+  | "image";
 
 function applyFormat(editor: Editor, mode: FormatMode) {
   switch (mode) {
@@ -91,21 +122,36 @@ const FORMAT_BUTTONS: { mode: FormatMode; icon: React.ReactNode; label: string }
 function isActive(editor: Editor | null, mode: FormatMode): boolean {
   if (!editor) return false;
   switch (mode) {
-    case "bold": return editor.isActive("bold");
-    case "italic": return editor.isActive("italic");
-    case "strike": return editor.isActive("strike");
-    case "underline": return editor.isActive("underline");
-    case "highlight": return editor.isActive("highlight");
-    case "code": return editor.isActive("code") || editor.isActive("codeBlock");
-    case "link": return editor.isActive("link");
-    case "quote": return editor.isActive("blockquote");
-    case "ul": return editor.isActive("bulletList");
-    case "ol": return editor.isActive("orderedList");
-    case "taskList": return editor.isActive("taskList");
-    case "alignLeft": return editor.isActive({ textAlign: "left" });
-    case "alignCenter": return editor.isActive({ textAlign: "center" });
-    case "alignRight": return editor.isActive({ textAlign: "right" });
-    default: return false;
+    case "bold":
+      return editor.isActive("bold");
+    case "italic":
+      return editor.isActive("italic");
+    case "strike":
+      return editor.isActive("strike");
+    case "underline":
+      return editor.isActive("underline");
+    case "highlight":
+      return editor.isActive("highlight");
+    case "code":
+      return editor.isActive("code") || editor.isActive("codeBlock");
+    case "link":
+      return editor.isActive("link");
+    case "quote":
+      return editor.isActive("blockquote");
+    case "ul":
+      return editor.isActive("bulletList");
+    case "ol":
+      return editor.isActive("orderedList");
+    case "taskList":
+      return editor.isActive("taskList");
+    case "alignLeft":
+      return editor.isActive({ textAlign: "left" });
+    case "alignCenter":
+      return editor.isActive({ textAlign: "center" });
+    case "alignRight":
+      return editor.isActive({ textAlign: "right" });
+    default:
+      return false;
   }
 }
 
@@ -143,7 +189,10 @@ export function FormattingBar({ editorRef }: Props) {
           className="flex items-center gap-1 rounded-md px-2 py-1"
           style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
         >
-          <span className="text-xs font-medium" style={{ color: "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))" }}>
+          <span
+            className="text-xs font-medium"
+            style={{ color: "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))" }}
+          >
             {urlInput.mode === "link" ? "URL:" : "Image URL:"}
           </span>
           <input
@@ -154,10 +203,25 @@ export function FormattingBar({ editorRef }: Props) {
             placeholder="https://..."
             className="flex-1 rounded bg-transparent px-1 text-xs outline-none"
             style={{ color: "var(--center-channel-color)", minWidth: 120 }}
-            onKeyDown={(e) => { if (e.key === "Escape") setUrlInput(null); }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setUrlInput(null);
+            }}
           />
-          <button type="submit" className="rounded px-1 py-0.5 text-xs font-medium" style={{ color: "var(--button-bg)" }}>Add</button>
-          <button type="button" onClick={() => setUrlInput(null)} className="rounded px-1 py-0.5 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))" }}>✕</button>
+          <button
+            type="submit"
+            className="rounded px-1 py-0.5 text-xs font-medium"
+            style={{ color: "var(--button-bg)" }}
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            onClick={() => setUrlInput(null)}
+            className="rounded px-1 py-0.5 text-xs"
+            style={{ color: "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))" }}
+          >
+            ✕
+          </button>
         </form>
       )}
       {FORMAT_BUTTONS.map(({ mode, icon, label }, index) => {

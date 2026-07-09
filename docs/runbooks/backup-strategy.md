@@ -5,12 +5,14 @@
 Supabase provides automated daily backups on the Pro plan with 7-day retention. Point-in-time recovery (PITR) is available on the Team plan.
 
 ### Automated Backups
+
 - **Schedule**: Daily (automated by Supabase)
 - **Retention**: 7 days (Pro) / 28 days (Team with PITR)
 - **Scope**: Full database, including schemas, data, and indexes
 - **Restore**: Via Supabase Dashboard → Database → Backups → Restore
 
 ### Manual Snapshots
+
 For additional safety before risky operations (migrations, schema changes):
 
 ```bash
@@ -48,11 +50,11 @@ Job queues are stored in Redis and will be lost on Redis failure.
 
 Volumes are defined in `docker-compose.prod.yml`:
 
-| Volume | Content | Backup |
-|--------|---------|--------|
-| `caddy-data` | TLS certificates, ACME account | Optional — Caddy auto-renews certs |
-| `caddy-config` | Caddy configuration | Tracked in git |
-| `redis-data` | AOF persistence file | Not backed up (ephemeral) |
+| Volume         | Content                        | Backup                             |
+| -------------- | ------------------------------ | ---------------------------------- |
+| `caddy-data`   | TLS certificates, ACME account | Optional — Caddy auto-renews certs |
+| `caddy-config` | Caddy configuration            | Tracked in git                     |
+| `redis-data`   | AOF persistence file           | Not backed up (ephemeral)          |
 
 ## Recovery Procedure
 
@@ -71,11 +73,11 @@ supabase db restore --file ./backups/verify-$(date +%F).sql --target staging
 
 ## Retention Policy
 
-| Data Type | Retention | Backup Frequency |
-|-----------|-----------|-----------------|
-| Database (full) | 7-28 days | Daily |
-| Message history | Indefinite | Daily (via DB backup) |
-| Uploaded files | Indefinite | Daily (via Supabase backup) |
-| User sessions | Until expiry | Not backed up |
-| Audit logs | 90 days | Daily (via DB backup) |
-| Cached data | Ephemeral | Not backed up |
+| Data Type       | Retention    | Backup Frequency            |
+| --------------- | ------------ | --------------------------- |
+| Database (full) | 7-28 days    | Daily                       |
+| Message history | Indefinite   | Daily (via DB backup)       |
+| Uploaded files  | Indefinite   | Daily (via Supabase backup) |
+| User sessions   | Until expiry | Not backed up               |
+| Audit logs      | 90 days      | Daily (via DB backup)       |
+| Cached data     | Ephemeral    | Not backed up               |

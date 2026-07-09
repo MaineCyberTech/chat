@@ -33,7 +33,7 @@
   "auth": {
     "signIn": "Entrar",
     "signOut": "Sair",
-    "sendMagicLink": "Enviar link mágico",
+    "sendMagicLink": "Enviar link mï¿½gico",
     "checkEmail": "Check your email for the magic link",
     "signInWithGoogle": "Sign in with Google",
     "signInWithGithub": "Sign in with GitHub",
@@ -49,7 +49,7 @@
     "signingIn": "Signing in...",
     "createAccount": "Create Account",
     "orContinueWith": "Ou continuar com",
-    "emailLabel": "Endereço de e-mail",
+    "emailLabel": "Endereï¿½o de e-mail",
     "passwordLabel": "Password",
     "passwordOptional": "Password (optional for magic link)",
     "passwordRequired": "Password is required for sign-up.",

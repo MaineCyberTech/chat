@@ -113,9 +113,7 @@ describe("livekit routes", () => {
       await handler(req, res);
 
       expect(mockGenerateToken).toHaveBeenCalledWith("room_user-1", "user-1", undefined);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ roomName: "room_user-1" }),
-      );
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ roomName: "room_user-1" }));
     });
 
     it("passes undefined display name when name query not provided", async () => {

@@ -16,14 +16,26 @@ type MockChain = { [key: string]: any; then: (fn: (v: unknown) => unknown) => Pr
 function createChain(result: unknown): MockChain {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "in", "order", "limit", "single",
-    "insert", "update", "delete", "is", "or", "gt", "lt", "contains", "lte",
+    "select",
+    "eq",
+    "in",
+    "order",
+    "limit",
+    "single",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
+    "contains",
+    "lte",
     "upsert",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve(result).then(onfulfilled);
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
   return chain;
 }
 
@@ -129,7 +141,12 @@ describe("status routes", () => {
     it("sets a status with duration", async () => {
       const { getSupabase } = await import("../../../lib/supabase.js");
       const insertChain = createChain({
-        data: { user_id: "user-1", emoji: "speech_balloon", text: "Busy", expires_at: expect.any(String) },
+        data: {
+          user_id: "user-1",
+          emoji: "speech_balloon",
+          text: "Busy",
+          expires_at: expect.any(String),
+        },
         error: null,
       });
       const from = vi.fn(() => insertChain);

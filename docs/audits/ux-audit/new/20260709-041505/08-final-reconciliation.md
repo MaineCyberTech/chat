@@ -9,6 +9,7 @@
 A full 8-phase frontend UI/UX comparative audit of the current chat repo vs Mattermost v11.9.0 has been completed and acted upon.
 
 **Key findings:**
+
 - **Chat's frontend architecture is superior** to Mattermost's (Next.js 15 App Router + Tailwind CSS v4 + design tokens + optimistic UI + Storybook)
 - **Mattermost's strengths are in breadth, not quality** — 358 component directories, 67 locales, 37 E2E test suites, but built on an older tech stack (Webpack SPA, Redux, SCSS, no design system)
 - **All 50 earlier UI/UX audit findings have been resolved** (1 P0, 16 P1, 22 P2, 11 P3)
@@ -23,33 +24,36 @@ A full 8-phase frontend UI/UX comparative audit of the current chat repo vs Matt
 
 ## 2. Frontend Architecture and UX Overview
 
-| Aspect | Chat | Mattermost |
-|--------|------|-----------|
-| **Framework** | Next.js 15 (SSR/SSG, App Router) | React SPA (Webpack 5) |
-| **Styling** | Tailwind CSS v4 + design tokens | SCSS + CSS variables |
-| **State** | React hooks + optimistic updates | Redux (mattermost-redux) |
-| **Components** | ~60 files + 11 shared UI components | 358+ component directories |
-| **Design system** | Formal tokens + Storybook (14 stories) | Ad-hoc (dev-only component library) |
-| **Icons** | lucide-react (consistent) | Compass Icons + Font Awesome (mixed) |
-| **Routing** | File-system (Next.js) | react-router v5 (declarative) |
-| **Testing** | Vitest (19 test files) + Playwright (3 specs) | Jest (~70 tests) + Playwright (37 suites) + Cypress |
-| **Typography** | System font stack (fast, native) | Metropolis + Open Sans (branded) |
-| **Auth** | Supabase Auth (magic link + OAuth) | Custom auth (email/password + OAuth + LDAP + SAML) |
-| **Real-time** | Socket.io + Redis | WebSocket + Redis |
+| Aspect            | Chat                                          | Mattermost                                          |
+| ----------------- | --------------------------------------------- | --------------------------------------------------- |
+| **Framework**     | Next.js 15 (SSR/SSG, App Router)              | React SPA (Webpack 5)                               |
+| **Styling**       | Tailwind CSS v4 + design tokens               | SCSS + CSS variables                                |
+| **State**         | React hooks + optimistic updates              | Redux (mattermost-redux)                            |
+| **Components**    | ~60 files + 11 shared UI components           | 358+ component directories                          |
+| **Design system** | Formal tokens + Storybook (14 stories)        | Ad-hoc (dev-only component library)                 |
+| **Icons**         | lucide-react (consistent)                     | Compass Icons + Font Awesome (mixed)                |
+| **Routing**       | File-system (Next.js)                         | react-router v5 (declarative)                       |
+| **Testing**       | Vitest (19 test files) + Playwright (3 specs) | Jest (~70 tests) + Playwright (37 suites) + Cypress |
+| **Typography**    | System font stack (fast, native)              | Metropolis + Open Sans (branded)                    |
+| **Auth**          | Supabase Auth (magic link + OAuth)            | Custom auth (email/password + OAuth + LDAP + SAML)  |
+| **Real-time**     | Socket.io + Redis                             | WebSocket + Redis                                   |
 
 ---
 
 ## 3. Information Architecture Findings
 
 ### Navigation Model
+
 - **Chat**: 3-panel (team rail + sidebar + content) with optional RHS for threads/channel info
 - **Mattermost**: Same 3-panel model with global header + product switcher
 
 ### Route Structure
+
 - **Chat**: `/[workspaceSlug]/[channelId]/` with 10 workspace-scoped sub-routes
 - **Mattermost**: `/:team/channels/:id/` with 7+ team-scoped sub-routes
 
 ### Key Difference
+
 - Mattermost's **GlobalHeader** provides persistent access to search, settings, help, and product switching from any view
 - Chat's **sidebar-based navigation** provides equivalent access but with one extra click for some features
 
@@ -58,6 +62,7 @@ A full 8-phase frontend UI/UX comparative audit of the current chat repo vs Matt
 ## 4. Visual System and Component Findings
 
 ### Strengths (Chat)
+
 - **Design tokens**: Typed, comprehensive, single source of truth for colors/spacing/typography/motion/borders
 - **Tailwind CSS v4**: Utility-first, maintainable, avoids SCSS bloat
 - **Storybook**: 14 stories for component documentation
@@ -69,6 +74,7 @@ A full 8-phase frontend UI/UX comparative audit of the current chat repo vs Matt
 - **Button**: 4 variants (primary/secondary/ghost/danger)
 
 ### Weaknesses (Chat)
+
 - **Opacity usage**: Raw `rgba(var(--center-channel-color-rgb), 0.56)` still used in 100+ places instead of `var(--text-tertiary-alpha)`
 - **Focus rings**: Not consistently applied across all interactive elements
 - **Empty state coverage**: 15+ locations still use ad-hoc `<p>` instead of shared EmptyState
@@ -81,89 +87,91 @@ A full 8-phase frontend UI/UX comparative audit of the current chat repo vs Matt
 
 ### Accessibility — ✔ All critical paths covered
 
-| Area | Status |
-|------|--------|
-| ARIA live regions on message list | ✔ Done (Phase 1) |
-| Focus traps on all modals/dialogs | ✔ Done |
-| Skip-to-content link | ✔ Present |
-| Reduced motion support | ✔ CSS media query |
-| Status indicator accessible labels | ✔ Done (Phase 1) |
-| Toast role="alert" | ✔ Present |
+| Area                                                         | Status              |
+| ------------------------------------------------------------ | ------------------- |
+| ARIA live regions on message list                            | ✔ Done (Phase 1)    |
+| Focus traps on all modals/dialogs                            | ✔ Done              |
+| Skip-to-content link                                         | ✔ Present           |
+| Reduced motion support                                       | ✔ CSS media query   |
+| Status indicator accessible labels                           | ✔ Done (Phase 1)    |
+| Toast role="alert"                                           | ✔ Present           |
 | Keyboard navigation (context menus, sidebar, quick switcher) | ✔ Fully implemented |
-| Focus return on dialog close | ✔ Implemented |
-| Button aria-pressed on formatting toolbar | ✔ Done (Phase 1) |
-| ScreenReaderOnly utility | ✔ Done (Phase 2) |
+| Focus return on dialog close                                 | ✔ Implemented       |
+| Button aria-pressed on formatting toolbar                    | ✔ Done (Phase 1)    |
+| ScreenReaderOnly utility                                     | ✔ Done (Phase 2)    |
 
 ### Responsiveness — ✔ All breakpoints handled
 
-| Breakpoint | Behavior | Status |
-|------------|----------|--------|
-| < 768px (Mobile) | Overlay sidebar + bottom nav + safe areas | ✔ Handled |
-| 768-1024px (Tablet) | Auto-collapsed sidebar (60px mini-rail) | ✔ Done (Phase 3) |
-| ≥ 1024px (Desktop) | Full sidebar + team rail + content + RHS | ✔ Handled |
-| Landscape mobile | Compact bottom nav (2.75rem) | ✔ Handled |
-| iOS safe areas | `env(safe-area-inset-*)` | ✔ Handled |
-| iOS keyboard | VisualViewport API for --vh | ✔ Handled |
+| Breakpoint          | Behavior                                  | Status           |
+| ------------------- | ----------------------------------------- | ---------------- |
+| < 768px (Mobile)    | Overlay sidebar + bottom nav + safe areas | ✔ Handled        |
+| 768-1024px (Tablet) | Auto-collapsed sidebar (60px mini-rail)   | ✔ Done (Phase 3) |
+| ≥ 1024px (Desktop)  | Full sidebar + team rail + content + RHS  | ✔ Handled        |
+| Landscape mobile    | Compact bottom nav (2.75rem)              | ✔ Handled        |
+| iOS safe areas      | `env(safe-area-inset-*)`                  | ✔ Handled        |
+| iOS keyboard        | VisualViewport API for --vh               | ✔ Handled        |
 
 ---
 
 ## 6. Best Patterns Worth Adapting
 
-| Pattern | From | Status |
-|---------|------|--------|
-| Channel header dot menu (rich actions) | Mattermost | ✔ Baseline done (Phase 3) |
-| Channel topic in header + empty state | Mattermost | ✔ Done (Phase 3) |
-| Announcement banner | Mattermost | ✔ Done (Phase 3) |
-| Tablet sidebar auto-collapse | Mattermost | ✔ Done (Phase 3) |
-| Thread typing indicator → display names | Mattermost | ✔ Done (Phase 3) |
-| Toast for silent error paths | Best practice | ✔ Done (Phase 2) |
-| Button danger variant | Best practice | ✔ Done (Phase 2) |
-| Modal backdrop standardization | Best practice | ✔ Done (Phase 2) |
-| Inline topic editing | Mattermost | Phase 4 |
-| Post-delete undo toast | Mattermost | Phase 4 |
+| Pattern                                 | From          | Status                    |
+| --------------------------------------- | ------------- | ------------------------- |
+| Channel header dot menu (rich actions)  | Mattermost    | ✔ Baseline done (Phase 3) |
+| Channel topic in header + empty state   | Mattermost    | ✔ Done (Phase 3)          |
+| Announcement banner                     | Mattermost    | ✔ Done (Phase 3)          |
+| Tablet sidebar auto-collapse            | Mattermost    | ✔ Done (Phase 3)          |
+| Thread typing indicator → display names | Mattermost    | ✔ Done (Phase 3)          |
+| Toast for silent error paths            | Best practice | ✔ Done (Phase 2)          |
+| Button danger variant                   | Best practice | ✔ Done (Phase 2)          |
+| Modal backdrop standardization          | Best practice | ✔ Done (Phase 2)          |
+| Inline topic editing                    | Mattermost    | Phase 4                   |
+| Post-delete undo toast                  | Mattermost    | Phase 4                   |
 
 ---
 
 ## 7. Current Frontend Strengths to Preserve
 
-| Strength | Rationale |
-|----------|-----------|
+| Strength                    | Rationale                                                           |
+| --------------------------- | ------------------------------------------------------------------- |
 | Design tokens + Tailwind v4 | Maintainable, typed, avoids SCSS, enables utility-first development |
-| Optimistic UI hook | Instant message feedback — critical UX |
-| Virtualized message list | Handles 1000+ messages without perf issues |
-| Shared Dialog component | Consistent modal pattern with focus trap |
-| Toast system | Accessible feedback with 5 variants |
-| EmptyState component | Consistent empty state rendering |
-| Resizable sidebar | User-control over layout |
-| System font stack | Fast loading, native platform feel |
-| PWA support | Installable, offline-capable, push notifications |
-| LiveKit media rooms | WebRTC voice/video without third-party dependency |
-| Storybook | Visual component documentation |
+| Optimistic UI hook          | Instant message feedback — critical UX                              |
+| Virtualized message list    | Handles 1000+ messages without perf issues                          |
+| Shared Dialog component     | Consistent modal pattern with focus trap                            |
+| Toast system                | Accessible feedback with 5 variants                                 |
+| EmptyState component        | Consistent empty state rendering                                    |
+| Resizable sidebar           | User-control over layout                                            |
+| System font stack           | Fast loading, native platform feel                                  |
+| PWA support                 | Installable, offline-capable, push notifications                    |
+| LiveKit media rooms         | WebRTC voice/video without third-party dependency                   |
+| Storybook                   | Visual component documentation                                      |
 
 ---
 
 ## 8. Risk Register
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| CSS variable conflict between layers | Low | Medium | Architecture comments added, dupes removed |
-| Empty state replacement regresses layout | Low | Low | Visual QA post-change |
-| Channel header menu conflicts with existing buttons | Low | Low | Click-outside dismissal |
-| Tablet sidebar animation causes layout shift | Low | Low | CSS transition with no layout change |
-| Thread typing socket events spike | Low | Low | 3s debounce, stop on blur |
-| Dark mode regressions | Low | Medium | Manual QA across all 5+ flows |
-| iOS keyboard overlaps content | Low | High | VisualViewport API already in place |
+| Risk                                                | Likelihood | Impact | Mitigation                                 |
+| --------------------------------------------------- | ---------- | ------ | ------------------------------------------ |
+| CSS variable conflict between layers                | Low        | Medium | Architecture comments added, dupes removed |
+| Empty state replacement regresses layout            | Low        | Low    | Visual QA post-change                      |
+| Channel header menu conflicts with existing buttons | Low        | Low    | Click-outside dismissal                    |
+| Tablet sidebar animation causes layout shift        | Low        | Low    | CSS transition with no layout change       |
+| Thread typing socket events spike                   | Low        | Low    | 3s debounce, stop on blur                  |
+| Dark mode regressions                               | Low        | Medium | Manual QA across all 5+ flows              |
+| iOS keyboard overlaps content                       | Low        | High   | VisualViewport API already in place        |
 
 ---
 
 ## 9. Safe UI/UX Roadmap
 
 ### Phase 0-1 (Done) — Accessibility + Polish
+
 - ARIA live regions, toast roles, status labels
 - Button danger variant
 - Hardcoded color cleanup
 
 ### Phase 2 (Done) — Component Standardization
+
 - ScreenReaderOnly, StatusBadge, EmptyState components
 - DeleteDialog refactor
 - Modal backdrop standardization
@@ -171,6 +179,7 @@ A full 8-phase frontend UI/UX comparative audit of the current chat repo vs Matt
 - CSS variable consolidation
 
 ### Phase 3 (Done) — Layout/Workflow Refinement
+
 - Global announcement banner
 - Channel header action menu
 - Tablet-optimized sidebar
@@ -178,6 +187,7 @@ A full 8-phase frontend UI/UX comparative audit of the current chat repo vs Matt
 - Thread typing indicator wiring
 
 ### Phase 4 (Future) — Strategic UX Modernization
+
 - EmptyState adoption across remaining 15+ locations
 - Opacity variable consolidation
 - Focus ring standardization
@@ -191,13 +201,15 @@ A full 8-phase frontend UI/UX comparative audit of the current chat repo vs Matt
 ## 10. File/Area Change Recommendations
 
 ### Immediate (Phase 4 items)
-| File | Change | Priority |
-|------|--------|----------|
-| 16 files with ad-hoc empty states | Replace with `<EmptyState>` | High |
-| Files using raw `rgba(..., 0.56)` | Replace with `var(--text-tertiary)` | Medium |
-| All interactive elements | Audit for consistent `:focus-visible` | Medium |
+
+| File                              | Change                                | Priority |
+| --------------------------------- | ------------------------------------- | -------- |
+| 16 files with ad-hoc empty states | Replace with `<EmptyState>`           | High     |
+| Files using raw `rgba(..., 0.56)` | Replace with `var(--text-tertiary)`   | Medium   |
+| All interactive elements          | Audit for consistent `:focus-visible` | Medium   |
 
 ### Deferred (Not needed at current stage)
+
 - Message-input.tsx decomposition (1026 lines) — wait for E2E coverage
 - App-sidebar.tsx componentization (1191 lines) — wait for behavioral stability
 - Full i18n expansion beyond en.json — wait for multi-language requirements
@@ -229,6 +241,7 @@ HIGH:
 ## 12. Validation Checklist
 
 ### Before Phase 4
+
 - [ ] All 19 test files pass (12 web + 7 shared UI)
 - [ ] Playwright E2E: auth-workspace-chat flow passes
 - [ ] Storybook renders all 14 stories
@@ -240,6 +253,7 @@ HIGH:
 - [ ] Screen reader: message list announces new messages, toasts announce alerts
 
 ### After Phase 4
+
 - [ ] Empty states render correctly in all 15+ locations
 - [ ] Focus rings visible on all interactive elements via keyboard nav
 - [ ] Opacity values use CSS variables (no raw rgba for text secondary/tertiary)

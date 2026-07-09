@@ -54,7 +54,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...((options.headers as Record<string, string>) ?? {}),
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
-  headers["x-request-id"] = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  headers["x-request-id"] =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   if (options.method && options.method !== "GET" && options.method !== "HEAD") {
     if (!csrfPromise) csrfPromise = ensureCsrfToken();
     await csrfPromise;
@@ -62,7 +65,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (csrfToken) headers["x-csrf-token"] = csrfToken;
   }
 
-  const res = await fetch(`${API_BASE}${apiPath(path)}`, { ...options, headers, credentials: "include" });
+  const res = await fetch(`${API_BASE}${apiPath(path)}`, {
+    ...options,
+    headers,
+    credentials: "include",
+  });
 
   if (res.status === 401) {
     const supabase = getSupabaseBrowserClient();
@@ -73,7 +80,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const errorMsg = body?.error?.message ?? `Request failed: ${res.status}`;
-    Sentry.captureException(new Error(errorMsg), { tags: { httpStatus: String(res.status), path } });
+    Sentry.captureException(new Error(errorMsg), {
+      tags: { httpStatus: String(res.status), path },
+    });
     throw new Error(errorMsg);
   }
 

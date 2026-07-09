@@ -7,7 +7,9 @@ import { api } from "@/lib/api";
 import { Skeleton } from "@chat/ui";
 import { Settings, ChevronDown, FileText, MessageSquare, File, Image } from "lucide-react";
 
-function extractAttachments(content: string): { type: "image" | "file"; name: string; url: string }[] {
+function extractAttachments(
+  content: string,
+): { type: "image" | "file"; name: string; url: string }[] {
   const attachments: { type: "image" | "file"; name: string; url: string }[] = [];
   // Match markdown image: ![alt](url)
   const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
@@ -318,7 +320,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 background: showOperatorHint
                   ? "var(--button-bg)"
                   : "rgba(var(--center-channel-color-rgb), 0.08)",
-                color: showOperatorHint ? "var(--button-color)" : "rgba(var(--center-channel-color-rgb), 0.72)",
+                color: showOperatorHint
+                  ? "var(--button-color)"
+                  : "rgba(var(--center-channel-color-rgb), 0.72)",
                 borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
                 borderBottom: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
               }}
@@ -326,7 +330,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               aria-pressed={showOperatorHint}
               title="Search operators"
             >
-              <span className="text-sm font-bold leading-none">?</span>
+              <span className="text-sm leading-none font-bold">?</span>
             </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -335,7 +339,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 background: showFilters
                   ? "var(--button-bg)"
                   : "rgba(var(--center-channel-color-rgb), 0.08)",
-                color: showFilters ? "var(--button-color)" : "rgba(var(--center-channel-color-rgb), 0.72)",
+                color: showFilters
+                  ? "var(--button-color)"
+                  : "rgba(var(--center-channel-color-rgb), 0.72)",
               }}
               aria-label="Toggle search filters"
               aria-pressed={showFilters}
@@ -463,7 +469,17 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 {[
                   {
                     category: "Documents",
-                    exts: [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv"],
+                    exts: [
+                      ".pdf",
+                      ".doc",
+                      ".docx",
+                      ".xls",
+                      ".xlsx",
+                      ".ppt",
+                      ".pptx",
+                      ".txt",
+                      ".csv",
+                    ],
                   },
                   {
                     category: "Images",
@@ -471,7 +487,20 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   },
                   {
                     category: "Code",
-                    exts: [".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".java", ".sql", ".json", ".yaml", ".xml"],
+                    exts: [
+                      ".ts",
+                      ".tsx",
+                      ".js",
+                      ".jsx",
+                      ".py",
+                      ".go",
+                      ".rs",
+                      ".java",
+                      ".sql",
+                      ".json",
+                      ".yaml",
+                      ".xml",
+                    ],
                   },
                   {
                     category: "Media",
@@ -487,7 +516,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   .map((grp) => (
                     <div key={grp.category}>
                       <p
-                        className="mb-0.5 px-2 text-[10px] font-medium uppercase tracking-wider"
+                        className="mb-0.5 px-2 text-[10px] font-medium tracking-wider uppercase"
                         style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
                       >
                         {grp.category}
@@ -724,7 +753,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                     ? "var(--button-bg)"
                     : "rgba(var(--center-channel-color-rgb), 0.56)",
                 borderBottom:
-                  searchType === "messages" ? "2px solid var(--button-bg)" : "2px solid transparent",
+                  searchType === "messages"
+                    ? "2px solid var(--button-bg)"
+                    : "2px solid transparent",
               }}
               aria-pressed={searchType === "messages"}
             >
@@ -755,44 +786,46 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           {results.map((r, index) => {
             const attachments = extractAttachments(r.content);
             return (
-            <Link
-              key={r.id}
-              href={`/${workspaceSlug}/${r.channel_slug ?? r.channel_id}`}
-              className="block border-b px-4 py-2 transition-colors"
-              style={{
-                borderColor: "rgba(var(--center-channel-color-rgb), 0.08)",
-                ...(index !== selectedIndex
-                  ? {}
-                  : { background: "rgba(var(--center-channel-color-rgb), 0.08)" }),
-              }}
-              role="option"
-              aria-selected={index === selectedIndex}
-            >
-              {attachments.length > 0 && (
-                <div className="mb-1 flex flex-wrap gap-1">
-                  {attachments.map((att, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs"
-                      style={{
-                        background: "rgba(var(--button-bg-rgb), 0.1)",
-                        color: "var(--button-bg)",
-                      }}
-                    >
-                      {att.type === "image" ? <Image size={12} /> : <File size={12} />}
-                      <span className="max-w-[120px] truncate">{att.name}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-              <p className="text-sm break-words">{highlightText(r.content.slice(0, 200), query)}</p>
-              <p
-                className="mt-0.5 text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              <Link
+                key={r.id}
+                href={`/${workspaceSlug}/${r.channel_slug ?? r.channel_id}`}
+                className="block border-b px-4 py-2 transition-colors"
+                style={{
+                  borderColor: "rgba(var(--center-channel-color-rgb), 0.08)",
+                  ...(index !== selectedIndex
+                    ? {}
+                    : { background: "rgba(var(--center-channel-color-rgb), 0.08)" }),
+                }}
+                role="option"
+                aria-selected={index === selectedIndex}
               >
-                {new Date(r.created_at).toLocaleDateString()}
-              </p>
-            </Link>
+                {attachments.length > 0 && (
+                  <div className="mb-1 flex flex-wrap gap-1">
+                    {attachments.map((att, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs"
+                        style={{
+                          background: "rgba(var(--button-bg-rgb), 0.1)",
+                          color: "var(--button-bg)",
+                        }}
+                      >
+                        {att.type === "image" ? <Image size={12} /> : <File size={12} />}
+                        <span className="max-w-[120px] truncate">{att.name}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-sm break-words">
+                  {highlightText(r.content.slice(0, 200), query)}
+                </p>
+                <p
+                  className="mt-0.5 text-xs"
+                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                >
+                  {new Date(r.created_at).toLocaleDateString()}
+                </p>
+              </Link>
             );
           })}
           {hasMore && (
@@ -804,7 +837,17 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               aria-label="Load more search results"
             >
               <ChevronDown size={14} />
-              {loadingMore ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.3)", borderTopColor: "transparent" }} /> : "Show more"}
+              {loadingMore ? (
+                <span
+                  className="inline-block h-3 w-3 animate-spin rounded-full border-2"
+                  style={{
+                    borderColor: "rgba(var(--center-channel-color-rgb), 0.3)",
+                    borderTopColor: "transparent",
+                  }}
+                />
+              ) : (
+                "Show more"
+              )}
             </button>
           )}
         </div>

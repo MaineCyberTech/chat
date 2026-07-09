@@ -27,8 +27,12 @@ export function DeleteDialog({
         </p>
       )}
       <div className="mt-4 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>Cancel</Button>
-        <Button variant="danger" onClick={onConfirm}>Delete</Button>
+        <Button variant="ghost" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button variant="danger" onClick={onConfirm}>
+          Delete
+        </Button>
       </div>
     </Dialog>
   );

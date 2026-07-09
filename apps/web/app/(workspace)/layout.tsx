@@ -297,24 +297,24 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
               onKeyDown={handleResizeKeyDown}
               className="hidden md:block"
               style={{
-              width: 4,
-              cursor: "col-resize",
-              background: "transparent",
-              position: "absolute",
-              right: 0,
-              top: 0,
-              bottom: 0,
-              zIndex: 10,
-              transition: "background 150ms",
-            }}
-            tabIndex={0}
-            role="separator"
-            aria-label="Resize sidebar. Use arrow keys to resize."
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "rgba(var(--center-channel-color-rgb), 0.16)")
-            }
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          />
+                width: 4,
+                cursor: "col-resize",
+                background: "transparent",
+                position: "absolute",
+                right: 0,
+                top: 0,
+                bottom: 0,
+                zIndex: 10,
+                transition: "background 150ms",
+              }}
+              tabIndex={0}
+              role="separator"
+              aria-label="Resize sidebar. Use arrow keys to resize."
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "rgba(var(--center-channel-color-rgb), 0.16)")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            />
           )}
         </div>
 

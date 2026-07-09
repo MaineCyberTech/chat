@@ -15,106 +15,126 @@ import {
 const router = Router();
 
 // GET /v1/sidebar-categories?workspace_id=xxx - list categories with channel assignments
-router.get("/", requireAuth, asyncHandler(async (req: Request, res: Response) => {
-  const workspaceId = req.query.workspace_id as string;
-  if (!workspaceId) throw new BadRequestError("workspace_id required");
+router.get(
+  "/",
+  requireAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const workspaceId = req.query.workspace_id as string;
+    if (!workspaceId) throw new BadRequestError("workspace_id required");
 
-  const supabase = req.supabase as SupabaseClient;
+    const supabase = req.supabase as SupabaseClient;
 
-  const { data: categories, error: catErr } = await supabase
-    .from("sidebar_categories")
-    .select("*")
-    .eq("workspace_id", workspaceId)
-    .eq("user_id", req.userId)
-    .order("sort_order");
+    const { data: categories, error: catErr } = await supabase
+      .from("sidebar_categories")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", req.userId)
+      .order("sort_order");
 
-  if (catErr) throw new InternalServerError(catErr.message);
+    if (catErr) throw new InternalServerError(catErr.message);
 
-  const categoryIds = categories.map((c) => c.id);
+    const categoryIds = categories.map((c) => c.id);
 
-  const { data: assignments, error: asgnErr } = await supabase
-    .from("sidebar_channel_assignments")
-    .select("*")
-    .in(
-      "category_id",
-      categoryIds.length > 0 ? categoryIds : ["00000000-0000-0000-0000-000000000000"],
-    )
-    .order("sort_order");
+    const { data: assignments, error: asgnErr } = await supabase
+      .from("sidebar_channel_assignments")
+      .select("*")
+      .in(
+        "category_id",
+        categoryIds.length > 0 ? categoryIds : ["00000000-0000-0000-0000-000000000000"],
+      )
+      .order("sort_order");
 
-  if (asgnErr) throw new InternalServerError(asgnErr.message);
+    if (asgnErr) throw new InternalServerError(asgnErr.message);
 
-  const grouped = categories.map((cat) => ({
-    ...cat,
-    channels: (assignments ?? []).filter((a) => a.category_id === cat.id).map((a) => a.channel_id),
-  }));
+    const grouped = categories.map((cat) => ({
+      ...cat,
+      channels: (assignments ?? [])
+        .filter((a) => a.category_id === cat.id)
+        .map((a) => a.channel_id),
+    }));
 
-  res.json({ categories: grouped });
-}));
+    res.json({ categories: grouped });
+  }),
+);
 
 // POST /v1/sidebar-categories - create a category
-router.post("/", requireAuth, asyncHandler(async (req: Request, res: Response) => {
-  const parsed = createSidebarCategorySchema.safeParse(req.body);
-  if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
+router.post(
+  "/",
+  requireAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const parsed = createSidebarCategorySchema.safeParse(req.body);
+    if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
 
-  const { workspace_id, name } = parsed.data;
-  const supabase = req.supabase as SupabaseClient;
+    const { workspace_id, name } = parsed.data;
+    const supabase = req.supabase as SupabaseClient;
 
-  const { data: existing } = await supabase
-    .from("sidebar_categories")
-    .select("sort_order")
-    .eq("workspace_id", workspace_id)
-    .eq("user_id", req.userId)
-    .order("sort_order", { ascending: false })
-    .limit(1);
+    const { data: existing } = await supabase
+      .from("sidebar_categories")
+      .select("sort_order")
+      .eq("workspace_id", workspace_id)
+      .eq("user_id", req.userId)
+      .order("sort_order", { ascending: false })
+      .limit(1);
 
-  const nextOrder = existing && existing.length > 0 ? existing[0].sort_order + 1 : 0;
+    const nextOrder = existing && existing.length > 0 ? existing[0].sort_order + 1 : 0;
 
-  const { data, error } = await supabase
-    .from("sidebar_categories")
-    .insert({ workspace_id, user_id: req.userId, name, sort_order: nextOrder })
-    .select()
-    .single();
+    const { data, error } = await supabase
+      .from("sidebar_categories")
+      .insert({ workspace_id, user_id: req.userId, name, sort_order: nextOrder })
+      .select()
+      .single();
 
-  if (error) throw new InternalServerError(error.message);
-  res.status(201).json({ category: data });
-}));
+    if (error) throw new InternalServerError(error.message);
+    res.status(201).json({ category: data });
+  }),
+);
 
 // PATCH /v1/sidebar-categories/:id - rename
-router.patch("/:id", requireAuth, validateUuidParam("id"), asyncHandler(async (req: Request, res: Response) => {
-  const parsed = updateSidebarCategorySchema.safeParse(req.body);
-  if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
+router.patch(
+  "/:id",
+  requireAuth,
+  validateUuidParam("id"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const parsed = updateSidebarCategorySchema.safeParse(req.body);
+    if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
 
-  const supabase = req.supabase as SupabaseClient;
+    const supabase = req.supabase as SupabaseClient;
 
-  const updates: Record<string, unknown> = {};
-  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
-  if (parsed.data.sort_order !== undefined) updates.sort_order = parsed.data.sort_order;
+    const updates: Record<string, unknown> = {};
+    if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.sort_order !== undefined) updates.sort_order = parsed.data.sort_order;
 
-  const { data, error } = await supabase
-    .from("sidebar_categories")
-    .update(updates)
-    .eq("id", req.params.id)
-    .eq("user_id", req.userId)
-    .select()
-    .single();
+    const { data, error } = await supabase
+      .from("sidebar_categories")
+      .update(updates)
+      .eq("id", req.params.id)
+      .eq("user_id", req.userId)
+      .select()
+      .single();
 
-  if (error) throw new InternalServerError(error.message);
-  res.json({ category: data });
-}));
+    if (error) throw new InternalServerError(error.message);
+    res.json({ category: data });
+  }),
+);
 
 // DELETE /v1/sidebar-categories/:id
-router.delete("/:id", requireAuth, validateUuidParam("id"), asyncHandler(async (req: Request, res: Response) => {
-  const supabase = req.supabase as SupabaseClient;
+router.delete(
+  "/:id",
+  requireAuth,
+  validateUuidParam("id"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const supabase = req.supabase as SupabaseClient;
 
-  const { error } = await supabase
-    .from("sidebar_categories")
-    .delete()
-    .eq("id", req.params.id)
-    .eq("user_id", req.userId);
+    const { error } = await supabase
+      .from("sidebar_categories")
+      .delete()
+      .eq("id", req.params.id)
+      .eq("user_id", req.userId);
 
-  if (error) throw new InternalServerError(error.message);
-  res.json({ success: true });
-}));
+    if (error) throw new InternalServerError(error.message);
+    res.json({ success: true });
+  }),
+);
 
 // POST /v1/sidebar-categories/:id/assignments - add channel to category
 router.post(
@@ -178,26 +198,30 @@ router.delete(
 );
 
 // PATCH /v1/sidebar-categories/reorder - reorder all categories
-router.patch("/reorder", requireAuth, asyncHandler(async (req: Request, res: Response) => {
-  const parsed = reorderSidebarCategoriesSchema.safeParse(req.body);
-  if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
+router.patch(
+  "/reorder",
+  requireAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const parsed = reorderSidebarCategoriesSchema.safeParse(req.body);
+    if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
 
-  const { categoryIds } = parsed.data;
-  const supabase = req.supabase as SupabaseClient;
-  const errs: string[] = [];
+    const { categoryIds } = parsed.data;
+    const supabase = req.supabase as SupabaseClient;
+    const errs: string[] = [];
 
-  for (let i = 0; i < categoryIds.length; i++) {
-    const { error } = await supabase
-      .from("sidebar_categories")
-      .update({ sort_order: i })
-      .eq("id", categoryIds[i])
-      .eq("user_id", req.userId);
-    if (error) errs.push(error.message);
-  }
+    for (let i = 0; i < categoryIds.length; i++) {
+      const { error } = await supabase
+        .from("sidebar_categories")
+        .update({ sort_order: i })
+        .eq("id", categoryIds[i])
+        .eq("user_id", req.userId);
+      if (error) errs.push(error.message);
+    }
 
-  if (errs.length > 0) throw new InternalServerError(errs.join("; "));
-  res.json({ success: true });
-}));
+    if (errs.length > 0) throw new InternalServerError(errs.join("; "));
+    res.json({ success: true });
+  }),
+);
 
 // PATCH /v1/sidebar-categories/:id/assignments/reorder - reorder channels in a category
 router.patch(

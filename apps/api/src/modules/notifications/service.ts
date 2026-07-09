@@ -15,7 +15,12 @@ interface Notification {
 }
 
 export class NotificationService {
-  async list(userId: string, workspaceId?: string, limit = 20, offset = 0): Promise<Notification[]> {
+  async list(
+    userId: string,
+    workspaceId?: string,
+    limit = 20,
+    offset = 0,
+  ): Promise<Notification[]> {
     const supabase = getSupabase();
     let query = supabase
       .from("notifications")

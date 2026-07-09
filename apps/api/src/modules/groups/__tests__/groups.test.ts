@@ -17,13 +17,24 @@ vi.mock("../../../lib/logger.js", () => ({
 function createChain(result: unknown) {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "order", "limit", "single",
-    "insert", "update", "delete", "is", "or", "gt", "lt", "contains", "lte",
+    "select",
+    "eq",
+    "order",
+    "limit",
+    "single",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
+    "contains",
+    "lte",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve(result).then(onfulfilled);
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
   return chain;
 }
 
@@ -76,8 +87,20 @@ describe("groups routes", () => {
     it("lists groups for a workspace", async () => {
       const chain = createChain({
         data: [
-          { id: "g-1", workspace_id: "ws-1", name: "engineering", display_name: "Engineering", user_group_members: [] },
-          { id: "g-2", workspace_id: "ws-1", name: "design", display_name: "Design", user_group_members: [] },
+          {
+            id: "g-1",
+            workspace_id: "ws-1",
+            name: "engineering",
+            display_name: "Engineering",
+            user_group_members: [],
+          },
+          {
+            id: "g-2",
+            workspace_id: "ws-1",
+            name: "design",
+            display_name: "Design",
+            user_group_members: [],
+          },
         ],
         error: null,
       });
@@ -115,7 +138,10 @@ describe("groups routes", () => {
   describe("POST /workspaces/:workspaceId/groups", () => {
     it("returns 400 when name missing", async () => {
       const handler = findHandler("post", "/workspaces/:workspaceId/groups");
-      const req = mockReq({ body: { displayName: "Engineering" }, params: { workspaceId: "ws-1" } });
+      const req = mockReq({
+        body: { displayName: "Engineering" },
+        params: { workspaceId: "ws-1" },
+      });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -138,7 +164,12 @@ describe("groups routes", () => {
 
     it("creates a group and lowercases slug", async () => {
       const insertChain = createChain({
-        data: { id: "g-1", workspace_id: "ws-1", name: "engineering", display_name: "Engineering Team" },
+        data: {
+          id: "g-1",
+          workspace_id: "ws-1",
+          name: "engineering",
+          display_name: "Engineering Team",
+        },
         error: null,
       });
       const from = vi.fn(() => insertChain);

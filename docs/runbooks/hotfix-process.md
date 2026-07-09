@@ -56,13 +56,13 @@ This ensures the hotfix is included in the next regular release.
 
 Create a post-mortem document covering:
 
-| Item                 | Details                                          |
-| -------------------- | ------------------------------------------------ |
-| **Timeline**         | When was the issue introduced? When detected? When resolved? |
-| **Root cause**       | What allowed the issue to reach production?      |
-| **Impact**           | Which users were affected? Any data loss?        |
-| **Action items**     | Prevent recurrence (tests, monitoring, process)  |
-| **Owner**            | Who is responsible for each action item          |
+| Item             | Details                                                      |
+| ---------------- | ------------------------------------------------------------ |
+| **Timeline**     | When was the issue introduced? When detected? When resolved? |
+| **Root cause**   | What allowed the issue to reach production?                  |
+| **Impact**       | Which users were affected? Any data loss?                    |
+| **Action items** | Prevent recurrence (tests, monitoring, process)              |
+| **Owner**        | Who is responsible for each action item                      |
 
 File as `docs/post-mortems/<date>-<issue-id>.md`.
 
@@ -106,8 +106,8 @@ Post-mortem: {link to doc}
 
 ## Approvers
 
-| Role    | Can approve hotfix PR? | Can approve test skip? |
-| ------- | ---------------------- | ---------------------- |
-| Owner   | ✅ Yes                 | ✅ Yes                 |
-| Admin   | ✅ Yes                 | ❌ No                  |
-| Member  | ❌ No                  | ❌ No                  |
+| Role   | Can approve hotfix PR? | Can approve test skip? |
+| ------ | ---------------------- | ---------------------- |
+| Owner  | ✅ Yes                 | ✅ Yes                 |
+| Admin  | ✅ Yes                 | ❌ No                  |
+| Member | ❌ No                  | ❌ No                  |

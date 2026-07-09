@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Performance
 
 - Added 10 new database indexes (messages channel+created, notifications, user search)
-- Narrowed SELECT * to specific columns across messages, channels, workspaces services
+- Narrowed SELECT \* to specific columns across messages, channels, workspaces services
 - Applied responseCache middleware to 14 GET endpoints (15-30s TTL)
 - Applied queryWithTimeout (10s) to 7 critical query sites
 - Added 15s fetch timeout to all Supabase clients

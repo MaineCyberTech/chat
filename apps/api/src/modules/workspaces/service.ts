@@ -28,9 +28,7 @@ export class WorkspaceService {
   ): Promise<{ workspaces: Workspace[]; total: number }> {
     const client = this.getClient(supabase);
 
-    const countQuery = await client
-      .from("workspaces")
-      .select("*", { count: "exact", head: true });
+    const countQuery = await client.from("workspaces").select("*", { count: "exact", head: true });
     const total = countQuery.count ?? 0;
 
     const { data, error } = await client
@@ -64,7 +62,11 @@ export class WorkspaceService {
       .select("*", { count: "exact", head: true })
       .eq("owner_id", input.owner_id);
     if (!countError && count !== null && count >= MAX_WORKSPACES_PER_USER) {
-      logger.warn("Workspace limit reached", { ownerId: input.owner_id, count, limit: MAX_WORKSPACES_PER_USER });
+      logger.warn("Workspace limit reached", {
+        ownerId: input.owner_id,
+        count,
+        limit: MAX_WORKSPACES_PER_USER,
+      });
       return null;
     }
     const slug = input.name

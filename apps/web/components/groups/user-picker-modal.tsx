@@ -35,9 +35,7 @@ export function UserPickerModal({
 
   const filtered = query.trim()
     ? users.filter(
-        (u) =>
-          u.display_name?.toLowerCase().includes(query.toLowerCase()) ??
-          u.id.includes(query),
+        (u) => u.display_name?.toLowerCase().includes(query.toLowerCase()) ?? u.id.includes(query),
       )
     : users;
 
@@ -154,7 +152,7 @@ export function UserPickerModal({
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
                   style={
                     isSelected
-                        ? { backgroundColor: "var(--button-bg)", color: "var(--button-color)" }
+                      ? { backgroundColor: "var(--button-bg)", color: "var(--button-color)" }
                       : {
                           backgroundColor: "var(--color-avatar-bg, #e8e8e8)",
                           color: "var(--color-avatar-fg, #333)",
@@ -168,14 +166,21 @@ export function UserPickerModal({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium" style={{ color: "var(--center-channel-color)" }}>
+                  <p
+                    className="truncate font-medium"
+                    style={{ color: "var(--center-channel-color)" }}
+                  >
                     {u.display_name ?? u.id.slice(0, 8)}
                   </p>
                 </div>
                 {isSelected ? (
                   <X size={14} className="shrink-0" style={{ color: "var(--button-bg)" }} />
                 ) : (
-                  <UserPlus size={14} className="shrink-0" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }} />
+                  <UserPlus
+                    size={14}
+                    className="shrink-0"
+                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  />
                 )}
               </button>
             );
@@ -186,7 +191,10 @@ export function UserPickerModal({
           className="border-t px-4 py-3"
           style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
         >
-          <div className="mb-2 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+          <div
+            className="mb-2 text-xs"
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+          >
             {selectedIds.size > 0
               ? `${selectedIds.size} user${selectedIds.size > 1 ? "s" : ""} selected`
               : "No users selected"}

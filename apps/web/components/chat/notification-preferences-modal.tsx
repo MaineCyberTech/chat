@@ -10,7 +10,11 @@ interface Props {
   currentNotify?: "all" | "mentions" | "none";
   currentSound?: boolean;
   currentNotifyEveryone?: boolean;
-  onSave?: (prefs: { notify: "all" | "mentions" | "none"; sound: boolean; notifyEveryone: boolean }) => void;
+  onSave?: (prefs: {
+    notify: "all" | "mentions" | "none";
+    sound: boolean;
+    notifyEveryone: boolean;
+  }) => void;
 }
 
 const NOTIFY_OPTIONS: { value: "all" | "mentions" | "none"; label: string; desc: string }[] = [
@@ -54,11 +58,19 @@ export function NotificationPreferencesModal({
   async function handleSave() {
     setSaving(true);
     try {
-      await api.put(`/channels/${channelId}/notification-preferences`, { notify, sound, notifyEveryone });
+      await api.put(`/channels/${channelId}/notification-preferences`, {
+        notify,
+        sound,
+        notifyEveryone,
+      });
       onSave?.({ notify, sound, notifyEveryone });
       onClose();
     } catch {
-      addToast({ title: "Error", description: "Failed to save notification preferences", variant: "error" });
+      addToast({
+        title: "Error",
+        description: "Failed to save notification preferences",
+        variant: "error",
+      });
       setSaving(false);
     }
   }

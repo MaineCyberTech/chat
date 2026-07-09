@@ -96,7 +96,9 @@ export function MessageContextMenu({
       onKeyDown={handleMenuKeyDown}
     >
       <button
-        ref={(el) => { menuItemsRef.current[0] = el; }}
+        ref={(el) => {
+          menuItemsRef.current[0] = el;
+        }}
         onClick={() => {
           onReply?.(contextMenu.message);
           onClose();
@@ -108,7 +110,9 @@ export function MessageContextMenu({
         <Reply size={14} /> Reply
       </button>
       <button
-        ref={(el) => { menuItemsRef.current[1] = el; }}
+        ref={(el) => {
+          menuItemsRef.current[1] = el;
+        }}
         onClick={() => {
           navigator.clipboard
             .writeText(contextMenu.message.content)
@@ -123,13 +127,17 @@ export function MessageContextMenu({
         <Copy size={14} /> Copy text
       </button>
       <button
-        ref={(el) => { menuItemsRef.current[2] = el; }}
+        ref={(el) => {
+          menuItemsRef.current[2] = el;
+        }}
         onClick={() => {
           const permalink = `${window.location.origin}/pl/${contextMenu.message.id}`;
           navigator.clipboard
             .writeText(permalink)
             .then(() => addToast({ title: "Link copied", variant: "success", duration: 2000 }))
-            .catch(() => addToast({ title: "Failed to copy link", variant: "error", duration: 3000 }));
+            .catch(() =>
+              addToast({ title: "Failed to copy link", variant: "error", duration: 3000 }),
+            );
           onClose();
         }}
         className="flex w-full items-center gap-2 px-3 py-2 text-sm"
@@ -139,7 +147,9 @@ export function MessageContextMenu({
         <Copy size={14} /> Copy link
       </button>
       <button
-        ref={(el) => { menuItemsRef.current[3] = el; }}
+        ref={(el) => {
+          menuItemsRef.current[3] = el;
+        }}
         onClick={() => {
           onSetRemindMessageId(contextMenu.message.id);
           onClose();
@@ -152,8 +162,13 @@ export function MessageContextMenu({
       </button>
       {onForward && (
         <button
-          ref={(el) => { menuItemsRef.current[4] = el; }}
-          onClick={() => { onForward(contextMenu.message); onClose(); }}
+          ref={(el) => {
+            menuItemsRef.current[4] = el;
+          }}
+          onClick={() => {
+            onForward(contextMenu.message);
+            onClose();
+          }}
           className="flex w-full items-center gap-2 px-3 py-2 text-sm"
           style={{ color: "var(--center-channel-color)" }}
           role="menuitem"
@@ -163,8 +178,13 @@ export function MessageContextMenu({
       )}
       {onPin && (
         <button
-          ref={(el) => { menuItemsRef.current[5] = el; }}
-          onClick={() => { onPin(contextMenu.message); onClose(); }}
+          ref={(el) => {
+            menuItemsRef.current[5] = el;
+          }}
+          onClick={() => {
+            onPin(contextMenu.message);
+            onClose();
+          }}
           className="flex w-full items-center gap-2 px-3 py-2 text-sm"
           style={{ color: "var(--center-channel-color)" }}
           role="menuitem"
@@ -174,7 +194,9 @@ export function MessageContextMenu({
       )}
       {contextMenu.message.user_id === currentUserId && onEdit && (
         <button
-          ref={(el) => { menuItemsRef.current[4] = el; }}
+          ref={(el) => {
+            menuItemsRef.current[4] = el;
+          }}
           onClick={() => {
             onStartEdit(contextMenu.message);
             onClose();
@@ -188,7 +210,9 @@ export function MessageContextMenu({
       )}
       {contextMenu.message.user_id === currentUserId && onDelete && (
         <button
-          ref={(el) => { menuItemsRef.current[5] = el; }}
+          ref={(el) => {
+            menuItemsRef.current[5] = el;
+          }}
           onClick={() => {
             onSetDeleteConfirmId(contextMenu.message.id);
             onClose();

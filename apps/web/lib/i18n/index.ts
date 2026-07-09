@@ -17,7 +17,12 @@ const localeMap: Record<string, LocaleInfo> = {
   es: { code: "es", name: "Spanish", nativeName: "Español", direction: "ltr" },
   fr: { code: "fr", name: "French", nativeName: "Français", direction: "ltr" },
   de: { code: "de", name: "German", nativeName: "Deutsch", direction: "ltr" },
-  "pt-BR": { code: "pt-BR", name: "Portuguese (Brazil)", nativeName: "Português (Brasil)", direction: "ltr" },
+  "pt-BR": {
+    code: "pt-BR",
+    name: "Portuguese (Brazil)",
+    nativeName: "Português (Brasil)",
+    direction: "ltr",
+  },
   ja: { code: "ja", name: "Japanese", nativeName: "日本語", direction: "ltr" },
 };
 
@@ -38,7 +43,9 @@ export function t(key: string, defaultValue?: string | Record<string, string | n
     return (defaultValue ?? key) as string;
   }
   if (!defaultValue || typeof defaultValue === "string") return value;
-  return value.replace(/\{(\w+)\}/g, (_, p) => String((defaultValue as Record<string, string | number>)[p] ?? `{${p}}`));
+  return value.replace(/\{(\w+)\}/g, (_, p) =>
+    String((defaultValue as Record<string, string | number>)[p] ?? `{${p}}`),
+  );
 }
 
 export function tn(key: string, count: number, params?: Record<string, string | number>): string {

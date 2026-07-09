@@ -16,13 +16,25 @@ type MockChain = { [key: string]: any; then: (fn: (v: unknown) => unknown) => Pr
 function createChain(result: unknown): MockChain {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "in", "order", "limit", "single",
-    "insert", "update", "delete", "is", "or", "gt", "lt", "contains", "lte",
+    "select",
+    "eq",
+    "in",
+    "order",
+    "limit",
+    "single",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
+    "contains",
+    "lte",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve(result).then(onfulfilled);
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
   return chain;
 }
 
@@ -75,7 +87,13 @@ describe("consent routes", () => {
     it("lists consent records", async () => {
       const listChain = createChain({
         data: [
-          { id: "c1", user_id: "user-1", consent_type: "cookies", granted: true, created_at: "2024-01-01T00:00:00Z" },
+          {
+            id: "c1",
+            user_id: "user-1",
+            consent_type: "cookies",
+            granted: true,
+            created_at: "2024-01-01T00:00:00Z",
+          },
         ],
         error: null,
       });

@@ -31,11 +31,18 @@ export class ChannelService {
     return supabase ?? getSupabase();
   }
 
-  async listByWorkspace(workspaceId: string, supabase?: SupabaseClient, limit = 50, offset = 0): Promise<Channel[]> {
+  async listByWorkspace(
+    workspaceId: string,
+    supabase?: SupabaseClient,
+    limit = 50,
+    offset = 0,
+  ): Promise<Channel[]> {
     const client = this.getClient(supabase);
     const { data, error } = await client
       .from("channels")
-      .select("id, name, slug, topic, workspace_id, created_by, is_private, is_read_only, channel_type, sort_order, created_at, updated_at, deleted_at")
+      .select(
+        "id, name, slug, topic, workspace_id, created_by, is_private, is_read_only, channel_type, sort_order, created_at, updated_at, deleted_at",
+      )
       .eq("workspace_id", workspaceId)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true })
@@ -168,7 +175,9 @@ export class ChannelService {
       .catch(() => {});
 
     try {
-      getIO().to(`channel:${channelId}`).emit("channel:updated", { channel: data as Channel });
+      getIO()
+        .to(`channel:${channelId}`)
+        .emit("channel:updated", { channel: data as Channel });
     } catch {
       // Socket not initialized
     }
@@ -193,7 +202,9 @@ export class ChannelService {
 
       try {
         const roomName = `channel:${channelId}`;
-        getIO().to(roomName).emit("channel:deleted", { channelId, workspaceId: channel.workspace_id });
+        getIO()
+          .to(roomName)
+          .emit("channel:deleted", { channelId, workspaceId: channel.workspace_id });
         removeAllFromRoom(roomName);
       } catch {
         // Socket not initialized
@@ -302,7 +313,9 @@ export class ChannelService {
     const channelIds = dmRecords.map((r: { channel_id: string }) => r.channel_id);
     const { data: channels } = await client
       .from("channels")
-      .select("id, name, slug, topic, workspace_id, channel_type, sort_order, created_at, updated_at")
+      .select(
+        "id, name, slug, topic, workspace_id, channel_type, sort_order, created_at, updated_at",
+      )
       .in("id", channelIds)
       .is("deleted_at", null)
       .in("channel_type", ["dm", "group"])

@@ -92,7 +92,9 @@ describe("feature-flags routes", () => {
 
       await callHandler(handler, req, res);
 
-      expect(res.json).toHaveBeenCalledWith({ flags: expect.arrayContaining([expect.objectContaining({ key: "new-ui" })]) });
+      expect(res.json).toHaveBeenCalledWith({
+        flags: expect.arrayContaining([expect.objectContaining({ key: "new-ui" })]),
+      });
     });
 
     it("returns empty array when no flags", async () => {
@@ -302,7 +304,11 @@ describe("feature-flags routes", () => {
 
   describe("POST /feature-flags/:key/evaluate", () => {
     it("evaluates a flag for the current user", async () => {
-      mockService.evaluateFlag.mockResolvedValue({ key: "new-ui", enabled: true, reason: "matched" });
+      mockService.evaluateFlag.mockResolvedValue({
+        key: "new-ui",
+        enabled: true,
+        reason: "matched",
+      });
 
       const handler = findHandler("post", "/feature-flags/:key/evaluate");
       const req = mockReq({ params: { key: "new-ui" }, body: {} });
@@ -320,7 +326,11 @@ describe("feature-flags routes", () => {
     });
 
     it("evaluates with explicit userId and userRole", async () => {
-      mockService.evaluateFlag.mockResolvedValue({ key: "new-ui", enabled: false, reason: "role_not_targeted" });
+      mockService.evaluateFlag.mockResolvedValue({
+        key: "new-ui",
+        enabled: false,
+        reason: "role_not_targeted",
+      });
 
       const handler = findHandler("post", "/feature-flags/:key/evaluate");
       const req = mockReq({
@@ -336,7 +346,11 @@ describe("feature-flags routes", () => {
         userRole: "admin",
       });
       expect(res.json).toHaveBeenCalledWith({
-        evaluation: expect.objectContaining({ key: "new-ui", enabled: false, reason: "role_not_targeted" }),
+        evaluation: expect.objectContaining({
+          key: "new-ui",
+          enabled: false,
+          reason: "role_not_targeted",
+        }),
       });
     });
 

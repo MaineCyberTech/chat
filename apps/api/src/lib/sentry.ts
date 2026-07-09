@@ -39,10 +39,7 @@ export function initSentry() {
       if (event.exception?.values) {
         for (const value of event.exception.values) {
           if (value.value) {
-            value.value = value.value.replace(
-              /[\w.+-]+@[\w-]+\.[\w.-]+/g,
-              "[EMAIL]",
-            );
+            value.value = value.value.replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "[EMAIL]");
           }
         }
       }

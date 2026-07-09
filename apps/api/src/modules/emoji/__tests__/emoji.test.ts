@@ -16,13 +16,25 @@ type MockChain = { [key: string]: any; then: (fn: (v: unknown) => unknown) => Pr
 function createChain(result: unknown): MockChain {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "in", "order", "limit", "single",
-    "insert", "update", "delete", "is", "or", "gt", "lt", "contains", "lte",
+    "select",
+    "eq",
+    "in",
+    "order",
+    "limit",
+    "single",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
+    "contains",
+    "lte",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve(result).then(onfulfilled);
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
   return chain;
 }
 
@@ -75,7 +87,13 @@ describe("emoji routes", () => {
     it("lists emoji for a workspace", async () => {
       const chain = createChain({
         data: [
-          { id: "e1", workspace_id: "ws-1", name: "wave", image_url: "https://example.com/wave.png", created_by: "user-1" },
+          {
+            id: "e1",
+            workspace_id: "ws-1",
+            name: "wave",
+            image_url: "https://example.com/wave.png",
+            created_by: "user-1",
+          },
         ],
         error: null,
       });
@@ -117,7 +135,13 @@ describe("emoji routes", () => {
   describe("POST /workspaces/:workspaceId/emoji", () => {
     it("creates an emoji", async () => {
       const chain = createChain({
-        data: { id: "e-new", workspace_id: "ws-1", name: "wave", image_url: "https://example.com/wave.png", created_by: "user-1" },
+        data: {
+          id: "e-new",
+          workspace_id: "ws-1",
+          name: "wave",
+          image_url: "https://example.com/wave.png",
+          created_by: "user-1",
+        },
         error: null,
       });
 

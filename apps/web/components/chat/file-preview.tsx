@@ -128,15 +128,12 @@ export function FilePreview({
     [zoom, dragOffset],
   );
 
-  const onMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (!dragging.current) return;
-      const dx = dragOrigin.current.x + (e.clientX - dragStart.current.x);
-      const dy = dragOrigin.current.y + (e.clientY - dragStart.current.y);
-      setDragOffset({ x: dx, y: dy });
-    },
-    [],
-  );
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!dragging.current) return;
+    const dx = dragOrigin.current.x + (e.clientX - dragStart.current.x);
+    const dy = dragOrigin.current.y + (e.clientY - dragStart.current.y);
+    setDragOffset({ x: dx, y: dy });
+  }, []);
 
   const onMouseUp = useCallback(() => {
     dragging.current = false;
@@ -159,7 +156,7 @@ export function FilePreview({
       <img
         src={src}
         alt={alt}
-        className="max-h-[80vh] max-w-[85vw] rounded-lg object-contain select-none transition-transform duration-200"
+        className="max-h-[80vh] max-w-[85vw] rounded-lg object-contain transition-transform duration-200 select-none"
         style={imageStyle}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={onMouseDown}

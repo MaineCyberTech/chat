@@ -28,8 +28,8 @@ export default function InstallPage() {
             className="max-w-md text-base"
             style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
           >
-            MaineCyberTech Chat is already installed on your device. You can open it from your home screen
-            or app launcher.
+            MaineCyberTech Chat is already installed on your device. You can open it from your home
+            screen or app launcher.
           </p>
         </div>
         <Link href="/">

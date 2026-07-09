@@ -18,7 +18,10 @@ export class SupabaseReactionStore implements IReactionStore {
     return (data ?? []) as Reaction[];
   }
 
-  async getBatch(messageIds: string[], supabase: SupabaseClient): Promise<Record<string, Reaction[]>> {
+  async getBatch(
+    messageIds: string[],
+    supabase: SupabaseClient,
+  ): Promise<Record<string, Reaction[]>> {
     if (messageIds.length === 0) return {};
 
     const { data } = await supabase
@@ -56,10 +59,7 @@ export class SupabaseReactionStore implements IReactionStore {
   }
 
   async remove(id: string, supabase: SupabaseClient): Promise<void> {
-    const { error } = await supabase
-      .from("reactions")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("reactions").delete().eq("id", id);
     if (error) throw new Error(`Failed to remove reaction: ${error.message}`);
   }
 }

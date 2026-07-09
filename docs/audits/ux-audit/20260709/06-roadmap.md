@@ -9,12 +9,12 @@
 
 **4-phase program** spanning low-risk visual cleanup through medium-risk interaction refinements. No architectural changes. No redesigns. All improvements are incremental and independently revertible.
 
-| Phase | Focus | Items | Effort | Risk |
-|---|---|---|---|---|
-| **P0** | Observation + validation | Audit UX-identified focus trap gaps, contrast spot-check, establish baseline | 1 engineer-day | None |
-| **P1** | No-risk visual consistency | Button/Input adoption, dark mode alignment, empty states, spacing tokens | 3-4 engineer-days | Very Low |
-| **P2** | Low-risk component consistency | Dialog adoption, settings sub-nav, channel filter, mark all read, search breadcrumb | 3-5 engineer-days | Low |
-| **P3** | Medium-risk refinements | Post priority labels, reaction tooltip wording, modal portal, expanded Storybook | 4-6 engineer-days | Low-Medium |
+| Phase  | Focus                          | Items                                                                               | Effort            | Risk       |
+| ------ | ------------------------------ | ----------------------------------------------------------------------------------- | ----------------- | ---------- |
+| **P0** | Observation + validation       | Audit UX-identified focus trap gaps, contrast spot-check, establish baseline        | 1 engineer-day    | None       |
+| **P1** | No-risk visual consistency     | Button/Input adoption, dark mode alignment, empty states, spacing tokens            | 3-4 engineer-days | Very Low   |
+| **P2** | Low-risk component consistency | Dialog adoption, settings sub-nav, channel filter, mark all read, search breadcrumb | 3-5 engineer-days | Low        |
+| **P3** | Medium-risk refinements        | Post priority labels, reaction tooltip wording, modal portal, expanded Storybook    | 4-6 engineer-days | Low-Medium |
 
 ---
 
@@ -145,30 +145,30 @@ These changes are visual-only, additive, or replacements of existing elements wi
 
 Ordered by user impact:
 
-| Priority | Item | Phase | Justification |
-|---|---|---|---|
-| 1 | Modal focus trap audit | P3 | Screen reader users trapped in modal without focus management |
-| 2 | `aria-live` on message list | P3 | New messages should be announced |
-| 3 | `role="menu"` on context menus | P2 | Proper semantics for menu interaction |
-| 4 | Empty state screen reader text | P1 | Empty states should announce status |
-| 5 | Color contrast systematic audit | P2 | Ensure WCAG AA compliance across all text |
-| 6 | Loading skeleton `aria-busy` | P3 | Screen reader should know content is loading |
-| 7 | Tablet layout verification | P2 | Ensure 768-1024px layouts are usable |
-| 8 | Landscape mobile keyboard test | P2 | Verify UX-009 fix works end-to-end |
+| Priority | Item                            | Phase | Justification                                                 |
+| -------- | ------------------------------- | ----- | ------------------------------------------------------------- |
+| 1        | Modal focus trap audit          | P3    | Screen reader users trapped in modal without focus management |
+| 2        | `aria-live` on message list     | P3    | New messages should be announced                              |
+| 3        | `role="menu"` on context menus  | P2    | Proper semantics for menu interaction                         |
+| 4        | Empty state screen reader text  | P1    | Empty states should announce status                           |
+| 5        | Color contrast systematic audit | P2    | Ensure WCAG AA compliance across all text                     |
+| 6        | Loading skeleton `aria-busy`    | P3    | Screen reader should know content is loading                  |
+| 7        | Tablet layout verification      | P2    | Ensure 768-1024px layouts are usable                          |
+| 8        | Landscape mobile keyboard test  | P2    | Verify UX-009 fix works end-to-end                            |
 
 ---
 
 ## 6. What Must Stay As-Is
 
-| Element | Reason to Keep Frozen |
-|---|---|
-| **Auth flows** | Any auth change has maximum blast radius. Login, OAuth, magic link, verify flows must not be modified. |
-| **Message send pipeline** | Optimistic UI + Socket.io delivery is the most critical user flow. No changes to composition or delivery chain. |
-| **Workspace layout CSS Grid** | The app__body grid (TeamSidebar + AppSidebar + Content) is load-bearing layout. No structural changes. |
+| Element                        | Reason to Keep Frozen                                                                                                       |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| **Auth flows**                 | Any auth change has maximum blast radius. Login, OAuth, magic link, verify flows must not be modified.                      |
+| **Message send pipeline**      | Optimistic UI + Socket.io delivery is the most critical user flow. No changes to composition or delivery chain.             |
+| **Workspace layout CSS Grid**  | The app\_\_body grid (TeamSidebar + AppSidebar + Content) is load-bearing layout. No structural changes.                    |
 | **Globals.css variable names** | The `--center-channel-bg`, `--sidebar-bg`, etc. naming is used everywhere. Renaming would be a large-blast-radius refactor. |
-| **Supabase RLS-driven auth** | Auth gating via Supabase RLS is the security model. UI changes must not bypass or simplify auth checks. |
-| **Socket.io event contracts** | Any change to socket event names or payloads breaks real-time. Must remain stable. |
-| **API route contracts** | `/api/v1/*` endpoints consumed by the frontend must remain stable unless changed in coordination with API. |
+| **Supabase RLS-driven auth**   | Auth gating via Supabase RLS is the security model. UI changes must not bypass or simplify auth checks.                     |
+| **Socket.io event contracts**  | Any change to socket event names or payloads breaks real-time. Must remain stable.                                          |
+| **API route contracts**        | `/api/v1/*` endpoints consumed by the frontend must remain stable unless changed in coordination with API.                  |
 
 ---
 

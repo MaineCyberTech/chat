@@ -5,9 +5,7 @@ function getContext(): AudioContext {
   return audioContext;
 }
 
-export async function playNotificationSound(
-  soundType: string = "standard",
-): Promise<void> {
+export async function playNotificationSound(soundType: string = "standard"): Promise<void> {
   if (soundType === "none") return;
   try {
     const ctx = getContext();
@@ -50,7 +48,11 @@ export async function playNotificationSound(
         break;
       }
       case "chime": {
-        const tones: [number, number][] = [[523, 0], [659, 0.1], [784, 0.2]];
+        const tones: [number, number][] = [
+          [523, 0],
+          [659, 0.1],
+          [784, 0.2],
+        ];
         for (const [freq, delay] of tones) {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
@@ -107,7 +109,11 @@ export async function playNotificationSound(
         break;
       }
       case "tri-tone": {
-        const tones: [number, number][] = [[440, 0], [554, 0.12], [659, 0.24]];
+        const tones: [number, number][] = [
+          [440, 0],
+          [554, 0.12],
+          [659, 0.24],
+        ];
         for (const [freq, delay] of tones) {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();

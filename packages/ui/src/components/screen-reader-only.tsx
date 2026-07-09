@@ -6,9 +6,5 @@ export interface ScreenReaderOnlyProps {
 }
 
 export function ScreenReaderOnly({ children, as: Tag = "span" }: ScreenReaderOnlyProps) {
-  return (
-    <Tag className="sr-only">
-      {children}
-    </Tag>
-  );
+  return <Tag className="sr-only">{children}</Tag>;
 }

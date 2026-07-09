@@ -2,10 +2,10 @@
 
 ## Pre-Flight Validation
 
-| Repo | Path | Exists |
-|------|------|--------|
+| Repo       | Path                        | Exists |
+| ---------- | --------------------------- | ------ |
 | Mattermost | `C:\temp\mattermost-master` | ✅ Yes |
-| Chat | `C:\temp\chat` | ✅ Yes |
+| Chat       | `C:\temp\chat`              | ✅ Yes |
 
 ---
 
@@ -13,19 +13,19 @@
 
 ### Top-Level Structure (24 entries)
 
-| Entry | Type | Description |
-|-------|------|-------------|
-| `api/` | dir | OpenAPI v4 spec, server (Go), playbooks |
-| `server/` | dir | Go backend (channels, platform, enterprise, cmd) |
-| `webapp/` | dir | React frontend (channels, platform packages) |
-| `e2e-tests/` | dir | Cypress + Playwright tests |
-| `docs/` | dir | API docs, development docs, site |
-| `.github/` | dir | 41 CI/CD workflows |
-| `tools/` | dir | Custom Go tools (govet, mmgotool) |
-| `build/` | dir | (part of server/build) Docker, release |
-| `config/` | dir | (part of server/config) Config store |
-| `scripts/` | dir | (part of server/scripts) DB, deploy scripts |
-| Root files | | `go.mod`, `Makefile`, `.nvmrc`, `SECURITY.md`, etc. |
+| Entry        | Type | Description                                         |
+| ------------ | ---- | --------------------------------------------------- |
+| `api/`       | dir  | OpenAPI v4 spec, server (Go), playbooks             |
+| `server/`    | dir  | Go backend (channels, platform, enterprise, cmd)    |
+| `webapp/`    | dir  | React frontend (channels, platform packages)        |
+| `e2e-tests/` | dir  | Cypress + Playwright tests                          |
+| `docs/`      | dir  | API docs, development docs, site                    |
+| `.github/`   | dir  | 41 CI/CD workflows                                  |
+| `tools/`     | dir  | Custom Go tools (govet, mmgotool)                   |
+| `build/`     | dir  | (part of server/build) Docker, release              |
+| `config/`    | dir  | (part of server/config) Config store                |
+| `scripts/`   | dir  | (part of server/scripts) DB, deploy scripts         |
+| Root files   |      | `go.mod`, `Makefile`, `.nvmrc`, `SECURITY.md`, etc. |
 
 ### Server (`server/`) — Go Backend
 
@@ -139,19 +139,19 @@ e2e-tests/
 
 ### Top-Level Structure (50 entries)
 
-| Entry | Type | Description |
-|-------|------|-------------|
-| `apps/` | dir | Application packages (api, web, worker) |
-| `packages/` | dir | Shared packages (db, ui, sdk, config) |
-| `infra/` | dir | Docker + Terraform infrastructure |
-| `scripts/` | dir | 39 dev/tooling scripts |
-| `supabase/` | dir | Supabase config, migrations, policies, seeds |
-| `tests/` | dir | E2E, integration, k6, chaos tests |
-| `hardening/` | dir | Hardening analysis artifacts |
-| `docs/` | dir | Architecture, audits, runbooks, security docs |
-| `.github/` | dir | 20 CI/CD workflows |
-| `.storybook/` | dir | Storybook config |
-| Root files | | `turbo.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, etc. |
+| Entry         | Type | Description                                                     |
+| ------------- | ---- | --------------------------------------------------------------- |
+| `apps/`       | dir  | Application packages (api, web, worker)                         |
+| `packages/`   | dir  | Shared packages (db, ui, sdk, config)                           |
+| `infra/`      | dir  | Docker + Terraform infrastructure                               |
+| `scripts/`    | dir  | 39 dev/tooling scripts                                          |
+| `supabase/`   | dir  | Supabase config, migrations, policies, seeds                    |
+| `tests/`      | dir  | E2E, integration, k6, chaos tests                               |
+| `hardening/`  | dir  | Hardening analysis artifacts                                    |
+| `docs/`       | dir  | Architecture, audits, runbooks, security docs                   |
+| `.github/`    | dir  | 20 CI/CD workflows                                              |
+| `.storybook/` | dir  | Storybook config                                                |
+| Root files    |      | `turbo.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, etc. |
 
 ### Apps (`apps/`) — Turborepo Applications
 
@@ -263,6 +263,7 @@ supabase/
 ### CI/CD (`.github/workflows/`)
 
 20 workflow files:
+
 - `ci.yml`, `validate.yml` — Main CI + reusable
 - `build-push.yml`, `deploy-development.yml`, `deploy-production.yml`
 - `infra-development.yml`
@@ -290,6 +291,7 @@ tests/
 ### Scripts (`scripts/`)
 
 39 entries including:
+
 - `setup-dev.ps1`, `teardown-dev.ps1`, `start-local-stack.ps1`
 - `engine/` — Audit engine
 - `hardening_runner/` — Hardening pipeline
@@ -315,16 +317,16 @@ docs/
 
 ### Key Architectural Patterns
 
-| Aspect | Pattern |
-|--------|---------|
-| **Auth** | Supabase Auth (magic link), per-request client |
-| **Data** | Supabase (PostgreSQL + RLS) |
-| **Real-time** | Socket.io + Redis adapter |
-| **Background** | BullMQ (Redis) |
-| **State** | React hooks/context (no Redux) |
-| **Styling** | Tailwind CSS + design tokens |
-| **Build** | Turborepo + pnpm |
-| **API** | Express + route-registry pattern |
-| **DB access** | Store abstraction layer (IChannelStore, etc.) |
-| **Media** | LiveKit WebRTC |
-| **PWA** | Service worker + push notifications |
+| Aspect         | Pattern                                        |
+| -------------- | ---------------------------------------------- |
+| **Auth**       | Supabase Auth (magic link), per-request client |
+| **Data**       | Supabase (PostgreSQL + RLS)                    |
+| **Real-time**  | Socket.io + Redis adapter                      |
+| **Background** | BullMQ (Redis)                                 |
+| **State**      | React hooks/context (no Redux)                 |
+| **Styling**    | Tailwind CSS + design tokens                   |
+| **Build**      | Turborepo + pnpm                               |
+| **API**        | Express + route-registry pattern               |
+| **DB access**  | Store abstraction layer (IChannelStore, etc.)  |
+| **Media**      | LiveKit WebRTC                                 |
+| **PWA**        | Service worker + push notifications            |

@@ -3,22 +3,13 @@
 import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { Button, useToast } from "@chat/ui";
 import { api } from "@/lib/api";
-import {
-  Paperclip,
-  Smile,
-  Eye,
-  Send,
-  Flag,
-  Clock,
-  Sparkles,
-  AlertTriangle,
-} from "lucide-react";
+import { Paperclip, Smile, Eye, Send, Flag, Clock, Sparkles, AlertTriangle } from "lucide-react";
 import { FormattingBar } from "./formatting-bar";
 import { EmojiPicker, searchEmojis } from "./emoji-picker";
 import { TipTapEditor, type Editor } from "./tiptap-editor";
 import { SLASH_COMMANDS } from "@/lib/slash-commands";
 import { MarkdownPreview } from "./markdown-preview";
-import type { PostPriority } from "./priority-picker";
+import { PRIORITY_CONFIG, type PostPriority } from "./priority-picker";
 import { FileAttachmentList } from "./file-attachment-list";
 import { PriorityPicker, PRIORITY_OPTIONS } from "./priority-picker";
 import { AiRewritePicker } from "./ai-rewrite-picker";
@@ -531,27 +522,30 @@ export function MessageInput({
     setShowEmojiPicker(false);
   }
 
-  const handleAiRewrite = useCallback(async (action: string) => {
-    const editor = tiptapRef.current;
-    const text = editor?.getText().trim();
-    if (!text) return;
+  const handleAiRewrite = useCallback(
+    async (action: string) => {
+      const editor = tiptapRef.current;
+      const text = editor?.getText().trim();
+      if (!text) return;
 
-    setAiRewriting(true);
-    try {
-      const res = await api.post<{ rewritten: string }>("/v1/ai/rewrite", { text, action });
-      if (editor) {
-        editor.commands.setContent(res.rewritten);
-        setContent(editor.getHTML());
-        editor.commands.focus();
+      setAiRewriting(true);
+      try {
+        const res = await api.post<{ rewritten: string }>("/v1/ai/rewrite", { text, action });
+        if (editor) {
+          editor.commands.setContent(res.rewritten);
+          setContent(editor.getHTML());
+          editor.commands.focus();
+        }
+        addToast({ title: "Rewritten", variant: "success", duration: 2000 });
+      } catch {
+        addToast({ title: "Error", description: "Failed to rewrite message", variant: "error" });
+      } finally {
+        setAiRewriting(false);
+        setShowAiPicker(false);
       }
-      addToast({ title: "Rewritten", variant: "success", duration: 2000 });
-    } catch {
-      addToast({ title: "Error", description: "Failed to rewrite message", variant: "error" });
-    } finally {
-      setAiRewriting(false);
-      setShowAiPicker(false);
-    }
-  }, [addToast]);
+    },
+    [addToast],
+  );
 
   return (
     <div
@@ -773,7 +767,10 @@ export function MessageInput({
             <PriorityPicker
               priority={priority}
               show={showPriorityPicker}
-              onSelect={(p) => { setPriority(p); setShowPriorityPicker(false); }}
+              onSelect={(p) => {
+                setPriority(p);
+                setShowPriorityPicker(false);
+              }}
               onClose={() => setShowPriorityPicker(false)}
             />
 
@@ -810,7 +807,9 @@ export function MessageInput({
                 className={`flex h-7 w-7 items-center justify-center rounded text-xs font-medium ${showFormatting ? "text-white" : ""}`}
                 style={{
                   background: showFormatting ? "var(--button-bg)" : "transparent",
-                  color: showFormatting ? "var(--button-color)" : "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))",
+                  color: showFormatting
+                    ? "var(--button-color)"
+                    : "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))",
                 }}
                 aria-label="Toggle formatting toolbar"
                 title="Formatting"
@@ -822,7 +821,9 @@ export function MessageInput({
                 className={`flex h-7 w-7 items-center justify-center rounded text-xs font-medium ${showPreview ? "text-white" : ""}`}
                 style={{
                   background: showPreview ? "var(--button-bg)" : "transparent",
-                  color: showPreview ? "var(--button-color)" : "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))",
+                  color: showPreview
+                    ? "var(--button-color)"
+                    : "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))",
                 }}
                 aria-label={showPreview ? "Hide preview" : "Show preview"}
               >
@@ -879,8 +880,14 @@ export function MessageInput({
               <SchedulePicker
                 scheduledAt={scheduledAt}
                 show={showSchedulePicker}
-                onSchedule={(iso) => { setScheduledAt(iso); setShowSchedulePicker(false); }}
-                onClear={() => { setScheduledAt(""); setShowSchedulePicker(false); }}
+                onSchedule={(iso) => {
+                  setScheduledAt(iso);
+                  setShowSchedulePicker(false);
+                }}
+                onClear={() => {
+                  setScheduledAt("");
+                  setShowSchedulePicker(false);
+                }}
                 onClose={() => setShowSchedulePicker(false)}
               />
             </div>
@@ -890,9 +897,10 @@ export function MessageInput({
                 <span
                   className="text-[10px] tabular-nums"
                   style={{
-                    color: content.length > 4000
-                      ? "var(--dnd-indicator)"
-                      : "rgba(var(--center-channel-color-rgb), 0.56)",
+                    color:
+                      content.length > 4000
+                        ? "var(--dnd-indicator)"
+                        : "rgba(var(--center-channel-color-rgb), 0.56)",
                   }}
                 >
                   {content.length}
@@ -936,7 +944,8 @@ export function MessageInput({
       {/* @everyone warning */}
       {showMentionWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
+          <div
+            className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
             role="alertdialog"
           >
             <h2 className="text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
@@ -975,7 +984,10 @@ export function MessageInput({
       {/* Urgent/Critical priority warning */}
       {showPriorityWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]" role="alertdialog">
+          <div
+            className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
+            role="alertdialog"
+          >
             <div
               className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
               style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}

@@ -2,7 +2,14 @@ import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
 import { recordWebhookDelivery } from "../../lib/metrics.js";
 import { executeWithCircuitBreaker } from "../../lib/circuit-breaker.js";
-import { createCipheriv, createDecipheriv, randomBytes, createHash, createHmac, randomUUID } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  createHash,
+  createHmac,
+  randomUUID,
+} from "node:crypto";
 
 // SSRF protection: private IP ranges and localhost
 const PRIVATE_IP_RANGES = [
@@ -64,7 +71,10 @@ function validateSecret(secret: string | undefined): { valid: boolean; error?: s
     return { valid: true }; // empty secret is allowed (no signature)
   }
   if (secret.length < WEBHOOK_SECRET_MIN_LENGTH) {
-    return { valid: false, error: `Webhook secret must be at least ${WEBHOOK_SECRET_MIN_LENGTH} characters` };
+    return {
+      valid: false,
+      error: `Webhook secret must be at least ${WEBHOOK_SECRET_MIN_LENGTH} characters`,
+    };
   }
   return { valid: true };
 }

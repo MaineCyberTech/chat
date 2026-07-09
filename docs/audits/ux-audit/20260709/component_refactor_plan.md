@@ -11,10 +11,14 @@
 ```tsx
 <Dialog open={open} onClose={onClose}>
   <DialogTitle>Delete message?</DialogTitle>
-  <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+  <p className="text-muted-foreground text-sm">This action cannot be undone.</p>
   <div className="flex justify-end gap-2">
-    <Button variant="ghost" onClick={onClose}>Cancel</Button>
-    <Button variant="danger" onClick={handleDelete}>Delete</Button>
+    <Button variant="ghost" onClick={onClose}>
+      Cancel
+    </Button>
+    <Button variant="danger" onClick={handleDelete}>
+      Delete
+    </Button>
   </div>
 </Dialog>
 ```
@@ -36,10 +40,11 @@ Remove: `delete-dialog.tsx`, `delete-dialog.stories.tsx`
 Add `loading` prop:
 
 ```tsx
-<Button loading>Send</Button>  // Shows spinner, disables interaction
+<Button loading>Send</Button> // Shows spinner, disables interaction
 ```
 
 Update `button.tsx`:
+
 ```diff
 + interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 +   loading?: boolean;
@@ -54,11 +59,13 @@ Update `button.tsx`:
 ```tsx
 const [imgError, setImgError] = useState(false);
 
-{src && !imgError ? (
-  <img src={src} alt={alt} onError={() => setImgError(true)} />
-) : (
-  <span className="avatar-initials">{initials}</span>
-)}
+{
+  src && !imgError ? (
+    <img src={src} alt={alt} onError={() => setImgError(true)} />
+  ) : (
+    <span className="avatar-initials">{initials}</span>
+  );
+}
 ```
 
 ---
@@ -68,6 +75,7 @@ const [imgError, setImgError] = useState(false);
 ### Replace Hardcoded `#fff`
 
 5 files with `color: "#fff"` on button backgrounds → replace with `color: "var(--button-color)"`:
+
 - `search/page.tsx:154`
 - `admin/page.tsx:506`
 - `user-picker-modal.tsx:158`
@@ -92,6 +100,7 @@ Then replace inline 0.56 alpha values with `var(--text-tertiary)`.
 ### Migrate Away from Mattermost Legacy Vars
 
 Step 1: Create mapping in `globals.css`:
+
 ```css
 :root {
   --color-foreground-primary: var(--center-channel-color);
@@ -105,14 +114,14 @@ Step 2: Over time, move components to reference `--color-*` variables.
 
 ## Phase 4: New Components to Build (Days 15-21)
 
-| Component | Priority | Purpose |
-|-----------|----------|---------|
-| `CharacterCounter` | P3 | Shows message character count near send button |
-| `InlineUrlInput` | P1 | Replaces `window.prompt()` for link/image URL entry in formatting toolbar |
-| `MarkAllReadButton` | P3 | Bulk dismiss notifications |
-| `EmptyStateGuidance` | P3 | Enhanced empty states with actionable microcopy |
-| `KeyboardReorder` | P2 | "Move up/down" buttons for drag-and-drop alternatives |
-| `SafeAreaWrapper` | P1 | Centralizes safe area padding for mobile layouts |
+| Component            | Priority | Purpose                                                                   |
+| -------------------- | -------- | ------------------------------------------------------------------------- |
+| `CharacterCounter`   | P3       | Shows message character count near send button                            |
+| `InlineUrlInput`     | P1       | Replaces `window.prompt()` for link/image URL entry in formatting toolbar |
+| `MarkAllReadButton`  | P3       | Bulk dismiss notifications                                                |
+| `EmptyStateGuidance` | P3       | Enhanced empty states with actionable microcopy                           |
+| `KeyboardReorder`    | P2       | "Move up/down" buttons for drag-and-drop alternatives                     |
+| `SafeAreaWrapper`    | P1       | Centralizes safe area padding for mobile layouts                          |
 
 ---
 

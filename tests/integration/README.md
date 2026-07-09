@@ -23,8 +23,8 @@ API_URL=http://localhost:4000 npx vitest run tests/integration/
 
 ## Test Structure
 
-| Test File | Endpoints Tested | Dependencies |
-|-----------|-----------------|--------------|
+| Test File        | Endpoints Tested              | Dependencies         |
+| ---------------- | ----------------------------- | -------------------- |
 | `health.test.ts` | `GET /health`, `GET /healthz` | API server, database |
 
 ## Adding Tests

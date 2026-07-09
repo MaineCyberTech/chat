@@ -22,29 +22,29 @@ python scripts/db-rollback-generator.py
 
 Options:
 
-| Flag         | Description                                   |
-| ------------ | --------------------------------------------- |
-| `--dry-run`  | Preview what would be generated without writing |
-| `--migrations-dir` | Custom path to migrations directory      |
-| `--rollback-dir`   | Custom path for rollback output directory |
+| Flag               | Description                                     |
+| ------------------ | ----------------------------------------------- |
+| `--dry-run`        | Preview what would be generated without writing |
+| `--migrations-dir` | Custom path to migrations directory             |
+| `--rollback-dir`   | Custom path for rollback output directory       |
 
 The generator parses each migration file and produces a `_down.sql` script
 that reverses supported SQL statements:
 
-| Migration Pattern              | Rollback Action                                 |
-| ------------------------------ | ----------------------------------------------- |
-| `CREATE TABLE`                 | `DROP TABLE ... CASCADE`                        |
-| `CREATE INDEX`                 | `DROP INDEX IF EXISTS`                          |
-| `CREATE TRIGGER`               | `DROP TRIGGER IF EXISTS`                        |
-| `CREATE FUNCTION`              | `DROP FUNCTION IF EXISTS`                       |
-| `ALTER TABLE ADD COLUMN`       | `ALTER TABLE DROP COLUMN IF EXISTS`             |
-| `ALTER TABLE ADD CONSTRAINT`   | `ALTER TABLE DROP CONSTRAINT IF EXISTS`         |
-| `CREATE POLICY`                | `DROP POLICY IF EXISTS`                        |
-| `INSERT INTO` (seed data)      | `DELETE FROM` (placeholder WHERE clause)        |
-| `UPDATE`                       | `# Manual rollback needed` comment              |
-| `ALTER TABLE ENABLE RLS`       | `ALTER TABLE DISABLE ROW LEVEL SECURITY`        |
-| `ALTER TABLE DISABLE RLS`      | `ALTER TABLE ENABLE ROW LEVEL SECURITY`         |
-| `CREATE EXTENSION`             | Comment (extensions cannot be safely dropped)   |
+| Migration Pattern            | Rollback Action                               |
+| ---------------------------- | --------------------------------------------- |
+| `CREATE TABLE`               | `DROP TABLE ... CASCADE`                      |
+| `CREATE INDEX`               | `DROP INDEX IF EXISTS`                        |
+| `CREATE TRIGGER`             | `DROP TRIGGER IF EXISTS`                      |
+| `CREATE FUNCTION`            | `DROP FUNCTION IF EXISTS`                     |
+| `ALTER TABLE ADD COLUMN`     | `ALTER TABLE DROP COLUMN IF EXISTS`           |
+| `ALTER TABLE ADD CONSTRAINT` | `ALTER TABLE DROP CONSTRAINT IF EXISTS`       |
+| `CREATE POLICY`              | `DROP POLICY IF EXISTS`                       |
+| `INSERT INTO` (seed data)    | `DELETE FROM` (placeholder WHERE clause)      |
+| `UPDATE`                     | `# Manual rollback needed` comment            |
+| `ALTER TABLE ENABLE RLS`     | `ALTER TABLE DISABLE ROW LEVEL SECURITY`      |
+| `ALTER TABLE DISABLE RLS`    | `ALTER TABLE ENABLE ROW LEVEL SECURITY`       |
+| `CREATE EXTENSION`           | Comment (extensions cannot be safely dropped) |
 
 ## Rollback Procedure
 

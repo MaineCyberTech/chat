@@ -89,9 +89,12 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
         </div>
         <div className="mb-3 flex gap-2">
           <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border bg-[var(--center-channel-bg)] text-lg cursor-pointer"
+            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border bg-[var(--center-channel-bg)] text-lg"
             style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
-            onClick={() => { const r = PRESET_EMOJIS[Math.floor(Math.random() * PRESET_EMOJIS.length)]; if (r) setEmoji(r); }}
+            onClick={() => {
+              const r = PRESET_EMOJIS[Math.floor(Math.random() * PRESET_EMOJIS.length)];
+              if (r) setEmoji(r);
+            }}
             title="Click to change emoji"
           >
             {emoji}
@@ -112,7 +115,9 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
               key={e}
               onClick={() => setEmoji(e)}
               className={`flex h-7 w-7 items-center justify-center rounded text-sm transition-colors ${
-                emoji === e ? "ring-2 ring-[var(--button-bg)]" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                emoji === e
+                  ? "ring-2 ring-[var(--button-bg)]"
+                  : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
               }`}
               title={e}
             >

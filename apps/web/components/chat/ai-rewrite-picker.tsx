@@ -22,10 +22,15 @@ export function AiRewritePicker({ show, rewriting, onRewrite, onClose: _onClose 
   if (!show) return null;
 
   return (
-    <div className="absolute bottom-full left-1/2 z-30 mb-2 w-52 -translate-x-1/2 overflow-hidden rounded-lg border p-1 shadow-lg"
-      style={{ background: "var(--center-channel-bg)", borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+    <div
+      className="absolute bottom-full left-1/2 z-30 mb-2 w-52 -translate-x-1/2 overflow-hidden rounded-lg border p-1 shadow-lg"
+      style={{
+        background: "var(--center-channel-bg)",
+        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+      }}
     >
-      <div className="mb-1 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider"
+      <div
+        className="mb-1 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase"
         style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
       >
         Rewrite with AI

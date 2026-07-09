@@ -28,13 +28,7 @@ interface User {
   display_name: string;
 }
 
-type ModalMode =
-  | "create"
-  | "edit"
-  | "delete"
-  | "add-members"
-  | "remove-member"
-  | "detail";
+type ModalMode = "create" | "edit" | "delete" | "add-members" | "remove-member" | "detail";
 
 interface Props {
   mode: ModalMode;
@@ -87,7 +81,10 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
     try {
       const _res = await api.post<{ group: Group }>("/groups", {
         workspace_id: workspaceId,
-        name: groupName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+        name: groupName
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]/g, ""),
         description: groupDesc.trim(),
         member_ids: Array.from(selectedMemberIds),
       });
@@ -105,7 +102,10 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
     setLoading(true);
     try {
       await api.patch(`/groups/${group.id}`, {
-        name: groupName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+        name: groupName
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]/g, ""),
         description: groupDesc.trim(),
       });
       addToast({ title: "Group updated", variant: "success", duration: 2000 });
@@ -276,7 +276,10 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
                   style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
                 >
                   {users.length === 0 && (
-                    <p className="px-2 py-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                    <p
+                      className="px-2 py-1 text-xs"
+                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                    >
                       No members available
                     </p>
                   )}
@@ -292,7 +295,9 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
                         <span
                           className="flex h-5 w-5 items-center justify-center rounded text-xs"
                           style={{
-                            background: isSel ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.16)",
+                            background: isSel
+                              ? "var(--button-bg)"
+                              : "rgba(var(--center-channel-color-rgb), 0.16)",
                             color: "var(--button-color)",
                           }}
                         >
@@ -312,11 +317,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
               className="w-full rounded-md py-1.5 text-xs font-medium text-white disabled:opacity-50"
               style={{ background: "var(--button-bg)" }}
             >
-              {loading
-                ? "Saving..."
-                : mode === "create"
-                  ? "Create Group"
-                  : "Save Changes"}
+              {loading ? "Saving..." : mode === "create" ? "Create Group" : "Save Changes"}
             </button>
           </div>
         )}
@@ -324,13 +325,19 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
         {/* Delete confirmation */}
         {mode === "delete" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 rounded-md p-3" style={{ background: "rgba(var(--dnd-indicator-rgb), 0.08)" }}>
+            <div
+              className="flex items-center gap-3 rounded-md p-3"
+              style={{ background: "rgba(var(--dnd-indicator-rgb), 0.08)" }}
+            >
               <AlertTriangle size={20} style={{ color: "var(--dnd-indicator)" }} />
               <div>
                 <p className="text-sm font-medium">Delete @{group?.name}?</p>
-                <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
-                  This will permanently remove this group and all member associations.
-                  Members will no longer be mentionable as @{group?.name}. This action cannot be undone.
+                <p
+                  className="text-xs"
+                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                >
+                  This will permanently remove this group and all member associations. Members will
+                  no longer be mentionable as @{group?.name}. This action cannot be undone.
                 </p>
               </div>
             </div>
@@ -361,14 +368,20 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
         {mode === "detail" && (
           <div className="space-y-3">
             <div>
-              <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+              <p
+                className="text-xs"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+              >
                 Description
               </p>
               <p className="text-sm">{group?.description || "No description"}</p>
             </div>
             <div>
               <div className="mb-1 flex items-center justify-between">
-                <p className="text-xs font-medium" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+                >
                   Members ({groupMembers.length})
                 </p>
                 <button
@@ -376,7 +389,9 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
                     onClose();
                     setTimeout(() => {
                       window.dispatchEvent(
-                        new CustomEvent("chat:group-add-members", { detail: { groupId: group?.id } }),
+                        new CustomEvent("chat:group-add-members", {
+                          detail: { groupId: group?.id },
+                        }),
                       );
                     }, 0);
                   }}
@@ -386,11 +401,15 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
                   <UserPlus size={12} /> Add
                 </button>
               </div>
-              <div className="max-h-48 space-y-0.5 overflow-y-auto rounded border p-1"
+              <div
+                className="max-h-48 space-y-0.5 overflow-y-auto rounded border p-1"
                 style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
               >
                 {groupMembers.length === 0 && (
-                  <p className="px-2 py-2 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                  <p
+                    className="px-2 py-2 text-xs"
+                    style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                  >
                     No members
                   </p>
                 )}
@@ -436,7 +455,8 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
         {mode === "remove-member" && removingUserId && (
           <div className="space-y-4">
             <p className="text-sm">
-              Remove <strong>{userMap.get(removingUserId) ?? removingUserId.slice(0, 8)}</strong> from @{group?.name}?
+              Remove <strong>{userMap.get(removingUserId) ?? removingUserId.slice(0, 8)}</strong>{" "}
+              from @{group?.name}?
             </p>
             <div className="flex gap-2">
               <button

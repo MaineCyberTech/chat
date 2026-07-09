@@ -39,7 +39,9 @@ export function parseCsv<T extends Record<string, string>>(
     const values = parseCsvLine(lines[i]);
     if (values.length === 0) continue;
     if (values.length !== headers.length) {
-      errors.push(`Row ${i}: column count mismatch (expected ${headers.length}, got ${values.length})`);
+      errors.push(
+        `Row ${i}: column count mismatch (expected ${headers.length}, got ${values.length})`,
+      );
       continue;
     }
     const row: Record<string, string> = {};

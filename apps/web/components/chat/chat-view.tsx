@@ -103,7 +103,13 @@ interface Props {
   workspaceSlug?: string;
 }
 
-export function ChatView({ channelId, channelName, channelTopic, workspaceId, workspaceSlug }: Props) {
+export function ChatView({
+  channelId,
+  channelName,
+  channelTopic,
+  workspaceId,
+  workspaceSlug,
+}: Props) {
   const { user } = useAuth();
 
   const {
@@ -601,21 +607,30 @@ export function ChatView({ channelId, channelName, channelTopic, workspaceId, wo
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <div className="flex items-center gap-1" style={{ height: 24 }}>
               <h1 className="mm-font-heading max-w-[300px] truncate"># {channelName}</h1>
-              <button className="mm-button-icon" aria-label="Channel menu" onClick={() => setShowChannelMenu(!showChannelMenu)}>
+              <button
+                className="mm-button-icon"
+                aria-label="Channel menu"
+                onClick={() => setShowChannelMenu(!showChannelMenu)}
+              >
                 <ChevronDown size={12} />
               </button>
             </div>
             {showChannelMenu && (
               <div
                 ref={channelMenuRef}
-                className="absolute left-0 top-full z-30 mt-1 min-w-[200px] rounded-lg border p-1 shadow-lg"
-                style={{ background: "var(--center-channel-bg)", borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+                className="absolute top-full left-0 z-30 mt-1 min-w-[200px] rounded-lg border p-1 shadow-lg"
+                style={{
+                  background: "var(--center-channel-bg)",
+                  borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                }}
               >
                 <button
                   className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.06)]"
                   style={{ color: "var(--center-channel-color)" }}
                   onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/${workspaceSlug}/${channelId}`);
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/${workspaceSlug}/${channelId}`,
+                    );
                     addToast({ title: "Link copied", variant: "success", duration: 2000 });
                     setShowChannelMenu(false);
                   }}
@@ -625,7 +640,10 @@ export function ChatView({ channelId, channelName, channelTopic, workspaceId, wo
                 <button
                   className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.06)]"
                   style={{ color: "var(--center-channel-color)" }}
-                  onClick={() => { setShowNotifPrefs(true); setShowChannelMenu(false); }}
+                  onClick={() => {
+                    setShowNotifPrefs(true);
+                    setShowChannelMenu(false);
+                  }}
                 >
                   {notifPrefs.notify === "none" ? <VolumeX size={14} /> : <Volume2 size={14} />}
                   {notifPrefs.notify === "none" ? "Unmute channel" : "Mute channel"}
@@ -633,7 +651,10 @@ export function ChatView({ channelId, channelName, channelTopic, workspaceId, wo
               </div>
             )}
             {channelTopic && (
-              <p className="truncate text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+              <p
+                className="truncate text-xs"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
                 {channelTopic}
               </p>
             )}

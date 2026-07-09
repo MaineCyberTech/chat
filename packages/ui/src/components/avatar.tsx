@@ -22,7 +22,13 @@ export function Avatar({ src, alt = "", fallback, size = "md" }: AvatarProps) {
 
   if (src && !imgError) {
     return (
-      <img src={src} alt={alt} className={`${classes} object-cover`} referrerPolicy="no-referrer" onError={() => setImgError(true)} />
+      <img
+        src={src}
+        alt={alt}
+        className={`${classes} object-cover`}
+        referrerPolicy="no-referrer"
+        onError={() => setImgError(true)}
+      />
     );
   }
 

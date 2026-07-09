@@ -44,7 +44,16 @@ export default function VerifyPage() {
           className="flex h-12 w-12 items-center justify-center rounded-full"
           style={{ backgroundColor: "rgba(var(--online-indicator-rgb,6,214,160),0.12)" }}
         >
-          <svg className="h-6 w-6" style={{ color: "var(--online-indicator)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="h-6 w-6"
+            style={{ color: "var(--online-indicator)" }}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
           </svg>
         </div>
@@ -52,8 +61,8 @@ export default function VerifyPage() {
           Check your email
         </h1>
         <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>
-          We&apos;ve sent a verification link to <strong>{email || "your email"}</strong>.
-          Click the link to activate your account.
+          We&apos;ve sent a verification link to <strong>{email || "your email"}</strong>. Click the
+          link to activate your account.
         </p>
         {error && (
           <p className="text-sm" style={{ color: "var(--dnd-indicator)" }} role="alert">

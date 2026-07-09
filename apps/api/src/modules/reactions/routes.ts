@@ -21,21 +21,24 @@ router.get(
 );
 
 // Batch reactions endpoint: GET /reactions/batch?message_ids=id1,id2,id3
-router.get("/reactions/batch", asyncHandler(async (req, res) => {
-  const idsParam = req.query.message_ids as string;
-  if (!idsParam) {
-    throw new BadRequestError("message_ids query param required");
-  }
-  const ids = idsParam
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (ids.length > 100) {
-    throw new BadRequestError("Maximum 100 message IDs");
-  }
-  const reactions = await reactionService.getByMessages(ids, req.supabase!);
-  res.json({ reactions });
-}));
+router.get(
+  "/reactions/batch",
+  asyncHandler(async (req, res) => {
+    const idsParam = req.query.message_ids as string;
+    if (!idsParam) {
+      throw new BadRequestError("message_ids query param required");
+    }
+    const ids = idsParam
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (ids.length > 100) {
+      throw new BadRequestError("Maximum 100 message IDs");
+    }
+    const reactions = await reactionService.getByMessages(ids, req.supabase!);
+    res.json({ reactions });
+  }),
+);
 
 router.post(
   "/messages/:id/reactions",
@@ -61,9 +64,15 @@ router.post(
 
     (async () => {
       try {
-        const { data: msg } = await req.supabase!.from("messages").select("channel_id").eq("id", req.params.id as string).single();
+        const { data: msg } = await req
+          .supabase!.from("messages")
+          .select("channel_id")
+          .eq("id", req.params.id as string)
+          .single();
         if (msg) {
-          getIO().to(`channel:${msg.channel_id}`).emit("reaction:added", { messageId: req.params.id as string, reaction });
+          getIO()
+            .to(`channel:${msg.channel_id}`)
+            .emit("reaction:added", { messageId: req.params.id as string, reaction });
         }
       } catch {
         // Socket broadcast best-effort
@@ -91,9 +100,15 @@ router.delete(
 
     (async () => {
       try {
-        const { data: msg } = await req.supabase!.from("messages").select("channel_id").eq("id", req.params.id as string).single();
+        const { data: msg } = await req
+          .supabase!.from("messages")
+          .select("channel_id")
+          .eq("id", req.params.id as string)
+          .single();
         if (msg) {
-          getIO().to(`channel:${msg.channel_id}`).emit("reaction:removed", { messageId: req.params.id as string, reactionId: emoji });
+          getIO()
+            .to(`channel:${msg.channel_id}`)
+            .emit("reaction:removed", { messageId: req.params.id as string, reactionId: emoji });
         }
       } catch {
         // Socket broadcast best-effort

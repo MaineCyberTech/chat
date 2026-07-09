@@ -43,7 +43,9 @@ describe("Dialog", () => {
         <p>Content</p>
       </Dialog>,
     );
-    const overlay = document.querySelector(".fixed.inset-0.bg-\\[var\\(--color-dialog-overlay\\)\\]");
+    const overlay = document.querySelector(
+      ".fixed.inset-0.bg-\\[var\\(--color-dialog-overlay\\)\\]",
+    );
     if (overlay) fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalled();
   });

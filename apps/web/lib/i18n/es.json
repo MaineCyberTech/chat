@@ -2,7 +2,7 @@
   "common": {
     "loading": "Cargando...",
     "error": "Error",
-    "success": "Éxito",
+    "success": "ï¿½xito",
     "cancel": "Cancelar",
     "save": "Guardar",
     "delete": "Delete",
@@ -31,9 +31,9 @@
     "noData": "No data available"
   },
   "auth": {
-    "signIn": "Iniciar sesión",
-    "signOut": "Cerrar sesión",
-    "sendMagicLink": "Enviar enlace mágico",
+    "signIn": "Iniciar sesiï¿½n",
+    "signOut": "Cerrar sesiï¿½n",
+    "sendMagicLink": "Enviar enlace mï¿½gico",
     "checkEmail": "Check your email for the magic link",
     "signInWithGoogle": "Sign in with Google",
     "signInWithGithub": "Sign in with GitHub",
@@ -49,7 +49,7 @@
     "signingIn": "Signing in...",
     "createAccount": "Create Account",
     "orContinueWith": "O continuar con",
-    "emailLabel": "Correo electrónico",
+    "emailLabel": "Correo electrï¿½nico",
     "passwordLabel": "Password",
     "passwordOptional": "Password (optional for magic link)",
     "passwordRequired": "Password is required for sign-up.",

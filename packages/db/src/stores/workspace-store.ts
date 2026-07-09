@@ -8,9 +8,17 @@ export interface IWorkspaceStore {
   create(data: Partial<Workspace>, supabase: SupabaseClient): Promise<Workspace>;
   update(id: string, data: Partial<Workspace>, supabase: SupabaseClient): Promise<Workspace>;
   delete(id: string, supabase: SupabaseClient): Promise<void>;
-  addMember(workspaceId: string, userId: string, role: string, supabase: SupabaseClient): Promise<void>;
+  addMember(
+    workspaceId: string,
+    userId: string,
+    role: string,
+    supabase: SupabaseClient,
+  ): Promise<void>;
   removeMember(workspaceId: string, userId: string, supabase: SupabaseClient): Promise<void>;
-  getMembers(workspaceId: string, supabase: SupabaseClient): Promise<Array<{ user_id: string; display_name: string; role: string }>>;
+  getMembers(
+    workspaceId: string,
+    supabase: SupabaseClient,
+  ): Promise<Array<{ user_id: string; display_name: string; role: string }>>;
 }
 
 export class SupabaseWorkspaceStore implements IWorkspaceStore {
@@ -27,21 +35,13 @@ export class SupabaseWorkspaceStore implements IWorkspaceStore {
   }
 
   async getById(id: string, supabase: SupabaseClient): Promise<Workspace | null> {
-    const { data, error } = await supabase
-      .from("workspaces")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const { data, error } = await supabase.from("workspaces").select("*").eq("id", id).single();
     if (error) return null;
     return data as Workspace;
   }
 
   async getBySlug(slug: string, supabase: SupabaseClient): Promise<Workspace | null> {
-    const { data, error } = await supabase
-      .from("workspaces")
-      .select("*")
-      .eq("slug", slug)
-      .single();
+    const { data, error } = await supabase.from("workspaces").select("*").eq("slug", slug).single();
     if (error) return null;
     return data as Workspace;
   }
@@ -57,7 +57,8 @@ export class SupabaseWorkspaceStore implements IWorkspaceStore {
       .select("*")
       .single();
 
-    if (error || !created) throw new Error(`Failed to create workspace: ${error?.message ?? "unknown"}`);
+    if (error || !created)
+      throw new Error(`Failed to create workspace: ${error?.message ?? "unknown"}`);
     return created as Workspace;
   }
 
@@ -69,7 +70,8 @@ export class SupabaseWorkspaceStore implements IWorkspaceStore {
       .select("*")
       .single();
 
-    if (error || !updated) throw new Error(`Failed to update workspace: ${error?.message ?? "unknown"}`);
+    if (error || !updated)
+      throw new Error(`Failed to update workspace: ${error?.message ?? "unknown"}`);
     return updated as Workspace;
   }
 
@@ -81,7 +83,12 @@ export class SupabaseWorkspaceStore implements IWorkspaceStore {
     if (error) throw new Error(`Failed to delete workspace: ${error.message}`);
   }
 
-  async addMember(workspaceId: string, userId: string, role: string, supabase: SupabaseClient): Promise<void> {
+  async addMember(
+    workspaceId: string,
+    userId: string,
+    role: string,
+    supabase: SupabaseClient,
+  ): Promise<void> {
     const { error } = await supabase
       .from("workspace_members")
       .insert({ workspace_id: workspaceId, user_id: userId, role });

@@ -14,61 +14,71 @@ function getCsvBody(req: Request): string {
   throw new BadRequestError("Request body must be raw CSV (text/csv) or JSON with a 'csv' field");
 }
 
-router.post("/admin/import/workspaces", authenticate, requireAdmin, asyncHandler(async (req: Request, res: Response) => {
-  const csv = getCsvBody(req);
-  const { data: rows, errors } = parseCsv<{ name: string; slug: string }>(csv);
+router.post(
+  "/admin/import/workspaces",
+  authenticate,
+  requireAdmin,
+  asyncHandler(async (req: Request, res: Response) => {
+    const csv = getCsvBody(req);
+    const { data: rows, errors } = parseCsv<{ name: string; slug: string }>(csv);
 
-  if (rows.length === 0 && errors.length === 0) {
-    throw new BadRequestError("CSV must contain a header row and at least one data row");
-  }
-
-  const admin = getSupabaseAdmin();
-  let imported = 0;
-
-  for (const row of rows) {
-    if (!row.name || !row.slug) {
-      errors.push(`Row ${imported + 1}: missing required columns (name, slug)`);
-      continue;
+    if (rows.length === 0 && errors.length === 0) {
+      throw new BadRequestError("CSV must contain a header row and at least one data row");
     }
-    const { error } = await admin.from("workspaces").insert({ name: row.name, slug: row.slug });
-    if (error) {
-      errors.push(`Row ${imported + 1}: ${error.message}`);
-    } else {
-      imported++;
+
+    const admin = getSupabaseAdmin();
+    let imported = 0;
+
+    for (const row of rows) {
+      if (!row.name || !row.slug) {
+        errors.push(`Row ${imported + 1}: missing required columns (name, slug)`);
+        continue;
+      }
+      const { error } = await admin.from("workspaces").insert({ name: row.name, slug: row.slug });
+      if (error) {
+        errors.push(`Row ${imported + 1}: ${error.message}`);
+      } else {
+        imported++;
+      }
     }
-  }
 
-  res.json({ imported, errors: errors.length > 0 ? errors : undefined });
-}));
+    res.json({ imported, errors: errors.length > 0 ? errors : undefined });
+  }),
+);
 
-router.post("/admin/import/users", authenticate, requireAdmin, asyncHandler(async (req: Request, res: Response) => {
-  const csv = getCsvBody(req);
-  const { data: rows, errors } = parseCsv<{ email: string; display_name: string }>(csv);
+router.post(
+  "/admin/import/users",
+  authenticate,
+  requireAdmin,
+  asyncHandler(async (req: Request, res: Response) => {
+    const csv = getCsvBody(req);
+    const { data: rows, errors } = parseCsv<{ email: string; display_name: string }>(csv);
 
-  if (rows.length === 0 && errors.length === 0) {
-    throw new BadRequestError("CSV must contain a header row and at least one data row");
-  }
-
-  const admin = getSupabaseAdmin();
-  let imported = 0;
-
-  for (const row of rows) {
-    if (!row.email) {
-      errors.push(`Row ${imported + 1}: missing required column (email)`);
-      continue;
+    if (rows.length === 0 && errors.length === 0) {
+      throw new BadRequestError("CSV must contain a header row and at least one data row");
     }
-    const { error } = await admin.from("users").insert({
-      email: row.email,
-      display_name: row.display_name || row.email.split("@")[0],
-    });
-    if (error) {
-      errors.push(`Row ${imported + 1}: ${error.message}`);
-    } else {
-      imported++;
-    }
-  }
 
-  res.json({ imported, errors: errors.length > 0 ? errors : undefined });
-}));
+    const admin = getSupabaseAdmin();
+    let imported = 0;
+
+    for (const row of rows) {
+      if (!row.email) {
+        errors.push(`Row ${imported + 1}: missing required column (email)`);
+        continue;
+      }
+      const { error } = await admin.from("users").insert({
+        email: row.email,
+        display_name: row.display_name || row.email.split("@")[0],
+      });
+      if (error) {
+        errors.push(`Row ${imported + 1}: ${error.message}`);
+      } else {
+        imported++;
+      }
+    }
+
+    res.json({ imported, errors: errors.length > 0 ? errors : undefined });
+  }),
+);
 
 export default router;

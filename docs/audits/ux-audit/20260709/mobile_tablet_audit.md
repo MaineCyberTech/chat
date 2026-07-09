@@ -3,6 +3,7 @@
 ## Mobile UX Report
 
 ### Mobile Strengths
+
 - Swipe-back gesture well implemented (`use-swipe-back.ts`)
 - Bottom navigation with 4 key items (Back, Menu, Channels, Settings)
 - Responsive sidebar overlay with 80vw width, max 320px
@@ -13,25 +14,25 @@
 
 ### Mobile Critical Issues (P0/P1)
 
-| # | Issue | Location | Impact |
-|---|-------|----------|--------|
-| 1 | **Keyboard hides message input on iOS** | `message-input.tsx` globally | Core messaging broken on iOS Safari — no VisualViewport API |
-| 2 | **Bottom nav lacks safe area inset** | `layout.tsx` | Home indicator overlaps nav buttons on notched phones |
-| 3 | **Mobile header lacks safe area top** | `layout.tsx` | Status bar/notch overlaps header content |
-| 4 | **Landscape nav height 40px (<44px min)** | `globals.css` | Buttons too small, compounded by no safe area |
-| 5 | **Context menu overflows viewport** | `channel-list.tsx` | Long-press menu appears off-screen near edges |
+| #   | Issue                                     | Location                     | Impact                                                      |
+| --- | ----------------------------------------- | ---------------------------- | ----------------------------------------------------------- |
+| 1   | **Keyboard hides message input on iOS**   | `message-input.tsx` globally | Core messaging broken on iOS Safari — no VisualViewport API |
+| 2   | **Bottom nav lacks safe area inset**      | `layout.tsx`                 | Home indicator overlaps nav buttons on notched phones       |
+| 3   | **Mobile header lacks safe area top**     | `layout.tsx`                 | Status bar/notch overlaps header content                    |
+| 4   | **Landscape nav height 40px (<44px min)** | `globals.css`                | Buttons too small, compounded by no safe area               |
+| 5   | **Context menu overflows viewport**       | `channel-list.tsx`           | Long-press menu appears off-screen near edges               |
 
 ### Mobile Workflow Friction
 
-| Workflow | Friction | Severity |
-|----------|----------|:--------:|
-| Send a message on iOS | Keyboard covers input — user cannot see what they type | P0 |
-| Reorder sidebar categories | HTML5 drag events don't work on touch | P2 |
-| Reorder channels | Same — touch drag not supported | P2 |
-| Use multiple workspaces | No team switcher on mobile — requires 3 taps | P2 |
-| Access context menu near screen edge | Menu overflows viewport | P1 |
-| Tap sidebar channels | 32px items below 44px touch target | P2 |
-| Tap small icon buttons (24px-32px) | Most UI controls below minimum touch target | P2 |
+| Workflow                             | Friction                                               | Severity |
+| ------------------------------------ | ------------------------------------------------------ | :------: |
+| Send a message on iOS                | Keyboard covers input — user cannot see what they type |    P0    |
+| Reorder sidebar categories           | HTML5 drag events don't work on touch                  |    P2    |
+| Reorder channels                     | Same — touch drag not supported                        |    P2    |
+| Use multiple workspaces              | No team switcher on mobile — requires 3 taps           |    P2    |
+| Access context menu near screen edge | Menu overflows viewport                                |    P1    |
+| Tap sidebar channels                 | 32px items below 44px touch target                     |    P2    |
+| Tap small icon buttons (24px-32px)   | Most UI controls below minimum touch target            |    P2    |
 
 ### Mobile Recommendations
 
@@ -53,11 +54,11 @@
 
 ## Tablet Experience Audit
 
-| Area | Current Behavior | Issue | Recommendation |
-|------|-----------------|-------|---------------|
-| Sidebar | Auto-collapses at 768px; user toggle reset on resize | No persistent tablet-optimized sidebar | Use `lg` breakpoint for full sidebar; honor user toggle |
-| Team rail | Hidden on tablet (`md:block` starts at 768px) | Team switching requires extra taps | Show rail in landscape tablet mode |
-| Split-pane | Chat + thread panel works well | No issues | — |
-| Admin pages | Sidebar nav takes 192px of limited space | Content area too narrow | Convert to horizontal tabs or collapsible nav on tablet |
-| Dialog sizing | `max-w-sm` (384px) on tablet | Dialog small on 768-1024px screens | Use `max-w-md` on tablet, `max-w-sm` on mobile |
-| Data density | Lists use card layout | Good for touch | — |
+| Area          | Current Behavior                                     | Issue                                  | Recommendation                                          |
+| ------------- | ---------------------------------------------------- | -------------------------------------- | ------------------------------------------------------- |
+| Sidebar       | Auto-collapses at 768px; user toggle reset on resize | No persistent tablet-optimized sidebar | Use `lg` breakpoint for full sidebar; honor user toggle |
+| Team rail     | Hidden on tablet (`md:block` starts at 768px)        | Team switching requires extra taps     | Show rail in landscape tablet mode                      |
+| Split-pane    | Chat + thread panel works well                       | No issues                              | —                                                       |
+| Admin pages   | Sidebar nav takes 192px of limited space             | Content area too narrow                | Convert to horizontal tabs or collapsible nav on tablet |
+| Dialog sizing | `max-w-sm` (384px) on tablet                         | Dialog small on 768-1024px screens     | Use `max-w-md` on tablet, `max-w-sm` on mobile          |
+| Data density  | Lists use card layout                                | Good for touch                         | —                                                       |

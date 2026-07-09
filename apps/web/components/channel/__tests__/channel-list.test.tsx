@@ -111,9 +111,7 @@ describe("ChannelList", () => {
     const channels = [makeChannel({ id: "ch1", name: "general" })];
     vi.mocked(api.get).mockResolvedValue({ channels });
 
-    render(
-      <ChannelList workspaceSlug="ws1" workspaceId="ws1" activeChannelId="ch1" />,
-    );
+    render(<ChannelList workspaceSlug="ws1" workspaceId="ws1" activeChannelId="ch1" />);
 
     await waitFor(() => {
       const option = screen.getByRole("option", { selected: true });
@@ -129,12 +127,7 @@ describe("ChannelList", () => {
     unreads.set("ch1", { count: 5, mentions: 2 });
 
     render(
-      <ChannelList
-        workspaceSlug="ws1"
-        workspaceId="ws1"
-        activeChannelId="ch2"
-        unreads={unreads}
-      />,
+      <ChannelList workspaceSlug="ws1" workspaceId="ws1" activeChannelId="ch2" unreads={unreads} />,
     );
 
     await waitFor(() => {

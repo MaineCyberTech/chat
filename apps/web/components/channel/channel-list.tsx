@@ -133,7 +133,9 @@ export function ChannelList({
         else next.delete(channelId);
         return next;
       });
-      console.warn("Favorite API not available. Suggested: PATCH /channels/:id with { favorite: boolean }");
+      console.warn(
+        "Favorite API not available. Suggested: PATCH /channels/:id with { favorite: boolean }",
+      );
     }
   }
 
@@ -155,7 +157,11 @@ export function ChannelList({
         else next.delete(channelId);
         return next;
       });
-      addToast({ title: "Error", description: "Failed to update mute preference", variant: "error" });
+      addToast({
+        title: "Error",
+        description: "Failed to update mute preference",
+        variant: "error",
+      });
     }
   }
 
@@ -395,16 +401,17 @@ export function ChannelList({
             className="my-1"
             style={{ borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.08)" }}
           />
-          {unreads?.get(contextMenu.channel.id) && unreads.get(contextMenu.channel.id)!.count > 0 && (
-            <button
-              onClick={() => handleMarkAsRead(contextMenu.channel.id)}
-              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-              style={{ color: "var(--center-channel-color)" }}
-            >
-              <CheckCheck size={14} />
-              Mark as read
-            </button>
-          )}
+          {unreads?.get(contextMenu.channel.id) &&
+            unreads.get(contextMenu.channel.id)!.count > 0 && (
+              <button
+                onClick={() => handleMarkAsRead(contextMenu.channel.id)}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                style={{ color: "var(--center-channel-color)" }}
+              >
+                <CheckCheck size={14} />
+                Mark as read
+              </button>
+            )}
           <button
             onClick={() => handleToggleFavorite(contextMenu.channel.id)}
             className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
@@ -414,7 +421,10 @@ export function ChannelList({
                 : "var(--center-channel-color)",
             }}
           >
-            <Bookmark size={14} fill={favorites.has(contextMenu.channel.id) ? "var(--button-bg)" : "none"} />
+            <Bookmark
+              size={14}
+              fill={favorites.has(contextMenu.channel.id) ? "var(--button-bg)" : "none"}
+            />
             {favorites.has(contextMenu.channel.id) ? "Unfavorite" : "Favorite"}
           </button>
           <button
@@ -427,13 +437,20 @@ export function ChannelList({
           </button>
           {categories && categories.length > 0 && onMoveToCategory && (
             <button
-              onClick={() => setSubMenu({ type: "move-category", channelId: contextMenu.channel.id })}
+              onClick={() =>
+                setSubMenu({ type: "move-category", channelId: contextMenu.channel.id })
+              }
               className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
               style={{ color: "var(--center-channel-color)" }}
             >
               <ExternalLink size={14} />
               Move to category
-              <span className="ml-auto" style={{ color: "rgba(var(--center-channel-color-rgb),0.4)" }}>▶</span>
+              <span
+                className="ml-auto"
+                style={{ color: "rgba(var(--center-channel-color-rgb),0.4)" }}
+              >
+                ▶
+              </span>
             </button>
           )}
           <div

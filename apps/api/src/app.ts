@@ -36,7 +36,12 @@ function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
       duration,
     );
     if (duration > 5) {
-      logger.warn("Slow API response", { method: req.method, route, duration, status_code: res.statusCode });
+      logger.warn("Slow API response", {
+        method: req.method,
+        route,
+        duration,
+        status_code: res.statusCode,
+      });
     }
   });
 

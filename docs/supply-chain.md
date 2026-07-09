@@ -2,15 +2,15 @@
 
 ## Current State
 
-| Practice                | Status                 | Tool / Method                                                      |
-| ----------------------- | ---------------------- | ------------------------------------------------------------------ |
-| **Lockfile**            | ✅ Active              | `pnpm-lock.yaml` (committed, immutable)                            |
-| **Dependabot**          | ✅ Active              | Weekly npm + Docker + GHA ecosystem scans (`.github/dependabot.yml`) |
-| **Vulnerability Scanning** | ✅ Active          | Trivy on container images (`HIGH`, `CRITICAL`) in build-push.yml   |
-| **SBOM Generation**     | ✅ Active              | Anchore SBOM action → SPDX JSON (CycloneDX) in build-push.yml      |
-| **Code Signing**        | ❌ Missing             | No image signing (cosign)                                          |
-| **License Compliance**  | ❌ Missing             | No automated license checking (FOSSA, ORT, or similar)             |
-| **SLSA Levels**         | ❌ Not documented      | No SLSA level targets defined                                      |
+| Practice                   | Status            | Tool / Method                                                        |
+| -------------------------- | ----------------- | -------------------------------------------------------------------- |
+| **Lockfile**               | ✅ Active         | `pnpm-lock.yaml` (committed, immutable)                              |
+| **Dependabot**             | ✅ Active         | Weekly npm + Docker + GHA ecosystem scans (`.github/dependabot.yml`) |
+| **Vulnerability Scanning** | ✅ Active         | Trivy on container images (`HIGH`, `CRITICAL`) in build-push.yml     |
+| **SBOM Generation**        | ✅ Active         | Anchore SBOM action → SPDX JSON (CycloneDX) in build-push.yml        |
+| **Code Signing**           | ❌ Missing        | No image signing (cosign)                                            |
+| **License Compliance**     | ❌ Missing        | No automated license checking (FOSSA, ORT, or similar)               |
+| **SLSA Levels**            | ❌ Not documented | No SLSA level targets defined                                        |
 
 ## Gaps & Recommendations
 
@@ -40,11 +40,11 @@ Integrate a license checker (e.g., FOSSA, ORT, or `pnpm licenses list`):
 
 ### 3. SLSA Levels
 
-| Level | Target | Current | Gap                        |
-| ----- | ------ | ------- | -------------------------- |
-| SLSA 1 | ✅     | ✅      | Build script defined (GitHub Actions) |
-| SLSA 2 | ✅     | ✅      | Build as code, provenance attestations |
-| SLSA 3 | 🚧     | ❌      | Requires hermetic builds + cosign signing |
+| Level  | Target | Current | Gap                                             |
+| ------ | ------ | ------- | ----------------------------------------------- |
+| SLSA 1 | ✅     | ✅      | Build script defined (GitHub Actions)           |
+| SLSA 2 | ✅     | ✅      | Build as code, provenance attestations          |
+| SLSA 3 | 🚧     | ❌      | Requires hermetic builds + cosign signing       |
 | SLSA 4 | ❌     | ❌      | Requires two-party review + reproducible builds |
 
 **Short-term target**: SLSA 2 with cosign signing (image provenance).

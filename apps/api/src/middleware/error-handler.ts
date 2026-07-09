@@ -44,13 +44,11 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
       statusCode: 500,
       timestamp: new Date().toISOString(),
     });
-    res
-      .status(500)
-      .json({
-        error: {
-          ...errorResponse("INTERNAL_ERROR", "An unexpected error occurred", 500).error,
-          requestId,
-        },
-      });
+    res.status(500).json({
+      error: {
+        ...errorResponse("INTERNAL_ERROR", "An unexpected error occurred", 500).error,
+        requestId,
+      },
+    });
   }
 }

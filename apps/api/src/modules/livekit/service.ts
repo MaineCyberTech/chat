@@ -5,7 +5,9 @@ if (!process.env.LIVEKIT_API_KEY) {
   throw new Error("LIVEKIT_API_KEY environment variable is required for LiveKit token generation");
 }
 if (!process.env.LIVEKIT_API_SECRET) {
-  throw new Error("LIVEKIT_API_SECRET environment variable is required for LiveKit token generation");
+  throw new Error(
+    "LIVEKIT_API_SECRET environment variable is required for LiveKit token generation",
+  );
 }
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;

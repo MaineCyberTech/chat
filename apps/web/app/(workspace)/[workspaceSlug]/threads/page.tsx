@@ -29,7 +29,9 @@ interface ChannelMap {
 export default function ThreadsPage() {
   const params = useParams<{ workspaceSlug: string }>();
 
-  useEffect(() => { document.title = "Threads - Chat"; }, []);
+  useEffect(() => {
+    document.title = "Threads - Chat";
+  }, []);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [channels, setChannels] = useState<ChannelMap>({});
   const [loading, setLoading] = useState(true);
@@ -70,8 +72,12 @@ export default function ThreadsPage() {
         <Skeleton className="mb-6 h-8 w-40" />
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-start gap-3 rounded-lg border p-3" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}>
-              <Skeleton className="h-5 w-5 mt-0.5 shrink-0" />
+            <div
+              key={i}
+              className="flex items-start gap-3 rounded-lg border p-3"
+              style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
+            >
+              <Skeleton className="mt-0.5 h-5 w-5 shrink-0" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-3 w-40" />
                 <Skeleton className="h-4 w-3/4" />
@@ -87,9 +93,18 @@ export default function ThreadsPage() {
   if (error) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center p-6">
-        <p className="mb-3 text-sm" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>{error}</p>
+        <p
+          className="mb-3 text-sm"
+          style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+        >
+          {error}
+        </p>
         <button
-          onClick={() => { setError(null); setLoading(true); window.location.reload(); }}
+          onClick={() => {
+            setError(null);
+            setLoading(true);
+            window.location.reload();
+          }}
           className="rounded-md px-4 py-2 text-xs font-medium text-white"
           style={{ background: "var(--button-bg)" }}
         >

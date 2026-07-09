@@ -4,13 +4,22 @@ import { ThreadService } from "../service.js";
 function mockSupabase(result: unknown) {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "order", "limit", "single",
-    "insert", "update", "delete", "is", "or", "gt", "lt",
+    "select",
+    "eq",
+    "order",
+    "limit",
+    "single",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve(result).then(onfulfilled);
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
 
   return { from: vi.fn(() => chain) };
 }
@@ -26,8 +35,18 @@ describe("ThreadService", () => {
     it("returns participants for a thread", async () => {
       const supabase = mockSupabase({
         data: [
-          { thread_id: "thread-1", user_id: "user-1", last_read_at: "2024-01-01T00:00:00Z", joined_at: "2024-01-01T00:00:00Z" },
-          { thread_id: "thread-1", user_id: "user-2", last_read_at: null, joined_at: "2024-01-02T00:00:00Z" },
+          {
+            thread_id: "thread-1",
+            user_id: "user-1",
+            last_read_at: "2024-01-01T00:00:00Z",
+            joined_at: "2024-01-01T00:00:00Z",
+          },
+          {
+            thread_id: "thread-1",
+            user_id: "user-2",
+            last_read_at: null,
+            joined_at: "2024-01-02T00:00:00Z",
+          },
         ],
         error: null,
       });

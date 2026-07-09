@@ -4,12 +4,12 @@ This runbook provides procedures for responding to production incidents.
 
 ## Severity Levels
 
-| Severity | Name                | Response Time     | Examples                                                    | Escalation                 |
-| -------- | ------------------- | ----------------- | ----------------------------------------------------------- | -------------------------- |
-| SEV1     | Site Down / Outage  | 15 min            | API returns 5xx, database unreachable, DNS failure          | Page on-call immediately   |
-| SEV2     | Major Degradation   | 30 min            | High latency, elevated errors, feature broken for all users | Page on-call within 1 hour |
-| SEV3     | Minor Issue         | 2 hours           | Single user affected, non-critical feature broken           | Assign to next sprint      |
-| SEV4     | Low Impact / Inquiry| Next business day | Cosmetic bugs, documentation errors, feature requests       | Track in backlog           |
+| Severity | Name                 | Response Time     | Examples                                                    | Escalation                 |
+| -------- | -------------------- | ----------------- | ----------------------------------------------------------- | -------------------------- |
+| SEV1     | Site Down / Outage   | 15 min            | API returns 5xx, database unreachable, DNS failure          | Page on-call immediately   |
+| SEV2     | Major Degradation    | 30 min            | High latency, elevated errors, feature broken for all users | Page on-call within 1 hour |
+| SEV3     | Minor Issue          | 2 hours           | Single user affected, non-critical feature broken           | Assign to next sprint      |
+| SEV4     | Low Impact / Inquiry | Next business day | Cosmetic bugs, documentation errors, feature requests       | Track in backlog           |
 
 ---
 
@@ -24,6 +24,7 @@ This runbook provides procedures for responding to production incidents.
 ### Response Procedures
 
 #### API Down
+
 1. **Check droplet status**: `ssh root@<droplet-ip> "docker ps -a"`
 2. **Check API container logs**: `ssh root@<droplet-ip> "docker compose -f /opt/chat/infra/docker/docker-compose.prod.yml logs api --tail 100"`
 3. **Check health endpoint**: `curl -s https://chat-api.mainecybertech.com/healthz`
@@ -31,6 +32,7 @@ This runbook provides procedures for responding to production incidents.
 5. **If failed, check Node process**: Look for OOM kills (`dmesg | grep -i oom`), port conflicts, uncaught exceptions
 
 #### Database Unavailable
+
 1. **Check Supabase status**: `curl -s https://status.supabase.com/api/v2/status.json | jq`
 2. **Check Supabase Dashboard → Logs** for connection pool exhaustion
 3. **Verify Supabase URL and keys** in `.env` on the droplet
@@ -38,6 +40,7 @@ This runbook provides procedures for responding to production incidents.
 5. **If connection pool exhausted**: Temporarily increase pool size, identify slow queries via Supabase Query Performance tab
 
 #### Redis Down
+
 1. **Check Redis container**: `ssh root@<droplet-ip> "docker compose -f /opt/chat/infra/docker/docker-compose.prod.yml ps redis"`
 2. **Check Redis logs**: `ssh root@<droplet-ip> "docker compose -f /opt/chat/infra/docker/docker-compose.prod.yml logs redis --tail 50"`
 3. **Test Redis connectivity**: `ssh root@<droplet-ip> "docker exec $(docker ps -q -f name=redis) redis-cli ping"`
@@ -46,6 +49,7 @@ This runbook provides procedures for responding to production incidents.
 6. **Impact if Redis unavailable**: Socket.io falls back to polling; BullMQ jobs queue locally; user presence shows stale
 
 #### Deployment Failure
+
 1. **Check GitHub Actions run logs** for the failing deploy workflow
 2. **Common causes**:
    - Terraform state drift: Run `terraform plan` manually to identify drift
@@ -173,40 +177,48 @@ A post-mortem is required for all SEV1 and SEV2 incidents. SEV3 incidents may wa
 # Post-Mortem: YYYY-MM-DD - <Incident Title>
 
 ## Incident Summary
+
 - **Date**: YYYY-MM-DD
 - **Severity**: SEV1/SEV2
 - **Duration**: HH:MM to HH:MM (X hours, Y minutes)
 - **Impact**: <users affected, features impacted, downtime duration>
 
 ## Timeline
-| Time (UTC) | Event |
-| ---------- | ----- |
-| HH:MM      | First alert triggered |
+
+| Time (UTC) | Event                         |
+| ---------- | ----------------------------- |
+| HH:MM      | First alert triggered         |
 | HH:MM      | On-call engineer acknowledged |
-| HH:MM      | Root cause identified |
-| HH:MM      | Mitigation applied |
-| HH:MM      | Services restored |
+| HH:MM      | Root cause identified         |
+| HH:MM      | Mitigation applied            |
+| HH:MM      | Services restored             |
 
 ## Root Cause
+
 <What caused the incident>
 
 ## Contributing Factors
+
 - <Factor 1>
 - <Factor 2>
 
 ## Detection
+
 <How was the incident first detected? Was there a gap in monitoring?>
 
 ## Resolution
+
 <Steps taken to resolve the incident>
 
 ## Action Items
-| # | Action | Owner | Target Date | Status |
-| - | ------ | ----- | ----------- | ------ |
-| 1 | <action> | @person | YYYY-MM-DD | [ ] |
-| 2 | <action> | @person | YYYY-MM-DD | [ ] |
+
+| #   | Action   | Owner   | Target Date | Status |
+| --- | -------- | ------- | ----------- | ------ |
+| 1   | <action> | @person | YYYY-MM-DD  | [ ]    |
+| 2   | <action> | @person | YYYY-MM-DD  | [ ]    |
 
 ## Lessons Learned
+
 <What went well, what could be improved>
 ```
 

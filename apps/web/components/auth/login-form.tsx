@@ -10,7 +10,8 @@ type Mode = "signin" | "signup";
 const isDev = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
 
 function userSafeError(err: unknown): string {
-  if (typeof err !== "string") return t("common.somethingWentWrong", "Something went wrong. Please try again.");
+  if (typeof err !== "string")
+    return t("common.somethingWentWrong", "Something went wrong. Please try again.");
   const msg = err.toLowerCase();
   if (msg.includes("invalid login credentials") || msg.includes("invalid email")) {
     return t("auth.invalidCredentials", "Invalid email or password");
@@ -122,7 +123,9 @@ export function LoginForm() {
             setMessage("");
           }}
           className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-            mode === "signin" ? "text-[var(--button-color)]" : "hover:text-[var(--center-channel-color)]"
+            mode === "signin"
+              ? "text-[var(--button-color)]"
+              : "hover:text-[var(--center-channel-color)]"
           }`}
           style={
             mode === "signin"
@@ -142,7 +145,9 @@ export function LoginForm() {
             setMessage("");
           }}
           className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-            mode === "signup" ? "text-[var(--button-color)]" : "hover:text-[var(--center-channel-color)]"
+            mode === "signup"
+              ? "text-[var(--button-color)]"
+              : "hover:text-[var(--center-channel-color)]"
           }`}
           style={
             mode === "signup"
@@ -164,15 +169,24 @@ export function LoginForm() {
           type="email"
           required
           value={email}
-          onChange={(e) => { setEmail(e.target.value); setEmailError(null); }}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setEmailError(null);
+          }}
           placeholder={t("auth.emailPlaceholder", "you@example.com")}
         />
         {emailError && (
-          <p className="text-xs mt-0.5" style={{ color: "var(--dnd-indicator)" }} role="alert">{emailError}</p>
+          <p className="mt-0.5 text-xs" style={{ color: "var(--dnd-indicator)" }} role="alert">
+            {emailError}
+          </p>
         )}
         <Input
           id="password"
-          label={mode === "signin" ? t("auth.passwordOptional", "Password (optional for magic link)") : t("auth.passwordLabel", "Password")}
+          label={
+            mode === "signin"
+              ? t("auth.passwordOptional", "Password (optional for magic link)")
+              : t("auth.passwordLabel", "Password")
+          }
           type="password"
           required={mode === "signup"}
           value={password}
@@ -249,7 +263,10 @@ export function LoginForm() {
       <Button
         variant="secondary"
         className="w-full"
-        onClick={() => { setStatus("loading"); signInWithGithub(); }}
+        onClick={() => {
+          setStatus("loading");
+          signInWithGithub();
+        }}
         disabled={status === "loading"}
       >
         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">

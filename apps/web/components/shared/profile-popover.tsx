@@ -42,7 +42,9 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
   // Auto-focus close button on open
   useEffect(() => {
     requestAnimationFrame(() => {
-      const btn = popoverRef.current?.querySelector<HTMLButtonElement>('[aria-label="Close profile"]');
+      const btn = popoverRef.current?.querySelector<HTMLButtonElement>(
+        '[aria-label="Close profile"]',
+      );
       btn?.focus();
     });
   }, []);

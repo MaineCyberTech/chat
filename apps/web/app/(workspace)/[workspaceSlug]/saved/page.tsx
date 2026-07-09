@@ -10,7 +10,9 @@ import type { Message, UserProfile } from "@chat/db";
 export default function SavedMessagesPage() {
   const { user } = useAuth();
 
-  useEffect(() => { document.title = "Saved Messages - Chat"; }, []);
+  useEffect(() => {
+    document.title = "Saved Messages - Chat";
+  }, []);
   const [messages, setMessages] = useState<Message[]>([]);
   const [profiles, setProfiles] = useState<Map<string, UserProfile>>(new Map());
   const [loading, setLoading] = useState(true);

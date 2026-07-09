@@ -32,7 +32,6 @@ async function updateMessageIndex(
   supabase: ReturnType<typeof createSupabaseClient>,
   messageId: string,
   content: string | undefined,
-
 ): Promise<boolean> {
   const contentToIndex = content ?? null;
 
@@ -68,7 +67,6 @@ async function updateMessageIndex(
 async function removeMessageFromIndex(
   supabase: ReturnType<typeof createSupabaseClient>,
   messageId: string,
-
 ): Promise<boolean> {
   const { error } = await supabase
     .from("messages")
@@ -118,7 +116,9 @@ export function registerSearchIndexer() {
       return await Promise.race([
         work(),
         new Promise<never>((_, reject) => {
-          signal.addEventListener("abort", () => reject(new Error("Job timed out after 30s")), { once: true });
+          signal.addEventListener("abort", () => reject(new Error("Job timed out after 30s")), {
+            once: true,
+          });
         }),
       ]);
     },

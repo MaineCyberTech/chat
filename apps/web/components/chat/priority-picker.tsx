@@ -5,6 +5,13 @@ import { Flag, AlertCircle, AlertTriangle } from "lucide-react";
 
 export type PostPriority = "standard" | "important" | "urgent" | "critical";
 
+export const PRIORITY_CONFIG: Record<PostPriority, { color: string }> = {
+  standard: { color: "rgba(var(--center-channel-color-rgb), 0.56)" },
+  important: { color: "#f59e0b" },
+  urgent: { color: "#ef4444" },
+  critical: { color: "#dc2626" },
+};
+
 export const PRIORITY_OPTIONS: { key: PostPriority; label: string; icon: React.ReactNode; description: string }[] = [
   { key: "standard", label: "Standard", icon: <Flag size={16} />, description: "Normal message" },
   { key: "important", label: "Important", icon: <AlertCircle size={16} />, description: "Needs attention" },

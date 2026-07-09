@@ -57,7 +57,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="MaineCyberTech Chat" />
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: ws: wss:; frame-src 'self' https:; manifest-src 'self'; media-src 'self' data: https: blob:; worker-src 'self' blob:;" />
+        <meta
+          http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: ws: wss:; frame-src 'self' https:; manifest-src 'self'; media-src 'self' data: https: blob:; worker-src 'self' blob:;"
+        />
         <style>{"html,body{background:#fff}html.dark,body.dark{background:#1a1a1a}"}</style>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
@@ -77,21 +80,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <ThemeProvider>
           <I18nProvider>
-          <PWAProvider>
-            <AuthProvider>
-              <ToastProvider>
-                <AppHeader />
-                <ErrorBoundary>
-                  <main id="main-content" className="flex min-h-0 flex-1 flex-col">
-                    {children}
-                  </main>
-                </ErrorBoundary>
-                <VersionBadge />
-                <CookieBanner />
-                <KeyboardShortcuts />
-              </ToastProvider>
-            </AuthProvider>
-          </PWAProvider>
+            <PWAProvider>
+              <AuthProvider>
+                <ToastProvider>
+                  <AppHeader />
+                  <ErrorBoundary>
+                    <main id="main-content" className="flex min-h-0 flex-1 flex-col">
+                      {children}
+                    </main>
+                  </ErrorBoundary>
+                  <VersionBadge />
+                  <CookieBanner />
+                  <KeyboardShortcuts />
+                </ToastProvider>
+              </AuthProvider>
+            </PWAProvider>
           </I18nProvider>
         </ThemeProvider>
       </body>

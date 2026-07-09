@@ -46,9 +46,7 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
     expect(screen.getByText("Something went wrong")).toBeDefined();
-    expect(
-      screen.getByText(/An unexpected error occurred/),
-    ).toBeDefined();
+    expect(screen.getByText(/An unexpected error occurred/)).toBeDefined();
     expect(screen.getByRole("button", { name: /refresh page/i })).toBeDefined();
   });
 

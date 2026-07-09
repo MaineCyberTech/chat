@@ -44,9 +44,13 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
             setChannels(chRes.channels);
             setUsers(memberRes.members);
           })
-          .catch(() => addToast({ title: "Failed to load channels", variant: "error", duration: 3000 }));
+          .catch(() =>
+            addToast({ title: "Failed to load channels", variant: "error", duration: 3000 }),
+          );
       })
-      .catch(() => addToast({ title: "Failed to load workspace", variant: "error", duration: 3000 }));
+      .catch(() =>
+        addToast({ title: "Failed to load workspace", variant: "error", duration: 3000 }),
+      );
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [open, workspaceSlug]);
 

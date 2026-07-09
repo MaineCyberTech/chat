@@ -8,7 +8,16 @@ const OUTPUT_FILE = process.argv[3] || "apps/web/lib/i18n/en.json";
 const T_KEY_PATTERN = /(?<![\.\w])t\("([a-z][\w.]+)"\)/g;
 const EXCLUDE_DIRS = new Set(["node_modules", ".turbo", "dist", ".next", "__tests__"]);
 const EXCLUDE_KEYS = new Set(["@"]);
-const EXCLUDE_PATTERNS = [/^https?:\/\//, /^\//, /^@/, /^\|/, /^const /, /^import /, /^function /, /^ /];
+const EXCLUDE_PATTERNS = [
+  /^https?:\/\//,
+  /^\//,
+  /^@/,
+  /^\|/,
+  /^const /,
+  /^import /,
+  /^function /,
+  /^ /,
+];
 
 function findSourceFiles(dir, results = []) {
   const entries = readdirSync(dir, { withFileTypes: true });

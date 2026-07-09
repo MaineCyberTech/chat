@@ -38,28 +38,60 @@ const messageColumns: CsvColumn[] = [
   { key: "created_at", label: "created_at" },
 ];
 
-router.get("/admin/export/workspaces", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
-  const admin = getSupabaseAdmin();
-  const { data } = await admin.from("workspaces").select("id, name, slug, created_at").order("created_at", { ascending: true });
-  sendExportResponse(res, data ?? [], workspaceColumns, "workspaces");
-}));
+router.get(
+  "/admin/export/workspaces",
+  authenticate,
+  requireAdmin,
+  asyncHandler(async (_req: Request, res: Response) => {
+    const admin = getSupabaseAdmin();
+    const { data } = await admin
+      .from("workspaces")
+      .select("id, name, slug, created_at")
+      .order("created_at", { ascending: true });
+    sendExportResponse(res, data ?? [], workspaceColumns, "workspaces");
+  }),
+);
 
-router.get("/admin/export/users", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
-  const admin = getSupabaseAdmin();
-  const { data } = await admin.from("users").select("id, email, display_name, created_at").order("created_at", { ascending: true });
-  sendExportResponse(res, data ?? [], userColumns, "users");
-}));
+router.get(
+  "/admin/export/users",
+  authenticate,
+  requireAdmin,
+  asyncHandler(async (_req: Request, res: Response) => {
+    const admin = getSupabaseAdmin();
+    const { data } = await admin
+      .from("users")
+      .select("id, email, display_name, created_at")
+      .order("created_at", { ascending: true });
+    sendExportResponse(res, data ?? [], userColumns, "users");
+  }),
+);
 
-router.get("/admin/export/channels", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
-  const admin = getSupabaseAdmin();
-  const { data } = await admin.from("channels").select("id, name, slug, workspace_id, channel_type, created_at").order("created_at", { ascending: true });
-  sendExportResponse(res, data ?? [], channelColumns, "channels");
-}));
+router.get(
+  "/admin/export/channels",
+  authenticate,
+  requireAdmin,
+  asyncHandler(async (_req: Request, res: Response) => {
+    const admin = getSupabaseAdmin();
+    const { data } = await admin
+      .from("channels")
+      .select("id, name, slug, workspace_id, channel_type, created_at")
+      .order("created_at", { ascending: true });
+    sendExportResponse(res, data ?? [], channelColumns, "channels");
+  }),
+);
 
-router.get("/admin/export/messages", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
-  const admin = getSupabaseAdmin();
-  const { data } = await admin.from("messages").select("id, channel_id, user_id, content, created_at").order("created_at", { ascending: true });
-  sendExportResponse(res, data ?? [], messageColumns, "messages");
-}));
+router.get(
+  "/admin/export/messages",
+  authenticate,
+  requireAdmin,
+  asyncHandler(async (_req: Request, res: Response) => {
+    const admin = getSupabaseAdmin();
+    const { data } = await admin
+      .from("messages")
+      .select("id, channel_id, user_id, content, created_at")
+      .order("created_at", { ascending: true });
+    sendExportResponse(res, data ?? [], messageColumns, "messages");
+  }),
+);
 
 export default router;

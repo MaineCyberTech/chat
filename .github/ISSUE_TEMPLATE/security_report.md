@@ -24,6 +24,7 @@ What an attacker could achieve by exploiting this.
 If possible, describe how to reproduce the issue (without exposing other users to risk).
 
 **Affected Components**
+
 - [ ] Authentication / Authorization
 - [ ] API / Backend
 - [ ] Frontend / UI
@@ -36,6 +37,7 @@ If possible, describe how to reproduce the issue (without exposing other users t
 If you have an idea for how to fix the issue, describe it here.
 
 **Environment**
+
 - Version/Commit:
 - Deployment (dev/prod):
 

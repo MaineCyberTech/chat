@@ -16,7 +16,17 @@ try {
 
 let changelog: Record<string, unknown>[] | null = null;
 try {
-  const changelogPath = join(__dirname, "..", "..", "..", "..", "..", "docs", "api", "changelog.json");
+  const changelogPath = join(
+    __dirname,
+    "..",
+    "..",
+    "..",
+    "..",
+    "..",
+    "docs",
+    "api",
+    "changelog.json",
+  );
   if (existsSync(changelogPath)) {
     changelog = JSON.parse(readFileSync(changelogPath, "utf-8"));
   }

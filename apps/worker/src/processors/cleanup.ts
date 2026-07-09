@@ -4,7 +4,13 @@ import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 
 export interface CleanupJobData {
-  type: "old_deliveries" | "dead_letters" | "consent_logs" | "stale_sessions" | "expired_uploads" | "message_edit_history";
+  type:
+    | "old_deliveries"
+    | "dead_letters"
+    | "consent_logs"
+    | "stale_sessions"
+    | "expired_uploads"
+    | "message_edit_history";
   olderThanDays?: number;
 }
 
@@ -26,7 +32,6 @@ export const cleanupQueue = new Queue<CleanupJobData>("cleanup", {
 async function cleanupOldDeliveries(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
-
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -60,7 +65,6 @@ async function cleanupOldDeliveries(
 async function cleanupDeadLetters(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
-
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -93,7 +97,6 @@ async function cleanupDeadLetters(
 async function cleanupConsentLogs(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
-
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -126,7 +129,6 @@ async function cleanupConsentLogs(
 async function cleanupMessageEditHistory(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
-
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -197,14 +199,19 @@ export function registerCleanupProcessor() {
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-        logger.info({ type, cutoffDate: cutoffDate.toISOString(), cleaned }, "Cleanup job completed");
+        logger.info(
+          { type, cutoffDate: cutoffDate.toISOString(), cleaned },
+          "Cleanup job completed",
+        );
         return { status: "cleaned", type, cutoffDate: cutoffDate.toISOString(), cleaned };
       };
 
       return await Promise.race([
         work(),
         new Promise<never>((_, reject) => {
-          signal.addEventListener("abort", () => reject(new Error("Job timed out after 30s")), { once: true });
+          signal.addEventListener("abort", () => reject(new Error("Job timed out after 30s")), {
+            once: true,
+          });
         }),
       ]);
     },

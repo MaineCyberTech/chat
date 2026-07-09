@@ -2,11 +2,11 @@
 
 ## Current Monitoring State
 
-| Tool          | Purpose                             | Integration                                     |
-| ------------- | ----------------------------------- | ------------------------------------------------ |
-| **Prometheus** | Metrics collection                 | Exposed at `GET /metrics` (counter, histogram, gauge) |
-| **Sentry**    | Error tracking + performance        | `@sentry/node` initialized in `server.ts`         |
-| **Health endpoint** | Liveness/readiness checks     | `GET /health` (readiness), `GET /healthz` (full health) |
+| Tool                | Purpose                      | Integration                                             |
+| ------------------- | ---------------------------- | ------------------------------------------------------- |
+| **Prometheus**      | Metrics collection           | Exposed at `GET /metrics` (counter, histogram, gauge)   |
+| **Sentry**          | Error tracking + performance | `@sentry/node` initialized in `server.ts`               |
+| **Health endpoint** | Liveness/readiness checks    | `GET /health` (readiness), `GET /healthz` (full health) |
 
 **Gap**: No distributed tracing across services (API → DB → Worker).
 Each service has independent metrics; there is no trace context propagation.
@@ -19,13 +19,13 @@ Use OpenTelemetry (OTel) with the Sentry integration layer. Sentry's OTel-based 
 
 ### Key Spans to Instrument
 
-| Span                           | Location                          | Description                          |
-| ------------------------------ | --------------------------------- | ------------------------------------ |
-| `api.request`                  | Express middleware                 | Per-request span with method, route  |
-| `db.query`                     | Supabase client wrapper            | SQL query timing                     |
-| `socket.event`                 | Socket.io event handlers           | Per-event processing time            |
-| `worker.job`                   | BullMQ processor                   | Per-job execution span               |
-| `worker.webhook_delivery`      | Webhook service                    | HTTP call to webhook endpoint        |
+| Span                      | Location                 | Description                         |
+| ------------------------- | ------------------------ | ----------------------------------- |
+| `api.request`             | Express middleware       | Per-request span with method, route |
+| `db.query`                | Supabase client wrapper  | SQL query timing                    |
+| `socket.event`            | Socket.io event handlers | Per-event processing time           |
+| `worker.job`              | BullMQ processor         | Per-job execution span              |
+| `worker.webhook_delivery` | Webhook service          | HTTP call to webhook endpoint       |
 
 ### Configuration
 
@@ -42,11 +42,11 @@ Sentry.init({
 });
 ```
 
-| Config             | Recommended Value | Notes                               |
-| ------------------ | ----------------- | ----------------------------------- |
-| `tracesSampleRate` | `0.1` (10%)       | Increase to `1.0` for debugging     |
-| OTLP endpoint      | Sentry DSN        | Sentry ingests OTel spans natively  |
-| Environment        | `NODE_ENV`        | Separate sampling per environment   |
+| Config             | Recommended Value | Notes                              |
+| ------------------ | ----------------- | ---------------------------------- |
+| `tracesSampleRate` | `0.1` (10%)       | Increase to `1.0` for debugging    |
+| OTLP endpoint      | Sentry DSN        | Sentry ingests OTel spans natively |
+| Environment        | `NODE_ENV`        | Separate sampling per environment  |
 
 ### Code Example: Adding a Child Span
 

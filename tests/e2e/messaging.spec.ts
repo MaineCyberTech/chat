@@ -59,7 +59,10 @@ test.describe("Messaging Flow", () => {
   const creds = loadCredentials();
 
   test.beforeEach(function () {
-    test.skip(!creds, "Skipping: copy test-signin.example.json to test-signin.json with valid credentials");
+    test.skip(
+      !creds,
+      "Skipping: copy test-signin.example.json to test-signin.json with valid credentials",
+    );
   });
 
   const wsName = creds ? `e2e-ws-${Date.now()}` : "";

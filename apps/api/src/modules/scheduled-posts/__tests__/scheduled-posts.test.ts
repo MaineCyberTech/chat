@@ -17,13 +17,24 @@ vi.mock("../../../lib/logger.js", () => ({
 function createChain(result: unknown) {
   const chain: any = {};
   for (const m of [
-    "select", "eq", "order", "limit", "single",
-    "insert", "update", "delete", "is", "or", "gt", "lt", "contains", "lte",
+    "select",
+    "eq",
+    "order",
+    "limit",
+    "single",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
+    "contains",
+    "lte",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve(result).then(onfulfilled);
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
   return chain;
 }
 
@@ -142,7 +153,11 @@ describe("scheduled-posts routes", () => {
     it("returns 400 when scheduled_at is in the past", async () => {
       const handler = findHandler("post", "/");
       const req = mockReq({
-        body: { channel_id: "ch-1", content: "Hello", scheduled_at: new Date("2020-01-01").toISOString() },
+        body: {
+          channel_id: "ch-1",
+          content: "Hello",
+          scheduled_at: new Date("2020-01-01").toISOString(),
+        },
       });
       const res = mockRes();
 
@@ -159,7 +174,12 @@ describe("scheduled-posts routes", () => {
     it("creates a scheduled post", async () => {
       const futureDate = new Date(Date.now() + 86400000);
       const insertChain = createChain({
-        data: { id: "p-1", channel_id: "ch-1", content: "Hello", scheduled_at: futureDate.toISOString() },
+        data: {
+          id: "p-1",
+          channel_id: "ch-1",
+          content: "Hello",
+          scheduled_at: futureDate.toISOString(),
+        },
         error: null,
       });
       const from = vi.fn(() => insertChain);
