@@ -21,6 +21,7 @@ export default defineConfig({
           command: "pnpm --filter web dev",
           port: 3000,
           reuseExistingServer: true,
+          timeout: 60000,
         },
       ]
     : undefined,
