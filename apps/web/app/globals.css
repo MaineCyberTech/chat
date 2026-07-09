@@ -1,3 +1,14 @@
+/*
+ * CSS Variable Architecture
+ * —————————————————————————
+ * Mattermost-style vars (--button-bg, --center-channel-*, --sidebar-*):
+ *   Defined in globals.css :root / html.dark — used via var() across components
+ * Design token vars (--color-*): Defined in packages/ui/src/styles.css @theme
+ *   — used by Tailwind utilities and shared UI components
+ * JS tokens (semantic-colors.ts): TypeScript source of truth for styles.css values
+ *   — kept in sync manually; run `pnpm -F @chat/ui build` to regenerate
+ */
+
 @import "tailwindcss";
 @import "@chat/ui/styles.css";
 
@@ -300,17 +311,6 @@ html.dark, html.dark body {
   --semantic-color-success: 52, 211, 153;
   --semantic-color-warning: 251, 191, 36;
   --semantic-color-danger: 248, 113, 113;
-  --color-skeleton-bg: #262626;
-  --color-dialog-overlay: rgba(0, 0, 0, 0.7);
-  --color-dialog-bg: #171717;
-  --color-dialog-close-btn-bg-hover: #262626;
-  --color-dialog-close-btn-fg: #737373;
-  --color-dialog-close-btn-fg-hover: #d4d4d4;
-  --color-avatar-bg: #404040;
-  --color-avatar-fg: #d4d4d4;
-  --color-input-bg: #262626;
-  --color-input-border: #404040;
-  --color-input-fg: #fafafa;
 }
 
 /* Ensure minimum touch targets on mobile for icon-only buttons */

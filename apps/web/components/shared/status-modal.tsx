@@ -69,8 +69,7 @@ export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.5)" }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       role="dialog"
       aria-label="Set custom status"
     >

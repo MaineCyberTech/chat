@@ -74,7 +74,7 @@ export function ThreadPanel({
   useEffect(() => {
     api.get<{ thread: { metadata: { reply_count: number; participant_count: number }; participants: ParticipantInfo[] } }>(`/messages/${parentMessage.id}/thread`)
       .then((res) => setParticipants(res.thread.participants))
-      .catch(() => {});
+      .catch(() => addToast({ title: "Failed to load thread participants", variant: "error", duration: 3000 }));
   }, [parentMessage.id, replies.length]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [replies.length]);
@@ -292,8 +292,8 @@ export function ThreadPanel({
 
         {/* Delete confirmation */}
         {deleteConfirmId && (
-          <div className="flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", position: "fixed", inset: 0, zIndex: 50 }}>
-            <div className="max-w-sm rounded-lg p-6" style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }} role="alertdialog" aria-label="Delete reply">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]" role="alertdialog" aria-label="Delete reply">
               <h3 className="text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>Delete reply?</h3>
               <p className="mt-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>This cannot be undone.</p>
               {deleteError && <p className="mt-2 text-xs" style={{ color: "var(--error-text)" }} role="alert">{deleteError}</p>}

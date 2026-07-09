@@ -307,8 +307,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 z-20 md:hidden"
-            style={{ background: "rgba(0,0,0,0.5)" }}
+            className="fixed inset-0 z-20 bg-black/50 md:hidden"
             onClick={() => setSidebarOpen(false)}
           >
             <div

@@ -181,8 +181,8 @@ export function ChannelBookmarks({ channelId }: Props) {
 
       {/* Delete confirmation */}
       {deleteConfirm && (
-        <div className="flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", position: "fixed", inset: 0, zIndex: 50 }}>
-          <div className="max-w-sm rounded-lg p-6" style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }} role="alertdialog" aria-label="Delete bookmark">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]" role="alertdialog" aria-label="Delete bookmark">
             <h3 className="text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>Delete bookmark?</h3>
             <p className="mt-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}>This cannot be undone.</p>
             <div className="mt-4 flex justify-end gap-2">

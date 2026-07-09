@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { useToast } from "@chat/ui";
-import { X, Search, Check, UserPlus, Trash2, Users, AlertTriangle } from "lucide-react";
+import { X, Check, UserPlus, Trash2, AlertTriangle } from "lucide-react";
 import { UserPickerModal } from "./user-picker-modal";
 
 interface Group {
@@ -85,7 +85,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
     if (!groupName.trim() || !workspaceId) return;
     setLoading(true);
     try {
-      const res = await api.post<{ group: Group }>("/groups", {
+      const _res = await api.post<{ group: Group }>("/groups", {
         workspace_id: workspaceId,
         name: groupName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, ""),
         description: groupDesc.trim(),
@@ -191,8 +191,7 @@ export function GroupModal({ mode, group, workspaceId, members, onClose, onSaved
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.5)" }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onClose}
     >
       <div

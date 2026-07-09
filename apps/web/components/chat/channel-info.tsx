@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { X, Pin, Users, Bookmark } from "lucide-react";
 import { ChannelBookmarks } from "./channel-bookmarks";
+import { EmptyState } from "@chat/ui";
 import type { Message } from "@chat/db";
 
 interface Props {
@@ -91,10 +92,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
         ) : tab === "members" ? (
           <div className="space-y-0.5">
             {members.length === 0 && (
-              <div className="p-3 text-center">
-                <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>No members yet</p>
-                <p className="mt-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>Invite people from the channel menu to get started.</p>
-              </div>
+              <EmptyState description="No members yet" className="py-3" />
             )}
             {members.map((m) => (
               <div
@@ -113,10 +111,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
         ) : (
           <div className="space-y-1">
             {pinnedMessages.length === 0 && (
-              <div className="p-3 text-center">
-                <p className="text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>No pinned messages</p>
-                <p className="mt-1 text-xs" style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>Pin a message by clicking the pin icon on any message.</p>
-              </div>
+              <EmptyState description="No pinned messages" className="py-3" />
             )}
             {pinnedMessages.map((msg) => (
               <div

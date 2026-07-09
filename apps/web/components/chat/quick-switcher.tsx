@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@chat/ui";
 import { api } from "@/lib/api";
 import { Hash, Search, User, X } from "lucide-react";
 import type { Channel } from "@chat/db";
@@ -19,6 +20,7 @@ interface UserResult {
 
 export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
   const router = useRouter();
+  const { addToast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -42,9 +44,9 @@ export function QuickSwitcher({ workspaceSlug, open, onClose }: Props) {
             setChannels(chRes.channels);
             setUsers(memberRes.members);
           })
-          .catch(() => {});
+          .catch(() => addToast({ title: "Failed to load channels", variant: "error", duration: 3000 }));
       })
-      .catch(() => {});
+      .catch(() => addToast({ title: "Failed to load workspace", variant: "error", duration: 3000 }));
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [open, workspaceSlug]);
 

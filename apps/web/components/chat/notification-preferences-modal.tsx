@@ -64,17 +64,13 @@ export function NotificationPreferencesModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.5)" }}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Notification preferences"
-        className="w-full max-w-sm rounded-xl p-5"
-        style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }}
+        className="w-full max-w-sm rounded-xl bg-[var(--center-channel-bg)] p-5 shadow-[var(--elevation-5)]"
       >
         <h3 className="mb-2 text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
           Notification Preferences

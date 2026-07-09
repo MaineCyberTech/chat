@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useToast } from "@chat/ui";
+import { useToast, EmptyState } from "@chat/ui";
 import { api } from "@/lib/api";
 import { RemindModal } from "./remind-modal";
 import type { Message, UserProfile } from "@chat/db";
@@ -366,17 +366,7 @@ export function MessageList({
       <div className="relative flex-1 overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="max-w-sm text-center" style={{ padding: "120px 24px 32px" }}>
-            <h2
-              className="mb-2 text-3xl font-semibold"
-              style={{
-                letterSpacing: "-0.03em",
-                lineHeight: "40px",
-                color: "rgba(var(--center-channel-color-rgb), 0.08)",
-              }}
-            ></h2>
-            <p style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
-              No messages yet. Start the conversation!
-            </p>
+            <EmptyState description="No messages yet. Start the conversation!" />
           </div>
         </div>
       </div>

@@ -756,15 +756,8 @@ export default function SettingsPage() {
 
       {/* Reset preferences confirmation */}
       {resetConfirmOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.5)" }}
-        >
-          <div
-            className="max-w-sm rounded-lg p-6"
-            style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }}
-            role="alertdialog"
-          >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]" role="alertdialog">
             <div
               className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
               style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}
@@ -806,15 +799,8 @@ export default function SettingsPage() {
 
       {/* Delete account confirmation */}
       {deleteConfirmOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.5)" }}
-        >
-          <div
-            className="max-w-sm rounded-lg p-6"
-            style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }}
-            role="alertdialog"
-          >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]" role="alertdialog">
             <div
               className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
               style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}

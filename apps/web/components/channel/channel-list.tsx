@@ -506,10 +506,7 @@ export function ChannelList({
       )}
 
       {deleteConfirmId && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.5)" }}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             className="w-full max-w-sm rounded-lg p-6"
             style={{ background: "var(--center-channel-bg)" }}

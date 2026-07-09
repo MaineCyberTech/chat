@@ -113,7 +113,7 @@ export function MessageContextMenu({
           navigator.clipboard
             .writeText(contextMenu.message.content)
             .then(() => addToast({ title: "Copied", variant: "success", duration: 2000 }))
-            .catch(() => {});
+            .catch(() => addToast({ title: "Failed to copy", variant: "error", duration: 3000 }));
           onClose();
         }}
         className="flex w-full items-center gap-2 px-3 py-2 text-sm"
@@ -129,7 +129,7 @@ export function MessageContextMenu({
           navigator.clipboard
             .writeText(permalink)
             .then(() => addToast({ title: "Link copied", variant: "success", duration: 2000 }))
-            .catch(() => {});
+            .catch(() => addToast({ title: "Failed to copy link", variant: "error", duration: 3000 }));
           onClose();
         }}
         className="flex w-full items-center gap-2 px-3 py-2 text-sm"
