@@ -4,8 +4,9 @@ import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { logger } from "../../lib/logger.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { InternalServerError, ForbiddenError } from "../../lib/app-error.js";
+import { InternalServerError, ForbiddenError, BadRequestError } from "../../lib/app-error.js";
 import { loadEnv } from "../../config/env.js";
+import { pushError, getErrors } from "./error-buffer.js";
 
 const router = Router();
 const startTime = Date.now();
@@ -236,6 +237,98 @@ router.post("/webhooks/dead-letters/:id/retry", authenticate, requireAdmin, asyn
   const success = await webhookService.retryDeadLetter(req.params.id as string);
   if (!success) res.status(404).json({ error: "Dead letter not found or webhook inactive" });
   else res.json({ success: true });
+}));
+
+router.get("/security", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
+  const env = loadEnv();
+  const supabaseUrl = env.SUPABASE_URL ?? "";
+  const authProviders: Record<string, { enabled: boolean; label: string }> = {
+    "magic-link": { enabled: true, label: "Magic Link Email" },
+    google: { enabled: !!env.SUPABASE_URL, label: "Google OAuth" },
+    github: { enabled: !!env.SUPABASE_URL, label: "GitHub OAuth" },
+  };
+
+  const rateLimiters = [
+    { name: "API", limit: 100, windowMs: 60000, unit: "requests/min" },
+    { name: "Auth", limit: 10, windowMs: 60000, unit: "requests/min" },
+    { name: "Search", limit: 30, windowMs: 60000, unit: "requests/min" },
+    { name: "Magic Link", limit: 3, windowMs: 60000, unit: "requests/min/IP" },
+  ];
+
+  const securityHeaders = [
+    { name: "Content-Security-Policy", status: "enabled" as const },
+    { name: "Strict-Transport-Security", status: "enabled" as const },
+    { name: "X-Content-Type-Options", status: "enabled" as const },
+    { name: "X-Frame-Options", status: "enabled" as const },
+    { name: "Referrer-Policy", status: "enabled" as const },
+    { name: "Permissions-Policy", status: "enabled" as const },
+    { name: "Cross-Origin-Embedder-Policy", status: "enabled" as const },
+    { name: "Cross-Origin-Opener-Policy", status: "enabled" as const },
+  ];
+
+  res.json({
+    authProviders,
+    rateLimiters,
+    securityHeaders,
+    sessionConfig: {
+      jwtEnabled: true,
+      sessionDuration: "1 year",
+      refreshTokenRotation: true,
+    },
+  });
+}));
+
+router.get("/logs", authenticate, requireAdmin, asyncHandler(async (req: Request, res: Response) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 100, 200);
+  const level = req.query.level as string | undefined;
+  const logs = getErrors(limit, level);
+  res.json({ logs });
+}));
+
+router.get("/config", authenticate, requireAdmin, asyncHandler(async (_req: Request, res: Response) => {
+  const env = loadEnv();
+  const supabaseUrl = env.SUPABASE_URL ?? "";
+  const projectRef = supabaseUrl ? new URL(supabaseUrl).hostname.split(".")[0] : null;
+  res.json({
+    appName: "Chat",
+    version: process.env.npm_package_version ?? "0.0.0",
+    environment: env.NODE_ENV,
+    frontendUrl: env.FRONTEND_URL,
+    apiUrl: env.API_BASE_URL,
+    supabaseProjectRef: projectRef,
+    redisConfigured: !!env.REDIS_URL,
+    smtpConfigured: !!(env.SMTP_HOST && env.SMTP_USER),
+    sentryConfigured: !!env.SENTRY_DSN,
+    vapidConfigured: !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY),
+  });
+}));
+
+router.get("/audit-logs", authenticate, requireAdmin, asyncHandler(async (req: Request, res: Response) => {
+  const admin = getSupabaseAdmin();
+  const page = parseInt(req.query.page as string) || 0;
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+  const workspaceId = req.query.workspaceId as string | undefined;
+  const action = req.query.action as string | undefined;
+  const actorUserId = req.query.actorUserId as string | undefined;
+  const dateFrom = req.query.dateFrom as string | undefined;
+  const dateTo = req.query.dateTo as string | undefined;
+
+  let query = admin
+    .from("audit_logs")
+    .select("*, auth_users:actor_user_id(email)", { count: "exact" });
+
+  if (workspaceId) query = query.eq("organization_id", workspaceId);
+  if (action) query = query.eq("action", action);
+  if (actorUserId) query = query.eq("actor_user_id", actorUserId);
+  if (dateFrom) query = query.gte("created_at", dateFrom);
+  if (dateTo) query = query.lte("created_at", dateTo);
+
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .range(page * limit, (page + 1) * limit - 1);
+
+  if (error) throw new InternalServerError(error.message);
+  res.json({ logs: data ?? [], total: count ?? 0, page, limit });
 }));
 
 router.get("/export/compliance", authenticate, requireAdmin, asyncHandler(async (req: Request, res: Response) => {
