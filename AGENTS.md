@@ -3,9 +3,12 @@
 ## Current State (July 8, 2026)
 
 - **All P0/P1 findings resolved** — 0 P0, 0 P1 across all audit/hardening pipelines
-- **P2/P3 findings**: ~130 total (original), many resolved in recent session
+- **P2/P3 findings**: ~130 total (original), all resolved
+- **Phases 6-8 of Mattermost comparative audit**: Complete — Change Plan (Phase 6) revised, Patch Sets (Phase 7) redesigned, Final Reconciliation (Phase 8) updated with current SSOT
+- **Remaining gaps**: 7 patch sets remain (~10 engineering days) — emoji expansion, DM modal, channel context menu, category management, MessageList split completion, resizable sidebar, global notification settings
+- **Strategic items gated**: Multi-team sidebar, i18n expansion, full TipTap expansion — require post-launch analytics to justify
 - **Deployment**: Development at chat.mainecybertech.us, Production at chat.mainecybertech.com — both healthy
-- **Recent major changes**: Full comparative audit, 105+ P2/P3 fixes, security hardening, test expansion, production readiness, API performance optimization
+- **Recent major changes**: Full comparative audit, 105+ P2/P3 fixes, security hardening, test expansion, production readiness, API performance optimization, Phase 6-8 reconciliation
 
 ## Architecture Overview
 
@@ -397,6 +400,7 @@ Detailed change logs for all completed work can be found in the git history:
 - **Phase 2 Alignment Work (July 7)** — Deploy fix (removed hard API dependency from web container, added container log capture on startup failure), admin health/system endpoint (GET /admin/system with version/uptime/DB status), i18n infrastructure expansion (extraction script, pluralization support, locale metadata, formatDate/formatNumber utilities), TypeScript build error fixes (logger arg order), prettier formatting fixes
 - **P2/P3 Finding Fixes (July 7)** — Workspace list pagination with limit/offset (P2), magic link rate limiting at 3/min/IP (P2), channel slug validation (P3), workspace creation limit unit test (P3), file content search documentation comment (P3), worker `/healthz` endpoint confirmed existing (P3)
 - **Quick Wins Implementation (July 8)** — AGENTS.md Current State + Feature Verification Status updated, pnpm audit added to pre-commit hook, GitHub discussion template created, worker .env.example created, turbo.json task descriptions added
+- **Phases 6-8 Comparative Audit Revised (July 8)** — Phase 6 (Change Plan) rewritten to reflect current repo state with 7 remaining patch groups identified. Phase 7 (Patch Sets) redesigned from 12 to 8 groups based on implemented items. Phase 8 (Final Reconciliation) updated as true SSOT with current state, remaining gaps, 20 guardrails, and go/no-go gates. Stale `07_PATCH_SETS_v2.md` removed. `COMPARE_AUDIT_SUMMARY.md` and `MERGED_REPO_AUDIT_SUMMARY.md` updated to reflect current audit state.
 
 Run `git log --oneline --since="2026-06-20"` for the full commit history or see `CHANGELOG.md`.
  

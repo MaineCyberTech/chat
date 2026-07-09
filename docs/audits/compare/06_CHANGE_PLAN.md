@@ -1,212 +1,227 @@
-# Phase 6 — File-by-File / Area-by-Area Change Plan
+# Phase 6 — File-by-File / Area-by-Area Change Plan (Revised July 8, 2026)
 
-## 1. Highest-Priority Target Areas
-
-Based on the phased roadmap, the highest-priority targets are Phase 1 items (low-risk wins) that add structural alignment without breaking anything:
-
-1. **Supabase seeds directory** — add test data for local dev
-2. **Supabase policies directory** — extract existing RLS policies from migrations
-3. **Supabase functions directory** — create empty placeholder
-4. **Shared config package** — centralize ESLint/TSConfig
-5. **Environment variable documentation** — complete .env.example files
+> **Status**: This document reflects the current repo state after the July 1–6 implementation wave. Many Phase 1-2 items from the original plan are now complete. This revision identifies the **true remaining gaps**.
 
 ---
 
-## 2. Likely Files/Folders to Touch First
+## 1. Highest-Priority Target Areas (Current Gaps)
 
-### Supabase Seeds
+Based on the current staging analysis, the highest-priority remaining targets are:
 
-- **CREATE**: `supabase/seeds/00_test_user.sql` — test user for local auth
-- **CREATE**: `supabase/seeds/01_test_workspace.sql` — test workspace
-- **CREATE**: `supabase/seeds/02_test_channel.sql` — test channel
-- **CREATE**: `supabase/seeds/03_test_message.sql` — test messages
-- **CREATE**: `supabase/seeds/README.md` — instructions for loading seeds
-
-### Supabase Policies
-
-- **CREATE**: `supabase/policies/01_workspaces_rls.sql` — extract from migration
-- **CREATE**: `supabase/policies/02_channels_rls.sql` — extract from migration
-- **CREATE**: `supabase/policies/03_messages_rls.sql` — extract from migration
-- **CREATE**: `supabase/policies/04_audit_logs_rls.sql` — extract from migration
-- **CREATE**: `supabase/policies/05_webhooks_rls.sql` — extract from migration
-
-### Supabase Functions
-
-- **CREATE**: `supabase/functions/.gitkeep` — empty placeholder
-
-### Shared Config Package
-
-- **CREATE**: `packages/config/package.json` — package manifest
-- **CREATE**: `packages/config/eslint.base.mjs` — shared ESLint config
-- **CREATE**: `packages/config/tsconfig.base.json` — shared TypeScript base
-- **MODIFY**: `apps/api/eslint.config.mjs` — extend shared config
-- **MODIFY**: `apps/web/eslint.config.mjs` — extend shared config
-- **MODIFY**: `apps/api/tsconfig.json` — extend shared base
-- **MODIFY**: `apps/web/tsconfig.json` — extend shared base
-- **MODIFY**: `packages/db/tsconfig.json` — extend shared base
-- **MODIFY**: `packages/ui/tsconfig.json` — extend shared base
-
-### Environment Variable Documentation
-
-- **MODIFY**: `apps/api/.env.example` — add any missing vars (LOG*LEVEL, SENTRY_DSN, SMTP*\*)
-- **MODIFY**: `apps/web/.env.example` — add any missing vars (NEXT_PUBLIC_API_URL, ANALYZE)
+1. **Emoji dataset expansion** — swap ~600 emoji set with full 3300+ Unicode set (infrastructure already wired)
+2. **MessageList decomposition completion** — message-list.tsx (1181 lines) still contains ~600 lines that should be in message-list/ sub-modules
+3. **DM multi-select creation modal** — DM API and table exist; creation UI is inline/basic
+4. **Sidebar category management UI** — `sidebar_categories` + `sidebar_channel_assignments` tables exist; no management UI
+5. **Sidebar channel context menu** — message context menu exists; channel sidebar right-click missing
+6. **Resizable sidebar drag handle** — sidebar width is fixed; no user resizing
+7. **Multi-team sidebar (65px rail)** — workspace switcher exists in dropdown; no persistent rail
 
 ---
 
-## 3. Likely Files/Folders to Avoid Touching Early
+## 2. Files to Touch (Current Gaps)
 
-| File/Folder                                 | Reason                                                                              |
-| ------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `apps/api/src/modules/auth/`                | Auth is critical path. No changes until Phase 3+ and comprehensive test coverage.   |
-| `apps/api/src/modules/messages/`            | Core real-time feature. No changes to Socket.io event contracts.                    |
-| `apps/web/components/chat/`                 | Chat UI is the primary user-facing surface. Avoid layout/behavior changes.          |
-| `apps/web/components/auth/`                 | Auth context + login form — critical UX path.                                       |
-| `infra/docker/Caddyfile`                    | Current route mappings are production contracts. Changes require extensive testing. |
-| `infra/docker/docker-compose.devremote.yml` | Production deployment manifest. Changes risk downtime.                              |
-| `apps/api/server.ts`                        | Entry point with graceful shutdown logic.                                           |
-| `.github/workflows/deploy-development.yml`  | 219 lines of fragile SSH-based deployment.                                          |
-| `.github/workflows/deploy-production.yml`   | Untested but needed for production.                                                 |
+### Patch Group A: Emoji Expansion
 
----
+| File | Action | Details | Risk |
+|---|---|---|---|
+| `apps/web/lib/emoji/emoji-data.json` | REPLACE | Swap ~600 emoji dataset with 3300+ from Mattermost `emoji.json` | Low |
+| `apps/web/components/chat/emoji-picker.tsx` | MODIFY | Virtualize grid for 5x data, verify category ordering | Low |
 
-## 4. Structural Cleanup Candidates
+### Patch Group B: MessageList Decomposition Completion
 
-| Current Structure                                                  | Suggestion                                                        | Effort             |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------- | ------------------ |
-| `infra/docker/traefik/` (legacy)                                   | Remove directory — no longer used (migrated to Caddy)             | 5 min              |
-| `infra/docker/Caddyfile.prod` vs `Caddyfile`                       | Consolidate into single Caddyfile with conditional includes       | 15 min             |
-| `packages/db/sql/` contains migrations, policies, functions, seeds | Rename to match reference pattern or keep as-is (current is fine) | —                  |
-| `tests/` integration directory (empty except README)               | Either populate with integration tests or remove                  | 10 min if removing |
+| File | Action | Details | Risk |
+|---|---|---|---|
+| `apps/web/components/chat/message-list/reactions.tsx` | EXTRACT | Reaction buttons + tooltips from message-list.tsx | Medium |
+| `apps/web/components/chat/message-list/message-editing.tsx` | EXTRACT | Edit form + save/cancel from message-list.tsx | Medium |
+| `apps/web/components/chat/message-list/timestamp.tsx` | EXTRACT | Permalink + floating overlay from message-list.tsx | Medium |
+| `apps/web/components/chat/message-list/system-message.tsx` | EXTRACT | Join/leave/pin messages from message-list.tsx | Medium |
+| `apps/web/components/chat/message-list/index.ts` | MODIFY | Update barrel exports | Low |
 
----
+### Patch Group C: DM Multi-Select Creation Modal
 
-## 5. UI/UX Alignment Candidates
+| File | Action | Details | Risk |
+|---|---|---|---|
+| `apps/web/components/chat/create-dm-modal.tsx` | CREATE | Typeahead + checkable list + confirm button | Low-Med |
+| `apps/web/components/workspace/app-sidebar.tsx` | MODIFY | Add DM creation button | Low |
+| `apps/api/src/modules/channels/service.ts` | MODIFY | Ensure bulk member add on DM creation | Low |
 
-| Current Component                               | Reference Equivalent                              | Action                 | Notes                                             |
-| ----------------------------------------------- | ------------------------------------------------- | ---------------------- | ------------------------------------------------- |
-| `packages/ui/src/components/button.tsx`         | Not in reference (no shared UI)                   | **Keep current**       | Current is better — part of shared library        |
-| `packages/ui/src/components/avatar.tsx`         | Not in reference                                  | **Keep current**       | Shared component                                  |
-| `packages/ui/src/components/dialog.tsx`         | Not in reference                                  | **Keep current**       | Shared component                                  |
-| `apps/web/components/workspace/app-sidebar.tsx` | Reference `components/portal/PortalSubnav.tsx`    | **Keep current**       | Different UX needs (sidebar vs subnav)            |
-| `apps/web/components/chat/chat-view.tsx`        | Reference `SupportCenterClient.tsx` (ticket view) | **Adapt conceptually** | Both are thread-based views but different domains |
+### Patch Group D: Sidebar Category Management UI
 
-**UI Alignment Decision**: Do NOT attempt to copy reference UI components. The domains are fundamentally different (portal vs. real-time chat). Current UI is purpose-built and appropriate.
+| File | Action | Details | Risk |
+|---|---|---|---|
+| `apps/web/components/workspace/sidebar-category-manager.tsx` | CREATE | Create/rename/reorder/delete categories with DnD | Low |
+| `apps/web/components/workspace/app-sidebar.tsx` | MODIFY | Integrate category manager | Low |
 
----
+### Patch Group E: Channel Context Menu (Sidebar)
 
-## 6. API/Service Layer Alignment Candidates
+| File | Action | Details | Risk |
+|---|---|---|---|
+| `apps/web/components/workspace/channel-context-menu.tsx` | CREATE | Favorites, Mute, Mark Read, Copy Link, Leave, Delete | Low |
+| `apps/web/components/workspace/app-sidebar.tsx` | MODIFY | Add right-click handler on channel items | Low |
 
-| Current Module        | Reference Route                | Action                 | Notes                                      |
-| --------------------- | ------------------------------ | ---------------------- | ------------------------------------------ |
-| `modules/auth/`       | `routes/auth.ts`               | **Keep current**       | Both use Supabase auth + JWT               |
-| `modules/health/`     | `routes/health.ts`             | **Keep current**       | Current has DB latency check ref hasn't    |
-| `modules/workspaces/` | `routes/organizations.ts`      | **Adapt conceptually** | Similar tenant model; different naming     |
-| `modules/channels/`   | (no equivalent)                | **Keep current**       | Chat-specific concept                      |
-| `modules/messages/`   | `routes/tickets.ts` (comments) | **Keep current**       | Similar threaded content, different domain |
+### Patch Group F: Resizable Sidebar
 
-**Decision**: No API restructuring needed. Feature-based modules/ pattern is superior to flat routes/.
+| File | Action | Details | Risk |
+|---|---|---|---|
+| `apps/web/components/workspace/app-sidebar.tsx` | MODIFY | Add draggable divider (4px handle, onMouseDown) | Medium |
+| `apps/web/app/(workspace)/layout.tsx` | MODIFY | CSS var for sidebar width, MIN/MAX clamping | Medium |
 
----
+### Patch Group G: Multi-Team Sidebar (Strategic)
 
-## 7. Shared Utility / Abstraction Candidates
-
-| Utility                 | Current Location                      | Reference Equivalent        | Action                                           |
-| ----------------------- | ------------------------------------- | --------------------------- | ------------------------------------------------ |
-| cn() utility            | `packages/ui/src/styles.css` (inline) | `packages/ui/src/lib/cn.ts` | **Adapt** — extract cn() to a dedicated file     |
-| Rate limiter            | Inline in API modules                 | `middleware/rate-limit.ts`  | **Keep current**                                 |
-| Zod validation          | Inline in API routes                  | `validators/` directory     | **Keep current** — co-located validation is fine |
-| Supabase client factory | `packages/db/src/config.ts`           | `packages/sdk/client.ts`    | **Keep current** — simpler for current needs     |
-| Pino logger setup       | `apps/api/src/lib/`                   | `packages/sdk/audit.ts`     | **Keep current**                                 |
+| File | Action | Details | Risk |
+|---|---|---|---|
+| `apps/web/components/workspace/team-rail.tsx` | CREATE | Fixed 65px left rail with workspace icons + tooltips | High |
+| `apps/web/app/(workspace)/layout.tsx` | MODIFY | Add rail + shift sidebar right by 65px | High |
+| `apps/web/components/workspace/app-sidebar.tsx` | MODIFY | Reduce width by 65px | High |
+| `apps/api/src/modules/workspaces/service.ts` | MODIFY | Multi-workspace membership queries | Low |
 
 ---
 
-## 8. Test Coverage Needed Before Refactor
+## 3. Files/Folders to Avoid Touching
 
-| Area              | Current Tests                      | Needed Before Changes                                                  |
-| ----------------- | ---------------------------------- | ---------------------------------------------------------------------- |
-| Auth module       | 1 test (auth.service.test.ts)      | Additional: token validation, session refresh, logout, magic link flow |
-| Workspaces module | 1 test (workspace.service.test.ts) | Additional: CRUD, RLS enforcement, member management                   |
-| Channels module   | 1 test (channel.service.test.ts)   | Additional: CRUD, membership checks                                    |
-| Messages module   | 1 test (message.service.test.ts)   | Additional: send, edit, delete, thread replies, file attachments       |
-| Health module     | 1 test (health.service.test.ts)    | Sufficient — simple endpoint                                           |
-| UI components     | 7 test files                       | Sufficient — one per component                                         |
-| E2E               | 1 test (home.spec.ts)              | Additional: workspace creation, channel navigation, message sending    |
-
-**Minimum test gate before Phase 2+ refactors**: All 5 API modules have `service.test.ts` files (already done). E2E covers the primary user flow (workspace → channel → send message).
-
----
-
-## 9. Documentation / Runbook Improvements
-
-| Doc                      | Current State                                               | Improvement                                       |
-| ------------------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| `AGENTS.md`              | Good — concise architecture overview                        | Update after each phase                           |
-| `apps/api/.env.example`  | Has SUPABASE_URL, SUPABASE_ANON_KEY                         | Add: LOG_LEVEL, SENTRY_DSN, port                  |
-| `apps/web/.env.example`  | Has NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY | Add: NEXT_PUBLIC_APP_URL, ANALYZE                 |
-| `infra/docker/README.md` | Good — compose setup docs                                   | Update with Caddy cert troubleshooting            |
-| `tests/README.md`        | Skeleton                                                    | Add test run instructions, test data setup        |
-| `supabase/README.md`     | None                                                        | Add migration workflow, seed loading instructions |
+| File/Folder | Reason |
+|---|---|
+| `apps/api/src/modules/auth/` | Auth is critical path. No changes without comprehensive test coverage. |
+| `apps/api/src/middleware/authenticate.ts` | Auth gate for every operation. See guardrail #1. |
+| `apps/web/components/auth/auth-context.tsx` | Auth context is the client-side auth boundary. |
+| `apps/web/app/api/v1/[...path]/route.ts` (BFF) | The BFF proxy is Chat's best security feature. |
+| `apps/api/src/lib/socket.ts` | Socket.io event contracts must be additive only. |
+| `infra/docker/Caddyfile` + `Caddyfile.prod` | Route mappings are production contracts. |
+| `apps/api/server.ts` | Entry point with graceful shutdown (SIGTERM/SIGINT 10s drain). |
+| `.github/workflows/deploy-development.yml` | Fragile SSH-based deployment pipeline. |
+| `.github/workflows/deploy-production.yml` | Production deploy workflow. |
+| `packages/ui/src/components/` (existing) | Shared UI library is Chat's design system foundation. |
 
 ---
 
-## 10. Safe Patch Grouping Proposal
+## 4. Already Implemented (No Action Needed)
 
-### Patch Set A: Supabase Structure Alignment (Phase 1)
+These items from the original change plan are now complete and require no further action:
 
+| Area | Files Created/Modified | Status |
+|---|---|---|
+| **Supabase seeds** | 9 seed files in `supabase/seeds/` | ✅ Complete |
+| **Supabase rollback scripts** | 52 `_down.sql` files in `supabase/rollback/` | ✅ Complete |
+| **Shared config package** | `packages/config/` with eslint, tsconfig, logger, errors, env-schema, date, vitest | ✅ Complete |
+| **Store abstraction** | 5 store interfaces in `packages/db/src/stores/` (message, channel, workspace, reaction, notification) | ✅ Complete |
+| **i18n infrastructure** | `apps/web/lib/i18n/` with `en.json` + `index.ts` locale system | ✅ Complete |
+| **Onboarding tour** | `apps/web/components/workspace/onboarding-tour.tsx` (5-step task list) | ✅ Complete |
+| **Drafts auto-save** | `message-input.tsx` with `DRAFT_KEY_PREFIX` + localStorage | ✅ Complete |
+| **TipTap WYSIWYG editor** | `apps/web/components/chat/tiptap-editor.tsx` with TaskList, Link, Placeholder extensions | ✅ Complete |
+| **Keyboard shortcut categories** | `keyboard-shortcuts.tsx` with Navigation/Messaging/Formatting/General groups | ✅ Complete |
+| **Sidebar workspace menu** | `app-sidebar.tsx` with workspace switcher dropdown, active indicator | ✅ Complete |
+| **File preview metadata** | `file-preview.tsx` with formatSize, name, fileSize fields | ✅ Complete |
+| **MessageList partial decomposition** | `message-list/` directory with context-menu.tsx, message-item.tsx, delete-dialog.tsx | ✅ Partial |
+| **Colon autocomplete** | In `message-input.tsx` | ✅ Complete |
+| **Markdown formatting toolbar** | In `message-input.tsx` | ✅ Complete |
+| **Slash commands** | With autocomplete popup | ✅ Complete |
+| **E2E tests** | 9+ spec files (auth, file-upload, home, messaging, navigation, search, comprehensive, visual-snapshot, auth-workspace-chat) | ✅ Complete |
+| **Caddy/Traefik cleanup** | Traefik directory removed | ✅ Complete |
+| **Migration count** | 53 migrations (up from original 48) | ✅ Complete |
+
+---
+
+## 5. UI/UX Alignment Candidates (Current State)
+
+| Current Component | Status vs Mattermost | Action | Notes |
+|---|---|---|---|
+| Emoji picker | 600 emojis vs 3300+ | Expand dataset | Infrastructure already wired |
+| Keyboard shortcuts | Categories exist, 10+ shortcuts | Already matched | No action needed |
+| File preview | Metadata panel exists | Already matched | No action needed |
+| Sidebar header menu | Workspace switcher exists | Already matched | No action needed |
+| Sidebar categories | Tables exist, no management UI | Build category manager | ~2 days effort |
+| Channel context menu | Message Cx exists, channel missing | Build channel Cx | ~1 day effort |
+| Resizable sidebar | Not implemented | Build drag handle | ~1 day effort |
+| DM creation | Inline/basic | Build multi-select modal | ~2 days effort |
+| Multi-team sidebar | Not implemented | Build 65px rail (gated) | ~5 days effort |
+
+---
+
+## 6. API/Service Alignment Candidates
+
+| Module | Current State | Mattermost Reference | Action | Notes |
+|---|---|---|---|---|
+| `modules/channels/` | DM, GM, read-only channels | Similar | Already aligned | DM tables exist |
+| `modules/notifications/` | Per-channel prefs exist | Global settings + trigger words | Add global settings page | ~2 days |
+| `modules/messages/` | Pinning, flagging, edit history | Similar | Already aligned | All features implemented |
+| Store abstraction | 5 interfaces (message, channel, workspace, reaction, notification) | 40+ interfaces | Already adequate | No further expansion needed yet |
+| Store contract tests | Some exist | Testlib/ patterns | Add contract tests | ~1 day |
+
+---
+
+## 7. Test Coverage Needed
+
+| Area | Current Tests | Needed Before Changes |
+|---|---|---|
+| **Store abstraction** | Existing service tests | Contract tests for each store interface against real Supabase |
+| **DM multi-select** | No DM-specific E2E test | `dm-creation.spec.ts` before implementation |
+| **Resizable sidebar** | No sidebar resize test | `sidebar-resize.spec.ts` verifying width persistence |
+| **Multi-team sidebar** | No multi-workspace E2E test | `multi-workspace.spec.ts` before implementation |
+| **Sidebar categories** | No category management test | `category-management.spec.ts` |
+
+---
+
+## 8. Documentation / Runbook Improvements
+
+| Doc | Current State | Improvement Needed |
+|---|---|---|
+| `AGENTS.md` | Good — comprehensive | Update after each patch group |
+| `apps/api/.env.example` | Has key vars | Verify all vars documented |
+| `apps/web/.env.example` | Has key vars | Verify all vars documented |
+| `supabase/README.md` | None | Add migration workflow, seed loading instructions |
+| `tests/README.md` | Skeleton | Add test run instructions, test data setup |
+
+---
+
+## 9. Safe Patch Grouping (Revised)
+
+### Immediate (Week 1)
 ```
-supabase/seeds/00_test_user.sql          [CREATE]
-supabase/seeds/01_test_workspace.sql     [CREATE]
-supabase/seeds/02_test_channel.sql       [CREATE]
-supabase/seeds/README.md                 [CREATE]
-supabase/policies/01_workspaces_rls.sql  [CREATE]
-supabase/policies/02_channels_rls.sql    [CREATE]
-supabase/policies/03_messages_rls.sql    [CREATE]
-supabase/policies/04_audit_logs_rls.sql  [CREATE]
-supabase/policies/05_webhooks_rls.sql    [CREATE]
-supabase/functions/.gitkeep              [CREATE]
+Group A: Emoji expansion
+  apps/web/lib/emoji/emoji-data.json       [REPLACE — 3300+ dataset]
+  apps/web/components/chat/emoji-picker.tsx [MODIFY — virtualize grid]
+
+Group C: DM multi-select modal
+  apps/web/components/chat/create-dm-modal.tsx          [CREATE]
+  apps/web/components/workspace/app-sidebar.tsx          [MODIFY]
+  apps/api/src/modules/channels/service.ts               [MODIFY]
+
+Group E: Channel context menu
+  apps/web/components/workspace/channel-context-menu.tsx [CREATE]
+  apps/web/components/workspace/app-sidebar.tsx          [MODIFY]
 ```
 
-### Patch Set B: Shared Config Package (Phase 1)
-
+### Week 2
 ```
-packages/config/package.json             [CREATE]
-packages/config/eslint.base.mjs          [CREATE]
-packages/config/tsconfig.base.json       [CREATE]
-packages/db/tsconfig.json                [MODIFY]
-packages/ui/tsconfig.json                [MODIFY]
-apps/api/tsconfig.json                   [MODIFY]
-apps/web/tsconfig.json                   [MODIFY]
-apps/api/eslint.config.mjs               [MODIFY]
-apps/web/eslint.config.mjs               [MODIFY]
-```
+Group D: Sidebar category management
+  apps/web/components/workspace/sidebar-category-manager.tsx [CREATE]
+  apps/web/components/workspace/app-sidebar.tsx              [MODIFY]
 
-### Patch Set C: Environment Variable Documentation (Phase 1)
-
-```
-apps/api/.env.example                    [MODIFY]
-apps/web/.env.example                    [MODIFY]
+Group B: MessageList decomposition
+  apps/web/components/chat/message-list/reactions.tsx       [EXTRACT]
+  apps/web/components/chat/message-list/message-editing.tsx [EXTRACT]
+  apps/web/components/chat/message-list/timestamp.tsx       [EXTRACT]
+  apps/web/components/chat/message-list/system-message.tsx  [EXTRACT]
+  apps/web/components/chat/message-list/index.ts            [MODIFY]
 ```
 
-### Patch Set D: Legacy Cleanup (Phase 2)
-
+### Week 3 (Medium Risk)
 ```
-infra/docker/traefik/                    [REMOVE]
-tests/integration/README.md              [REMOVE or POPULATE]
-```
+Group F: Resizable sidebar
+  apps/web/components/workspace/app-sidebar.tsx [MODIFY — drag handle]
+  apps/web/app/(workspace)/layout.tsx           [MODIFY — CSS var]
 
-### Patch Set E: Test Expansion (Phase 2)
-
-```
-tests/e2e/workspace.spec.ts              [CREATE]
-tests/e2e/channel.spec.ts                [CREATE]
-tests/e2e/message.spec.ts                [CREATE]
+Global notification settings
+  apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx [MODIFY]
 ```
 
-### Patch Set F: Local Stack Script (Phase 2)
-
+### Strategic (Gated)
 ```
-scripts/start-local-stack.ps1            [CREATE]
-scripts/teardown-local-stack.ps1         [MODIFY — enhance existing]
+Group G: Multi-team sidebar
+  apps/web/components/workspace/team-rail.tsx     [CREATE]
+  apps/web/app/(workspace)/layout.tsx             [MODIFY]
+  apps/web/components/workspace/app-sidebar.tsx   [MODIFY]
+  apps/api/src/modules/workspaces/service.ts      [MODIFY]
 ```
 
-**Execution order**: A → B → C → D → E → F. Each patch set can be validated independently before proceeding to the next.
+**Execution order**: A → C → E → D → B → F → G. Each group can be validated independently.
