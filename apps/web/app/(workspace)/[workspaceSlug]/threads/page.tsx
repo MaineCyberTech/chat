@@ -28,6 +28,8 @@ interface ChannelMap {
 
 export default function ThreadsPage() {
   const params = useParams<{ workspaceSlug: string }>();
+
+  useEffect(() => { document.title = "Threads - Chat"; }, []);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [channels, setChannels] = useState<ChannelMap>({});
   const [loading, setLoading] = useState(true);

@@ -26,6 +26,7 @@ export const cleanupQueue = new Queue<CleanupJobData>("cleanup", {
 async function cleanupOldDeliveries(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
+
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -59,6 +60,7 @@ async function cleanupOldDeliveries(
 async function cleanupDeadLetters(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
+
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -91,6 +93,7 @@ async function cleanupDeadLetters(
 async function cleanupConsentLogs(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
+
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -123,6 +126,7 @@ async function cleanupConsentLogs(
 async function cleanupMessageEditHistory(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
+
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -164,35 +168,45 @@ export function registerCleanupProcessor() {
   const worker = new Worker<CleanupJobData>(
     "cleanup",
     async (job: Job<CleanupJobData>) => {
+      const signal = AbortSignal.timeout(30000);
       const { type, olderThanDays = 30 } = job.data;
       logger.info({ type, olderThanDays }, "Processing cleanup job");
 
-      let cleaned = 0;
-      switch (type) {
-        case "old_deliveries":
-          cleaned = await cleanupOldDeliveries(supabase, olderThanDays);
-          break;
-        case "dead_letters":
-          cleaned = await cleanupDeadLetters(supabase, olderThanDays);
-          break;
-        case "consent_logs":
-          cleaned = await cleanupConsentLogs(supabase, olderThanDays);
-          break;
-        case "message_edit_history":
-          cleaned = await cleanupMessageEditHistory(supabase, olderThanDays);
-          break;
-        case "expired_uploads":
-          logger.info({ type }, "Expired upload cleanup not yet implemented");
-          break;
-        default:
-          logger.warn({ type }, "Unknown cleanup job type");
-      }
+      const work = async () => {
+        let cleaned = 0;
+        switch (type) {
+          case "old_deliveries":
+            cleaned = await cleanupOldDeliveries(supabase, olderThanDays);
+            break;
+          case "dead_letters":
+            cleaned = await cleanupDeadLetters(supabase, olderThanDays);
+            break;
+          case "consent_logs":
+            cleaned = await cleanupConsentLogs(supabase, olderThanDays);
+            break;
+          case "message_edit_history":
+            cleaned = await cleanupMessageEditHistory(supabase, olderThanDays);
+            break;
+          case "expired_uploads":
+            logger.info({ type }, "Expired upload cleanup not yet implemented");
+            break;
+          default:
+            logger.warn({ type }, "Unknown cleanup job type");
+        }
 
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-      logger.info({ type, cutoffDate: cutoffDate.toISOString(), cleaned }, "Cleanup job completed");
-      return { status: "cleaned", type, cutoffDate: cutoffDate.toISOString(), cleaned };
+        logger.info({ type, cutoffDate: cutoffDate.toISOString(), cleaned }, "Cleanup job completed");
+        return { status: "cleaned", type, cutoffDate: cutoffDate.toISOString(), cleaned };
+      };
+
+      return await Promise.race([
+        work(),
+        new Promise<never>((_, reject) => {
+          signal.addEventListener("abort", () => reject(new Error("Job timed out after 30s")), { once: true });
+        }),
+      ]);
     },
     {
       connection: { url: env.REDIS_URL },

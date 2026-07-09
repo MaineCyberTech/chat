@@ -3,18 +3,20 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 const CREDENTIALS_PATH = path.resolve(__dirname, "../../test-signin.json");
+const HAS_CREDENTIALS = fs.existsSync(CREDENTIALS_PATH);
 
 interface TestCredentials {
   email: string;
   password: string;
 }
 
-function loadCredentials(): TestCredentials {
+function loadCredentials(): TestCredentials | null {
+  if (!HAS_CREDENTIALS) return null;
   try {
     const raw = fs.readFileSync(CREDENTIALS_PATH, "utf-8");
     return JSON.parse(raw) as TestCredentials;
   } catch {
-    return { email: "e2e-test@example.com", password: "testpassword123" };
+    return null;
   }
 }
 
@@ -55,9 +57,14 @@ async function createTestChannel(page: Page, workspaceSlug: string, name: string
 
 test.describe("Messaging Flow", () => {
   const creds = loadCredentials();
-  const wsName = `e2e-ws-${Date.now()}`;
+
+  test.beforeEach(function () {
+    test.skip(!creds, "Skipping: copy test-signin.example.json to test-signin.json with valid credentials");
+  });
+
+  const wsName = creds ? `e2e-ws-${Date.now()}` : "";
   const wsSlug = wsName.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  const chName = `e2e-ch-${Date.now()}`;
+  const chName = creds ? `e2e-ch-${Date.now()}` : "";
 
   test.beforeEach(async ({ page }) => {
     await login(page, creds);

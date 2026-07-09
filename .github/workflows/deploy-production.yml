@@ -1,4 +1,10 @@
 name: Provision + Deploy — Production
+# HOTFIX PROCESS:
+# 1. Create branch from main
+# 2. Apply minimal fix, get PR review
+# 3. Use workflow_dispatch with inputs.hotfix=true
+# 4. Post hotfix notification to #operations after deploy
+# 5. Schedule post-mortem within 24 hours
 
 on:
   workflow_dispatch:
@@ -9,6 +15,11 @@ on:
         type: string
   push:
     branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
 
 concurrency:
   group: deploy-prod-${{ github.ref }}

@@ -24,9 +24,9 @@ const ENCRYPTION_ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
 
 function getEncryptionKey(): Buffer {
-  const key = process.env.WEBHOOK_ENCRYPTION_KEY || process.env.JWT_SECRET || "";
+  const key = process.env.WEBHOOK_ENCRYPTION_KEY;
   if (!key) {
-    throw new Error("WEBHOOK_ENCRYPTION_KEY or JWT_SECRET must be set for webhook secret encryption");
+    throw new Error("WEBHOOK_ENCRYPTION_KEY must be set for webhook secret encryption");
   }
   return createHash("sha256").update(key).digest();
 }

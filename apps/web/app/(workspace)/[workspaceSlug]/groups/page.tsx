@@ -27,6 +27,8 @@ interface WorkspaceMember {
 export default function UserGroupsPage() {
   const { user } = useAuth();
   const params = useParams<{ workspaceSlug: string }>();
+
+  useEffect(() => { document.title = "User Groups - Chat"; }, []);
   const workspaceSlug = params?.workspaceSlug ?? "";
   const [groups, setGroups] = useState<Group[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);

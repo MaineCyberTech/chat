@@ -37,10 +37,19 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "signedup" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
+    setEmailError(null);
+    if (!email) {
+      setEmailError(t("auth.emailRequired", "Email is required"));
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError(t("auth.invalidEmail", "Please enter a valid email address"));
+      return;
+    }
     setStatus("loading");
 
     if (mode === "signup") {
@@ -155,9 +164,12 @@ export function LoginForm() {
           type="email"
           required
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => { setEmail(e.target.value); setEmailError(null); }}
           placeholder={t("auth.emailPlaceholder", "you@example.com")}
         />
+        {emailError && (
+          <p className="text-xs mt-0.5" style={{ color: "var(--dnd-indicator)" }} role="alert">{emailError}</p>
+        )}
         <Input
           id="password"
           label={mode === "signin" ? t("auth.passwordOptional", "Password (optional for magic link)") : t("auth.passwordLabel", "Password")}

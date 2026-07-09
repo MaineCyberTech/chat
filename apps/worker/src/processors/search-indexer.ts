@@ -32,6 +32,7 @@ async function updateMessageIndex(
   supabase: ReturnType<typeof createSupabaseClient>,
   messageId: string,
   content: string | undefined,
+
 ): Promise<boolean> {
   const contentToIndex = content ?? null;
 
@@ -67,6 +68,7 @@ async function updateMessageIndex(
 async function removeMessageFromIndex(
   supabase: ReturnType<typeof createSupabaseClient>,
   messageId: string,
+
 ): Promise<boolean> {
   const { error } = await supabase
     .from("messages")
@@ -92,23 +94,33 @@ export function registerSearchIndexer() {
   const worker = new Worker<SearchIndexingJobData>(
     "search-indexing",
     async (job: Job<SearchIndexingJobData>) => {
+      const signal = AbortSignal.timeout(30000);
       const { type, messageId, workspaceId, channelId, content } = job.data;
       logger.info({ type, messageId, workspaceId, channelId }, "Processing search indexing");
 
-      let success = false;
+      const work = async () => {
+        let success = false;
 
-      switch (type) {
-        case "message_created":
-        case "message_updated":
-          success = await updateMessageIndex(supabase, messageId, content);
-          break;
-        case "message_deleted":
-          success = await removeMessageFromIndex(supabase, messageId);
-          break;
-      }
+        switch (type) {
+          case "message_created":
+          case "message_updated":
+            success = await updateMessageIndex(supabase, messageId, content);
+            break;
+          case "message_deleted":
+            success = await removeMessageFromIndex(supabase, messageId);
+            break;
+        }
 
-      logger.debug({ type, messageId, success }, "Search indexing job completed");
-      return { status: success ? "indexed" : "failed", type };
+        logger.debug({ type, messageId, success }, "Search indexing job completed");
+        return { status: success ? "indexed" : "failed", type };
+      };
+
+      return await Promise.race([
+        work(),
+        new Promise<never>((_, reject) => {
+          signal.addEventListener("abort", () => reject(new Error("Job timed out after 30s")), { once: true });
+        }),
+      ]);
     },
     {
       connection: { url: env.REDIS_URL },

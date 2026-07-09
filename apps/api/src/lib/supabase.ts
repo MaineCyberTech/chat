@@ -3,6 +3,25 @@ import type { Env } from "../config/env.js";
 import { logger } from "./logger.js";
 
 const FETCH_TIMEOUT = 15_000;
+const CB_WINDOW_MS = 30_000;
+const CB_MAX_FAILURES = 5;
+
+const failureTracker = new Map<string, number[]>();
+
+function isCircuitOpen(label: string): boolean {
+  const now = Date.now();
+  const failures = failureTracker.get(label) ?? [];
+  const recent = failures.filter((t) => now - t < CB_WINDOW_MS);
+  failureTracker.set(label, recent);
+  return recent.length >= CB_MAX_FAILURES;
+}
+
+function recordFailure(label: string): void {
+  const now = Date.now();
+  const failures = failureTracker.get(label) ?? [];
+  failures.push(now);
+  failureTracker.set(label, failures.slice(-CB_MAX_FAILURES * 2));
+}
 
 function wrapBuilder(builder: object, table: string, label: string): object {
   return new Proxy(builder, {
@@ -27,6 +46,7 @@ function wrapBuilder(builder: object, table: string, label: string): object {
             },
             (error: Error) => {
               const duration = (performance.now() - start).toFixed(1);
+              recordFailure(label);
               logger.warn("DB query failed", { table, label, duration: `${duration}ms`, error: error?.message });
               if (typeof onrejected === "function") return onrejected(error);
               throw error;
@@ -46,6 +66,7 @@ function wrapBuilder(builder: object, table: string, label: string): object {
 }
 
 function createLoggedClient(url: string, key: string, label: string, opts?: Record<string, unknown>): SupabaseClient {
+  const circuitLabel = `supabase:${label}`;
   const client = createClient(url, key, {
     auth: { persistSession: false },
     global: { fetch: createFetchWithTimeout(FETCH_TIMEOUT) },
@@ -55,6 +76,11 @@ function createLoggedClient(url: string, key: string, label: string, opts?: Reco
     get(target, prop, receiver) {
       if (prop === "from") {
         return (table: string) => {
+          if (isCircuitOpen(circuitLabel)) {
+            logger.warn("Supabase circuit breaker open, skipping query", { label });
+            const empty = Promise.resolve({ data: [], error: null, count: null, status: 200, statusText: "OK" });
+            return wrapBuilder(empty as unknown as object, table, `${label} (cb-open)`);
+          }
           const builder = Reflect.apply(target.from, target, [table]);
           return wrapBuilder(builder, table, label);
         };

@@ -39,6 +39,9 @@ ENV NODE_ENV=production
 
 WORKDIR /app/apps/worker
 
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:4100/healthz || exit 1
+
 RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 appuser
 USER appuser
 

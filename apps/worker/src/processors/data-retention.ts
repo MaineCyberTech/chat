@@ -68,6 +68,7 @@ async function retainMessages(
 async function retainAuditLogs(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
+  signal?: AbortSignal,
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -100,6 +101,7 @@ async function retainAuditLogs(
 async function retainSoftDeletedChannels(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
+  signal?: AbortSignal,
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -136,6 +138,7 @@ async function retainSoftDeletedChannels(
 async function retainConsentLogs(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
+  signal?: AbortSignal,
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -171,6 +174,7 @@ async function retainConsentLogs(
 async function retainNotifications(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
+  signal?: AbortSignal,
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -206,6 +210,7 @@ async function retainNotifications(
 async function retainSoftDeletedWorkspaces(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
+  signal?: AbortSignal,
 ) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -251,44 +256,54 @@ export function registerDataRetentionProcessor() {
   const worker = new Worker<DataRetentionJobData>(
     "data-retention",
     async (job: Job<DataRetentionJobData>) => {
+      const signal = AbortSignal.timeout(30000);
       const { type, olderThanDays = 90 } = job.data;
       logger.info({ type, olderThanDays }, "Processing data retention job");
 
-      let cleaned = 0;
-      switch (type) {
-        case "messages":
-          cleaned = await retainMessages(supabase, olderThanDays);
-          break;
-        case "audit_logs":
-          cleaned = await retainAuditLogs(supabase, olderThanDays);
-          break;
-        case "soft_deleted_channels":
-          cleaned = await retainSoftDeletedChannels(supabase, olderThanDays);
-          break;
-        case "consent_logs":
-          cleaned = await retainConsentLogs(supabase, olderThanDays);
-          if (cleaned > 0) {
-            logger.info({ count: cleaned }, "Consent logs: active purge completed");
-          }
-          break;
-        case "notifications":
-          cleaned = await retainNotifications(supabase, olderThanDays);
-          break;
-        case "soft_deleted_workspaces":
-          cleaned = await retainSoftDeletedWorkspaces(supabase, olderThanDays);
-          break;
-        default:
-          logger.warn({ type }, "Unknown data retention job type");
-      }
+      const work = async () => {
+        let cleaned = 0;
+        switch (type) {
+          case "messages":
+            cleaned = await retainMessages(supabase, olderThanDays);
+            break;
+          case "audit_logs":
+            cleaned = await retainAuditLogs(supabase, olderThanDays);
+            break;
+          case "soft_deleted_channels":
+            cleaned = await retainSoftDeletedChannels(supabase, olderThanDays);
+            break;
+          case "consent_logs":
+            cleaned = await retainConsentLogs(supabase, olderThanDays);
+            if (cleaned > 0) {
+              logger.info({ count: cleaned }, "Consent logs: active purge completed");
+            }
+            break;
+          case "notifications":
+            cleaned = await retainNotifications(supabase, olderThanDays);
+            break;
+          case "soft_deleted_workspaces":
+            cleaned = await retainSoftDeletedWorkspaces(supabase, olderThanDays);
+            break;
+          default:
+            logger.warn({ type }, "Unknown data retention job type");
+        }
 
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-      logger.info(
-        { type, cutoffDate: cutoffDate.toISOString(), cleaned },
-        "Data retention job completed",
-      );
-      return { status: "retained", type, cutoffDate: cutoffDate.toISOString(), cleaned };
+        logger.info(
+          { type, cutoffDate: cutoffDate.toISOString(), cleaned },
+          "Data retention job completed",
+        );
+        return { status: "retained", type, cutoffDate: cutoffDate.toISOString(), cleaned };
+      };
+
+      return await Promise.race([
+        work(),
+        new Promise<never>((_, reject) => {
+          signal.addEventListener("abort", () => reject(new Error("Job timed out after 30s")), { once: true });
+        }),
+      ]);
     },
     {
       connection: { url: env.REDIS_URL },

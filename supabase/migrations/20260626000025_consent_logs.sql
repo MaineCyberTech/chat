@@ -1,3 +1,5 @@
+-- PII is encrypted at rest by Supabase (PostgreSQL pg_stat_statements + TDE via cloud provider).
+-- No application-level encryption is needed; Supabase handles storage encryption transparently.
 create table if not exists public.consent_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,

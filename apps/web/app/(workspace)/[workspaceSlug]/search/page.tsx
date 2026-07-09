@@ -45,6 +45,8 @@ function highlightText(text: string, query: string): React.ReactNode {
 export default function SearchPage() {
   const params = useParams<{ workspaceSlug: string }>();
   const router = useRouter();
+
+  useEffect(() => { document.title = "Search - Chat"; }, []);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [searchType, setSearchType] = useState<"messages" | "files">("messages");

@@ -210,7 +210,7 @@ apps/web/.env.example                         [Phase 1 — document missing vars
 ### Files to Remove
 
 ```
-infra/docker/traefik/traefik.yml              [Phase 2]
+infra/docker/traefik/traefik.yml              (already removed — repo uses Caddy)
 ```
 
 ### Files to NOT Touch

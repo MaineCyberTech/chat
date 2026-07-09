@@ -12,6 +12,10 @@ on:
       - "infra/docker/**"
       - ".github/workflows/deploy-development.yml"
 
+permissions:
+  contents: read
+  packages: write
+
 concurrency:
   group: deploy-dev-${{ github.ref }}
   cancel-in-progress: true

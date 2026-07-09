@@ -54,6 +54,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...((options.headers as Record<string, string>) ?? {}),
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
+  headers["x-request-id"] = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   if (options.method && options.method !== "GET" && options.method !== "HEAD") {
     if (!csrfPromise) csrfPromise = ensureCsrfToken();
     await csrfPromise;

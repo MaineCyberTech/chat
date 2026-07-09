@@ -20,6 +20,8 @@ interface NotificationPrefs {
 
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => { document.title = "Settings - Chat"; }, []);
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

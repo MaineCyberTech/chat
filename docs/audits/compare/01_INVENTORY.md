@@ -135,7 +135,7 @@ Each module has: routes.ts, service.ts, **tests**/ (5 test files total)
 
 ### Infra
 
-- `infra/docker/` — Caddyfile (same-domain routing: /health, /auth, /workspaces, /channels, /messages, /socket.io proxied to API), Caddyfile.prod, docker-compose.devremote.yml (3 services: caddy, web, api), docker-compose.prod.yml, traefik/ (legacy)
+- `infra/docker/` — Caddyfile (same-domain routing: /health, /auth, /workspaces, /channels, /messages, /socket.io proxied to API), Caddyfile.prod, docker-compose.devremote.yml (3 services: caddy, web, api), docker-compose.prod.yml, Caddy (legacy traefik/ dir removed)
 - `infra/terraform/` — main.tf, variables.tf, outputs.tf, versions.tf, locals.tf, cloud-init.yaml.tftpl (DigitalOcean only)
 
 ### CI/CD (6 workflows)

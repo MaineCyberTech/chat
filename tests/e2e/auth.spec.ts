@@ -1,4 +1,9 @@
 import { test, expect } from "@playwright/test";
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+const CREDENTIALS_PATH = path.resolve(__dirname, "../../test-signin.json");
+const HAS_CREDENTIALS = fs.existsSync(CREDENTIALS_PATH);
 
 test.describe("Auth Flow", () => {
   test.beforeEach(async ({ page }) => {
@@ -23,9 +28,22 @@ test.describe("Auth Flow", () => {
   });
 
   test("shows sent state after successful magic link request", async ({ page }) => {
-    // Use a test email that won't actually send
     await page.fill('input[type="email"]', "test@example.com");
     await page.click('button[type="submit"]');
     await expect(page.locator("text=Check your email")).toBeVisible({ timeout: 10000 });
+  });
+
+  test("completes full sign-in with credentials", async ({ page }) => {
+    test.skip(!HAS_CREDENTIALS, "Skipping: copy test-signin.example.json to test-signin.json with valid credentials");
+    const raw = fs.readFileSync(CREDENTIALS_PATH, "utf-8");
+    const creds = JSON.parse(raw) as { email: string; password: string };
+    await page.goto("/login");
+    await page.waitForLoadState("networkidle");
+    await page.fill('input[type="email"]', creds.email);
+    const passwordInput = page.locator('input[type="password"]');
+    if (await passwordInput.isVisible()) await passwordInput.fill(creds.password);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/[^/]+$/, { timeout: 30000 });
+    await expect(page.locator("text=Chat")).toBeVisible({ timeout: 10000 });
   });
 });

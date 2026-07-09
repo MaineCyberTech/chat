@@ -171,6 +171,7 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 }
 
 export default function AdminPage() {
+  useEffect(() => { document.title = "Admin - Chat"; }, []);
   const [tab, setTab] = useState<Tab>("overview");
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -310,18 +310,34 @@ jobs:
       - name: Verify migration status
         run: supabase migration list || echo "Migration list not available (project not linked), skipping verification"
 
-      - name: Validate migration order
+      - name: Validate migration order against manifest
         run: |
-          prev=""
-          for f in $(ls supabase/migrations/*.sql 2>/dev/null | sort); do
-            v=$(basename "$f" | cut -d_ -f1)
-            if [ -n "$prev" ] && [ "$v" \< "$prev" ] 2>/dev/null; then
-              echo "❌ Migration ordering error: $v < $prev"
-              exit 1
-            fi
-            prev="$v"
+          MANIFEST="supabase/migrations/migrations.list"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "❌ Migration manifest not found at $MANIFEST"
+            exit 1
+          fi
+          # Build ordered list from filesystem
+          actual=""
+          for f in supabase/migrations/*.sql; do
+            base=$(basename "$f")
+            if [ "$base" = "migrations.list" ]; then continue; fi
+            actual="$actual$base
+"
           done
-          echo "✅ Migration order validated"
+          actual=$(echo "$actual" | sort)
+          # Read manifest
+          expected=$(cat "$MANIFEST")
+          # Diff
+          if [ "$actual" != "$expected" ]; then
+            echo "❌ Migration order mismatch!"
+            echo "--- Expected (from manifest) ---"
+            echo "$expected"
+            echo "--- Actual (from filesystem) ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "✅ Migration order matches manifest"
 
       - name: Run SQL lint
         run: |

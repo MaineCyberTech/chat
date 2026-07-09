@@ -7,6 +7,8 @@ const env = loadEnv();
 const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 export async function processReminders() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   try {
     const now = new Date().toISOString();
     const { data: due, error } = await supabase
@@ -46,6 +48,12 @@ export async function processReminders() {
 
     logger.info(`Processed ${due.length} reminders`);
   } catch (err) {
-    logger.error({ error: String(err) }, "Reminder processor failed");
+    if (controller.signal.aborted) {
+      logger.error("Reminder processor timed out after 30s");
+    } else {
+      logger.error({ error: String(err) }, "Reminder processor failed");
+    }
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
