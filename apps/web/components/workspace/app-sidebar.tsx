@@ -37,6 +37,8 @@ interface Props {
   channelId?: string;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: (collapsed: boolean) => void;
 }
 
 const SIDEBAR_WIDTH = 264;
@@ -48,6 +50,8 @@ export function AppSidebar({
   channelId,
   mobileOpen,
   onMobileClose: _onMobileClose,
+  collapsed: _collapsed,
+  onToggleCollapse,
 }: Props) {
   const router = useRouter();
   const { user, signOut } = useAuth();
@@ -58,7 +62,8 @@ export function AppSidebar({
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [wsLoading, setWsLoading] = useState(false);
   const [sidebarRef, setSidebarRef] = useState<HTMLElement | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
+  const [localCollapsed, setLocalCollapsed] = useState(false);
+  const collapsed = _collapsed ?? localCollapsed;
   const collapsedRef = useRef(true);
   const userToggledRef = useRef(false);
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_WIDTH);
@@ -101,27 +106,11 @@ export function AppSidebar({
     return m;
   }, [chatUsers]);
 
-  // Auto-collapse sidebar at md breakpoint (768px) for tablet layout
+  // Collapse state is controlled by parent layout when sidebarCollapsed is provided.
+  // Keep internal ref in sync for local-only usage (mobile overlay).
   useEffect(() => {
-    function handleResize() {
-      if (userToggledRef.current) return;
-      const width = window.innerWidth;
-      if (width >= 768 && width < 1024) {
-        if (!collapsedRef.current) {
-          setCollapsed(true);
-          collapsedRef.current = true;
-        }
-      } else if (width >= 1024) {
-        if (collapsedRef.current) {
-          setCollapsed(false);
-          collapsedRef.current = false;
-        }
-      }
-    }
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    collapsedRef.current = collapsed;
+  }, [collapsed]);
 
   const handleCreated = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -523,13 +512,11 @@ export function AppSidebar({
       <div
         id="SidebarContainer"
         ref={setSidebarRef}
-        className={`flex h-full flex-col ${collapsed ? "w-[60px]" : ""}`}
+        className={`flex h-full flex-col ${collapsed ? "w-[60px]" : "w-full"}`}
         style={{
           background: "var(--sidebar-bg)",
           color: "var(--sidebar-text)",
-          minWidth: collapsed ? 60 : SIDEBAR_MIN_WIDTH,
-          maxWidth: collapsed ? 60 : SIDEBAR_MAX_WIDTH,
-          width: collapsed ? 60 : sidebarWidth,
+          minWidth: collapsed ? 60 : 200,
           gridArea: "team-sidebar",
           overflowX: "visible",
           position: "relative",
@@ -544,7 +531,8 @@ export function AppSidebar({
             <button
               onClick={() => {
                 userToggledRef.current = true;
-                setCollapsed(false);
+                setLocalCollapsed(false);
+                onToggleCollapse?.(false);
               }}
               className="mx-auto flex h-9 w-9 items-center justify-center rounded"
               style={{ color: "var(--sidebar-header-text-color)" }}
@@ -654,7 +642,8 @@ export function AppSidebar({
               <button
                 onClick={() => {
                   userToggledRef.current = true;
-                  setCollapsed(true);
+                  setLocalCollapsed(true);
+                  onToggleCollapse?.(true);
                 }}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded"
                 style={{ color: "var(--sidebar-header-text-color)" }}

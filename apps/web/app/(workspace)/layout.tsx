@@ -300,6 +300,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
               channelId={params.channelId}
               mobileOpen={sidebarOpen}
               onMobileClose={() => setSidebarOpen(false)}
+              collapsed={sidebarCollapsed}
+              onToggleCollapse={setSidebarCollapsed}
             />
           </div>
           {!sidebarCollapsed && (
