@@ -225,19 +225,19 @@ Full comparative audit executed (8 phases). All 16 verified features documented 
 | Email         | Email verification flow                            | ✅ Verification page with resend |
 | Import/Export | Bulk import/export (CSV/JSON)                      | ✅ 4 export endpoints + 2 import endpoints + admin UI |
 
-### Medium Effort (2-4 days each)
+### Medium Effort (2-4 days each) — All Implemented
 
-| Area          | Feature                                            | Reference                                                           |
-| ------------- | -------------------------------------------------- | ------------------------------------------------------------------- |
-| Sidebar       | Category management (create/rename/delete/reorder) | `sidebar_category/` (466 lines, draggable)                          |
-| Sidebar       | Channel context menu (right-click)                 | `sidebar_channel_menu/` (favorite, mute, move, copy, leave, delete) |
-| Sidebar       | Sidebar header team menu                           | `sidebar_header/` (team switch, browse channels, create, invite)    |
-| Sidebar       | Resizable sidebar (drag handle)                    | `resizable_sidebar/`                                                |
-| Search        | Operator hints (`from:`, `in:`, etc.)              | `search_box_hints.tsx`                                              |
-| Search        | File extension suggestions                         | `extension_suggestions_provider.tsx`                                |
-| Notifications | Global notification settings page                  | `user_settings_notifications.tsx` (1300 lines)                      |
-| Notifications | Desktop notification sounds (9 sounds)             | `desktop_notification_sounds_setting/`                              |
-| Notifications | Trigger words + auto-responder                     | `user_settings_notifications.tsx`                                   |
+| Area          | Feature                                            | Status | Reference |
+| ------------- | -------------------------------------------------- | ------ | --------- |
+| Sidebar       | Category management (create/rename/delete/reorder) | ✅ DONE | `app-sidebar.tsx` |
+| Sidebar       | Channel context menu (right-click)                 | ✅ DONE | `channel-list.tsx` (9 options) |
+| Sidebar       | Sidebar header team menu                           | ✅ DONE | `app-sidebar.tsx` |
+| Sidebar       | Resizable sidebar (drag handle)                    | ✅ DONE | `layout.tsx` |
+| Search        | Operator hints (`from:`, `in:`, etc.)              | ✅ DONE | `search-bar.tsx` |
+| Search        | File extension suggestions                         | ✅ DONE | `search-bar.tsx` |
+| Notifications | Global notification settings page                  | ✅ DONE | `settings/page.tsx` |
+| Notifications | Desktop notification sounds (9 sounds)             | ✅ DONE | `notification-sound.ts` |
+| Notifications | Trigger words + auto-responder                     | ✅ DONE | `trigger_words` API + UI |
 
 ### High Effort (1-2 weeks each)
 
