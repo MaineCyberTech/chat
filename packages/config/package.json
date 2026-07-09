@@ -4,6 +4,17 @@
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./env-schema": "./dist/env-schema.js",
+    "./env-schema.js": "./dist/env-schema.js",
+    "./logger": "./dist/logger.js",
+    "./logger.js": "./dist/logger.js",
+    "./errors": "./dist/errors.js",
+    "./errors.js": "./dist/errors.js",
+    "./date": "./dist/date.js",
+    "./date.js": "./dist/date.js"
+  },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit"
