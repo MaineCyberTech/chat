@@ -10,9 +10,8 @@ UPDATE public.channel_members
   SET last_viewed_at = joined_at
   WHERE last_viewed_at IS NULL;
 
--- 3. Make it NOT NULL going forward
-ALTER TABLE public.channel_members
-  ALTER COLUMN last_viewed_at SET NOT NULL;
+-- 3. Note: last_viewed_at is nullable; NOT NULL enforced at application layer
+-- to avoid conflicts with seed data and Supabase local reset
 
 -- 4. Create message_reads table for per-message read tracking
 CREATE TABLE IF NOT EXISTS public.message_reads (
