@@ -22,6 +22,7 @@ import adminRoutes from "./modules/admin/routes.js";
 import exportRoutes from "./modules/export/routes.js";
 import importRoutes from "./modules/import/routes.js";
 import openApiRoutes from "./modules/openapi/routes.js";
+import aiRoutes from "./modules/ai/routes.js";
 
 export interface RouteEndpoint {
   method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -85,4 +86,5 @@ export const routeRegistry: RouteEntry[] = [
   { path: "/v1/admin", router: adminRoutes, description: "Admin operations" },
   { path: "/v1", router: exportRoutes, description: "Admin data export (CSV/JSON)" },
   { path: "/v1", router: importRoutes, description: "Admin data import from CSV" },
+  { path: "/v1/ai", router: aiRoutes, description: "AI rewrite actions" },
 ];

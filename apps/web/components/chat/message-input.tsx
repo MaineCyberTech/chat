@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   AlertCircle,
   Clock,
+  Sparkles,
 } from "lucide-react";
 import { FormattingBar } from "./formatting-bar";
 import { CodeBlock } from "./code-block";
@@ -121,6 +122,9 @@ export function MessageInput({
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>("");
   const schedulePickerRef = useRef<HTMLDivElement>(null);
+  const [showAiPicker, setShowAiPicker] = useState(false);
+  const [aiRewriting, setAiRewriting] = useState(false);
+  const aiPickerRef = useRef<HTMLDivElement>(null);
   const priorityWarningAcked = useRef(false);
   const lastTypingEmitRef = useRef(0);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -610,6 +614,55 @@ export function MessageInput({
     setShowEmojiPicker(false);
   }
 
+  const handleAiRewrite = useCallback(async (action: string) => {
+    const editor = tiptapRef.current;
+    const text = editor?.getText().trim();
+    if (!text) return;
+
+    setAiRewriting(true);
+    try {
+      const res = await api.post<{ rewritten: string }>("/v1/ai/rewrite", { text, action });
+      if (editor) {
+        editor.commands.setContent(res.rewritten);
+        setContent(editor.getHTML());
+        editor.commands.focus();
+      }
+      addToast({ title: "Rewritten", variant: "success", duration: 2000 });
+    } catch {
+      addToast({ title: "Error", description: "Failed to rewrite message", variant: "error" });
+    } finally {
+      setAiRewriting(false);
+      setShowAiPicker(false);
+    }
+  }, [addToast]);
+
+  const AI_ACTIONS = [
+    { id: "fix-spelling", label: "Fix spelling" },
+    { id: "shorter", label: "Make shorter" },
+    { id: "formal", label: "Make formal" },
+    { id: "concise", label: "Make concise" },
+    { id: "friendly", label: "Make friendly" },
+  ];
+
+  useEffect(() => {
+    if (!showAiPicker) return;
+    function handleClick(e: MouseEvent | TouchEvent) {
+      if (aiPickerRef.current && !aiPickerRef.current.contains(e.target as Node))
+        setShowAiPicker(false);
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowAiPicker(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("touchstart", handleClick, { passive: true });
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("touchstart", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [showAiPicker]);
+
   return (
     <div
       ref={editorRef}
@@ -955,6 +1008,51 @@ export function MessageInput({
 
           {/* Right action buttons */}
           <div className="flex shrink-0 items-center gap-1" style={{ paddingBottom: 8 }}>
+            {/* AI rewrite button */}
+            <div className="relative">
+              <button
+                onClick={() => setShowAiPicker(!showAiPicker)}
+                className="flex h-8 w-8 items-center justify-center rounded"
+                style={{
+                  color: "rgba(var(--center-channel-color-rgb), 0.56)",
+                  background: showAiPicker ? "rgba(var(--button-bg-rgb), 0.12)" : "transparent",
+                }}
+                aria-label="AI rewrite"
+                title="Rewrite with AI"
+                disabled={aiRewriting}
+              >
+                <Sparkles size={16} />
+              </button>
+
+              {showAiPicker && (
+                <div
+                  ref={aiPickerRef}
+                  className="absolute right-0 bottom-full z-10 mb-1 w-44 rounded-lg border py-1 shadow-[var(--elevation-3)]"
+                  style={{
+                    background: "var(--center-channel-bg)",
+                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                  }}
+                >
+                  {AI_ACTIONS.map((a) => (
+                    <button
+                      key={a.id}
+                      onClick={() => handleAiRewrite(a.id)}
+                      disabled={aiRewriting}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                      style={{ color: "var(--center-channel-color)" }}
+                    >
+                      {aiRewriting ? (
+                        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <Sparkles size={14} style={{ color: "rgba(var(--button-bg-rgb), 0.72)" }} />
+                      )}
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Schedule button */}
             <div className="relative">
               <button
@@ -989,19 +1087,88 @@ export function MessageInput({
                   >
                     Schedule message
                   </p>
-                  <input
-                    type="datetime-local"
-                    value={scheduledAt}
-                    onChange={(e) => setScheduledAt(e.target.value)}
-                    min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-                    className="w-full rounded border px-2 py-1 text-xs"
-                    style={{
-                      borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                      background: "var(--center-channel-bg)",
-                      color: "var(--center-channel-color)",
-                    }}
-                    aria-label="Schedule date and time"
-                  />
+
+                  {/* Preset options */}
+                  {[
+                    {
+                      label: "Later today",
+                      desc: "In 1 hour",
+                      getTime: () => {
+                        const d = new Date();
+                        d.setHours(d.getHours() + 1);
+                        return d;
+                      },
+                    },
+                    {
+                      label: "Tomorrow morning",
+                      desc: "9:00 AM",
+                      getTime: () => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 1);
+                        d.setHours(9, 0, 0, 0);
+                        return d;
+                      },
+                    },
+                    {
+                      label: "Tomorrow afternoon",
+                      desc: "1:00 PM",
+                      getTime: () => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 1);
+                        d.setHours(13, 0, 0, 0);
+                        return d;
+                      },
+                    },
+                  ].map((opt) => {
+                    const t = opt.getTime();
+                    const val = t.toISOString().slice(0, 16);
+                    return (
+                      <button
+                        key={opt.label}
+                        onClick={() => {
+                          setScheduledAt(val);
+                          setShowSchedulePicker(false);
+                        }}
+                        className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs ${
+                          scheduledAt === val
+                            ? "bg-[rgba(var(--button-bg-rgb),0.08)]"
+                            : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                        }`}
+                        style={{
+                          color:
+                            scheduledAt === val
+                              ? "var(--button-bg)"
+                              : "var(--center-channel-color)",
+                        }}
+                      >
+                        <span className="font-medium">{opt.label}</span>
+                        <span style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}>
+                          {opt.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  {/* Custom date/time picker */}
+                  <div className="mt-2 border-t pt-2" style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}>
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wider" style={{ color: "rgba(var(--center-channel-color-rgb), 0.48)" }}>
+                      Custom
+                    </p>
+                    <input
+                      type="datetime-local"
+                      value={scheduledAt}
+                      onChange={(e) => setScheduledAt(e.target.value)}
+                      min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                      className="w-full rounded border px-2 py-1 text-xs"
+                      style={{
+                        borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                        background: "var(--center-channel-bg)",
+                        color: "var(--center-channel-color)",
+                      }}
+                      aria-label="Custom schedule date and time"
+                    />
+                  </div>
+
                   <div className="mt-2 flex justify-end gap-2">
                     {scheduledAt && (
                       <button

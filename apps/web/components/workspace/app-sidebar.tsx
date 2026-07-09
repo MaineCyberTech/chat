@@ -26,6 +26,7 @@ import {
   Shield,
 } from "lucide-react";
 import type { Channel, Workspace } from "@chat/db";
+import { UserPickerModal } from "@/components/groups/user-picker-modal";
 import { api } from "@/lib/api";
 import { usePresence, statusColor as presenceColor, statusClass } from "@/lib/use-presence";
 
@@ -215,12 +216,16 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
   }
 
   function toggleUserSelection(userId: string) {
-    setSelectedUserIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(userId)) next.delete(userId);
-      else next.add(userId);
-      return next;
-    });
+    if (selectedUserIds.size === 0) {
+      startDm(userId);
+    } else {
+      setSelectedUserIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(userId)) next.delete(userId);
+        else next.add(userId);
+        return next;
+      });
+    }
   }
 
   // Fetch user status
@@ -1003,83 +1008,25 @@ export function AppSidebar({ workspaceSlug, channelId, mobileOpen, onMobileClose
             </div>
           )}
 
-          {/* User picker for starting DM or GM */}
           {showUserPicker && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              style={{ background: "rgba(0,0,0,0.5)" }}
-            >
-              <div
-                className="w-full max-w-sm rounded-lg p-4 shadow-[var(--elevation-5)]"
-                style={{
-                  background: "var(--center-channel-bg)",
-                  color: "var(--center-channel-color)",
-                }}
-              >
-                <h3 className="mb-2 text-sm font-semibold">Start a conversation</h3>
-                <p
-                  className="mb-2 text-xs"
-                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
-                >
-                  Click a name for a DM, or select multiple for a group chat
-                </p>
-                <div className="max-h-48 space-y-0.5 overflow-y-auto">
-                  {chatUsers.length === 0 && (
-                    <p
-                      className="text-xs"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
-                    >
-                      No other members found
-                    </p>
-                  )}
-                  {chatUsers.map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => {
-                        if (selectedUserIds.size === 0) {
-                          startDm(u.id);
-                        } else {
-                          toggleUserSelection(u.id);
-                        }
-                      }}
-                      className="w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors"
-                      style={{
-                        background: selectedUserIds.has(u.id)
-                          ? `rgba(var(--button-bg-rgb), 0.08)`
-                          : "transparent",
-                        color: selectedUserIds.has(u.id)
-                          ? "var(--link-color)"
-                          : "var(--center-channel-color)",
-                      }}
-                    >
-                      <span className="mr-2">{selectedUserIds.has(u.id) ? "\u2713" : "+"}</span>
-                      {u.display_name ?? u.id.slice(0, 8)}
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-3 flex gap-2">
-                  {selectedUserIds.size > 0 && (
-                    <button
-                      onClick={createGroupChat}
-                      className="flex-1 rounded-md px-3 py-1.5 text-xs font-medium text-white"
-                      style={{ background: "var(--button-bg)" }}
-                    >
-                      Start group ({selectedUserIds.size})
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setShowUserPicker(false);
-                      setSelectedUserIds(new Set());
-                    }}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium ${selectedUserIds.size > 0 ? "flex-1" : "w-full"}`}
-                    style={{ background: "rgba(var(--center-channel-color-rgb), 0.08)" }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
+            <UserPickerModal
+              users={chatUsers}
+              selectedIds={selectedUserIds}
+              onToggle={toggleUserSelection}
+              onCancel={() => {
+                setShowUserPicker(false);
+                setSelectedUserIds(new Set());
+              }}
+              onSubmit={createGroupChat}
+              submitLabel={
+                selectedUserIds.size === 0
+                  ? "Select users to start a group chat"
+                  : `Start group chat (${selectedUserIds.size})`
+              }
+              submitDisabled={selectedUserIds.size < 2}
+              title="Start a conversation"
+              description="Click a name for a DM, or select multiple for a group chat."
+            />
           )}
 
           {workspace && showInviteModal && (
