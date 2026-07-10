@@ -149,9 +149,7 @@ export function MessageContextMenu({
         </button>
         {onForward && (
           <button
-            ref={(el) => {
-              menuItemsRef.current[4] = el;
-            }}
+            ref={(el) => { menuItemsRef.current[6] = el; }}
             onClick={() => {
               onForward(contextMenu.message);
               onClose();
@@ -165,9 +163,7 @@ export function MessageContextMenu({
         )}
         {onPin && (
           <button
-            ref={(el) => {
-              menuItemsRef.current[5] = el;
-            }}
+            ref={(el) => { menuItemsRef.current[7] = el; }}
             onClick={() => {
               onPin(contextMenu.message);
               onClose();
@@ -181,9 +177,7 @@ export function MessageContextMenu({
         )}
         {contextMenu.message.user_id === currentUserId && onEdit && (
           <button
-            ref={(el) => {
-              menuItemsRef.current[4] = el;
-            }}
+            ref={(el) => { menuItemsRef.current[8] = el; }}
             onClick={() => {
               onStartEdit(contextMenu.message);
               onClose();
@@ -197,9 +191,7 @@ export function MessageContextMenu({
         )}
         {contextMenu.message.user_id === currentUserId && onDelete && (
           <button
-            ref={(el) => {
-              menuItemsRef.current[5] = el;
-            }}
+            ref={(el) => { menuItemsRef.current[9] = el; }}
             onClick={() => {
               onSetDeleteConfirmId(contextMenu.message.id);
               onClose();

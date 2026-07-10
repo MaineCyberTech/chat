@@ -936,8 +936,20 @@ export function ChatView({
               }
               sendErrors={sendErrors}
               onRetry={handleRetry}
-              onUndoDelete={handleUndoDelete}
-              channelTopic={channelTopic}
+               onUndoDelete={handleUndoDelete}
+               onForward={(msg) => {
+                 navigator.clipboard.writeText(msg.content);
+                 addToast({ title: "Message copied for forwarding", variant: "info", duration: 3000 });
+               }}
+               onPin={async (msg) => {
+                 try {
+                   await api.post(`/messages/${msg.id}/pin`, {});
+                   addToast({ title: "Message pinned", variant: "success", duration: 2000 });
+                 } catch {
+                   addToast({ title: "Failed to pin message", variant: "error" });
+                 }
+               }}
+               channelTopic={channelTopic}
             />
           </div>
 

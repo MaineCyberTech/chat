@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
-import { Button, EmptyState, SidebarGroup, Skeleton, useToast } from "@chat/ui";
+import { Button, EmptyState, SidebarGroup, Skeleton, useToast, useTheme } from "@chat/ui";
 import { Bell, BellOff, AlertTriangle, X, Plus, Play } from "lucide-react";
 import { playNotificationSound } from "@/lib/notification-sound";
 import type { UserPreferences, ThemePreference } from "@chat/db";
@@ -32,6 +32,7 @@ export default function SettingsPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   const [saveMessage, setSaveMessage] = useState("");
   const { addToast } = useToast();
+  const { setTheme: applyThemeSetting } = useTheme();
   const [channelPrefs, setChannelPrefs] = useState<Map<string, boolean>>(new Map());
   const [channels, setChannels] = useState<
     { id: string; workspace_id: string; name: string; slug: string }[]
@@ -118,7 +119,7 @@ export default function SettingsPage() {
       setAutoResponderEnabled(res.responder.enabled);
       setAutoResponderMessage(res.responder.message);
     } catch {
-      /* ignore */
+      console.warn("Failed to fetch auto-responder");
     }
   }
 
@@ -216,10 +217,11 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleThemeChange(theme: ThemePreference) {
-    const updated = { ...preferences, theme } as UserPreferences;
+  async function handleThemeChange(t: ThemePreference) {
+    const updated = { ...preferences, theme: t } as UserPreferences;
     setPreferences(updated);
-    await savePreferences({ theme });
+    applyThemeSetting(t);
+    await savePreferences({ theme: t });
   }
 
   function handleNotificationChange(
@@ -232,6 +234,7 @@ export default function SettingsPage() {
       notification_prefs: { ...current, [key]: value },
     } as UserPreferences;
     setPreferences(updated);
+    savePreferences(updated).catch(() => {});
   }
 
   async function savePreferences(patch: Partial<UserPreferences>) {

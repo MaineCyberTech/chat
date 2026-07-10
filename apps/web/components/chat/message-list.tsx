@@ -33,6 +33,8 @@ interface Props {
   sendErrors?: Map<string, string>;
   onRetry?: (messageId: string) => void;
   onUndoDelete?: (messageId: string) => void;
+  onForward?: (message: Message) => void;
+  onPin?: (message: Message) => void;
   channelTopic?: string;
 }
 
@@ -54,6 +56,8 @@ export function MessageList({
   sendErrors,
   onRetry,
   onUndoDelete: _onUndoDelete,
+  onForward,
+  onPin,
   channelTopic,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -554,6 +558,8 @@ export function MessageList({
           onReply={onReply}
           onEdit={onEdit}
           onDelete={onDelete}
+          onForward={onForward}
+          onPin={onPin}
           onClose={() => setContextMenu(null)}
           onStartEdit={(msg) => startEdit(msg)}
           onSetDeleteConfirmId={handleSetDeleteConfirmId}
