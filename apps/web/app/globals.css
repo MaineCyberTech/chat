@@ -34,9 +34,14 @@
     padding: 0;
     height: 100%;
     font-family: var(--font-sans);
+    font-size: clamp(14px, 1vw + 0.5rem, 16px);
     color: var(--center-channel-color);
     overscroll-behavior: none;
     background: var(--center-channel-bg);
+  }
+
+  .text-fluid {
+    font-size: clamp(var(--font-size-min, 0.875rem), var(--font-size-pref, 1vw + 0.5rem), var(--font-size-max, 1rem));
   }
 
   :root {

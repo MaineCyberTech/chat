@@ -39,6 +39,7 @@ export function MessageContextMenu({
   onPin?: (message: Message) => void;
 }) {
   const { addToast } = useToast();
+  const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
 
   const menuItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -78,6 +79,168 @@ export function MessageContextMenu({
     }
   }
 
+  function renderMenuItems() {
+    return (
+      <>
+        <button
+          ref={(el) => {
+            menuItemsRef.current[0] = el;
+          }}
+          onClick={() => {
+            onReply?.(contextMenu.message);
+            onClose();
+          }}
+          className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+          style={{ color: "var(--center-channel-color)" }}
+          role="menuitem"
+        >
+          <Reply size={14} /> Reply
+        </button>
+        <button
+          ref={(el) => {
+            menuItemsRef.current[1] = el;
+          }}
+          onClick={() => {
+            navigator.clipboard
+              .writeText(contextMenu.message.content)
+              .then(() => addToast({ title: "Copied", variant: "success", duration: 2000 }))
+              .catch(() => addToast({ title: "Failed to copy", variant: "error", duration: 3000 }));
+            onClose();
+          }}
+          className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+          style={{ color: "var(--center-channel-color)" }}
+          role="menuitem"
+        >
+          <Copy size={14} /> Copy text
+        </button>
+        <button
+          ref={(el) => {
+            menuItemsRef.current[2] = el;
+          }}
+          onClick={() => {
+            const permalink = `${window.location.origin}/pl/${contextMenu.message.id}`;
+            navigator.clipboard
+              .writeText(permalink)
+              .then(() => addToast({ title: "Link copied", variant: "success", duration: 2000 }))
+              .catch(() =>
+                addToast({ title: "Failed to copy link", variant: "error", duration: 3000 }),
+              );
+            onClose();
+          }}
+          className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+          style={{ color: "var(--center-channel-color)" }}
+          role="menuitem"
+        >
+          <Copy size={14} /> Copy link
+        </button>
+        <button
+          ref={(el) => {
+            menuItemsRef.current[3] = el;
+          }}
+          onClick={() => {
+            onSetRemindMessageId(contextMenu.message.id);
+            onClose();
+          }}
+          className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+          style={{ color: "var(--center-channel-color)" }}
+          role="menuitem"
+        >
+          <Clock size={14} /> Remind me
+        </button>
+        {onForward && (
+          <button
+            ref={(el) => {
+              menuItemsRef.current[4] = el;
+            }}
+            onClick={() => {
+              onForward(contextMenu.message);
+              onClose();
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+            style={{ color: "var(--center-channel-color)" }}
+            role="menuitem"
+          >
+            <Share2 size={14} /> Forward
+          </button>
+        )}
+        {onPin && (
+          <button
+            ref={(el) => {
+              menuItemsRef.current[5] = el;
+            }}
+            onClick={() => {
+              onPin(contextMenu.message);
+              onClose();
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+            style={{ color: "var(--center-channel-color)" }}
+            role="menuitem"
+          >
+            <Pin size={14} /> Pin
+          </button>
+        )}
+        {contextMenu.message.user_id === currentUserId && onEdit && (
+          <button
+            ref={(el) => {
+              menuItemsRef.current[4] = el;
+            }}
+            onClick={() => {
+              onStartEdit(contextMenu.message);
+              onClose();
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+            style={{ color: "var(--center-channel-color)" }}
+            role="menuitem"
+          >
+            <Pencil size={14} /> Edit
+          </button>
+        )}
+        {contextMenu.message.user_id === currentUserId && onDelete && (
+          <button
+            ref={(el) => {
+              menuItemsRef.current[5] = el;
+            }}
+            onClick={() => {
+              onSetDeleteConfirmId(contextMenu.message.id);
+              onClose();
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+            style={{ color: "var(--dnd-indicator)" }}
+            role="menuitem"
+          >
+            <Trash2 size={14} /> Delete
+          </button>
+        )}
+      </>
+    );
+  }
+
+  if (isTouchDevice) {
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-40 bg-black/50"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+        <div
+          ref={menuRef}
+          className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl border px-2 pb-6 pt-2"
+          style={{
+            background: "var(--center-channel-bg)",
+            borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+            boxShadow: "var(--elevation-5)",
+          }}
+          role="menu"
+          aria-label="Message actions"
+          onKeyDown={handleMenuKeyDown}
+        >
+          {renderMenuItems()}
+        </div>
+      </>
+    );
+  }
+
   return (
     <div
       ref={menuRef}
@@ -95,135 +258,7 @@ export function MessageContextMenu({
       aria-label="Message actions"
       onKeyDown={handleMenuKeyDown}
     >
-      <button
-        ref={(el) => {
-          menuItemsRef.current[0] = el;
-        }}
-        onClick={() => {
-          onReply?.(contextMenu.message);
-          onClose();
-        }}
-        className="flex w-full items-center gap-2 px-3 py-2 text-sm"
-        style={{ color: "var(--center-channel-color)" }}
-        role="menuitem"
-      >
-        <Reply size={14} /> Reply
-      </button>
-      <button
-        ref={(el) => {
-          menuItemsRef.current[1] = el;
-        }}
-        onClick={() => {
-          navigator.clipboard
-            .writeText(contextMenu.message.content)
-            .then(() => addToast({ title: "Copied", variant: "success", duration: 2000 }))
-            .catch(() => addToast({ title: "Failed to copy", variant: "error", duration: 3000 }));
-          onClose();
-        }}
-        className="flex w-full items-center gap-2 px-3 py-2 text-sm"
-        style={{ color: "var(--center-channel-color)" }}
-        role="menuitem"
-      >
-        <Copy size={14} /> Copy text
-      </button>
-      <button
-        ref={(el) => {
-          menuItemsRef.current[2] = el;
-        }}
-        onClick={() => {
-          const permalink = `${window.location.origin}/pl/${contextMenu.message.id}`;
-          navigator.clipboard
-            .writeText(permalink)
-            .then(() => addToast({ title: "Link copied", variant: "success", duration: 2000 }))
-            .catch(() =>
-              addToast({ title: "Failed to copy link", variant: "error", duration: 3000 }),
-            );
-          onClose();
-        }}
-        className="flex w-full items-center gap-2 px-3 py-2 text-sm"
-        style={{ color: "var(--center-channel-color)" }}
-        role="menuitem"
-      >
-        <Copy size={14} /> Copy link
-      </button>
-      <button
-        ref={(el) => {
-          menuItemsRef.current[3] = el;
-        }}
-        onClick={() => {
-          onSetRemindMessageId(contextMenu.message.id);
-          onClose();
-        }}
-        className="flex w-full items-center gap-2 px-3 py-2 text-sm"
-        style={{ color: "var(--center-channel-color)" }}
-        role="menuitem"
-      >
-        <Clock size={14} /> Remind me
-      </button>
-      {onForward && (
-        <button
-          ref={(el) => {
-            menuItemsRef.current[4] = el;
-          }}
-          onClick={() => {
-            onForward(contextMenu.message);
-            onClose();
-          }}
-          className="flex w-full items-center gap-2 px-3 py-2 text-sm"
-          style={{ color: "var(--center-channel-color)" }}
-          role="menuitem"
-        >
-          <Share2 size={14} /> Forward
-        </button>
-      )}
-      {onPin && (
-        <button
-          ref={(el) => {
-            menuItemsRef.current[5] = el;
-          }}
-          onClick={() => {
-            onPin(contextMenu.message);
-            onClose();
-          }}
-          className="flex w-full items-center gap-2 px-3 py-2 text-sm"
-          style={{ color: "var(--center-channel-color)" }}
-          role="menuitem"
-        >
-          <Pin size={14} /> Pin
-        </button>
-      )}
-      {contextMenu.message.user_id === currentUserId && onEdit && (
-        <button
-          ref={(el) => {
-            menuItemsRef.current[4] = el;
-          }}
-          onClick={() => {
-            onStartEdit(contextMenu.message);
-            onClose();
-          }}
-          className="flex w-full items-center gap-2 px-3 py-2 text-sm"
-          style={{ color: "var(--center-channel-color)" }}
-          role="menuitem"
-        >
-          <Pencil size={14} /> Edit
-        </button>
-      )}
-      {contextMenu.message.user_id === currentUserId && onDelete && (
-        <button
-          ref={(el) => {
-            menuItemsRef.current[5] = el;
-          }}
-          onClick={() => {
-            onSetDeleteConfirmId(contextMenu.message.id);
-            onClose();
-          }}
-          className="flex w-full items-center gap-2 px-3 py-2 text-sm"
-          style={{ color: "var(--dnd-indicator)" }}
-          role="menuitem"
-        >
-          <Trash2 size={14} /> Delete
-        </button>
-      )}
+      {renderMenuItems()}
     </div>
   );
 }

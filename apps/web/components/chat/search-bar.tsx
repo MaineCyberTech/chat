@@ -122,6 +122,8 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const autocompleteRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [showRecentSearches, setShowRecentSearches] = useState(false);
 
   useEffect(() => {
     return () => clearTimeout(debounceRef.current);
@@ -141,6 +143,30 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
     }
     document.addEventListener("chat:search-open", handleSearchOpen);
     return () => document.removeEventListener("chat:search-open", handleSearchOpen);
+  }, []);
+
+  function saveRecentSearch(q: string) {
+    const trimmed = q.trim();
+    if (!trimmed) return;
+    const updated = [trimmed, ...recentSearches.filter((s) => s !== trimmed)].slice(0, 10);
+    setRecentSearches(updated);
+    try {
+      localStorage.setItem("recent-searches", JSON.stringify(updated));
+    } catch { /* ignore */ }
+  }
+
+  function clearRecentSearches() {
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem("recent-searches");
+    } catch { /* ignore */ }
+  }
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("recent-searches");
+      if (stored) setRecentSearches(JSON.parse(stored));
+    } catch { /* ignore */ }
   }, []);
 
   function buildSearchUrl(q: string, offset = 0): string {
@@ -225,11 +251,15 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex((prev) => Math.max(prev - 1, 0));
-      } else if (e.key === "Enter" && selectedIndex >= 0) {
-        e.preventDefault();
-        const result = results[selectedIndex];
-        if (result?.channel_slug) {
-          router.push(`/${workspaceSlug}/${result.channel_slug}`);
+      } else if (e.key === "Enter") {
+        if (selectedIndex >= 0) {
+          e.preventDefault();
+          const result = results[selectedIndex];
+          if (result?.channel_slug) {
+            router.push(`/${workspaceSlug}/${result.channel_slug}`);
+          }
+        } else if (query.trim().length >= 2) {
+          saveRecentSearch(query);
         }
       } else if (e.key === "Escape") {
         setOpen(false);
@@ -241,10 +271,14 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
 
   const handleFocus = useCallback(() => {
     if (results.length > 0) setOpen(true);
-  }, [results.length]);
+    if (!query && recentSearches.length > 0) setShowRecentSearches(true);
+  }, [results.length, query, recentSearches.length]);
 
   const handleBlur = useCallback(() => {
-    setTimeout(() => setOpen(false), 300);
+    setTimeout(() => {
+      setOpen(false);
+      setShowRecentSearches(false);
+    }, 300);
   }, []);
 
   return (
@@ -272,6 +306,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
+                setShowRecentSearches(false);
                 const v = e.target.value;
 
                 // Operator hints: auto-show when no operator is being typed
@@ -576,6 +611,42 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+          {showRecentSearches && recentSearches.length > 0 && (
+            <div
+              className="absolute top-full left-0 z-50 mt-1 w-full rounded-lg border py-1 shadow-[var(--elevation-4)]"
+              style={{
+                background: "var(--center-channel-bg)",
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+              }}
+            >
+              <div className="flex items-center justify-between px-3 py-1.5">
+                <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>Recent searches</span>
+                <button
+                  onClick={clearRecentSearches}
+                  className="text-xs hover:underline"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Clear all
+                </button>
+              </div>
+              {recentSearches.map((sq) => (
+                <button
+                  key={sq}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setQuery(sq);
+                    setShowRecentSearches(false);
+                    search(sq);
+                    saveRecentSearch(sq);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                  style={{ color: "var(--center-channel-color)" }}
+                >
+                  <span className="truncate">{sq}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>

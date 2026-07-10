@@ -157,7 +157,7 @@ export function ChannelInfo({ channelId, onClose, initialTab = "members" }: Prop
                   {msg.content}
                 </p>
                 <p className="mt-0.5 text-[10px]" style={{ color: "var(--text-tertiary)" }}>
-                  {new Date(msg.created_at).toLocaleDateString()}
+                  <time dateTime={new Date(msg.created_at).toISOString()}>{new Date(msg.created_at).toLocaleDateString()}</time>
                 </p>
               </div>
             ))}

@@ -26,6 +26,7 @@ function formatFloatingTime(dateString: string): string {
 
 export function FloatingTimestamp({ containerRef }: Props) {
   const [timestamp, setTimestamp] = useState<string | null>(null);
+  const [dateStr, setDateStr] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -54,9 +55,10 @@ export function FloatingTimestamp({ containerRef }: Props) {
       });
 
       if (topmostMessage) {
-        const dateStr = (topmostMessage as Element).getAttribute("data-timestamp");
-        if (dateStr) {
-          setTimestamp(formatFloatingTime(dateStr));
+        const rawDateStr = (topmostMessage as Element).getAttribute("data-timestamp");
+        if (rawDateStr) {
+          setTimestamp(formatFloatingTime(rawDateStr));
+          setDateStr(rawDateStr);
           setVisible(true);
         }
       } else {
@@ -82,7 +84,7 @@ export function FloatingTimestamp({ containerRef }: Props) {
           boxShadow: "var(--elevation-2)",
         }}
       >
-        {timestamp}
+        <time dateTime={dateStr ? new Date(dateStr).toISOString() : ""}>{timestamp}</time>
       </div>
     </div>
   );

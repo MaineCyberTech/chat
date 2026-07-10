@@ -156,6 +156,7 @@ export function FilePreview({
       <img
         src={src}
         alt={alt}
+        loading="lazy"
         className="max-h-[80vh] max-w-[85vw] rounded-lg object-contain transition-transform duration-200 select-none"
         style={imageStyle}
         onClick={(e) => e.stopPropagation()}

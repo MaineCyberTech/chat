@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
 import { Button, EmptyState, SidebarGroup, Skeleton, useToast } from "@chat/ui";
-import { Bell, BellOff, AlertTriangle, X, Plus } from "lucide-react";
+import { Bell, BellOff, AlertTriangle, X, Plus, Play } from "lucide-react";
+import { playNotificationSound } from "@/lib/notification-sound";
 import type { UserPreferences, ThemePreference } from "@chat/db";
 
 interface NotificationPrefs {
@@ -390,6 +391,34 @@ export default function SettingsPage() {
               <option value="compact">Compact (minimal)</option>
             </select>
           </div>
+          <div>
+            <label
+              className="mb-2 block text-sm font-medium"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Language
+            </label>
+            <select
+              value={typeof window !== "undefined" ? localStorage.getItem("chat-locale") ?? "en" : "en"}
+              onChange={(e) => {
+                localStorage.setItem("chat-locale", e.target.value);
+                window.location.reload();
+              }}
+              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                background: "var(--center-channel-bg)",
+                color: "var(--center-channel-color)",
+              }}
+            >
+              <option value="en">English (en)</option>
+              <option value="es">Spanish (es)</option>
+              <option value="fr">French (fr)</option>
+              <option value="de">German (de)</option>
+              <option value="pt-BR">Portuguese (pt-BR)</option>
+              <option value="ja">Japanese (ja)</option>
+            </select>
+          </div>
         </div>
       </SidebarGroup>
 
@@ -455,27 +484,39 @@ export default function SettingsPage() {
             >
               Notification sound
             </label>
-            <select
-              value={notifPrefs.sound ?? "standard"}
-              onChange={(e) => handleNotificationChange("sound", e.target.value)}
-              disabled={saving}
-              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
-              style={{
-                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                background: "var(--center-channel-bg)",
-                color: "var(--center-channel-color)",
-              }}
-            >
-              <option value="none">None (silent)</option>
-              <option value="subtle">Subtle</option>
-              <option value="standard">Standard</option>
-              <option value="urgent">Urgent</option>
-              <option value="chime">Chime</option>
-              <option value="bell">Bell</option>
-              <option value="ding">Ding</option>
-              <option value="pop">Pop</option>
-              <option value="tri-tone">Tri-tone</option>
-            </select>
+            <div className="flex gap-2">
+              <select
+                value={notifPrefs.sound ?? "standard"}
+                onChange={(e) => handleNotificationChange("sound", e.target.value)}
+                disabled={saving}
+                className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+                style={{
+                  borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                  background: "var(--center-channel-bg)",
+                  color: "var(--center-channel-color)",
+                }}
+              >
+                <option value="none">None (silent)</option>
+                <option value="subtle">Subtle</option>
+                <option value="standard">Standard</option>
+                <option value="urgent">Urgent</option>
+                <option value="chime">Chime</option>
+                <option value="bell">Bell</option>
+                <option value="ding">Ding</option>
+                <option value="pop">Pop</option>
+                <option value="tri-tone">Tri-tone</option>
+              </select>
+              <button
+                onClick={() => playNotificationSound(notifPrefs.sound ?? "standard")}
+                disabled={saving}
+                className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                style={{ color: "var(--button-bg)", border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)" }}
+                aria-label="Test notification sound"
+              >
+                <Play size={14} />
+                Test
+              </button>
+            </div>
           </div>
           <div>
             <label
@@ -698,6 +739,37 @@ export default function SettingsPage() {
               style={{ color: "var(--dnd-indicator)" }}
             >
               Reset preferences
+            </Button>
+          </div>
+          <div
+            className="rounded-lg border p-3"
+            style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
+          >
+            <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
+              Export data
+            </p>
+            <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
+              Download a JSON export of your messages.
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2"
+              style={{ color: "var(--dnd-indicator)" }}
+              onClick={async () => {
+                try {
+                  const res = await api.get("/export/messages?format=json");
+                  const blob = new Blob([JSON.stringify(res, null, 2)], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a"); a.href = url; a.download = "chat-export.json"; a.click();
+                  URL.revokeObjectURL(url);
+                  addToast({ title: "Export complete", variant: "success" });
+                } catch {
+                  addToast({ title: "Export failed", variant: "error" });
+                }
+              }}
+            >
+              Export data
             </Button>
           </div>
           <div

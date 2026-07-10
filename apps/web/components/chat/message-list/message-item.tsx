@@ -156,7 +156,7 @@ export const MessageItem = React.memo(function MessageItem({
               color: "var(--text-secondary)",
             }}
           >
-            {formatDate(msg.created_at)}
+            <time dateTime={new Date(msg.created_at).toISOString()}>{formatDate(msg.created_at)}</time>
           </span>
           <div
             className="flex-1"
@@ -207,7 +207,7 @@ export const MessageItem = React.memo(function MessageItem({
                   whiteSpace: "nowrap",
                 }}
               >
-                {formatTime(msg.created_at)}
+                <time dateTime={new Date(msg.created_at).toISOString()}>{formatTime(msg.created_at)}</time>
               </span>
             </div>
           )}
@@ -223,7 +223,7 @@ export const MessageItem = React.memo(function MessageItem({
                   {name}
                 </span>
                 <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                  {formatTime(msg.created_at)}
+                  <time dateTime={new Date(msg.created_at).toISOString()}>{formatTime(msg.created_at)}</time>
                 </span>
               </div>
             )}
@@ -461,7 +461,7 @@ export const MessageItem = React.memo(function MessageItem({
                 </div>
 
                 {/* Floating timestamp permalink */}
-                <div className="post__permalink">{formatTime(msg.created_at)}</div>
+                <div className="post__permalink"><time dateTime={new Date(msg.created_at).toISOString()}>{formatTime(msg.created_at)}</time></div>
               </div>
             )}
 

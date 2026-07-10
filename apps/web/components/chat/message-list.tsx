@@ -73,6 +73,9 @@ export function MessageList({
   const [showJumpButton, setShowJumpButton] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [flaggedMsgs, setFlaggedMsgs] = useState<Set<string>>(new Set());
+  const pullTouchStartRef = useRef<{ y: number; scrollTop: number } | null>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+  const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
 
   async function toggleFlag(messageId: string, currentlyFlagged: boolean) {
     try {
@@ -252,6 +255,47 @@ export function MessageList({
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
   }, []);
 
+  const pullStartY = useRef(0);
+  const isPullingRef = useRef(false);
+
+  const handlePullTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isTouchDevice || !onLoadOlder || !hasMoreOlder) return;
+      const el = listRef.current;
+      if (!el || el.scrollTop > 0) return;
+      pullStartY.current = e.touches[0]!.clientY;
+      isPullingRef.current = false;
+    },
+    [isTouchDevice, onLoadOlder, hasMoreOlder],
+  );
+
+  const handlePullTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isTouchDevice || !onLoadOlder || !hasMoreOlder) return;
+      const el = listRef.current;
+      if (!el || el.scrollTop > 0) {
+        setPullDistance(0);
+        return;
+      }
+      const diff = e.touches[0]!.clientY - pullStartY.current;
+      if (diff > 0) {
+        isPullingRef.current = true;
+        setPullDistance(Math.min(diff * 0.5, 120));
+      }
+    },
+    [isTouchDevice, onLoadOlder, hasMoreOlder],
+  );
+
+  const handlePullTouchEnd = useCallback(() => {
+    if (!isTouchDevice || !onLoadOlder || !hasMoreOlder) return;
+    if (pullDistance > 60 && pullStartY.current !== 0) {
+      onLoadOlder();
+    }
+    pullStartY.current = 0;
+    isPullingRef.current = false;
+    setPullDistance(0);
+  }, [isTouchDevice, onLoadOlder, hasMoreOlder, pullDistance]);
+
   async function toggleReaction(messageId: string, emoji: string) {
     const msgReactions = reactions.get(messageId) ?? [];
     const existing = msgReactions.find((r) => r.user_id === currentUserId && r.emoji === emoji);
@@ -386,8 +430,32 @@ export function MessageList({
         role="log"
         aria-live="polite"
         aria-label="Message list"
-        style={{ overflow: "auto", flex: 1 }}
+        style={{ overflow: "auto", flex: 1, position: "relative" }}
+        onTouchStart={handlePullTouchStart}
+        onTouchMove={handlePullTouchMove}
+        onTouchEnd={handlePullTouchEnd}
       >
+        {pullDistance > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: pullDistance,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 10,
+              pointerEvents: "none",
+              transition: pullDistance === 0 ? "height 0.2s ease" : undefined,
+            }}
+          >
+            <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+              {pullDistance > 60 ? "Release to refresh" : "Pull to refresh"}
+            </span>
+          </div>
+        )}
         {loadingOlder && (
           <div className="flex justify-center py-3">
             <div

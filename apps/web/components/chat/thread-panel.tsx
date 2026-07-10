@@ -287,7 +287,7 @@ export function ThreadPanel({
               <p className="text-xs font-medium" style={{ color: "var(--center-channel-color)" }}>
                 {authorName(parentMessage.user_id, profiles)}
                 <span className="ml-2" style={{ color: "var(--text-tertiary)" }}>
-                  {formatTime(parentMessage.created_at)}
+                  <time dateTime={new Date(parentMessage.created_at).toISOString()}>{formatTime(parentMessage.created_at)}</time>
                 </span>
               </p>
               <p
@@ -367,7 +367,7 @@ export function ThreadPanel({
                           >
                             {name}
                             <span className="ml-2" style={{ color: "var(--text-tertiary)" }}>
-                              {formatTime(reply.created_at)}
+                              <time dateTime={new Date(reply.created_at).toISOString()}>{formatTime(reply.created_at)}</time>
                             </span>
                           </p>
                           {isEditing ? (
