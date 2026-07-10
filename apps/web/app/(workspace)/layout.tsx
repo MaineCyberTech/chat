@@ -278,12 +278,14 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           <span className="truncate text-sm font-semibold">{params.workspaceSlug ?? "Chat"}</span>
         </div>
 
-        {/* Team sidebar rail (desktop only) */}
-        <div className="hidden md:block" style={{ flexShrink: 0 }}>
-          <TeamSidebar />
-        </div>
+        {/* Team sidebar rail (desktop only) — hidden when collapsed */}
+        {!sidebarCollapsed && (
+          <div className="hidden md:block" style={{ flexShrink: 0 }}>
+            <TeamSidebar />
+          </div>
+        )}
 
-        {/* Sidebar (desktop/tablet) */}
+        {/* Sidebar (desktop/tablet) — shrinks to 60px when collapsed */}
         <div
           className="hidden md:flex"
           style={{
