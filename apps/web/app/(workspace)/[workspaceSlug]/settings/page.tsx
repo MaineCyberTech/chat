@@ -317,6 +317,7 @@ export default function SettingsPage() {
   const notifPrefs = (preferences?.notification_prefs ?? {}) as unknown as NotificationPrefs;
 
   return (
+    <div className="h-full overflow-y-auto px-4 py-2">
     <div className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
       <h1 className="text-2xl font-bold" style={{ color: "var(--center-channel-color)" }}>
         Preferences
@@ -887,6 +888,7 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
