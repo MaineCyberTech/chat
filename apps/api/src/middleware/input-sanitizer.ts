@@ -20,7 +20,7 @@ const SQL_INJECTION_PATTERNS = [
   /('(\s|%20)*(or|and)(\s|%20)')/i,
 ];
 
-const EXEMPT_FIELDS = new Set(["content"]);
+const EXEMPT_FIELDS = new Set(["content", "notification_prefs"]);
 
 function containsDangerousContent(value: unknown): boolean {
   if (typeof value !== "string") return false;

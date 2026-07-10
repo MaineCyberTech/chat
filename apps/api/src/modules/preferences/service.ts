@@ -1,4 +1,5 @@
 import { getSupabase } from "../../lib/supabase.js";
+import { logger } from "../../lib/logger.js";
 import type { UserPreferences } from "@chat/db";
 
 const DB_COLUMNS = new Set([
@@ -19,7 +20,10 @@ export class PreferencesService {
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (error) return null;
+    if (error) {
+      logger.error("Failed to get preferences", { error: String(error), userId });
+      return null;
+    }
     return data as UserPreferences | null;
   }
 
@@ -40,7 +44,10 @@ export class PreferencesService {
       .select("*")
       .single();
 
-    if (error) return null;
+    if (error) {
+      logger.error("Failed to upsert preferences", { error: String(error), userId });
+      return null;
+    }
     return data as UserPreferences;
   }
 }
