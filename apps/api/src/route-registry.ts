@@ -97,7 +97,7 @@ export const routeRegistry: RouteEntry[] = [
   { path: "/v1", router: messageRoutes, description: "Messages CRUD + pin/flag/forward" },
   { path: "/v1", router: webhookRoutes, description: "Webhook endpoints + deliveries" },
   { path: "/v1", router: notificationRoutes, description: "Notifications + push subscriptions" },
-  { path: "/v1/auth", router: preferencesRoutes, description: "User preferences" },
+  { path: "/v1", router: preferencesRoutes, description: "User preferences" },
   { path: "/v1", router: reactionRoutes, description: "Message reactions" },
   { path: "/v1", router: featureFlagRoutes, description: "Feature flags" },
   { path: "/v1", router: consentRoutes, description: "Consent logging" },

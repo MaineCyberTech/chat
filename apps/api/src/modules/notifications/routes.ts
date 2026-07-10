@@ -33,6 +33,30 @@ router.get(
   }),
 );
 
+// Get unread notification count
+router.get(
+  "/notifications/unread",
+  asyncHandler(async (req, res) => {
+    const workspaceId = req.query.workspace_id as string | undefined;
+    const unread = await notificationService.unreadCount(req.userId!, workspaceId);
+    res.json({ unread });
+  }),
+);
+
+// List all channel notification preferences for the current user
+router.get(
+  "/notifications/preferences",
+  asyncHandler(async (req, res) => {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("channel_notification_preferences")
+      .select("channel_id, notify")
+      .eq("user_id", req.userId);
+    if (error) throw new InternalServerError(error.message);
+    res.json({ preferences: data ?? [] });
+  }),
+);
+
 // Get notification preference for a channel
 router.get(
   "/channels/:id/notification-preference",
@@ -126,6 +150,21 @@ router.get(
     if (error) {
       throw new InternalServerError(error.message);
     }
+    res.json({ trigger_words: data });
+  }),
+);
+
+// Alias: /notifications/trigger-words
+router.get(
+  "/notifications/trigger-words",
+  asyncHandler(async (req, res) => {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("trigger_words")
+      .select("id, word, created_at")
+      .eq("user_id", req.userId)
+      .order("created_at", { ascending: true });
+    if (error) throw new InternalServerError(error.message);
     res.json({ trigger_words: data });
   }),
 );
