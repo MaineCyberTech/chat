@@ -241,9 +241,9 @@ jobs:
               fi
 
               # Check ALL critical containers are healthy (not just one)
-              API_HEALTHY=$(echo "$LOGS" | grep "chat-api-dev" | grep -c "(healthy)")
-              WEB_HEALTHY=$(echo "$LOGS" | grep "chat-web-dev" | grep -c "(healthy)")
-              REDIS_HEALTHY=$(echo "$LOGS" | grep "chat-redis-dev" | grep -c "(healthy)")
+              API_HEALTHY=$(echo "$LOGS" | grep "chat-api-dev" | grep -c "(healthy)" || true)
+              WEB_HEALTHY=$(echo "$LOGS" | grep "chat-web-dev" | grep -c "(healthy)" || true)
+              REDIS_HEALTHY=$(echo "$LOGS" | grep "chat-redis-dev" | grep -c "(healthy)" || true)
               if [ "$API_HEALTHY" -gt 0 ] && [ "$WEB_HEALTHY" -gt 0 ] && [ "$REDIS_HEALTHY" -gt 0 ]; then
                 echo "All critical containers healthy"
                 echo "$LOGS"
