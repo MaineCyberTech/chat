@@ -56,3 +56,4 @@
 20260709000002_add_read_receipts.sql
 20260709000003_add_compliance_exports.sql
 20260709000004_add_announcements.sql
+20260710000001_add_preference_columns.sql
