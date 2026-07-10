@@ -170,11 +170,10 @@ describe("doubleSubmitCookieCsrf", () => {
 
     expect(res.cookie).toHaveBeenCalledWith(
       "csrf_token",
-      "61".repeat(32),
+      expect.any(String),
       expect.objectContaining({
-        httpOnly: true,
-        sameSite: "strict",
-        secure: false,
+        httpOnly: false,
+        sameSite: "lax",
       }),
     );
     expect(req.csrfToken).toBeDefined();

@@ -53,8 +53,8 @@ function mockRes() {
 }
 
 describe("Read Receipts Routes", () => {
-  it("POST /v1/channels/:id/read marks channel as read", async () => {
-    const handler = findHandler("post", "/v1/channels/:id/read");
+  it("POST /channels/:id/read marks channel as read", async () => {
+    const handler = findHandler("post", "/channels/:id/read");
     expect(handler).toBeTruthy();
     const req = mockReq({ params: { id: "channel-1" } });
     const res = mockRes();
@@ -62,8 +62,8 @@ describe("Read Receipts Routes", () => {
     expect(res.json).toHaveBeenCalledWith({ ok: true });
   });
 
-  it("GET /v1/channels/:id/last-viewed returns timestamp", async () => {
-    const handler = findHandler("get", "/v1/channels/:id/last-viewed");
+  it("GET /channels/:id/last-viewed returns timestamp", async () => {
+    const handler = findHandler("get", "/channels/:id/last-viewed");
     expect(handler).toBeTruthy();
     const req = mockReq({ params: { id: "channel-1" } });
     const res = mockRes();
@@ -71,8 +71,8 @@ describe("Read Receipts Routes", () => {
     expect(res.json).toHaveBeenCalledWith({ lastViewed: "2026-01-01T00:00:00Z" });
   });
 
-  it("POST /v1/messages/:id/read marks message as read", async () => {
-    const handler = findHandler("post", "/v1/messages/:id/read");
+  it("POST /messages/:id/read marks message as read", async () => {
+    const handler = findHandler("post", "/messages/:id/read");
     expect(handler).toBeTruthy();
     const req = mockReq({ params: { id: "msg-1" }, body: { channelId: "channel-1" } });
     const res = mockRes();
@@ -80,16 +80,16 @@ describe("Read Receipts Routes", () => {
     expect(res.json).toHaveBeenCalledWith({ ok: true });
   });
 
-  it("POST /v1/messages/:id/read returns 400 without channelId", async () => {
-    const handler = findHandler("post", "/v1/messages/:id/read");
+  it("POST /messages/:id/read returns 400 without channelId", async () => {
+    const handler = findHandler("post", "/messages/:id/read");
     const req = mockReq({ params: { id: "msg-1" }, body: {} });
     const res = mockRes();
     await handler(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
-  it("GET /v1/messages/:id/readers returns readers list", async () => {
-    const handler = findHandler("get", "/v1/messages/:id/readers");
+  it("GET /messages/:id/readers returns readers list", async () => {
+    const handler = findHandler("get", "/messages/:id/readers");
     expect(handler).toBeTruthy();
     const req = mockReq({ params: { id: "msg-1" } });
     const res = mockRes();
@@ -97,8 +97,8 @@ describe("Read Receipts Routes", () => {
     expect(res.json).toHaveBeenCalledWith({ readers: [] });
   });
 
-  it("GET /v1/unread/counts returns counts", async () => {
-    const handler = findHandler("get", "/v1/unread/counts");
+  it("GET /unread/counts returns counts", async () => {
+    const handler = findHandler("get", "/unread/counts");
     expect(handler).toBeTruthy();
     const req = mockReq({ query: { channel_ids: "ch-1,ch-2" } });
     const res = mockRes();

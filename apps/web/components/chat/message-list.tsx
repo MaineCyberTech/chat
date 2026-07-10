@@ -77,7 +77,6 @@ export function MessageList({
   const [showJumpButton, setShowJumpButton] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [flaggedMsgs, setFlaggedMsgs] = useState<Set<string>>(new Set());
-  const pullTouchStartRef = useRef<{ y: number; scrollTop: number } | null>(null);
   const [pullDistance, setPullDistance] = useState(0);
   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
 

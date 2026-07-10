@@ -41,10 +41,6 @@ interface Props {
   onToggleCollapse?: (collapsed: boolean) => void;
 }
 
-const SIDEBAR_WIDTH = 264;
-const SIDEBAR_MIN_WIDTH = 200;
-const SIDEBAR_MAX_WIDTH = 304;
-
 export function AppSidebar({
   workspaceSlug,
   channelId,
@@ -66,10 +62,7 @@ export function AppSidebar({
   const collapsed = _collapsed ?? localCollapsed;
   const collapsedRef = useRef(true);
   const userToggledRef = useRef(false);
-  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_WIDTH);
-  const resizingRef = useRef(false);
-  const startXRef = useRef(0);
-  const startWidthRef = useRef(SIDEBAR_WIDTH);
+
   const [dmChannels, setDmChannels] = useState<Channel[]>([]);
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -476,36 +469,6 @@ export function AppSidebar({
       cancelled = true;
     };
   }, []);
-
-  function handleResizeStart(e: React.MouseEvent) {
-    e.preventDefault();
-    resizingRef.current = true;
-    startXRef.current = e.clientX;
-    startWidthRef.current = sidebarWidth;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-
-    function onMouseMove(ev: MouseEvent) {
-      if (!resizingRef.current) return;
-      const delta = ev.clientX - startXRef.current;
-      const newWidth = Math.max(
-        SIDEBAR_MIN_WIDTH,
-        Math.min(SIDEBAR_MAX_WIDTH, startWidthRef.current + delta),
-      );
-      setSidebarWidth(newWidth);
-    }
-
-    function onMouseUp() {
-      resizingRef.current = false;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    }
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  }
 
   return (
     <>
