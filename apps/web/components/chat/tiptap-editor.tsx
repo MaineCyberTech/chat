@@ -40,6 +40,8 @@ export const TipTapEditor = React.forwardRef<Editor, Props>(
         StarterKit.configure({
           heading: { levels: [1, 2, 3] },
           codeBlock: false,
+          link: false,
+          underline: false,
         }),
         Underline,
         Highlight.configure({ multicolor: true }),
