@@ -477,7 +477,8 @@ export function MessageList({
             if (!msg) return null;
             return (
               <div
-                key={msg.id}
+                key={virtualRow.index}
+                data-index={virtualRow.index}
                 style={{
                   position: "absolute",
                   top: 0,

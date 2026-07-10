@@ -84,9 +84,9 @@ export function doubleSubmitCookieCsrf(req: CSRFRequest, res: Response, next: Ne
   if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
     const token = generateToken();
     res.cookie(CSRF_COOKIE_NAME, token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
     req.csrfToken = token;
