@@ -38,6 +38,7 @@ export default function SettingsPage() {
     { id: string; workspace_id: string; name: string; slug: string }[]
   >([]);
   const [notifSaving, setNotifSaving] = useState<string | null>(null);
+  const [locale, setLocale] = useState("en");
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -81,6 +82,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (authLoading) return;
+    setLocale(localStorage.getItem("chat-locale") ?? "en");
     fetchPreferences();
     fetchChannels();
     fetchTriggerWords();
@@ -402,8 +404,9 @@ export default function SettingsPage() {
               Language
             </label>
             <select
-              value={typeof window !== "undefined" ? localStorage.getItem("chat-locale") ?? "en" : "en"}
+              value={locale}
               onChange={(e) => {
+                setLocale(e.target.value);
                 localStorage.setItem("chat-locale", e.target.value);
                 window.location.reload();
               }}

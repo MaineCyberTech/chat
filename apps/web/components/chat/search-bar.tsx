@@ -266,7 +266,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         inputRef.current?.blur();
       }
     },
-    [results, selectedIndex, workspaceSlug],
+    [results, selectedIndex, workspaceSlug, query, router],
   );
 
   const handleFocus = useCallback(() => {
