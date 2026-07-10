@@ -310,14 +310,14 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
               onKeyDown={handleResizeKeyDown}
               className="hidden md:block"
               style={{
-                width: 4,
+                width: 12,
                 cursor: "col-resize",
                 background: "transparent",
                 position: "absolute",
-                right: 0,
+                right: -12,
                 top: 0,
                 bottom: 0,
-                zIndex: 10,
+                zIndex: 50,
                 transition: "background 150ms",
               }}
               tabIndex={0}
