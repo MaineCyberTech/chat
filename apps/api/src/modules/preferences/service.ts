@@ -1,5 +1,5 @@
-import { getSupabase } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { UserPreferences } from "@chat/db";
 
 const DB_COLUMNS = new Set([
@@ -12,8 +12,7 @@ const DB_COLUMNS = new Set([
 ]);
 
 export class PreferencesService {
-  async get(userId: string): Promise<UserPreferences | null> {
-    const supabase = getSupabase();
+  async get(userId: string, supabase: SupabaseClient): Promise<UserPreferences | null> {
     const { data, error } = await supabase
       .from("user_preferences")
       .select("*")
@@ -27,8 +26,11 @@ export class PreferencesService {
     return data as UserPreferences | null;
   }
 
-  async upsert(userId: string, prefs: Partial<UserPreferences>): Promise<UserPreferences | null> {
-    const supabase = getSupabase();
+  async upsert(
+    userId: string,
+    prefs: Partial<UserPreferences>,
+    supabase: SupabaseClient,
+  ): Promise<UserPreferences | null> {
     const dbColumns: Record<string, unknown> = {
       user_id: userId,
       updated_at: new Date().toISOString(),

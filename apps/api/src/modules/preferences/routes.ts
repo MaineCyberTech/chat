@@ -11,7 +11,7 @@ router.use(authenticate);
 router.get(
   "/preferences",
   asyncHandler(async (req, res) => {
-    const prefs = await preferencesService.get(req.userId!);
+    const prefs = await preferencesService.get(req.userId!, req.supabase!);
     res.json({
       preferences: prefs ?? { user_id: req.userId, theme: "system", notification_prefs: {} },
     });
@@ -26,7 +26,7 @@ router.patch(
       throw new BadRequestError(parsed.error.issues[0].message);
     }
 
-    const prefs = await preferencesService.upsert(req.userId!, parsed.data);
+    const prefs = await preferencesService.upsert(req.userId!, parsed.data, req.supabase!);
     if (!prefs) {
       throw new InternalServerError("Could not update preferences");
     }
