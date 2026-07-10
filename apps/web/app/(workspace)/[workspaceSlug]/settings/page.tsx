@@ -117,7 +117,7 @@ export default function SettingsPage() {
       if (!ws) return;
       const res = await api.get<{
         responder: { enabled: boolean; message: string; trigger_status: string[] };
-      }>(`/status/auto-responder?workspace_id=${ws.id}`);
+      }>(`/auto-responder?workspace_id=${ws.id}`);
       setAutoResponderEnabled(res.responder.enabled);
       setAutoResponderMessage(res.responder.message);
     } catch {
@@ -131,7 +131,7 @@ export default function SettingsPage() {
       const wsRes = await api.get<{ workspaces: { id: string }[] }>("/workspaces");
       const ws = wsRes.workspaces[0];
       if (!ws) return;
-      await api.put("/status/auto-responder", {
+      await api.put("/auto-responder", {
         workspace_id: ws.id,
         enabled: autoResponderEnabled,
         message: autoResponderMessage,
