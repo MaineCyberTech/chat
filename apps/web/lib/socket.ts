@@ -7,33 +7,8 @@ const MAX_RECONNECT_ATTEMPTS = 20;
 const RECONNECT_BASE_DELAY = 1000;
 const RECONNECT_MAX_DELAY = 30000;
 const CONNECTION_TIMEOUT = 10000;
-const HEALTH_CHECK_INTERVAL = 25000;
-const HEALTH_CHECK_TIMEOUT = 10000;
-
 let socket: Socket | null = null;
-let healthCheckTimer: ReturnType<typeof setInterval> | null = null;
 let reconnectAttempts = 0;
-
-function startHealthCheck(s: Socket) {
-  stopHealthCheck();
-  healthCheckTimer = setInterval(() => {
-    if (!s.connected) return;
-    const timedOut = setTimeout(() => {
-      logger.warn("Health check pong timeout — disconnecting");
-      s.disconnect();
-    }, HEALTH_CHECK_TIMEOUT);
-    s.emit("ping", () => {
-      clearTimeout(timedOut);
-    });
-  }, HEALTH_CHECK_INTERVAL);
-}
-
-function stopHealthCheck() {
-  if (healthCheckTimer) {
-    clearInterval(healthCheckTimer);
-    healthCheckTimer = null;
-  }
-}
 
 const logger = {
   warn: (...args: unknown[]) => {
@@ -61,7 +36,8 @@ export async function getSocket(): Promise<Socket> {
 
   socket = io(API_BASE, {
     auth: { token },
-    transports: ["websocket"],
+    path: "/v1/socket.io",
+    transports: ["websocket", "polling"],
     reconnection: true,
     reconnectionDelay: RECONNECT_BASE_DELAY,
     reconnectionDelayMax: RECONNECT_MAX_DELAY,
@@ -84,19 +60,14 @@ export async function getSocket(): Promise<Socket> {
 
   socket.io.on("reconnect_failed", () => {
     logger.warn(`Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached — giving up`);
-    stopHealthCheck();
   });
 
   socket.on("connect", () => {
     reconnectAttempts = 0;
-    startHealthCheck(socket!);
   });
 
   socket.on("disconnect", (reason) => {
     logger.warn(`Disconnected: ${reason}`);
-    if (reason === "io server disconnect") {
-      stopHealthCheck();
-    }
   });
 
   return new Promise((resolve, reject) => {
@@ -133,7 +104,6 @@ export function offReconnect(callback: () => void) {
 }
 
 export function disconnectSocket() {
-  stopHealthCheck();
   if (socket) {
     socket.disconnect();
     socket = null;
