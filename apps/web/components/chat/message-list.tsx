@@ -473,11 +473,12 @@ export function MessageList({
         )}
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {virtualizer.getVirtualItems().map((virtualRow) => {
+            if (virtualRow.index >= messagesWithMeta.length) return null;
             const msg = messagesWithMeta[virtualRow.index];
             if (!msg) return null;
             return (
               <div
-                key={virtualRow.index}
+                key={virtualRow.key}
                 data-index={virtualRow.index}
                 style={{
                   position: "absolute",

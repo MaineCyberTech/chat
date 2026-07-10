@@ -30,7 +30,12 @@ function getCsrfToken(): string | undefined {
 async function ensureCsrfToken(): Promise<void> {
   if (typeof document === "undefined") return;
   if (getCsrfToken()) return;
-  await fetch(`${API_BASE}/healthz`, { method: "GET", credentials: "include" });
+  try {
+    await fetch(`${API_BASE}/healthz`, { method: "GET", credentials: "include" });
+  } catch {
+    csrfPromise = null;
+    throw new Error("Failed to obtain CSRF token");
+  }
 }
 
 import * as Sentry from "@sentry/nextjs";
@@ -59,7 +64,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   if (options.method && options.method !== "GET" && options.method !== "HEAD") {
-    if (!csrfPromise) csrfPromise = ensureCsrfToken();
+    if (!csrfPromise || !getCsrfToken()) csrfPromise = ensureCsrfToken().catch(() => { csrfPromise = null; });
     await csrfPromise;
     const csrfToken = getCsrfToken();
     if (csrfToken) headers["x-csrf-token"] = csrfToken;

@@ -13,7 +13,7 @@ const router = Router();
 router.use(authenticate);
 
 router.post(
-  "/v1/channels/:id/read",
+  "/channels/:id/read",
   asyncHandler(async (req, res) => {
     await markChannelRead(req.params.id as string, req.userId!, req.supabase!);
     res.json({ ok: true });
@@ -21,7 +21,7 @@ router.post(
 );
 
 router.get(
-  "/v1/channels/:id/last-viewed",
+  "/channels/:id/last-viewed",
   asyncHandler(async (req, res) => {
     const lastViewed = await getLastViewed(req.params.id as string, req.userId!, req.supabase!);
     res.json({ lastViewed });
@@ -29,7 +29,7 @@ router.get(
 );
 
 router.post(
-  "/v1/messages/:id/read",
+  "/messages/:id/read",
   asyncHandler(async (req, res) => {
     const { channelId } = req.body as { channelId?: string };
     if (!channelId) {
@@ -42,7 +42,7 @@ router.post(
 );
 
 router.get(
-  "/v1/messages/:id/readers",
+  "/messages/:id/readers",
   asyncHandler(async (req, res) => {
     const readers = await getMessageReaders(req.params.id as string, req.supabase!);
     res.json({ readers });
@@ -50,7 +50,7 @@ router.get(
 );
 
 router.get(
-  "/v1/unread/counts",
+  "/unread/counts",
   asyncHandler(async (req, res) => {
     const channelIds = ((req.query.channel_ids as string) ?? "").split(",").filter(Boolean);
     const counts = await getUnreadCounts(req.userId!, channelIds, req.supabase!);
