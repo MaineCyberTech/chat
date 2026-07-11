@@ -16,7 +16,7 @@ const DANGEROUS_PATTERNS = [
 
 const SQL_INJECTION_PATTERNS = [
   /(\b(union|select|insert|update|delete|drop|alter|create|exec|execute|xp_|sp_|0x)\b)/i,
-  /(--|;|\/\*|\*\/|@@|char|nchar|varchar|nvarchar|alter|begin|cast|create|cursor|declare|exec|execute|fetch|kill|sys|sysobjects|syscolumns)/i,
+  /(--|;|\/\*|\*\/|@@|char|nchar|varchar|nvarchar|alter|begin|cast|create|cursor|declare|exec|execute|fetch|kill|\bsys\b|sysobjects|syscolumns)/i,
   /('(\s|%20)*(or|and)(\s|%20)')/i,
 ];
 
@@ -73,7 +73,7 @@ export function inputSanitizer(req: Request, _res: Response, next: NextFunction)
 function checkNested(obj: Record<string, unknown>, parentKey: string) {
   for (const [key, value] of Object.entries(obj)) {
     const fullKey = `${parentKey}.${key}`;
-    if (EXEMPT_FIELDS.has(key)) continue;
+    if (EXEMPT_FIELDS.has(key) || EXEMPT_FIELDS.has(parentKey)) continue;
 
     if (containsDangerousContent(value)) {
       logger.warn("Blocked XSS in nested field", { key: fullKey });
