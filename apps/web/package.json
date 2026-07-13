@@ -20,7 +20,7 @@
     "@livekit/components-react": "^2.9.21",
     "@livekit/components-styles": "^1.2.0",
     "@next/bundle-analyzer": "^16.2.9",
-    "@sentry/nextjs": "^10.59.0",
+    "@sentry/nextjs": "^10.62.0",
     "@supabase/supabase-js": "^2.49.0",
     "@tanstack/react-virtual": "^3.14.5",
     "@tiptap/extension-link": "^3.27.1",
