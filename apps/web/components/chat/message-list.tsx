@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useToast, EmptyState } from "@chat/ui";
 import { api } from "@/lib/api";
@@ -354,23 +354,15 @@ export function MessageList({
   }, [messages]);
 
   const scrollRestoreRef = useRef<{ prevScrollHeight: number; prevScrollTop: number } | null>(null);
-  const initialLoadRef = useRef(true);
 
   // Virtualizer
   const virtualizer = useVirtualizer({
     count: messagesWithMeta.length,
     getScrollElement: () => listRef.current,
-    estimateSize: (index) => {
-      const msg = messagesWithMeta[index];
-      if (!msg) return 60;
-      let height = 28;
-      if (msg.showDate) height += 40;
-      if (msg.isGroupStart) height += 24;
-      height += Math.min(msg.content.length * 0.4, 200);
-      return height;
-    },
+    estimateSize: () => 52,
     getItemKey: (index) => messagesWithMeta[index]?.id ?? index,
-    overscan: 10,
+    overscan: 20,
+    measureElement: (element) => element.getBoundingClientRect().height,
   });
 
   const handleScrollOverride = useCallback(() => {
@@ -406,6 +398,7 @@ export function MessageList({
   }, [virtualizer, messagesWithMeta.length]);
 
   const prevLengthRef = useRef(messagesWithMeta.length);
+  const didInitialScrollRef = useRef(false);
 
   useEffect(() => {
     const el = listRef.current;
@@ -427,7 +420,7 @@ export function MessageList({
       return;
     }
 
-    if (curLen > prevLen) {
+    if (curLen > prevLen && didInitialScrollRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = el;
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
       if (isAtBottom) {
@@ -438,13 +431,29 @@ export function MessageList({
     }
   }, [messagesWithMeta.length, virtualizer]);
 
-  useLayoutEffect(() => {
-    if (messages.length > 0 && initialLoadRef.current) {
-      initialLoadRef.current = false;
+  useEffect(() => {
+    if (messages.length === 0) return;
+    if (didInitialScrollRef.current) return;
+
+    const tryScroll = () => {
+      const el = listRef.current;
+      if (!el) return false;
+      const { scrollHeight, clientHeight } = el;
+      if (scrollHeight <= clientHeight) return false;
       virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
-      requestAnimationFrame(() => {
-        virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
-      });
+      didInitialScrollRef.current = true;
+      return true;
+    };
+
+    if (!tryScroll()) {
+      const interval = setInterval(() => {
+        if (tryScroll()) clearInterval(interval);
+      }, 50);
+      const timeout = setTimeout(() => clearInterval(interval), 3000);
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
     }
   }, [messages.length, messagesWithMeta.length, virtualizer]);
 
@@ -522,6 +531,7 @@ export function MessageList({
                   top: 0,
                   left: 0,
                   width: "100%",
+                  height: virtualRow.size,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
                 ref={virtualizer.measureElement}
