@@ -359,9 +359,18 @@ export function MessageList({
   const virtualizer = useVirtualizer({
     count: messagesWithMeta.length,
     getScrollElement: () => listRef.current,
-    estimateSize: () => 52,
+    estimateSize: (index) => {
+      const msg = messagesWithMeta[index];
+      if (!msg) return 52;
+      let h = 36;
+      if (msg.showDate) h += 40;
+      if (msg.isGroupStart) h += 24;
+      const lines = Math.ceil(msg.content.length / 80);
+      h += Math.min(lines * 20, 200);
+      return h;
+    },
     getItemKey: (index) => messagesWithMeta[index]?.id ?? index,
-    overscan: 20,
+    overscan: 8,
     measureElement: (element) => element.getBoundingClientRect().height,
   });
 
@@ -435,26 +444,17 @@ export function MessageList({
     if (messages.length === 0) return;
     if (didInitialScrollRef.current) return;
 
-    const tryScroll = () => {
-      const el = listRef.current;
-      if (!el) return false;
-      const { scrollHeight, clientHeight } = el;
-      if (scrollHeight <= clientHeight) return false;
+    const raf = requestAnimationFrame(() => {
       virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
       didInitialScrollRef.current = true;
-      return true;
+    });
+    const timer = setTimeout(() => {
+      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+    }, 100);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
     };
-
-    if (!tryScroll()) {
-      const interval = setInterval(() => {
-        if (tryScroll()) clearInterval(interval);
-      }, 50);
-      const timeout = setTimeout(() => clearInterval(interval), 3000);
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-      };
-    }
   }, [messages.length, messagesWithMeta.length, virtualizer]);
 
   if (messages.length === 0) {
