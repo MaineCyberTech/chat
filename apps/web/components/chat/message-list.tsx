@@ -359,16 +359,7 @@ export function MessageList({
   const virtualizer = useVirtualizer({
     count: messagesWithMeta.length,
     getScrollElement: () => listRef.current,
-    estimateSize: (index) => {
-      const msg = messagesWithMeta[index];
-      if (!msg) return 52;
-      let h = 36;
-      if (msg.showDate) h += 40;
-      if (msg.isGroupStart) h += 24;
-      const lines = Math.ceil(msg.content.length / 80);
-      h += Math.min(lines * 20, 200);
-      return h;
-    },
+    estimateSize: () => 52,
     getItemKey: (index) => messagesWithMeta[index]?.id ?? index,
     overscan: 8,
     measureElement: (element) => element.getBoundingClientRect().height,
@@ -408,6 +399,13 @@ export function MessageList({
 
   const prevLengthRef = useRef(messagesWithMeta.length);
   const didInitialScrollRef = useRef(false);
+  const scrollToBottomRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    scrollToBottomRef.current = () => {
+      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+    };
+  });
 
   useEffect(() => {
     const el = listRef.current;
@@ -434,28 +432,22 @@ export function MessageList({
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
       if (isAtBottom) {
         requestAnimationFrame(() => {
-          virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+          scrollToBottomRef.current();
         });
       }
     }
-  }, [messagesWithMeta.length, virtualizer]);
+  }, [messagesWithMeta.length]);
 
   useEffect(() => {
     if (messages.length === 0) return;
     if (didInitialScrollRef.current) return;
+    didInitialScrollRef.current = true;
 
-    const raf = requestAnimationFrame(() => {
-      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
-      didInitialScrollRef.current = true;
-    });
     const timer = setTimeout(() => {
       virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
-    }, 100);
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(timer);
-    };
-  }, [messages.length, messagesWithMeta.length, virtualizer]);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [messages.length]);
 
   if (messages.length === 0) {
     return (
@@ -531,7 +523,6 @@ export function MessageList({
                   top: 0,
                   left: 0,
                   width: "100%",
-                  height: virtualRow.size,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
                 ref={virtualizer.measureElement}
