@@ -201,6 +201,12 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     };
   }, [params.workspaceSlug, params.channelId, channels, router]);
 
+  useEffect(() => {
+    if (!user && !authLoading) {
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+    }
+  }, [user, authLoading, router, pathname]);
+
   if (authLoading) {
     return (
       <div
@@ -220,16 +226,15 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     );
   }
 
-  useEffect(() => {
-    if (!user && !authLoading) {
-      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
-    }
-  }, [user, authLoading, router, pathname]);
-
   if (!user) {
     return (
-      <div className="flex h-screen items-center justify-center" style={{ background: "var(--center-channel-bg)" }}>
-        <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Redirecting to login...</p>
+      <div
+        className="flex h-screen items-center justify-center"
+        style={{ background: "var(--center-channel-bg)" }}
+      >
+        <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+          Redirecting to login...
+        </p>
       </div>
     );
   }
