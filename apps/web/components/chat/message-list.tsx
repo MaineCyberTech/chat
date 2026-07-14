@@ -377,7 +377,7 @@ export function MessageList({
     const el = listRef.current;
     if (!el) return;
     const { scrollTop, scrollHeight, clientHeight } = el;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
     setShowJumpButton(!isAtBottom);
 
     if (onLoadOlder && hasMoreOlder && !loadingOlder && scrollTop < TOP_TRIGGER_OFFSET) {
@@ -405,23 +405,45 @@ export function MessageList({
     virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
   }, [virtualizer, messagesWithMeta.length]);
 
+  const prevLengthRef = useRef(messagesWithMeta.length);
+
   useEffect(() => {
     const el = listRef.current;
+    if (!el) return;
+
+    const prevLen = prevLengthRef.current;
+    const curLen = messagesWithMeta.length;
+    prevLengthRef.current = curLen;
+
     const restore = scrollRestoreRef.current;
-    if (!restore || !el) return;
-    requestAnimationFrame(() => {
-      if (!listRef.current) return;
-      const newScrollHeight = listRef.current.scrollHeight;
-      listRef.current.scrollTop =
-        restore.prevScrollTop + (newScrollHeight - restore.prevScrollHeight);
-    });
-    scrollRestoreRef.current = null;
-  }, [messagesWithMeta.length]);
+    if (restore) {
+      scrollRestoreRef.current = null;
+      requestAnimationFrame(() => {
+        if (!listRef.current) return;
+        const newScrollHeight = listRef.current.scrollHeight;
+        listRef.current.scrollTop =
+          restore.prevScrollTop + (newScrollHeight - restore.prevScrollHeight);
+      });
+      return;
+    }
+
+    if (curLen > prevLen) {
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+      if (isAtBottom) {
+        requestAnimationFrame(() => {
+          virtualizer.scrollToIndex(virtualizer.getTotalSize(), { align: "end" });
+        });
+      }
+    }
+  }, [messagesWithMeta.length, virtualizer]);
 
   useLayoutEffect(() => {
     if (messages.length > 0 && initialLoadRef.current) {
       initialLoadRef.current = false;
-      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+      requestAnimationFrame(() => {
+        virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+      });
     }
   }, [messages.length, messagesWithMeta.length, virtualizer]);
 
@@ -472,7 +494,10 @@ export function MessageList({
           </div>
         )}
         {loadingOlder && (
-          <div className="flex justify-center py-3">
+          <div
+            className="flex justify-center py-3"
+            style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 5 }}
+          >
             <div
               className="h-5 w-5 animate-spin rounded-full border-2"
               style={{
@@ -496,7 +521,6 @@ export function MessageList({
                   top: 0,
                   left: 0,
                   width: "100%",
-                  height: virtualRow.size,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
                 ref={virtualizer.measureElement}

@@ -475,32 +475,6 @@ html.dark body {
   }
 }
 
-/* Floating timestamp permalink */
-.post__permalink {
-  position: absolute;
-  top: 0;
-  left: -76px;
-  width: 60px;
-  text-align: right;
-  font-size: 0.85em;
-  color: rgba(var(--center-channel-color-rgb), 0.56);
-  opacity: 0;
-  transition: opacity 150ms;
-  pointer-events: none;
-}
-.mm-post:hover .post__permalink {
-  opacity: 1;
-  pointer-events: auto;
-}
-.post__permalink:hover {
-  text-decoration: underline;
-  color: var(--link-color);
-}
-.mm-post:focus-within .post__permalink {
-  opacity: 1;
-  pointer-events: auto;
-}
-
 /* Status pill on DMs */
 .status-pill {
   width: 8px;

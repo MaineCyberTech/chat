@@ -201,19 +201,7 @@ export const MessageItem = React.memo(function MessageItem({
               </div>
             </div>
           ) : (
-            <div style={{ width: 44 }} className="shrink-0 pt-0.5 text-right">
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-tertiary)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <time dateTime={new Date(msg.created_at).toISOString()}>
-                  {formatTime(msg.created_at)}
-                </time>
-              </span>
-            </div>
+            <div style={{ width: 44 }} className="shrink-0" />
           )}
 
           {/* Body */}
@@ -464,13 +452,6 @@ export const MessageItem = React.memo(function MessageItem({
                       <X size={14} />
                     </button>
                   )}
-                </div>
-
-                {/* Floating timestamp permalink */}
-                <div className="post__permalink">
-                  <time dateTime={new Date(msg.created_at).toISOString()}>
-                    {formatTime(msg.created_at)}
-                  </time>
                 </div>
               </div>
             )}
