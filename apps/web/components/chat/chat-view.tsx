@@ -931,12 +931,7 @@ export function ChatView({
         {/* Message area - flex column with post list and input */}
         <div className="flex min-h-0 flex-1 flex-col">
           <div
-            role="log"
-            aria-live="polite"
-            aria-relevant="additions"
-            aria-atomic="false"
-            aria-label="Messages"
-            className="min-h-0 flex-1 overflow-y-auto"
+            className="min-h-0 flex-1 flex-col overflow-hidden"
             style={{ padding: "14px 0 7px" }}
           >
             <MessageList
