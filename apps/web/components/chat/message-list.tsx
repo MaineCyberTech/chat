@@ -16,6 +16,7 @@ const GROUP_GAP_MS = 5 * 60 * 1000;
 const TOP_TRIGGER_OFFSET = 200;
 
 interface Props {
+  channelId: string;
   messages: Message[];
   currentUserId?: string;
   profiles: Map<string, UserProfile>;
@@ -39,6 +40,7 @@ interface Props {
 }
 
 export function MessageList({
+  channelId,
   messages,
   currentUserId,
   profiles,
@@ -406,6 +408,7 @@ export function MessageList({
     virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
   }, [virtualizer, messagesWithMeta.length]);
 
+  const prevChannelIdRef = useRef(channelId);
   const prevLengthRef = useRef(messagesWithMeta.length);
   const didInitialScrollRef = useRef(false);
 
@@ -440,6 +443,13 @@ export function MessageList({
     }
   }, [messagesWithMeta.length]);
 
+  const channelChanged = prevChannelIdRef.current !== channelId;
+  if (channelChanged) {
+    prevChannelIdRef.current = channelId;
+    didInitialScrollRef.current = false;
+    prevLengthRef.current = 0;
+  }
+
   useEffect(() => {
     if (messages.length === 0) return;
     if (didInitialScrollRef.current) return;
@@ -457,7 +467,7 @@ export function MessageList({
       });
     });
     return () => cancelAnimationFrame(raf1);
-  }, [messages.length]);
+  }, [messages.length, channelChanged]);
 
   if (messages.length === 0) {
     return (

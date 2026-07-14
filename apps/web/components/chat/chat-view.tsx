@@ -531,11 +531,14 @@ export function ChatView({
     [channelId, addToast],
   );
 
-  const handleDropFiles = useCallback((files: FileList) => {
-    for (const file of Array.from(files)) {
-      handleFileUpload(file);
-    }
-  }, [handleFileUpload]);
+  const handleDropFiles = useCallback(
+    (files: FileList) => {
+      for (const file of Array.from(files)) {
+        handleFileUpload(file);
+      }
+    },
+    [handleFileUpload],
+  );
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -548,7 +551,10 @@ export function ChatView({
     e.preventDefault();
     e.stopPropagation();
     dragCounterRef.current--;
-    if (dragCounterRef.current <= 0) { dragCounterRef.current = 0; setDragOver(false); }
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setDragOver(false);
+    }
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -556,13 +562,16 @@ export function ChatView({
     e.stopPropagation();
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(false);
-    dragCounterRef.current = 0;
-    if (e.dataTransfer.files.length > 0) handleDropFiles(e.dataTransfer.files);
-  }, [handleDropFiles]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOver(false);
+      dragCounterRef.current = 0;
+      if (e.dataTransfer.files.length > 0) handleDropFiles(e.dataTransfer.files);
+    },
+    [handleDropFiles],
+  );
 
   const handleTypingStart = useCallback(() => {
     if (typingTimeoutRef.current) {
@@ -693,7 +702,13 @@ export function ChatView({
           className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center"
           style={{ background: "rgba(var(--button-bg-rgb), 0.08)" }}
         >
-          <div className="rounded-xl border-2 border-dashed p-8 text-center backdrop-blur-sm" style={{ borderColor: "var(--button-bg)", background: "rgba(var(--center-channel-bg-rgb), 0.95)" }}>
+          <div
+            className="rounded-xl border-2 border-dashed p-8 text-center backdrop-blur-sm"
+            style={{
+              borderColor: "var(--button-bg)",
+              background: "rgba(var(--center-channel-bg-rgb), 0.95)",
+            }}
+          >
             <p className="text-sm font-medium" style={{ color: "var(--button-bg)" }}>
               Drop files here to upload
             </p>
@@ -761,11 +776,16 @@ export function ChatView({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      api.patch(`/channels/${channelId}`, { topic: topicDraft }).then(() => {
-                        setChannelTopic(topicDraft);
-                        setEditingTopic(false);
-                        addToast({ title: "Topic updated", variant: "success", duration: 2000 });
-                      }).catch(() => addToast({ title: "Failed to update topic", variant: "error" }));
+                      api
+                        .patch(`/channels/${channelId}`, { topic: topicDraft })
+                        .then(() => {
+                          setChannelTopic(topicDraft);
+                          setEditingTopic(false);
+                          addToast({ title: "Topic updated", variant: "success", duration: 2000 });
+                        })
+                        .catch(() =>
+                          addToast({ title: "Failed to update topic", variant: "error" }),
+                        );
                     }
                     if (e.key === "Escape") {
                       setEditingTopic(false);
@@ -774,13 +794,19 @@ export function ChatView({
                   onBlur={() => setEditingTopic(false)}
                   maxLength={500}
                   className="w-full rounded border bg-transparent px-2 py-0.5 text-xs"
-                  style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)", color: "var(--center-channel-color)" }}
+                  style={{
+                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                    color: "var(--center-channel-color)",
+                  }}
                   aria-label="Edit channel topic"
                 />
               </div>
             ) : (
               <button
-                onClick={() => { setTopicDraft(channelTopic ?? ""); setEditingTopic(true); }}
+                onClick={() => {
+                  setTopicDraft(channelTopic ?? "");
+                  setEditingTopic(true);
+                }}
                 className="w-full truncate text-left text-xs transition-opacity hover:opacity-80"
                 style={{ color: "var(--text-tertiary)" }}
                 aria-label="Edit channel topic"
@@ -914,6 +940,7 @@ export function ChatView({
             style={{ padding: "14px 0 7px" }}
           >
             <MessageList
+              channelId={channelId}
               messages={
                 filterQuery
                   ? messages.filter((m) =>
@@ -936,20 +963,24 @@ export function ChatView({
               }
               sendErrors={sendErrors}
               onRetry={handleRetry}
-               onUndoDelete={handleUndoDelete}
-               onForward={(msg) => {
-                 navigator.clipboard.writeText(msg.content);
-                 addToast({ title: "Message copied for forwarding", variant: "info", duration: 3000 });
-               }}
-               onPin={async (msg) => {
-                 try {
-                   await api.post(`/messages/${msg.id}/pin`, {});
-                   addToast({ title: "Message pinned", variant: "success", duration: 2000 });
-                 } catch {
-                   addToast({ title: "Failed to pin message", variant: "error" });
-                 }
-               }}
-               channelTopic={channelTopic}
+              onUndoDelete={handleUndoDelete}
+              onForward={(msg) => {
+                navigator.clipboard.writeText(msg.content);
+                addToast({
+                  title: "Message copied for forwarding",
+                  variant: "info",
+                  duration: 3000,
+                });
+              }}
+              onPin={async (msg) => {
+                try {
+                  await api.post(`/messages/${msg.id}/pin`, {});
+                  addToast({ title: "Message pinned", variant: "success", duration: 2000 });
+                } catch {
+                  addToast({ title: "Failed to pin message", variant: "error" });
+                }
+              }}
+              channelTopic={channelTopic}
             />
           </div>
 

@@ -82,6 +82,7 @@ describe("MessageList", () => {
   it("renders list of messages", () => {
     render(
       <MessageList
+        channelId="ch-1"
         messages={[makeMessage({ id: "msg1", content: "Hello World" })]}
         profiles={mockProfiles}
       />,
@@ -90,13 +91,14 @@ describe("MessageList", () => {
   });
 
   it("shows empty state when no messages", () => {
-    render(<MessageList messages={[]} profiles={mockProfiles} />);
+    render(<MessageList channelId="ch-1" messages={[]} profiles={mockProfiles} />);
     expect(screen.getByText(/no messages yet/i)).toBeDefined();
   });
 
   it("shows author name for each message", () => {
     render(
       <MessageList
+        channelId="ch-1"
         messages={[makeMessage({ id: "msg1", user_id: "user1" })]}
         profiles={mockProfiles}
       />,
@@ -108,6 +110,7 @@ describe("MessageList", () => {
     const date = new Date("2026-07-05T14:30:00Z");
     render(
       <MessageList
+        channelId="ch-1"
         messages={[makeMessage({ id: "msg1", created_at: date.toISOString() })]}
         profiles={mockProfiles}
       />,
@@ -120,6 +123,7 @@ describe("MessageList", () => {
     const yesterday = new Date("2026-07-04T12:00:00Z");
     render(
       <MessageList
+        channelId="ch-1"
         messages={[
           makeMessage({ id: "msg1", content: "Old", created_at: yesterday.toISOString() }),
           makeMessage({ id: "msg2", content: "New", created_at: today.toISOString() }),
@@ -149,6 +153,7 @@ describe("MessageList", () => {
 
     render(
       <MessageList
+        channelId="ch-1"
         messages={[makeMessage({ id: "msg1" })]}
         currentUserId="user1"
         profiles={mockProfiles}
@@ -168,6 +173,7 @@ describe("MessageList", () => {
 
     render(
       <MessageList
+        channelId="ch-1"
         messages={messages}
         profiles={mockProfiles}
         onLoadOlder={onLoadOlder}
