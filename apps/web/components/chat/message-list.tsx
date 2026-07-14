@@ -359,7 +359,16 @@ export function MessageList({
   const virtualizer = useVirtualizer({
     count: messagesWithMeta.length,
     getScrollElement: () => listRef.current,
-    estimateSize: () => 52,
+    estimateSize: (index) => {
+      const msg = messagesWithMeta[index];
+      if (!msg) return 80;
+      let h = 40;
+      if (msg.showDate) h += 40;
+      if (msg.isGroupStart) h += 28;
+      const lines = Math.ceil((msg.content?.length ?? 0) / 80);
+      h += Math.min(lines * 22, 300);
+      return Math.max(h, 64);
+    },
     getItemKey: (index) => messagesWithMeta[index]?.id ?? index,
     overscan: 8,
     measureElement: (element) => element.getBoundingClientRect().height,
@@ -399,13 +408,6 @@ export function MessageList({
 
   const prevLengthRef = useRef(messagesWithMeta.length);
   const didInitialScrollRef = useRef(false);
-  const scrollToBottomRef = useRef<() => void>(() => {});
-
-  useEffect(() => {
-    scrollToBottomRef.current = () => {
-      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
-    };
-  });
 
   useEffect(() => {
     const el = listRef.current;
@@ -432,7 +434,7 @@ export function MessageList({
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
       if (isAtBottom) {
         requestAnimationFrame(() => {
-          scrollToBottomRef.current();
+          el.scrollTop = el.scrollHeight;
         });
       }
     }
@@ -443,10 +445,18 @@ export function MessageList({
     if (didInitialScrollRef.current) return;
     didInitialScrollRef.current = true;
 
-    const timer = setTimeout(() => {
-      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
-    }, 150);
-    return () => clearTimeout(timer);
+    const scrollDown = () => {
+      const el = listRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    };
+
+    const raf1 = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollDown();
+        setTimeout(scrollDown, 100);
+      });
+    });
+    return () => cancelAnimationFrame(raf1);
   }, [messages.length]);
 
   if (messages.length === 0) {
