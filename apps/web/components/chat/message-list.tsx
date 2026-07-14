@@ -455,18 +455,30 @@ export function MessageList({
     if (didInitialScrollRef.current) return;
     didInitialScrollRef.current = true;
 
-    const scrollDown = () => {
+    let frameCount = 0;
+    let lastHeight = 0;
+    let stableCount = 0;
+
+    const tick = () => {
       const el = listRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
+      if (!el) return;
+      el.scrollTop = el.scrollHeight;
+      frameCount++;
+
+      if (el.scrollHeight === lastHeight) {
+        stableCount++;
+      } else {
+        stableCount = 0;
+        lastHeight = el.scrollHeight;
+      }
+
+      if (frameCount < 60 && stableCount < 3) {
+        requestAnimationFrame(tick);
+      }
     };
 
-    const raf1 = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollDown();
-        setTimeout(scrollDown, 100);
-      });
-    });
-    return () => cancelAnimationFrame(raf1);
+    const raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [messages.length, channelChanged]);
 
   if (messages.length === 0) {
