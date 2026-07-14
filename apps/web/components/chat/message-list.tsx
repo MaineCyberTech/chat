@@ -432,7 +432,7 @@ export function MessageList({
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
       if (isAtBottom) {
         requestAnimationFrame(() => {
-          virtualizer.scrollToIndex(virtualizer.getTotalSize(), { align: "end" });
+          virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
         });
       }
     }
@@ -441,6 +441,7 @@ export function MessageList({
   useLayoutEffect(() => {
     if (messages.length > 0 && initialLoadRef.current) {
       initialLoadRef.current = false;
+      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
       requestAnimationFrame(() => {
         virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
       });
