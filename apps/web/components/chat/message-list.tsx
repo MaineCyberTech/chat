@@ -325,12 +325,15 @@ export function MessageList({
   }
 
   const messagesWithMeta = React.useMemo(() => {
+    const sorted = [...messages].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
     const result: MessageMeta[] = [];
     let lastDate: string | null = null;
     let lastUserId: string | null = null;
     let lastUserTime: number | null = null;
 
-    for (const msg of messages) {
+    for (const msg of sorted) {
       const msgDate = new Date(msg.created_at).toDateString();
       const msgTime = new Date(msg.created_at).getTime();
       const isNewDate = msgDate !== lastDate;
@@ -357,7 +360,16 @@ export function MessageList({
   const virtualizer = useVirtualizer({
     count: messagesWithMeta.length,
     getScrollElement: () => listRef.current,
-    estimateSize: () => 60,
+    estimateSize: (index) => {
+      const msg = messagesWithMeta[index];
+      if (!msg) return 60;
+      let height = 28;
+      if (msg.showDate) height += 40;
+      if (msg.isGroupStart) height += 24;
+      height += Math.min(msg.content.length * 0.4, 200);
+      return height;
+    },
+    getItemKey: (index) => messagesWithMeta[index]?.id ?? index,
     overscan: 10,
   });
 

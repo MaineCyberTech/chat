@@ -142,7 +142,7 @@ export const MessageItem = React.memo(function MessageItem({
   const threadReplyCount = replyCounts.get(msg.id) ?? 0;
 
   return (
-    <div key={msg.id}>
+    <div>
       {showDate && (
         <div className="flex items-center gap-3 px-4 py-3">
           <div
@@ -156,7 +156,9 @@ export const MessageItem = React.memo(function MessageItem({
               color: "var(--text-secondary)",
             }}
           >
-            <time dateTime={new Date(msg.created_at).toISOString()}>{formatDate(msg.created_at)}</time>
+            <time dateTime={new Date(msg.created_at).toISOString()}>
+              {formatDate(msg.created_at)}
+            </time>
           </span>
           <div
             className="flex-1"
@@ -207,7 +209,9 @@ export const MessageItem = React.memo(function MessageItem({
                   whiteSpace: "nowrap",
                 }}
               >
-                <time dateTime={new Date(msg.created_at).toISOString()}>{formatTime(msg.created_at)}</time>
+                <time dateTime={new Date(msg.created_at).toISOString()}>
+                  {formatTime(msg.created_at)}
+                </time>
               </span>
             </div>
           )}
@@ -223,7 +227,9 @@ export const MessageItem = React.memo(function MessageItem({
                   {name}
                 </span>
                 <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                  <time dateTime={new Date(msg.created_at).toISOString()}>{formatTime(msg.created_at)}</time>
+                  <time dateTime={new Date(msg.created_at).toISOString()}>
+                    {formatTime(msg.created_at)}
+                  </time>
                 </span>
               </div>
             )}
@@ -461,7 +467,11 @@ export const MessageItem = React.memo(function MessageItem({
                 </div>
 
                 {/* Floating timestamp permalink */}
-                <div className="post__permalink"><time dateTime={new Date(msg.created_at).toISOString()}>{formatTime(msg.created_at)}</time></div>
+                <div className="post__permalink">
+                  <time dateTime={new Date(msg.created_at).toISOString()}>
+                    {formatTime(msg.created_at)}
+                  </time>
+                </div>
               </div>
             )}
 
