@@ -892,7 +892,7 @@ export function ChatView({
 
         {/* Search bar row */}
         <div
-          className="flex items-center gap-2 border-b px-3 py-2"
+          className="flex shrink-0 items-center gap-2 border-b px-3 py-2"
           style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.08)" }}
         >
           <div className="max-w-[600px] flex-1">

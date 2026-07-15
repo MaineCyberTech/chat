@@ -115,7 +115,7 @@ export function ChannelBookmarks({ channelId }: Props) {
       {/* Inline bookmark bar */}
       {bookmarks.length > 0 && (
         <div
-          className="flex flex-wrap items-center gap-1 border-b px-3 py-1.5"
+          className="flex shrink-0 flex-wrap items-center gap-1 border-b px-3 py-1.5"
           style={{
             borderColor: "rgba(var(--center-channel-color-rgb), 0.08)",
             background: "rgba(var(--center-channel-color-rgb), 0.02)",

@@ -341,7 +341,13 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         {/* Main content */}
         <div
           className="app__content"
-          style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
         >
           <ErrorBoundary>{children}</ErrorBoundary>
           <div className="md:hidden" style={{ height: "var(--bottom-nav-height)" }} />
