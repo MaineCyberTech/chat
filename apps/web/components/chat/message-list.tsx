@@ -63,6 +63,7 @@ export function MessageList({
   channelTopic,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -481,6 +482,21 @@ export function MessageList({
     return () => cancelAnimationFrame(raf);
   }, [messages.length, channelChanged]);
 
+  useEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(() => {
+      if (!listRef.current) return;
+      const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+      if (scrollHeight - scrollTop - clientHeight < 100) {
+        listRef.current.scrollTop = listRef.current.scrollHeight;
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   if (messages.length === 0) {
     return (
       <div className="relative flex-1 overflow-clip">
@@ -547,7 +563,7 @@ export function MessageList({
             />
           </div>
         )}
-        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+        <div ref={innerRef} style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {virtualizer.getVirtualItems().map((virtualRow) => {
             if (virtualRow.index >= messagesWithMeta.length) return null;
             const msg = messagesWithMeta[virtualRow.index];
