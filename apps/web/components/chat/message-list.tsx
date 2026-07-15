@@ -412,6 +412,8 @@ export function MessageList({
   const prevChannelIdRef = useRef(channelId);
   const prevLengthRef = useRef(messagesWithMeta.length);
   const didInitialScrollRef = useRef(false);
+  const currentLenRef = useRef(messagesWithMeta.length);
+  currentLenRef.current = messagesWithMeta.length;
 
   useEffect(() => {
     const el = listRef.current;
@@ -438,11 +440,11 @@ export function MessageList({
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
       if (isAtBottom) {
         requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight;
+          virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
         });
       }
     }
-  }, [messagesWithMeta.length]);
+  }, [messagesWithMeta.length, virtualizer]);
 
   const channelChanged = prevChannelIdRef.current !== channelId;
   if (channelChanged) {
@@ -463,7 +465,7 @@ export function MessageList({
     const tick = () => {
       const el = listRef.current;
       if (!el) return;
-      el.scrollTop = el.scrollHeight;
+      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
       frameCount++;
 
       if (el.scrollHeight === lastHeight) {
@@ -480,7 +482,7 @@ export function MessageList({
 
     const raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [messages.length, channelChanged]);
+  }, [messages.length, channelChanged, virtualizer, messagesWithMeta.length]);
 
   useEffect(() => {
     const el = innerRef.current;
@@ -490,12 +492,12 @@ export function MessageList({
       if (!listRef.current) return;
       const { scrollTop, scrollHeight, clientHeight } = listRef.current;
       if (scrollHeight - scrollTop - clientHeight < 100) {
-        listRef.current.scrollTop = listRef.current.scrollHeight;
+        virtualizer.scrollToIndex(currentLenRef.current - 1, { align: "end" });
       }
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [virtualizer]);
 
   if (messages.length === 0) {
     return (
