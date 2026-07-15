@@ -930,54 +930,47 @@ export function ChatView({
 
         {/* Message area - flex column with post list and input */}
         <div className="flex min-h-0 flex-1 flex-col">
-          <div
-            className="min-h-0 flex-1 flex-col overflow-hidden"
-            style={{ padding: "14px 0 7px" }}
-          >
-            <MessageList
-              channelId={channelId}
-              messages={
-                filterQuery
-                  ? messages.filter((m) =>
-                      m.content.toLowerCase().includes(filterQuery.toLowerCase()),
-                    )
-                  : messages
+          <MessageList
+            channelId={channelId}
+            messages={
+              filterQuery
+                ? messages.filter((m) =>
+                    m.content.toLowerCase().includes(filterQuery.toLowerCase()),
+                  )
+                : messages
+            }
+            currentUserId={user?.id}
+            profiles={profiles}
+            onReply={setReplyTo}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onThreadOpen={setThreadMessage}
+            onLoadOlder={loadOlder}
+            hasMoreOlder={hasMoreOlder}
+            loadingOlder={loadingOlder}
+            replyCounts={replyCounts}
+            sendingIds={new Set(messages.filter((m) => m.id.startsWith("temp_")).map((m) => m.id))}
+            sendErrors={sendErrors}
+            onRetry={handleRetry}
+            onUndoDelete={handleUndoDelete}
+            onForward={(msg) => {
+              navigator.clipboard.writeText(msg.content);
+              addToast({
+                title: "Message copied for forwarding",
+                variant: "info",
+                duration: 3000,
+              });
+            }}
+            onPin={async (msg) => {
+              try {
+                await api.post(`/messages/${msg.id}/pin`, {});
+                addToast({ title: "Message pinned", variant: "success", duration: 2000 });
+              } catch {
+                addToast({ title: "Failed to pin message", variant: "error" });
               }
-              currentUserId={user?.id}
-              profiles={profiles}
-              onReply={setReplyTo}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onThreadOpen={setThreadMessage}
-              onLoadOlder={loadOlder}
-              hasMoreOlder={hasMoreOlder}
-              loadingOlder={loadingOlder}
-              replyCounts={replyCounts}
-              sendingIds={
-                new Set(messages.filter((m) => m.id.startsWith("temp_")).map((m) => m.id))
-              }
-              sendErrors={sendErrors}
-              onRetry={handleRetry}
-              onUndoDelete={handleUndoDelete}
-              onForward={(msg) => {
-                navigator.clipboard.writeText(msg.content);
-                addToast({
-                  title: "Message copied for forwarding",
-                  variant: "info",
-                  duration: 3000,
-                });
-              }}
-              onPin={async (msg) => {
-                try {
-                  await api.post(`/messages/${msg.id}/pin`, {});
-                  addToast({ title: "Message pinned", variant: "success", duration: 2000 });
-                } catch {
-                  addToast({ title: "Failed to pin message", variant: "error" });
-                }
-              }}
-              channelTopic={channelTopic}
-            />
-          </div>
+            }}
+            channelTopic={channelTopic}
+          />
 
           <MessageInput
             channelId={channelId}

@@ -501,7 +501,13 @@ export function MessageList({
         role="log"
         aria-live="polite"
         aria-label="Message list"
-        style={{ overflow: "auto", flex: 1, minHeight: 0, position: "relative" }}
+        style={{
+          overflow: "auto",
+          flex: 1,
+          minHeight: 0,
+          position: "relative",
+          padding: "14px 0 7px",
+        }}
         onTouchStart={handlePullTouchStart}
         onTouchMove={handlePullTouchMove}
         onTouchEnd={handlePullTouchEnd}
