@@ -118,9 +118,15 @@ CREATE POLICY "Users can create DMs"
   WITH CHECK (auth.uid() IN (user1_id, user2_id));
 
 -- RLS policies for user_presence
-CREATE POLICY "Anyone can view presence"
+CREATE POLICY "Users can view presence in same workspace"
   ON public.user_presence FOR SELECT
-  USING (true);
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.workspace_members wm1
+      JOIN public.workspace_members wm2 ON wm1.workspace_id = wm2.workspace_id
+      WHERE wm1.user_id = auth.uid() AND wm2.user_id = user_presence.user_id
+    )
+  );
 
 CREATE POLICY "Users can update their own presence"
   ON public.user_presence FOR UPDATE

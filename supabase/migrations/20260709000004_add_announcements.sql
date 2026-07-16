@@ -12,7 +12,13 @@ CREATE TABLE IF NOT EXISTS announcements (
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "announcements_select" ON announcements
-  FOR SELECT USING (true);
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM workspace_members
+      WHERE workspace_id = announcements.workspace_id
+        AND user_id = auth.uid()
+    )
+  );
 
 CREATE POLICY "announcements_insert" ON announcements
   FOR INSERT WITH CHECK (

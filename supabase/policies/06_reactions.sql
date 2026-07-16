@@ -4,7 +4,16 @@
 
 create policy "reactions_select"
   on public.reactions for select
-  using (true);
+  using (
+    exists (
+      select 1 from public.messages
+      where id = message_id
+        and channel_id in (
+          select channel_id from public.channel_members
+          where user_id = auth.uid()
+        )
+    )
+  );
 
 create policy "reactions_insert_own"
   on public.reactions for insert

@@ -858,6 +858,7 @@ export default function SettingsPage() {
             ref={resetDialogRef}
             className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
             role="alertdialog"
+            aria-modal="true"
           >
             <div
               className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
@@ -902,6 +903,7 @@ export default function SettingsPage() {
             ref={deleteDialogRef}
             className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
             role="alertdialog"
+            aria-modal="true"
           >
             <div
               className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"

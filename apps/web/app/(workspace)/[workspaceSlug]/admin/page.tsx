@@ -1653,19 +1653,96 @@ export default function AdminPage() {
         <h1 className="mb-6 text-xl font-bold" style={{ color: "var(--center-channel-color)" }}>
           {tabLabel}
         </h1>
-        {/* Mobile tab selector */}
-        <select
-          className="mb-4 w-full rounded-md border p-2 text-sm md:hidden"
-          value={tab}
-          onChange={(e) => setTab(e.target.value as Tab)}
-          style={{ backgroundColor: "var(--center-channel-bg)", color: "var(--center-channel-color)" }}
-        >
-          {sidebarSections.map((section) =>
-            section.items.map((item) => (
-              <option key={item.id} value={item.id}>{item.label}</option>
-            ))
+        {/* Mobile tab selector (hamburger) */}
+        <div className="mb-4 md:hidden">
+          <button
+            onClick={() => setMobileTabOpen(!mobileTabOpen)}
+            className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+            style={{
+              borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+              backgroundColor: "var(--center-channel-bg)",
+              color: "var(--center-channel-color)",
+            }}
+            aria-label={t("admin.toggleMenu", "Toggle menu")}
+            aria-expanded={mobileTabOpen}
+          >
+            <Settings size={16} />
+            <span className="flex-1 text-left">{tabLabel}</span>
+            <ChevronRight
+              size={14}
+              className="transition-transform"
+              style={{ transform: mobileTabOpen ? "rotate(90deg)" : "" }}
+            />
+          </button>
+          {mobileTabOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-black/50"
+                onClick={() => setMobileTabOpen(false)}
+              />
+              <nav
+                className="fixed top-0 bottom-0 left-0 z-50 w-64 overflow-y-auto border-r p-3 shadow-[var(--elevation-5)]"
+                style={{
+                  borderColor: "rgba(var(--center-channel-color-rgb), 0.12)",
+                  background: "var(--sidebar-bg)",
+                }}
+                role="dialog"
+                aria-modal="true"
+                aria-label={t("admin.systemConsole", "System Console")}
+              >
+                <div className="mb-4 flex items-center justify-between px-2">
+                  <h2
+                    className="text-sm font-bold"
+                    style={{ color: "var(--sidebar-header-text-color, var(--center-channel-color))" }}
+                  >
+                    {t("admin.systemConsole", "System Console")}
+                  </h2>
+                  <button
+                    onClick={() => setMobileTabOpen(false)}
+                    className="rounded-md p-1 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                    aria-label={t("common.close", "Close")}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                {sidebarSections.map((section) => (
+                  <div key={section.label} className="mb-3">
+                    <div
+                      className="mb-1 px-2 text-[10px] font-semibold tracking-wider uppercase"
+                      style={{
+                        color:
+                          "rgba(var(--sidebar-header-text-color-rgb, var(--center-channel-color-rgb)), 0.48)",
+                      }}
+                    >
+                      {section.label}
+                    </div>
+                    {section.items.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setTab(item.id);
+                          setMobileTabOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors"
+                        style={{
+                          background: tab === item.id ? "rgba(var(--button-bg-rgb), 0.16)" : "transparent",
+                          color:
+                            tab === item.id
+                              ? "var(--button-bg)"
+                              : "rgba(var(--sidebar-header-text-color-rgb, var(--center-channel-color-rgb)), 0.72)",
+                          fontWeight: tab === item.id ? 600 : 400,
+                        }}
+                      >
+                        {item.icon}
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </nav>
+            </>
           )}
-        </select>
+        </div>
         {renderContent()}
       </div>
     </div>

@@ -253,7 +253,7 @@ export function FormattingBar({ editorRef }: Props) {
                 applyFormat(editorRef.current, mode);
               }
             }}
-            className="flex min-h-[44px] min-w-[44px] md:min-h-7 md:min-w-7 items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:ring-[var(--button-bg)]"
+            className="flex h-11 w-11 md:h-7 md:w-7 items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:ring-[var(--button-bg)]"
             style={{
               color:
                 hoveredIndex === index

@@ -289,6 +289,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             </button>
             <input
               ref={inputRef}
+              role="combobox"
               type="text"
               value={query}
               onChange={(e) => {
