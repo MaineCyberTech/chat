@@ -443,5 +443,6 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
 
       <OnboardingTour />
     </div>
+  </div>
   );
 }
