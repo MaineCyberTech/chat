@@ -54,10 +54,18 @@ export function createApp(frontendUrl: string): Express {
   app.set("trust proxy", 1);
 
   app.use(compression());
+
+  // Health endpoint before CORS so Docker health checks (origin-less) work
+  app.get("/healthz", async (_req, res) => {
+    const result = await healthService.getFullHealth();
+    const statusCode = result.status === "healthy" ? 200 : result.status === "degraded" ? 200 : 503;
+    res.status(statusCode).json(result);
+  });
+
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin) return callback(new Error("Not allowed by CORS"));
+        if (!origin) return callback(null, true);
         if (origin === frontendUrl) return callback(null, true);
         callback(new Error("Not allowed by CORS"));
       },
