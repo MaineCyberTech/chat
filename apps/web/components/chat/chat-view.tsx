@@ -606,7 +606,7 @@ export function ChatView({
 
   if (loading) {
     return (
-      <div className="flex min-h-0 flex-1" id="channel_view">
+      <div className="flex h-full" id="channel_view">
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="mm-channel-header">
             <Skeleton
@@ -690,7 +690,7 @@ export function ChatView({
 
   return (
     <div
-      className="flex h-full"
+      className="flex min-h-0 flex-1"
       id="channel_view"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
