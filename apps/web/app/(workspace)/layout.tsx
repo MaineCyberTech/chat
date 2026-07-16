@@ -244,18 +244,20 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       className="app__body"
       style={{
         flex: 1,
-        display: "flex",
-        flexDirection: "column",
+        display: "grid",
+        gridTemplateRows: "1fr",
         background: "var(--sidebar-bg)",
         minHeight: 0,
       }}
     >
-      <RouteLoadingIndicator />
+      {/* Single grid child gets definite 1fr height */}
+      <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <RouteLoadingIndicator />
 
-      <AnnouncementBanner />
+        <AnnouncementBanner />
 
-      {/* Flex row for sidebar + content */}
-      <div style={{ display: "flex", overflow: "clip", minHeight: 0, flex: 1 }}>
+        {/* Flex row for sidebar + content */}
+        <div style={{ display: "flex", overflow: "clip", minHeight: 0, flex: 1 }}>
         {/* Mobile header */}
         <div
           id="global-header"
