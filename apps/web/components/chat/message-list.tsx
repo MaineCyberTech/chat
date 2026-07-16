@@ -465,7 +465,7 @@ export function MessageList({
     const tick = () => {
       const el = listRef.current;
       if (!el) return;
-      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+      el.scrollTop = el.scrollHeight;
       frameCount++;
 
       if (el.scrollHeight === lastHeight) {
@@ -477,12 +477,14 @@ export function MessageList({
 
       if (frameCount < 60 && stableCount < 3) {
         requestAnimationFrame(tick);
+      } else if (stableCount >= 3) {
+        virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
       }
     };
 
     const raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [messages.length, channelChanged, virtualizer, messagesWithMeta.length]);
+  }, [messages.length, channelChanged]);
 
   useEffect(() => {
     const el = innerRef.current;
