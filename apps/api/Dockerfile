@@ -34,6 +34,8 @@ COPY apps/api/package.json ./apps/api/package.json
 COPY --from=base /app/apps/api/dist ./apps/api/dist
 COPY --from=base /app/packages/db/package.json ./packages/db/package.json
 COPY --from=base /app/packages/db/dist ./packages/db/dist
+COPY --from=base /app/packages/config/package.json ./packages/config/package.json
+COPY --from=base /app/packages/config/dist ./packages/config/dist
 
 # Production-only install (clean, no devDeps)
 RUN pnpm install --frozen-lockfile --filter ./apps/api --prod --ignore-scripts

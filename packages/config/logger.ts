@@ -1,12 +1,13 @@
 import pino, { Logger, LoggerOptions, LogFn } from "pino";
-import pretty from "pino-pretty";
+import { createRequire } from "node:module";
+
+const _require = createRequire(import.meta.url);
 
 export interface LogConfig extends LoggerOptions {
   level?: string;
   pretty?: boolean;
 }
 
-// Extended logger type that supports structured logging
 export interface ExtendedLogger extends Logger {
   info: LogFn & ((obj: Record<string, unknown>, msg?: string) => void);
   warn: LogFn & ((obj: Record<string, unknown>, msg?: string) => void);
@@ -46,12 +47,17 @@ export function createLogger(config: LogConfig = {}): ExtendedLogger {
   };
 
   if (isDev && config.pretty !== false) {
-    const stream = pretty({
-      colorize: true,
-      translateTime: "SYS:standard",
-      ignore: "pid,hostname",
-    });
-    loggerInstance = pino(options, stream) as ExtendedLogger;
+    try {
+      const pretty = _require("pino-pretty");
+      const stream = pretty({
+        colorize: true,
+        translateTime: "SYS:standard",
+        ignore: "pid,hostname",
+      });
+      loggerInstance = pino(options, stream) as ExtendedLogger;
+    } catch {
+      loggerInstance = pino(options) as ExtendedLogger;
+    }
   } else {
     loggerInstance = pino(options) as ExtendedLogger;
   }
