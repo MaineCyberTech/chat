@@ -18,8 +18,11 @@ const logger = {
   },
 };
 
+let pendingSocket: Promise<Socket> | null = null;
+
 export async function getSocket(): Promise<Socket> {
   if (socket?.connected) return socket;
+  if (pendingSocket) return pendingSocket;
 
   const supabase = getSupabaseBrowserClient();
   const { data } = await supabase.auth.getSession();
@@ -70,15 +73,17 @@ export async function getSocket(): Promise<Socket> {
     logger.warn(`Disconnected: ${reason}`);
   });
 
-  return new Promise((resolve, reject) => {
+  pendingSocket = new Promise<Socket>((resolve, reject) => {
     const onConnect = () => {
       socket!.off("connect", onConnect);
       socket!.off("connect_error", onError);
+      pendingSocket = null;
       resolve(socket!);
     };
     const onError = (err: Error) => {
       socket!.off("connect", onConnect);
       socket!.off("connect_error", onError);
+      pendingSocket = null;
       reject(new Error(err.message));
     };
     socket!.on("connect", onConnect);
@@ -86,9 +91,12 @@ export async function getSocket(): Promise<Socket> {
     setTimeout(() => {
       socket!.off("connect", onConnect);
       socket!.off("connect_error", onError);
+      pendingSocket = null;
       reject(new Error("Connection timeout"));
     }, CONNECTION_TIMEOUT);
   });
+
+  return pendingSocket;
 }
 
 export function onReconnect(callback: () => void) {
