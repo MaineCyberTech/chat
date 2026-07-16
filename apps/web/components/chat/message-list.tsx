@@ -454,8 +454,12 @@ export function MessageList({
     didInitialScrollRef.current = true;
 
     const lastIdx = messagesWithMeta.length - 1;
+    const scrollToEnd = () => virtualizer.scrollToIndex(lastIdx, { align: "end" });
+    // First scroll uses estimated sizes. Second scroll after measureElement
+    // runs, so the actual measured height is used for precise alignment.
     requestAnimationFrame(() => {
-      virtualizer.scrollToIndex(lastIdx, { align: "end" });
+      scrollToEnd();
+      requestAnimationFrame(scrollToEnd);
     });
   }, [messagesWithMeta.length, channelChanged]);
 
