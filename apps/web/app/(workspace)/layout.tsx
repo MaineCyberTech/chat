@@ -244,20 +244,18 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       className="app__body"
       style={{
         flex: 1,
-        display: "grid",
-        gridTemplateRows: "1fr",
+        display: "flex",
+        flexDirection: "column",
         background: "var(--sidebar-bg)",
         minHeight: 0,
       }}
     >
-      {/* Single grid child gets definite 1fr height */}
-      <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <RouteLoadingIndicator />
+      <RouteLoadingIndicator />
 
-        <AnnouncementBanner />
+      <AnnouncementBanner />
 
-        {/* Flex row for sidebar + content */}
-        <div style={{ display: "flex", overflow: "clip", minHeight: 0, flex: 1 }}>
+      {/* Flex row for sidebar + content */}
+      <div style={{ display: "flex", overflow: "clip", minHeight: 0, flex: 1 }}>
         {/* Mobile header */}
         <div
           id="global-header"
@@ -349,7 +347,6 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            height: "100%",
           }}
         >
           <ErrorBoundary>{children}</ErrorBoundary>
@@ -444,6 +441,5 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
 
       <OnboardingTour />
     </div>
-  </div>
   );
 }
