@@ -928,8 +928,8 @@ export function ChatView({
           </div>
         )}
 
-        {/* Message area - grid with post list and input */}
-        <div className="min-h-0 flex-1 overflow-hidden" style={{ display: "grid", gridTemplateRows: "1fr auto" }}>
+        {/* Message area */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <MessageList
             channelId={channelId}
             messages={
