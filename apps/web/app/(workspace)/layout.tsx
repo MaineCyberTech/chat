@@ -349,6 +349,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
+            height: "100%",
           }}
         >
           <ErrorBoundary>{children}</ErrorBoundary>
