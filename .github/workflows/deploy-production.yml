@@ -224,6 +224,7 @@ jobs:
             git fetch origin main
             git checkout main
             git reset --hard origin/main
+            set +x
             cat > infra/docker/.env << 'EOF'
             SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
@@ -248,6 +249,7 @@ jobs:
             echo "${{ secrets.CF_ORIGIN_CERT }}" > "$CERT_DIR/fullchain.pem"
             echo "${{ secrets.CF_ORIGIN_KEY }}" > "$CERT_DIR/privkey.pem"
             chmod 600 "$CERT_DIR/privkey.pem"
+            set -x
             mkdir -p /opt/chat/caddy-data /opt/chat/caddy-config
 
       - name: Deploy containers
@@ -259,7 +261,13 @@ jobs:
           passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
           script: |
             cd ${{ env.REPO_DIR }}
+
+            exec 200>/tmp/chat-deploy.lock
+            flock -n 200 || { echo "Deploy already in progress (locked by /tmp/chat-deploy.lock)"; exit 1; }
+
+            set +x
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            set -x
 
             # Aggressive disk cleanup before pulling
             echo "=== Disk usage before cleanup ==="
@@ -277,20 +285,23 @@ jobs:
             echo "=== Disk usage after cleanup ==="
             df -h /
 
-            # Pull images with retries
+            COMMIT_SHA=${{ github.sha }}
+
             for img in api worker web; do
               for attempt in 1 2 3; do
-                if docker pull ghcr.io/${{ env.REPO_LC }}/$img:latest; then
-                  echo "Successfully pulled $img:latest"
+                if docker pull ghcr.io/${{ env.REPO_LC }}/$img:$COMMIT_SHA; then
+                  docker tag ghcr.io/${{ env.REPO_LC }}/$img:$COMMIT_SHA ghcr.io/${{ env.REPO_LC }}/$img:latest
+                  echo "Successfully pulled $img:$COMMIT_SHA"
                   break
                 fi
-                echo "Attempt $attempt failed for $img:latest, retrying in 5s..."
+                echo "Attempt $attempt failed for $img:$COMMIT_SHA, retrying in 5s..."
                 sleep 5
               done
             done
 
             docker compose -f infra/docker/docker-compose.prod.yml up -d --force-recreate --remove-orphans
             docker image prune -af
+            flock -u 200
 
       - name: Health check
         run: |
@@ -328,7 +339,9 @@ jobs:
           passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
           script: |
             cd ${{ env.REPO_DIR }}
+            set +x
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            set -x
 
             # Aggressive disk cleanup before pulling
             echo "=== Disk usage before cleanup ==="

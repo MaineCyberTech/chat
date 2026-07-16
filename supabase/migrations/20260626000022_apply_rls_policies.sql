@@ -79,7 +79,16 @@ end $$;
 
 -- Reactions
 do $$ begin
-  create policy "reactions_select" on public.reactions for select using (true);
+  create policy "reactions_select" on public.reactions for select using (
+    exists (
+      select 1 from public.messages
+      where id = message_id
+        and channel_id in (
+          select channel_id from public.channel_members
+          where user_id = auth.uid()
+        )
+    )
+  );
 exception when duplicate_object then null;
 end $$;
 do $$ begin

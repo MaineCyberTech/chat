@@ -335,27 +335,7 @@
     "durationToday": "Until end of day",
     "durationWeek": "This week"
   },
-  "admin": {
-    "title": "System Console",
-    "overview": "Overview",
-    "security": "Security",
-    "siteConfig": "Site Configuration",
-    "users": "Users",
-    "channels": "Channels",
-    "workspaces": "Workspaces",
-    "webhooks": "Webhooks",
-    "auditLog": "Audit Log",
-    "importExport": "Import/Export",
-    "systemInfo": "System Info",
-    "logs": "Logs",
-    "totalUsers": "Total Users",
-    "totalWorkspaces": "Total Workspaces",
-    "totalChannels": "Total Channels",
-    "totalMessages": "Total Messages",
-    "export": "Export",
-    "import": "Import",
-    "selectFormat": "Select format"
-  },
+
   "workspace": {
     "title": "Workspaces",
     "createWorkspace": "Create workspace",
@@ -570,7 +550,8 @@
     "action": "Action:",
     "from": "From:",
     "to": "To:",
-    "filterByAction": "Filter by action..."
+    "filterByAction": "Filter by action...",
+     "toggleMenu": "Toggle menu"
   },
   "formatting": {
     "bold": "Bold",

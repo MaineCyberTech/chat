@@ -187,19 +187,19 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
           <div className="space-y-1" role="tabpanel" id="tabpanel-pins">
             {pinnedMessages.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-3">
-                <EmptyState description="No pinned messages yet" className="py-3" />
+                <EmptyState description={t("channel.noPinnedMessages")} className="py-3" />
                 <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
-                  Pin a message from its context menu
+                  {t("channel.pinFromContextMenu")}
                 </p>
                 {workspaceId && (
                   <Button
                     variant="secondary"
                     size="sm"
                     onClick={() => setShowInviteModal(true)}
-                    aria-label="Invite members"
+                    aria-label={t("channel.inviteMembers")}
                   >
                     <UserPlus size={14} className="mr-1" />
-                    Invite members
+                    {t("channel.inviteMembers")}
                   </Button>
                 )}
               </div>

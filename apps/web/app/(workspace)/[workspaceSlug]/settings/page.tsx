@@ -53,9 +53,9 @@ export default function SettingsPage() {
   const [autoResponderEnabled, setAutoResponderEnabled] = useState(false);
   const [autoResponderMessage, setAutoResponderMessage] = useState("");
   const [autoResponderSaving, setAutoResponderSaving] = useState(false);
-  const resetDialogRef = useRef<HTMLDivElement>(null);
-  const deleteDialogRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const resetDialogRef = useRef<HTMLDivElement>(null!);
+  const deleteDialogRef = useRef<HTMLDivElement>(null!);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   async function handleResetPreferences() {
     setResetting(true);

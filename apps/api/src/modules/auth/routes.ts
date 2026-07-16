@@ -222,16 +222,49 @@ router.get(
     const supabase = getSupabaseAdmin();
     const userId = req.userId!;
 
-    // Collect all user data
-    const [profile, workspaces, messages, notifications, preferences, pushSubscriptions] =
-      await Promise.all([
-        supabase.from("users").select("*").eq("id", userId).single(),
-        supabase.from("workspace_members").select("*, workspaces(*)").eq("user_id", userId),
-        supabase.from("messages").select("*").eq("user_id", userId),
-        supabase.from("notifications").select("*").eq("user_id", userId),
-        supabase.from("user_preferences").select("*").eq("user_id", userId).single(),
-        supabase.from("push_subscriptions").select("*").eq("user_id", userId),
-      ]);
+    const [
+      profile,
+      workspaces,
+      messages,
+      notifications,
+      preferences,
+      pushSubscriptions,
+      reactions,
+      consentLogs,
+      channelMemberships,
+      bookmarks,
+      messageFlags,
+      editHistory,
+      scheduledPosts,
+      reminders,
+      statuses,
+      presence,
+      triggerWords,
+      autoResponders,
+      sidebarCategories,
+      sidebarAssignments,
+    ] = await Promise.all([
+      supabase.from("users").select("*").eq("id", userId).single(),
+      supabase.from("workspace_members").select("*, workspaces(*)").eq("user_id", userId),
+      supabase.from("messages").select("*").eq("user_id", userId),
+      supabase.from("notifications").select("*").eq("user_id", userId),
+      supabase.from("user_preferences").select("*").eq("user_id", userId).single(),
+      supabase.from("push_subscriptions").select("*").eq("user_id", userId),
+      supabase.from("reactions").select("*").eq("user_id", userId),
+      supabase.from("consent_logs").select("*").eq("user_id", userId),
+      supabase.from("channel_members").select("*, channels!inner(name, workspace_id)").eq("user_id", userId),
+      supabase.from("channel_bookmarks").select("*").eq("created_by", userId),
+      supabase.from("message_flags").select("*").eq("user_id", userId),
+      supabase.from("message_edit_history").select("*").eq("edited_by", userId),
+      supabase.from("scheduled_posts").select("*").eq("user_id", userId),
+      supabase.from("message_reminders").select("*").eq("user_id", userId),
+      supabase.from("user_statuses").select("*").eq("user_id", userId),
+      supabase.from("user_presence").select("*").eq("user_id", userId),
+      supabase.from("trigger_words").select("*").eq("user_id", userId),
+      supabase.from("auto_responders").select("*").eq("user_id", userId),
+      supabase.from("sidebar_categories").select("*").eq("user_id", userId),
+      supabase.from("sidebar_channel_assignments").select("*, sidebar_categories!inner(name)").eq("user_id", userId),
+    ]);
 
     const exportData = {
       exported_at: new Date().toISOString(),
@@ -241,6 +274,20 @@ router.get(
       notifications: notifications.data ?? [],
       preferences: preferences.data,
       push_subscriptions: pushSubscriptions.data ?? [],
+      reactions: reactions.data ?? [],
+      consent_logs: consentLogs.data ?? [],
+      channel_memberships: channelMemberships.data ?? [],
+      channel_bookmarks: bookmarks.data ?? [],
+      message_flags: messageFlags.data ?? [],
+      message_edit_history: editHistory.data ?? [],
+      scheduled_posts: scheduledPosts.data ?? [],
+      message_reminders: reminders.data ?? [],
+      user_statuses: statuses.data ?? [],
+      user_presence: presence.data ?? [],
+      trigger_words: triggerWords.data ?? [],
+      auto_responders: autoResponders.data ?? [],
+      sidebar_categories: sidebarCategories.data ?? [],
+      sidebar_channel_assignments: sidebarAssignments.data ?? [],
     };
 
     res.setHeader("Content-Type", "application/json");

@@ -1,20 +1,13 @@
 import { Worker, Job, Queue } from "bullmq";
-import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
+import { createSupabaseClient } from "../lib/supabase.js";
 
 export interface ComplianceExportJobData {
   type: "messages" | "audit_logs" | "channels" | "users";
   dateFrom: string;
   dateTo: string;
   exportId: string;
-}
-
-function createSupabaseClient() {
-  const env = loadEnv();
-  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-  });
 }
 
 function escapeCsv(v: unknown): string {

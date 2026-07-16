@@ -1,73 +1,62 @@
 {
-    # Production Caddyfile
-    {
-        admin off
-        http_port 80
-        https_port 443
+    admin off
+    http_port 80
+    https_port 443
+}
+
+chat.mainecybertech.com {
+    tls /certs/cf-origin.pem /certs/cf-origin-key.pem
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
     }
 
-    chat.mainecybertech.com {
-        # TLS via Cloudflare origin certs
-        tls /certs/cf-origin.pem /certs/cf-origin-key.pem
+    @static {
+        path /_next/static/*
+        path /static/*
+        path /manifest.json
+        path /sw.js
+    }
+    handle @static {
+        header Cache-Control "public, max-age=31536000, immutable"
+        root * /var/www/web
+        file_server
+    }
 
-        # Security headers
-        header {
-            Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-            X-Content-Type-Options "nosniff"
-            X-Frame-Options "DENY"
-            Referrer-Policy "strict-origin-when-cross-origin"
-            Permissions-Policy "camera=(), microphone=(), geolocation=()"
-        }
+    @api {
+        path /v1/*
+    }
+    handle @api {
+        reverse_proxy api:4000
+    }
 
-        # Static assets with caching
-        @static {
-            path /_next/static/*
-            path /static/*
-            path /manifest.json
-            path /sw.js
-        }
-        handle @static {
-            header Cache-Control "public, max-age=31536000, immutable"
-            root * /var/www/web
-            file_server
-        }
+    @health {
+        path /health /healthz
+    }
+    handle @health {
+        reverse_proxy api:4000
+    }
 
-        # API routes -> API container (includes /v1/socket.io for WebSocket)
-        @api {
-            path /v1/*
-        }
-        handle @api {
-            reverse_proxy api:4000
-        }
+    @livekit_ws {
+        path /v1/livekit/*
+        header Connection *Upgrade*
+    }
+    handle @livekit_ws {
+        reverse_proxy livekit:7880
+    }
 
-        # Health check + CSRF cookie init
-        @health {
-            path /health /healthz
-        }
-        handle @health {
-            reverse_proxy api:4000
-        }
+    @livekit {
+        path /v1/livekit/*
+    }
+    handle @livekit {
+        reverse_proxy livekit:7880
+    }
 
-        # LiveKit WebSocket signaling
-        @livekit_ws {
-            path /v1/livekit/*
-            header Connection *Upgrade*
-        }
-        handle @livekit_ws {
-            reverse_proxy livekit:7880
-        }
-
-        # LiveKit HTTP signaling
-        @livekit {
-            path /v1/livekit/*
-        }
-        handle @livekit {
-            reverse_proxy livekit:7880
-        }
-
-        # Next.js app
-        handle {
-            reverse_proxy web:3000
-        }
+    handle {
+        reverse_proxy web:3000
     }
 }

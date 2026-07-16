@@ -1,5 +1,6 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
+import { requireAdmin } from "../../middleware/require-admin.js";
 import { validateStringKeyParam } from "../../middleware/validate-string-key.js";
 import { featureFlagService } from "../../lib/feature-flags.js";
 import { z } from "zod";
@@ -58,6 +59,7 @@ router.get(
 
 router.post(
   "/feature-flags",
+  requireAdmin,
   asyncHandler(async (req, res) => {
     const parsed = createFlagSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -76,6 +78,7 @@ router.post(
 
 router.patch(
   "/feature-flags/:key",
+  requireAdmin,
   validateStringKeyParam("key"),
   asyncHandler(async (req, res) => {
     const parsed = updateFlagSchema.safeParse(req.body);
@@ -92,6 +95,7 @@ router.patch(
 
 router.delete(
   "/feature-flags/:key",
+  requireAdmin,
   validateStringKeyParam("key"),
   asyncHandler(async (req, res) => {
     const deleted = await featureFlagService.deleteFlag(req.params.key as string);

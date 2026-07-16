@@ -63,7 +63,7 @@ export function setLocale(locale: Locale) {
     return;
   }
   currentLocale = locale;
-  currentMessages = locales[locale];
+  currentMessages = locales[locale] as Messages;
 }
 
 export function getLocale(): string {

@@ -33,6 +33,9 @@ export interface RouteEndpoint {
   description: string;
 }
 
+// API versioning strategy: All production routes are mounted under /v1/ prefix.
+// The health endpoint at / is a legacy exception for load balancer checks.
+// Future breaking changes will increment the version (e.g., /v2/).
 export interface RouteEntry {
   path: string;
   router: Router;

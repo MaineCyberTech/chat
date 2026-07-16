@@ -1,7 +1,7 @@
 import { Worker, Job, Queue } from "bullmq";
-import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
+import { createSupabaseClient } from "../lib/supabase.js";
 
 export interface SearchIndexingJobData {
   type: "message_created" | "message_updated" | "message_deleted";
@@ -9,13 +9,6 @@ export interface SearchIndexingJobData {
   workspaceId: string;
   channelId: string;
   content?: string;
-}
-
-function createSupabaseClient() {
-  const env = loadEnv();
-  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-  });
 }
 
 export const searchQueue = new Queue<SearchIndexingJobData>("search-indexing", {

@@ -96,6 +96,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@chat/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@chat/db':
         specifier: workspace:*
         version: link:../../packages/db

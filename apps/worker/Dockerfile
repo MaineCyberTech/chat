@@ -27,6 +27,9 @@ COPY --from=base /app/packages/config ./packages/config
 
 RUN pnpm install --frozen-lockfile --filter ./apps/worker --prod --ignore-scripts
 
+RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 appuser
+USER appuser
+
 EXPOSE 4001
 
 CMD ["node", "apps/worker/dist/main.js"]

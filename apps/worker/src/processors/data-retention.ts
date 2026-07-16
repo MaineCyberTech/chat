@@ -1,7 +1,7 @@
 import { Worker, Job, Queue } from "bullmq";
-import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
+import { createSupabaseClient } from "../lib/supabase.js";
 
 export interface DataRetentionJobData {
   type:
@@ -12,13 +12,6 @@ export interface DataRetentionJobData {
     | "soft_deleted_channels"
     | "soft_deleted_workspaces";
   olderThanDays?: number;
-}
-
-function createSupabaseClient() {
-  const env = loadEnv();
-  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-  });
 }
 
 export const dataRetentionQueue = new Queue<DataRetentionJobData>("data-retention", {

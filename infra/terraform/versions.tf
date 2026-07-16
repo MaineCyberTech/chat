@@ -4,6 +4,7 @@ terraform {
   backend "s3" {
     bucket                      = "chat-terraform-state"
     key                         = "infra/terraform.tfstate"
+    endpoint                    = "https://sfo3.digitaloceanspaces.com"
     region                      = "us-east-1"
     skip_credentials_validation = true
     skip_metadata_api_check     = true

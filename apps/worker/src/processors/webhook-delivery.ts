@@ -1,7 +1,7 @@
 import { Worker, Job, Queue } from "bullmq";
-import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
+import { createSupabaseClient, supabaseQuery } from "../lib/supabase.js";
 import { randomUUID } from "node:crypto";
 
 export interface WebhookDeliveryJobData {
@@ -63,13 +63,6 @@ async function validateWebhookUrl(url: string): Promise<{ valid: boolean; error?
   } catch {
     return { valid: false, error: "Invalid webhook URL" };
   }
-}
-
-function createSupabaseClient() {
-  const env = loadEnv();
-  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-  });
 }
 
 export const webhookQueue = new Queue<WebhookDeliveryJobData>("webhook-delivery", {

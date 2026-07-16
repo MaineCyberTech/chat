@@ -282,7 +282,6 @@ jobs:
     name: Test Database Migrations
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    continue-on-error: true
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -425,6 +424,5 @@ jobs:
         continue-on-error: true
         run: supabase db execute --file supabase/seeds/seed.sql
       - name: Run E2E tests
-        continue-on-error: true
         timeout-minutes: 5
-        run: pnpm test:e2e 2>&1 || echo "E2E tests failed (non-blocking)"
+        run: pnpm test:e2e 2>&1

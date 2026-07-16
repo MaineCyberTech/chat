@@ -1,6 +1,6 @@
 import React from "react";
 
-interface ToggleRowProps {
+export interface ToggleRowProps {
   label: string;
   description?: string;
   checked: boolean;

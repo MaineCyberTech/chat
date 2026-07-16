@@ -57,7 +57,7 @@ export function createApp(frontendUrl: string): Express {
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
+        if (!origin) return callback(new Error("Not allowed by CORS"));
         if (origin === frontendUrl) return callback(null, true);
         callback(new Error("Not allowed by CORS"));
       },

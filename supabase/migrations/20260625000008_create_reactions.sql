@@ -11,7 +11,16 @@ ALTER TABLE public.reactions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "reactions_select"
   ON public.reactions FOR SELECT
-  USING (true);
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.messages
+      WHERE id = message_id
+        AND channel_id IN (
+          SELECT channel_id FROM public.channel_members
+          WHERE user_id = auth.uid()
+        )
+    )
+  );
 
 CREATE POLICY "reactions_insert_own"
   ON public.reactions FOR INSERT

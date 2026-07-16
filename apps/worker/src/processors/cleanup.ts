@@ -1,7 +1,7 @@
 import { Worker, Job, Queue } from "bullmq";
-import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
+import { createSupabaseClient } from "../lib/supabase.js";
 
 export interface CleanupJobData {
   type:
@@ -12,13 +12,6 @@ export interface CleanupJobData {
     | "expired_uploads"
     | "message_edit_history";
   olderThanDays?: number;
-}
-
-function createSupabaseClient() {
-  const env = loadEnv();
-  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-  });
 }
 
 export const cleanupQueue = new Queue<CleanupJobData>("cleanup", {

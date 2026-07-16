@@ -7,12 +7,11 @@ import {
 } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
-import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
 import { webhookService } from "./service.js";
 import { validateWebhookUrl } from "./service.js";
 import { logAuditEvent } from "../../services/audit.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
+import { BadRequestError, NotFoundError, InternalServerError, ForbiddenError } from "../../lib/app-error.js";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parsePaginationParams } from "../../lib/pagination.js";
@@ -47,6 +46,24 @@ const updateWebhookSchema = z.object({
   events: z.array(z.string()).min(1).optional(),
   is_active: z.boolean().optional(),
 });
+
+async function requireWorkspaceAccess(workspaceId: string, req: Request): Promise<void> {
+  const supabase = (req as unknown as { supabase?: SupabaseClient }).supabase;
+  const userId = req.userId;
+  if (!supabase || !userId) {
+    throw new ForbiddenError("Auth context missing");
+  }
+  const { data, error } = await supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .single();
+  if (error || !data) {
+    throw new ForbiddenError("Not a member of this workspace");
+  }
+  (req as unknown as { workspaceRole?: string }).workspaceRole = data.role;
+}
 
 function requireWorkspaceQueryParam(req: Request, res: Response, next: NextFunction) {
   const workspaceId = req.query.workspace_id as string | undefined;
@@ -128,12 +145,12 @@ router.get(
 router.get(
   "/webhooks/:id",
   validateUuidParam("id"),
-  requireWorkspaceMembership("id"),
   asyncHandler(async (req, res) => {
     const webhook = await webhookService.getById(req.params.id as string);
     if (!webhook) {
       throw new NotFoundError("Webhook not found");
     }
+    await requireWorkspaceAccess(webhook.workspace_id, req);
     const masked = {
       ...webhook,
       secret: webhook.secret ? "••••••••" : "",
@@ -144,12 +161,12 @@ router.get(
 
 router.post(
   "/webhooks",
-  requireWorkspaceMembership("workspace_id"),
   asyncHandler(async (req, res) => {
     const parsed = createWebhookSchema.safeParse(req.body);
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.issues[0].message);
     }
+    await requireWorkspaceAccess(parsed.data.workspace_id, req);
 
     // SSRF protection: validate webhook URL
     const urlValidation = await validateWebhookUrl(parsed.data.url);
@@ -182,12 +199,17 @@ router.post(
 router.patch(
   "/webhooks/:id",
   validateUuidParam("id"),
-  requireWorkspaceMembership("id"),
   asyncHandler(async (req, res) => {
     const parsed = updateWebhookSchema.safeParse(req.body);
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.issues[0].message);
     }
+
+    const existing = await webhookService.getById(req.params.id as string);
+    if (!existing) {
+      throw new NotFoundError("Webhook not found");
+    }
+    await requireWorkspaceAccess(existing.workspace_id, req);
 
     // SSRF protection: validate webhook URL if provided
     if (parsed.data.url) {
@@ -219,12 +241,12 @@ router.patch(
 router.delete(
   "/webhooks/:id",
   validateUuidParam("id"),
-  requireWorkspaceMembership("id"),
   asyncHandler(async (req, res) => {
     const webhook = await webhookService.getById(req.params.id as string);
     if (!webhook) {
       throw new NotFoundError("Webhook not found");
     }
+    await requireWorkspaceAccess(webhook.workspace_id, req);
     logAuditEvent({
       actorUserId: req.userId,
       action: "webhook.delete",

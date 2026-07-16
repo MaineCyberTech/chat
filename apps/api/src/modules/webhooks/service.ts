@@ -188,7 +188,7 @@ export class WebhookService {
   }): Promise<WebhookEndpoint | null> {
     const validation = validateSecret(input.secret);
     if (!validation.valid) {
-      logger.error("webhook create failed — invalid secret", { error: validation.error });
+      logger.error("webhook create failed", { error: "invalid secret" });
       throw new Error(validation.error);
     }
 
@@ -208,7 +208,7 @@ export class WebhookService {
       .select("*")
       .single();
     if (error) {
-      logger.error("webhook create failed", { error });
+      logger.error("webhook create failed", { error: error.message });
       return null;
     }
     return data as WebhookEndpoint;
