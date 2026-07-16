@@ -690,7 +690,7 @@ export function ChatView({
 
   return (
     <div
-      className="flex min-h-0 flex-1"
+      className="flex h-full"
       id="channel_view"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
