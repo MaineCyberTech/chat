@@ -4,7 +4,7 @@ import { requireMessageAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { reactionService } from "./service.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
+import { BadRequestError, NotFoundError, ForbiddenError, InternalServerError } from "../../lib/app-error.js";
 import { getIO } from "../../lib/socket.js";
 
 const router: RouterType = Router();
@@ -35,6 +35,51 @@ router.get(
     if (ids.length > 100) {
       throw new BadRequestError("Maximum 100 message IDs");
     }
+
+    // Verify user has access to all requested messages' channels
+    const { data: messages } = await req
+      .supabase!.from("messages")
+      .select("id, channel_id")
+      .in("id", ids);
+
+    const accessibleIds = new Set((messages ?? []).map((m: { id: string }) => m.id));
+    const missing = ids.filter((id) => !accessibleIds.has(id));
+    if (missing.length > 0) {
+      throw new NotFoundError("Some messages not found");
+    }
+
+    const channelIds = [
+      ...new Set((messages ?? []).map((m: { channel_id: string }) => m.channel_id)),
+    ];
+    const { data: channels } = await req
+      .supabase!.from("channels")
+      .select("id, workspace_id, is_private")
+      .in("id", channelIds);
+
+    for (const ch of channels ?? []) {
+      const channel = ch as { id: string; workspace_id: string; is_private: boolean };
+      const { data: member } = await req
+        .supabase!.from("workspace_members")
+        .select("role")
+        .eq("workspace_id", channel.workspace_id)
+        .eq("user_id", req.userId)
+        .single();
+      if (!member) {
+        throw new ForbiddenError("Not a member of this workspace");
+      }
+      if (channel.is_private) {
+        const { data: channelMember } = await req
+          .supabase!.from("channel_members")
+          .select("user_id")
+          .eq("channel_id", channel.id)
+          .eq("user_id", req.userId)
+          .single();
+        if (!channelMember) {
+          throw new ForbiddenError("Not a member of this private channel");
+        }
+      }
+    }
+
     const reactions = await reactionService.getByMessages(ids, req.supabase!);
     res.json({ reactions });
   }),

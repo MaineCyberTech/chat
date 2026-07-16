@@ -422,18 +422,18 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               }}
             >
               <p className="mb-1 text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
-                File type suggestions
+                {t("search.fileTypeSuggestions")}
               </p>
               <div className="space-y-0.5">
                 {[
-                  { ext: "has:image", desc: "Images" },
-                  { ext: "has:video", desc: "Videos" },
-                  { ext: "has:audio", desc: "Audio files" },
-                  { ext: "has:file", desc: "Documents" },
-                  { ext: "has:link", desc: "Links" },
-                  { ext: "has:code", desc: "Code snippets" },
-                  { ext: "has:pdf", desc: "PDF documents" },
-                  { ext: "has:spreadsheet", desc: "Spreadsheets" },
+                  { ext: "has:image", desc: t("search.hasImage") },
+                  { ext: "has:video", desc: t("search.hasVideo") },
+                  { ext: "has:audio", desc: t("search.hasAudio") },
+                  { ext: "has:file", desc: t("search.hasDocument") },
+                  { ext: "has:link", desc: t("search.hasLink") },
+                  { ext: "has:code", desc: t("search.hasCode") },
+                  { ext: "has:pdf", desc: t("search.hasPdf") },
+                  { ext: "has:spreadsheet", desc: t("search.hasSpreadsheet") },
                 ]
                   .filter((s) => !hasQuery || s.ext.replace("has:", "").startsWith(hasQuery))
                   .slice(0, 6)
@@ -475,12 +475,12 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               }}
             >
               <p className="mb-1 text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
-                File extension suggestions
+                {t("search.fileExtensionSuggestions")}
               </p>
               <div className="space-y-1">
                 {[
                   {
-                    category: "Documents",
+                    category: t("search.categoryDocuments"),
                     exts: [
                       ".pdf",
                       ".doc",
@@ -494,11 +494,11 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                     ],
                   },
                   {
-                    category: "Images",
+                    category: t("search.categoryImages"),
                     exts: [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp"],
                   },
                   {
-                    category: "Code",
+                    category: t("search.categoryCode"),
                     exts: [
                       ".ts",
                       ".tsx",
@@ -515,7 +515,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                     ],
                   },
                   {
-                    category: "Media",
+                    category: t("search.categoryMedia"),
                     exts: [".mp4", ".mp3", ".wav", ".ogg", ".mov", ".avi"],
                   },
                 ]
@@ -615,13 +615,13 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               }}
             >
               <div className="flex items-center justify-between px-3 py-1.5">
-                <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>Recent searches</span>
+                <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>{t("search.recentSearches")}</span>
                 <button
                   onClick={clearRecentSearches}
                   className="text-xs hover:underline"
                   style={{ color: "var(--text-tertiary)" }}
                 >
-                  Clear all
+                  {t("search.clearAll")}
                 </button>
               </div>
               {recentSearches.map((sq) => (

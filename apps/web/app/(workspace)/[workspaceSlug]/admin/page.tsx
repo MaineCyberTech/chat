@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { EmptyState, Skeleton, useToast } from "@chat/ui";
 import { t } from "@/lib/i18n";
+import { PaginationBar } from "@/components/shared/pagination-bar";
 
 import {
   Shield,
@@ -186,31 +187,6 @@ class TabErrorBoundary extends Component<{ children: React.ReactNode; tabName: s
     }
     return this.props.children;
   }
-}
-
-function Pagination({ currentPage, totalPages, onPrev, onNext }: {
-  currentPage: number;
-  totalPages: number;
-  onPrev: () => void;
-  onNext: () => void;
-}) {
-  return (
-    <div className="mt-4 flex items-center justify-between">
-      <button onClick={onPrev} disabled={currentPage <= 1}
-        className="rounded-md px-3 py-1 text-xs transition-colors"
-        style={{ color: currentPage <= 1 ? "var(--text-tertiary)" : "var(--button-bg)" }}>
-        {t("admin.previous", "Previous")}
-      </button>
-      <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-        {t("admin.page", { current: currentPage, total: totalPages })}
-      </span>
-      <button onClick={onNext} disabled={currentPage >= totalPages}
-        className="rounded-md px-3 py-1 text-xs transition-colors"
-        style={{ color: currentPage >= totalPages ? "var(--text-tertiary)" : "var(--button-bg)" }}>
-        {t("admin.next", "Next")}
-      </button>
-    </div>
-  );
 }
 
 function parseCSVLine(line: string): string[] {
@@ -666,7 +642,7 @@ export default function AdminPage() {
           ))}
         </div>
         {userTotal > 20 && (
-          <Pagination
+          <PaginationBar
             currentPage={userPage + 1}
             totalPages={Math.ceil(userTotal / 20)}
             onPrev={() => setUserPage((p) => p - 1)}
@@ -713,7 +689,7 @@ export default function AdminPage() {
           </div>
         ))}
         {channelTotal > 20 && (
-          <Pagination
+          <PaginationBar
             currentPage={channelPage + 1}
             totalPages={Math.ceil(channelTotal / 20)}
             onPrev={() => setChannelPage((p) => p - 1)}
@@ -1241,7 +1217,7 @@ export default function AdminPage() {
           )}
         </div>
         {auditTotal > 50 && (
-          <Pagination
+          <PaginationBar
             currentPage={auditPage + 1}
             totalPages={Math.ceil(auditTotal / 50)}
             onPrev={() => setAuditPage((p) => p - 1)}

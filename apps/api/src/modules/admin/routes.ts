@@ -425,6 +425,11 @@ router.get(
     const admin = getSupabaseAdmin();
     const workspaceId = req.query.workspace_id as string | undefined;
 
+    if (!workspaceId) {
+      res.status(400).json({ error: { code: "BAD_REQUEST", message: "workspace_id query param is required" } });
+      return;
+    }
+
     async function fetchAll(
       query: PromiseLike<{ data: unknown; error: { message: string } | null }>,
     ) {
@@ -435,48 +440,48 @@ router.get(
 
     const exportMeta = {
       exported_at: new Date().toISOString(),
-      workspace_id: workspaceId ?? "all",
+      workspace_id: workspaceId,
       format_version: "1.0",
     };
 
     type ExportTask = { key: string; fn: () => Promise<unknown> };
     const tasks: ExportTask[] = [{ key: "export_meta", fn: async () => exportMeta }];
 
-    if (!workspaceId || workspaceId === "all") {
-      tasks.push({
-        key: "users",
-        fn: () =>
-          fetchAll(admin.from("users").select("*").order("created_at", { ascending: true })),
-      });
-    }
-
     tasks.push(
       {
         key: "workspaces",
         fn: () =>
-          fetchAll(admin.from("workspaces").select("*").order("created_at", { ascending: true })),
+          fetchAll(admin.from("workspaces").select("*").eq("id", workspaceId).order("created_at", { ascending: true })),
       },
       {
         key: "channels",
         fn: () =>
-          fetchAll(admin.from("channels").select("*").order("created_at", { ascending: true })),
+          fetchAll(admin.from("channels").select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: true })),
       },
       {
         key: "messages",
-        fn: () =>
-          fetchAll(
+        fn: async () => {
+          const { data: chIds } = await admin
+            .from("channels")
+            .select("id")
+            .eq("workspace_id", workspaceId);
+          const ids = (chIds ?? []).map((c: { id: string }) => c.id);
+          if (ids.length === 0) return [];
+          return fetchAll(
             admin
               .from("messages")
               .select(
                 "id, channel_id, user_id, content, parent_id, is_pinned, priority, created_at, edited_at, deleted_at",
               )
+              .in("channel_id", ids)
               .order("created_at", { ascending: true }),
-          ),
+          );
+        },
       },
       {
         key: "audit_logs",
         fn: () =>
-          fetchAll(admin.from("audit_logs").select("*").order("created_at", { ascending: true })),
+          fetchAll(admin.from("audit_logs").select("*").eq("organization_id", workspaceId).order("created_at", { ascending: true })),
       },
     );
 

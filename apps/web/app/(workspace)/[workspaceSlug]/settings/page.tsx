@@ -463,12 +463,12 @@ export default function SettingsPage() {
                 color: "var(--center-channel-color)",
               }}
             >
-              <option value="en">English (en)</option>
-              <option value="es">Spanish (es)</option>
-              <option value="fr">French (fr)</option>
-              <option value="de">German (de)</option>
-              <option value="pt-BR">Portuguese (pt-BR)</option>
-              <option value="ja">Japanese (ja)</option>
+              <option value="en">{t("settings.languageEn")} (en)</option>
+              <option value="es">{t("settings.languageEs")} (es)</option>
+              <option value="fr">{t("settings.languageFr")} (fr)</option>
+              <option value="de">{t("settings.languageDe")} (de)</option>
+              <option value="pt-BR">{t("settings.languagePtBr")} (pt-BR)</option>
+              <option value="ja">{t("settings.languageJa")} (ja)</option>
             </select>
           </div>
         </div>

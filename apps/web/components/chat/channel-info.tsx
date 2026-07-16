@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { X, Pin, Users, Bookmark, UserPlus } from "lucide-react";
 import { ChannelBookmarks } from "./channel-bookmarks";
-import { EmptyState, Button } from "@chat/ui";
+import { EmptyState, Button, useToast } from "@chat/ui";
 import { InviteMembersModal } from "@/components/workspace/invite-members-modal";
+import { t } from "@/lib/i18n";
 import type { Message } from "@chat/db";
 
 interface Props {
@@ -28,6 +29,7 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
   const [retryCount, setRetryCount] = useState(0);
   const [tab, setTab] = useState<"pins" | "members" | "bookmarks">(initialTab);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const { addToast } = useToast();
 
   useEffect(() => {
     setLoading(true);
@@ -41,9 +43,10 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
         setMembers(memberRes.members);
       })
       .catch((err) => {
-        setError(err.message || "Failed to load channel info");
+        setError(err.message || t("errors.generic"));
         setPinnedMessages([]);
         setMembers([]);
+        addToast({ title: t("common.error", "Error"), description: err.message || t("errors.generic"), variant: "error" });
       })
       .finally(() => setLoading(false));
   }, [channelId, retryCount]);
@@ -66,9 +69,9 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
         }}
       >
         <h2 className="px-4 text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
-          Channel Info
+          {t("channel.info")}
         </h2>
-        <button onClick={onClose} className="mm-button-icon" aria-label="Close">
+        <button onClick={onClose} className="mm-button-icon" aria-label={t("common.close")}>
           <X size={16} />
         </button>
       </div>
@@ -88,7 +91,7 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
             borderColor: tab === "members" ? "var(--button-bg)" : "transparent",
           }}
         >
-          <Users size={14} className="mr-1 inline" /> Members
+          <Users size={14} className="mr-1 inline" /> {t("channel.members")}
         </button>
         <button
           role="tab"
@@ -101,7 +104,7 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
             borderColor: tab === "pins" ? "var(--button-bg)" : "transparent",
           }}
         >
-          <Pin size={14} className="mr-1 inline" /> Pinned
+          <Pin size={14} className="mr-1 inline" /> {t("channel.pinnedMessages")}
         </button>
         <button
           role="tab"
@@ -114,7 +117,7 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
             borderColor: tab === "bookmarks" ? "var(--button-bg)" : "transparent",
           }}
         >
-          <Bookmark size={14} className="mr-1 inline" /> Bookmarks
+          <Bookmark size={14} className="mr-1 inline" /> {t("channel.bookmarks")}
         </button>
       </div>
       <div
@@ -125,7 +128,7 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
           <div className="flex flex-col items-center justify-center gap-3 p-4 text-center">
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{error}</p>
             <Button variant="secondary" size="sm" onClick={() => setRetryCount((c) => c + 1)}>
-              Retry
+              {t("common.retry")}
             </Button>
           </div>
         ) : loading ? (
@@ -149,25 +152,17 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
           <div className="space-y-0.5" role="tabpanel" id="tabpanel-members">
             {members.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-3">
-                <EmptyState description="No members yet" className="py-3" />
+                <EmptyState description={t("channel.noMembersYet")} className="py-3" />
                 {workspaceId && (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setShowInviteModal(true)}
-                      aria-label="Invite members"
-                    >
-                      <UserPlus size={14} className="mr-1" />
-                      Invite members
-                    </Button>
-                    {showInviteModal && (
-                      <InviteMembersModal
-                        workspaceId={workspaceId}
-                        onClose={() => setShowInviteModal(false)}
-                      />
-                    )}
-                  </>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowInviteModal(true)}
+                    aria-label={t("channel.inviteMembers")}
+                  >
+                    <UserPlus size={14} className="mr-1" />
+                    {t("channel.inviteMembers")}
+                  </Button>
                 )}
               </div>
             ) : (
@@ -191,11 +186,22 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
         ) : (
           <div className="space-y-1" role="tabpanel" id="tabpanel-pins">
             {pinnedMessages.length === 0 ? (
-              <div className="flex flex-col items-center gap-1 py-3">
+              <div className="flex flex-col items-center gap-2 py-3">
                 <EmptyState description="No pinned messages yet" className="py-3" />
                 <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
                   Pin a message from its context menu
                 </p>
+                {workspaceId && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowInviteModal(true)}
+                    aria-label="Invite members"
+                  >
+                    <UserPlus size={14} className="mr-1" />
+                    Invite members
+                  </Button>
+                )}
               </div>
             ) : (
               pinnedMessages.map((msg) => (
@@ -219,6 +225,12 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
           </div>
         )}
       </div>
+      {showInviteModal && workspaceId && (
+        <InviteMembersModal
+          workspaceId={workspaceId}
+          onClose={() => setShowInviteModal(false)}
+        />
+      )}
     </div>
   );
 }
