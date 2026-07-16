@@ -142,10 +142,10 @@ All features from the Mattermost comparative audit (July 4, 2026) have been impl
 - **Auth**: Magic link auth, per-request Supabase client, workspace creation RLS, user profiles auto-creation
 - **Messages**: Optimistic locking, pinning, flagging, edit history, threaded conversations, permalinks, search with pagination and filters, forwarding, mention notifications, reaction tooltips
 - **Channels**: DM/GM channels, read-only channels, channel mute, channel bookmarks, channel info sidebar, member count
-- **Sidebar**: Categories, drag-and-drop reorder, unread filter, type icons (public/private/DM/GM), status pills on DMs
-- **UI/UX**: CSS Grid workspace layout, adaptive bottom nav, viewport height recalc, inline media preview, user profile popover, floating timestamps, syntax-highlighted code blocks, rich text editor, emoji picker (600+), slash commands with autocomplete, markdown formatting toolbar, paste image from clipboard, context menus, action buttons always visible on mobile
+- **Sidebar**: Categories, drag-and-drop reorder, unread filter, type icons (public/private/DM/GM), status pills on DMs, **workspace collapse toggle** (localStorage-persisted `sidebar:ws-expanded` key)
+- **UI/UX**: Flexbox workspace layout, adaptive bottom nav, viewport height recalc, inline media preview, user profile popover, floating timestamps, syntax-highlighted code blocks, rich text editor, emoji picker (600+), slash commands with autocomplete, markdown formatting toolbar, paste image from clipboard, context menus, action buttons always visible on mobile
 - **Real-time**: Socket.io with Redis adapter (dev remote/prod), user presence (online/away/dnd), per-event auth
-- **Worker**: 6 BullMQ processors — webhook-delivery (HMAC + SSRF + circuit breaker + DLQ), notification (in-app + push VAPID + email), search-indexer (async tsvector), cleanup (old deliveries + dead letters + consent logs), data-retention (messages/audit/consent logs/channels/workspaces), reminder (due reminders polling)
+- **Worker**: 6 BullMQ processors — webhook-delivery (HMAC + SSRF + circuit breaker + DLQ), notification (in-app + push VAPID + email Nodemailer), search-indexer (async tsvector), cleanup (old deliveries + dead letters + consent logs), data-retention (messages/audit/consent logs/channels/workspaces), reminder (due reminders polling)
 - **Infra**: RBAC (18 permissions × 3 roles), audit API, store abstraction layer, BFF layer, LiveKit WebRTC, per-channel notification preferences, custom user status, settings page
 - **CI/CD**: 19 GitHub Actions workflows, E2E tests, diff coverage, pre-commit hook, dependabot, SBOM generation, image vulnerability scanning
 - **Security**: All CSP/HSTS/metrics auth/SECURITY DEFINER/CSRF/rate limiter/query timeout/resilience hardening items resolved
@@ -200,6 +200,88 @@ Full audit pipeline executed across 8 batches (58 prompts, 624 initial findings)
 
 - **Cloudflare 521**: Cloudflare can't reach the origin server. Terraform firewall rules applied but 521 persists. May need Cloudflare SSL/TLS set to Full (Strict) + origin certificate.
 - **`hardening/` data store**: Still disconnected from `engine/full_engine.ps1` which reads stale `docs/audits/latest/findings.json`.
+
+### Message List Scroll Architecture (July 9, 2026)
+
+Critical layout architecture for `@tanstack/react-virtual` message list. All future edits to `message-list.tsx` and `chat-view.tsx` must preserve these constraints.
+
+#### Flex Height Chain (must resolve from body → scroll container)
+
+```
+body                    height: calc(var(--vh, 1vh) * 100)          ← root height anchor
+main                    flex: 1; min-height: 0; flex-col
+  .app__body            flex: 1; min-height: 0; display: flex        ← NOT CSS Grid (grid broke layout)
+    .app__row           display: flex; overflow: clip; min-height: 0; flex: 1
+      .app__content     flex: 1; min-height: 0; display: flex; flex-col; overflow: hidden
+        #channel_view    flex min-h-0 flex-1                          ← LOADING state: flex h-full; MAIN: flex min-h-0 flex-1
+          chat column   flex min-w-0 flex-1 flex-col
+            message area flex min-h-0 flex-1 flex-col overflow: hidden
+              #post-list  overflow: auto; flex: 1; min-height: 0; position: relative; padding: 14px 0 7px
+                AutoSizer   height passed as prop to inner div
+                  inner div  position: relative; min-height: 100%
+                    virtual rows  position: absolute; top: Xpx; transform: none; measured via measureElement
+```
+
+**Every element** in this chain needs `flex: 1` AND `min-height: 0`. Removing either one or using CSS Grid anywhere in the chain breaks the scroll container's ability to calculate its available height. The scroll container (`#post-list`) must NOT have a fixed height — it gets its height from `flex: 1` resolving against the bounded parent.
+
+#### Critical Anti-Patterns (learned the hard way)
+
+| Anti-Pattern | Why It Breaks | Reference |
+|---|---|---|
+| **Swapped className on `#channel_view`** | Loading state must be `flex h-full`, main state must be `flex min-h-0 flex-1`. Swapping these collapses the message area or causes infinite growth. | `chat-view.tsx` |
+| **CSS Grid for message area** | `display: grid; gridTemplateRows: "1fr auto"` breaks both scrolling and message display. Grid creates implicit row constraints that fight `flex: 1`. | `chat-view.tsx` |
+| **`.app__body` as CSS Grid** | `display: grid; gridTemplateRows: "1fr"` prevents sidebar from having a constrained height. Must be `display: flex; flex-direction: column`. | `layout.tsx` |
+| **`overflow: hidden` on `[role="log"]`** | Kills scroll on mobile. Only `overflow: auto` or `overflow: clip` works on the scroll container. | `globals.css` mobile media query |
+| **`el.scrollTop = el.scrollHeight` for initial scroll** | Only scrolls to top of last message, not bottom. Use `virtualizer.scrollToIndex(lastIdx, { align: "end" })` which accounts for measured item heights. | `message-list.tsx` |
+| **Fixed `height` on `.mm-post`** | Prevents `measureElement` from reading true content height. Message items must NOT have a fixed height — use `min-height` only. | `message-item.tsx` |
+| **`height: virtualRow.size` on measured rows** | Overwrites the measured height with the estimated height. For `measureElement` mode, do NOT set height on the virtual row div. | `message-list.tsx` |
+
+#### Virtual List Configuration
+
+```typescript
+const virtualizer = useVirtualizer({
+  count: messagesWithMeta.length,
+  getScrollElement: () => listRef.current,
+  estimateSize: () => estimatedItemHeight,  // dynamic based on message metadata
+  overscan: 8,
+  getItemKey: (i) => messagesWithMeta[i].id,  // stable keys for prepend
+  measureElement,  // reads true DOM height after render
+});
+```
+
+#### Initial Scroll Strategy
+
+```typescript
+// scrollToIndex with align: "end" handles measured heights correctly
+const lastIdx = messagesWithMeta.length - 1;
+requestAnimationFrame(() => {
+  virtualizer.scrollToIndex(lastIdx, { align: "end" });
+});
+```
+
+Do NOT use `el.scrollTop = el.scrollHeight` — it only reaches the top of the last message, not the bottom.
+
+#### Scroll Restore Strategy (for prepend / pagination)
+
+```typescript
+scrollRestoreRef.current = {
+  prevScrollTop: el.scrollTop,
+  prevScrollHeight: el.scrollHeight,
+};
+// After prepend, restore relative position:
+el.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+```
+
+#### Key Files
+
+| File | Role |
+|---|---|
+| `apps/web/components/chat/message-list.tsx` | Virtualizer config, scroll management, `#post-list` scroll container |
+| `apps/web/components/chat/chat-view.tsx` | `#channel_view` class management (loading vs main states) |
+| `apps/web/app/(workspace)/layout.tsx` | `.app__body` (flex column), flex row, `.app__content` |
+| `apps/web/app/layout.tsx` | Root `body` height, AppHeader `shrink-0`, main `flex:1; min-height:0` |
+| `apps/web/components/chat/message-list/message-item.tsx` | Individual message — must NOT have fixed height |
+| `apps/web/app/globals.css` | `.app__content` layer, `.mm-channel-header` flex-shrink, `--vh` custom property |
 
 ## Comparative Audit Implementation (July 4, 2026)
 
