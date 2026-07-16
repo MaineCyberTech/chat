@@ -436,9 +436,7 @@ export function MessageList({
       const { scrollTop, scrollHeight, clientHeight } = el;
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
       if (isAtBottom) {
-        requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight;
-        });
+        virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
       }
     }
   }, [messagesWithMeta.length]);
@@ -451,35 +449,24 @@ export function MessageList({
   }
 
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (messagesWithMeta.length === 0) return;
     if (didInitialScrollRef.current) return;
     didInitialScrollRef.current = true;
 
     let frameCount = 0;
-    let lastHeight = 0;
-    let stableCount = 0;
+    const lastIdx = messagesWithMeta.length - 1;
 
     const tick = () => {
-      const el = listRef.current;
-      if (!el) return;
-      el.scrollTop = el.scrollHeight;
+      virtualizer.scrollToIndex(lastIdx, { align: "end" });
       frameCount++;
-
-      if (el.scrollHeight === lastHeight) {
-        stableCount++;
-      } else {
-        stableCount = 0;
-        lastHeight = el.scrollHeight;
-      }
-
-      if (frameCount < 60 && stableCount < 3) {
+      if (frameCount < 30) {
         requestAnimationFrame(tick);
       }
     };
 
     const raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [messages.length, channelChanged]);
+  }, [messagesWithMeta.length, channelChanged]);
 
   if (messages.length === 0) {
     return (
