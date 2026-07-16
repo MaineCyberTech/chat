@@ -63,7 +63,6 @@ export function MessageList({
   channelTopic,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -412,8 +411,6 @@ export function MessageList({
   const prevChannelIdRef = useRef(channelId);
   const prevLengthRef = useRef(messagesWithMeta.length);
   const didInitialScrollRef = useRef(false);
-  const currentLenRef = useRef(messagesWithMeta.length);
-  currentLenRef.current = messagesWithMeta.length;
 
   useEffect(() => {
     const el = listRef.current;
@@ -440,11 +437,11 @@ export function MessageList({
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
       if (isAtBottom) {
         requestAnimationFrame(() => {
-          virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+          el.scrollTop = el.scrollHeight;
         });
       }
     }
-  }, [messagesWithMeta.length, virtualizer]);
+  }, [messagesWithMeta.length]);
 
   const channelChanged = prevChannelIdRef.current !== channelId;
   if (channelChanged) {
@@ -477,29 +474,12 @@ export function MessageList({
 
       if (frameCount < 60 && stableCount < 3) {
         requestAnimationFrame(tick);
-      } else if (stableCount >= 3) {
-        virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
       }
     };
 
     const raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [messages.length, channelChanged]);
-
-  useEffect(() => {
-    const el = innerRef.current;
-    if (!el) return;
-
-    const observer = new ResizeObserver(() => {
-      if (!listRef.current) return;
-      const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-      if (scrollHeight - scrollTop - clientHeight < 100) {
-        virtualizer.scrollToIndex(currentLenRef.current - 1, { align: "end" });
-      }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [virtualizer]);
 
   if (messages.length === 0) {
     return (
@@ -567,7 +547,7 @@ export function MessageList({
             />
           </div>
         )}
-        <div ref={innerRef} style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {virtualizer.getVirtualItems().map((virtualRow) => {
             if (virtualRow.index >= messagesWithMeta.length) return null;
             const msg = messagesWithMeta[virtualRow.index];
