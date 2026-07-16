@@ -1,0 +1,87 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "api_realtime_contract_audit",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-16T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 1,
+    "P2": 4,
+    "P3": 2
+  },
+  "category_scores": {
+    "rest_schema": 7,
+    "realtime_payload": 6,
+    "reconnect_behavior": 5,
+    "pagination": 7,
+    "auth_scoping": 6,
+    "idempotency": 9
+  },
+  "readiness": 6.5,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "auth_scoping",
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "issue": "Reactions batch endpoint lacks message access control verification",
+      "impact": "GET `/reactions/batch?message_ids=...` at line 24-41 accepts arbitrary message IDs without requiring message access. Any authenticated user can query reactions on messages in private channels they don't belong to, by guessing or enumerating message UUIDs.",
+      "fix": "Apply access filtering: either add `requireMessageAccess` middleware for each ID or query only message IDs the user can access via channel membership join."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "reconnect_behavior",
+      "file": "apps/web/lib/socket.ts",
+      "issue": "No reconnect resync mechanism \u2014 clients can miss events during disconnect",
+      "impact": "The frontend socket client at `apps/web/lib/socket.ts` implements reconnection with exponential backoff (lines 37-47) but has no mechanism to request missed events after reconnection. There is no `last_event_id` tracking, sequence number, or event replay endpoint. If a client disconnects for even a few seconds, messages sent during that window are permanently lost.",
+      "fix": "Implement event sequence tracking: (1) add a monotonically increasing sequence number to broadcast events, (2) store `last_sequence` in client localStorage, (3) on reconnect, call a `/messages/since?seq=N` endpoint to replay missed events."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "rest_schema",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Mixed pagination strategies \u2014 cursor-based for message list, offset-based for search",
+      "impact": "`GET /channels/:channelId/messages` (line 89-103) uses cursor-based pagination while search and most other list endpoints use offset-based pagination. This inconsistency forces frontend to implement two pagination strategies and complicates caching.",
+      "fix": "Consolidate on a single pagination strategy. Cursor-based is preferred for real-time feeds (avoids duplication on new insertions). Consider migrating search to cursor-based as well."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "rest_schema",
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "issue": "DM channels list endpoint doesn't use channel access middleware \u2014 relies solely on RLS",
+      "impact": "`GET /dm-channels` at line 248-255 lacks `requireChannelAccess` middleware. It uses `responseCache` but no authz middleware beyond `authenticate`, relying entirely on RLS for access control.",
+      "fix": "Add `requireChannelAccess` middleware for defense-in-depth, or ensure the RLS policy on `dm_channels` is correct (currently scoped to `user1_id`/`user2_id` which is sufficient)."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "realtime_payload",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "Socket channel join verifies workspace membership but not private channel membership correctly",
+      "impact": "The `channel:join` handler at line 155-212 checks workspace membership and private channel membership, but the RLS layer doesn't enforce private channel filtering for SELECT on channels/messages. This means a malicious client could bypass the socket-level check by reading channel data directly via Supabase.",
+      "fix": "Fix the underlying RLS policies (see security audit) so both layers are aligned."
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "rest_schema",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "Webhook enforceBodyLimit checks spoofable Content-Length header instead of actual body size",
+      "impact": "The `enforceBodyLimit` middleware at line 20-29 reads `content-length` header which can be spoofed by an attacker. A request with small `content-length` header but large actual body would bypass the limit.",
+      "fix": "Remove the middleware and rely on Express's `express.json({ limit: '1mb' })` which enforces actual body size after parsing."
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "realtime_payload",
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "issue": "Socket broadcast for reactions fires asynchronously with no error propagation",
+      "impact": "Reaction add/remove broadcasts at lines 65-80 and 101-116 use an IIFE with empty catch blocks (`catch { // Socket broadcast best-effort }`). Failure is silently swallowed, making debugging difficult when broadcasts fail.",
+      "fix": "At minimum log the error: `catch (err) { logger.warn('Reaction broadcast failed', { error: String(err) }) }`"
+    }
+  ],
+  "run_id": "api_realtime_contract_audit_20260716_060345"
+}

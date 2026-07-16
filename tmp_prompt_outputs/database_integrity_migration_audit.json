@@ -2,42 +2,86 @@
   "prompt_name": "database_integrity_migration_audit",
   "domain": "database",
   "stage": "principal_audit",
-  "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-09T12:00:00.000Z",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-16T12:00:00.000Z",
+  "readiness": 5.0,
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
-    "P2": 2,
-    "P3": 0
+    "P1": 3,
+    "P2": 3,
+    "P3": 1
   },
   "category_scores": {
-    "migration_safety": 85,
-    "rollback_readiness": 70,
-    "rls_posture": 72,
-    "indexing": 90,
-    "schema_integrity": 88
+    "migration_safety": 9,
+    "rollback_feasibility": 9,
+    "rls_posture": 3,
+    "indexing": 8,
+    "schema_drift": 7,
+    "data_integrity": 6
   },
-  "readiness": 81,
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "database",
-      "category": "rollback_readiness",
-      "file": "supabase/migrations/20260709000001_add_auto_responder.sql",
-      "line": 1,
-      "issue": "Missing rollback script for migration 20260709000001_add_auto_responder",
-      "impact": "55 migrations exist but only 54 rollback scripts are present. Migration 20260709000001 (adds auto_responders table) has no corresponding down migration. If this migration needs to be rolled back in production, the auto_responders table will remain orphaned, causing schema drift between environments.",
-      "fix": "Create supabase/rollback/20260709000001_add_auto_responder_down.sql with DROP TABLE IF EXISTS public.auto_responders CASCADE;"
+      "category": "rls_posture",
+      "file": "supabase/policies/06_reactions.sql",
+      "issue": "Reactions SELECT policy is open to all authenticated users \u2014 no channel/workspace scoping",
+      "impact": "`reactions_select` at `supabase/policies/06_reactions.sql:5-7` is `using (true)`. Any authenticated user can enumerate reactions on any message, including messages in private channels. This leaks engagement patterns.",
+      "fix": "Add channel membership check via message join: scope to messages in channels the user can access."
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
+      "issue": "user_presence SELECT policy is open to all authenticated users across all workspaces",
+      "impact": "The `user_presence` select policy uses `using (true)`, allowing any authenticated user to see the online status and custom status of every user in the system, regardless of workspace membership.",
+      "fix": "Scope presence visibility to users who share at least one workspace."
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "supabase/migrations/20260709000003_add_compliance_exports.sql",
+      "issue": "Compliance exports table has no workspace_id column \u2014 cross-workspace data exposure via RLS",
+      "impact": "The `compliance_exports` table lacks a `workspace_id` column. The SELECT policy allows any workspace admin/owner to read ALL rows. An admin in workspace A can see compliance exports generated for workspace B. Exports may contain sensitive message content and audit data.",
+      "fix": "Add `workspace_id UUID NOT NULL REFERENCES workspaces(id)` column. Update the SELECT policy to filter by workspace membership with admin role."
     },
     {
       "severity": "P2",
       "domain": "database",
-      "category": "rls",
-      "file": "supabase/policies/06_reactions.sql",
-      "line": 7,
-      "issue": "Reactions SELECT policy uses using(true) with no tenant/workspace scoping",
-      "impact": "The reactions table RLS policy allows all authenticated users to select all reactions across all workspaces. While reactions contain only emoji + user_id pairs, this violates the tenant isolation model used by all other tables and leaks user activity data across workspace boundaries.",
-      "fix": "Replace using(true) with a policy that joins through messages -> channels -> workspace_members to verify workspace membership before allowing reaction reads."
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260709000004_add_announcements.sql",
+      "issue": "Announcements SELECT policy is `using (true)` \u2014 all authenticated users see all announcements",
+      "impact": "The `announcements_select` policy allows any authenticated user to read all announcements across all workspaces. Announcement content may be workspace-sensitive.",
+      "fix": "Scope to workspace membership: `exists (select 1 from workspace_members wm where wm.workspace_id = announcements.workspace_id and wm.user_id = auth.uid())`"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/policies/03_channels.sql",
+      "issue": "Channels INSERT policy does not restrict private channel creation to admins",
+      "impact": "The `channels_insert_member` policy at `supabase/policies/03_channels.sql:18-27` allows any workspace member to create channels, including private channels. This enables unauthorized private channel creation with no admin oversight.",
+      "fix": "Restrict private channel creation to workspace admins/owners, or add a rate limit / approval flow."
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
+      "issue": "Migration includes data-seeding operations (INSERT ... SELECT) that may lock large tables",
+      "impact": "Lines 87-101 run `INSERT INTO sidebar_categories SELECT DISTINCT ... FROM workspace_members` which scans the entire`workspace_members` table. On a production database with thousands of members, this can cause long-running locks and table bloat.",
+      "fix": "Move seeding to a separate post-deploy script or application-level migration that runs in batches."
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "supabase/policies/04_messages.sql",
+      "issue": "Message select RLS does not filter private channels",
+      "impact": "Same root cause as the channels RLS gap \u2014 messages in private channels are exposed through the messages SELECT policy which only checks workspace membership.",
+      "fix": "Scope messages SELECT to include private channel membership check via join to channels + channel_members."
     }
   ]
 }

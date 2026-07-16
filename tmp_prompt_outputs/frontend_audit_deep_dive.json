@@ -2,86 +2,459 @@
   "prompt_name": "frontend_audit_deep_dive",
   "domain": "frontend",
   "stage": "principal_audit",
-  "decision": "GO",
-  "generated_at": "2026-07-09T15:00:00Z",
-  "readiness": 72,
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-16T14:00:00Z",
+  "readiness": 71.0,
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
-    "P2": 3,
-    "P3": 4
+    "P1": 4,
+    "P2": 24,
+    "P3": 20
   },
   "category_scores": {
-    "error_handling": 60,
-    "component_architecture": 70,
-    "performance": 75,
-    "design_system": 80,
-    "accessibility": 65,
-    "observability": 55
+    "F1-Design System": 75,
+    "F2-Layout & Navigation": 70,
+    "F3-Chat UX": 80,
+    "F4-State Management": 78,
+    "F5-Accessibility": 55,
+    "F6-Responsive Design": 72,
+    "F7-Performance": 75,
+    "F8-Interaction Quality": 68,
+    "F9-Visual Consistency": 65,
+    "F10-Component Architecture": 70
   },
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "frontend",
-      "category": "error_handling",
-      "file": "apps/web/components/chat/chat-view.tsx:63, apps/web/components/chat/message-input.tsx:215, apps/web/components/workspace/app-sidebar.tsx:205, and 36+ similar instances",
-      "issue": "39 silent catch blocks using console.warn() with no structured logging across all web components",
-      "impact": "Failures in critical paths (profile loading, socket setup, API calls, member fetching, file operations) go undetected in production with no structured logging, no error aggregation, and no user feedback for recoverable errors",
-      "fix": "Replace all console.warn() catch blocks with a centralized logger service (e.g., capture scope in Sentry or equivalent) and expose user-facing non-sensitive error messages where appropriate. Add error boundary fallbacks for critical failure paths."
+      "category": "Layout & Navigation",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin tab navigation broken on mobile \u2014 sidebar hidden md:block",
+      "impact": "Admin users on mobile cannot navigate between tabs",
+      "fix": "Add mobile tab bar or dropdown selector for admin sub-pages on screens <768px"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "Chat UX",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Formatting bar buttons 28px on mobile fail WCAG 44px touch target minimum",
+      "impact": "Users on mobile have difficulty tapping formatting buttons",
+      "fix": "Increase button size to min 36px (44px preferred) on mobile via media query or responsive classes"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "Search-bar missing aria-activedescendant on autocomplete input",
+      "impact": "Screen reader users cannot effectively use search autocomplete",
+      "fix": "Add role=combobox, aria-expanded, aria-activedescendant to input; role=listbox to results container"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "Interaction Quality",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Settings reset/delete dialogs lack focus traps \u2014 Tab escapes backdrop",
+      "impact": "Keyboard users can interact with page content behind confirmation dialogs",
+      "fix": "Use shared Dialog component (packages/ui) which has built-in focus trap support"
     },
     {
       "severity": "P2",
       "domain": "frontend",
-      "category": "component_architecture",
-      "file": "apps/web/components/chat/thread-panel.tsx:319",
-      "issue": "Thread reply editor uses plain HTML textarea instead of TipTap rich text editor, lacking formatting toolbar, @mention autocomplete, emoji picker, and slash commands",
-      "impact": "Users composing thread replies have a degraded editing experience compared to main channel messages. Inconsistent UX between main channel and thread replies with no formatting, no mentions, no emoji autocomplete, and no slash commands",
-      "fix": "Replace the textarea at thread-panel.tsx:319 with the shared TipTapEditor component used in MessageInput, adding the formatting toolbar, mention autocomplete, emoji picker, and slash command support for thread replies"
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "Search-bar type dropdown/autocomplete lack role=listbox",
+      "impact": "Screen readers may not announce list navigation properly",
+      "fix": "Add role=listbox to container and role=option to each item"
     },
     {
       "severity": "P2",
       "domain": "frontend",
-      "category": "component_architecture",
-      "file": "apps/web/components/chat/message-list/context-menu.tsx:177,191",
-      "issue": "Context menu ref array index overlap for conditional items causing focus management issues \u00e2\u20ac\u201d Forward and Pin reuse indices 4-5 which overlap with Edit and Delete",
-      "impact": "When conditional menu items (Forward, Pin, Edit, Delete) are shown/hidden, menuItemsRef indices overlap. Arrow key navigation may skip or double-focus items. Focus management breaks when editing permissions or feature flags change available actions",
-      "fix": "Remove fixed array indexing from menuItemsRef. Use a dynamic counter that increments conditionally, or use a Map<key, ref> approach that only assigns indices for rendered items. Ensure autoFocus and arrow-key navigation only reference actually-mounted elements"
+      "category": "Accessibility",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx",
+      "issue": "Search results container lacks aria-live=polite",
+      "impact": "Screen reader users get no feedback when search results update",
+      "fix": "Add aria-live=polite to the search results container"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Formatting toolbar no arrow-key keyboard navigation (Tab-only through 15 buttons)",
+      "impact": "Keyboard users must Tab 15 times to reach end of toolbar",
+      "fix": "Add arrow-key navigation within toolbar with visual focus indicator"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Formatting toolbar no visible focus ring on buttons",
+      "impact": "Keyboard users cannot see which button is focused",
+      "fix": "Add focus-visible:outline-2 or ring classes to all formatting bar buttons"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Link/image buttons have aria-pressed: undefined for toggle states",
+      "impact": "Screen reader users don't know if formatting is active",
+      "fix": "Add aria-pressed={isActive} for toggle buttons like bold, italic"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/shared/keyboard-shortcuts.tsx",
+      "issue": "Keyboard shortcuts shows Ctrl+K on macOS \u2014 no Mac modifier detection",
+      "impact": "Mac users see incorrect modifier keys",
+      "fix": "Detect platform via navigator.platform and show Cmd on macOS, Ctrl on Windows/Linux"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/shared/keyboard-shortcuts.tsx",
+      "issue": "Keyboard shortcuts filter has no aria-live for result count",
+      "impact": "Screen reader users get no feedback when filtering shortcuts",
+      "fix": "Add aria-live=polite region showing filtered result count"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/app/error.tsx, apps/web/app/(workspace)/error.tsx, apps/web/app/(auth)/error.tsx",
+      "issue": "All error boundaries (5+ files) lack role=alert",
+      "impact": "Screen readers may not announce error state changes",
+      "fix": "Add role=alert to the error message container in each error.tsx"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/app/loading.tsx, apps/web/app/(auth)/loading.tsx, apps/web/app/(workspace)/loading.tsx",
+      "issue": "All loading states (5+ files) lack aria-busy=true / role=status",
+      "impact": "Screen reader users don't know content is loading",
+      "fix": "Add aria-busy=true on loading containers and role=status with aria-live=polite"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/app/loading.tsx, apps/web/app/(auth)/loading.tsx",
+      "issue": "Root and auth loading show bare spinner instead of layout skeleton",
+      "impact": "Poor perceived performance; layout shift on content paint",
+      "fix": "Match the loading layout to actual page structure (AppHeader + main skeleton for root)"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/workspace/onboarding-tour.tsx",
+      "issue": "Onboarding tour no role=dialog, no focus trap",
+      "impact": "Keyboard/screen reader users can Tab behind the tour dialog",
+      "fix": "Add role=dialog, aria-modal=true, and implement focus trap"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "Cookie banner no focus trap, no aria-modal=true",
+      "impact": "Users can interact with page content behind the consent dialog",
+      "fix": "Add aria-modal=true and focus trap when banner is visible"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/channel-info.tsx",
+      "issue": "Channel-info tab bar missing role=tablist, aria-selected",
+      "impact": "Screen readers don't announce tab semantics",
+      "fix": "Add role=tablist on container, role=tab on buttons, aria-selected on active tab"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "State Design",
+      "file": "apps/web/components/chat/channel-info.tsx",
+      "issue": "Channel-info empty states lack actionable buttons or CTAs",
+      "impact": "Users see empty state but don't know how to populate it",
+      "fix": "Add contextual action buttons to empty states (Pin a message, Invite members)"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Interaction Quality",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Settings dual save mechanism \u2014 auto-save AND Save button confusing",
+      "impact": "Users may be confused about whether changes persist",
+      "fix": "Standardize on one pattern: auto-save with visual indicator, or manual save without auto-save"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Interaction Quality",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Language change triggers window.location.reload()",
+      "impact": "Poor UX \u2014 full page flash on locale change",
+      "fix": "Use router.refresh() or i18n provider locale switch without full browser reload"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Performance",
+      "file": "apps/web/components/chat/message-list.tsx:456-468",
+      "issue": "Message list 30-frame RAF loop for initial scroll may jank on low-end devices",
+      "impact": "Potential jank on low-end mobile devices",
+      "fix": "Use virtualizer.scrollToIndex with align:'end' once after short delay rather than RAF loop"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Performance",
+      "file": "apps/web/components/chat/message-list.tsx:502-521",
+      "issue": "Pull-to-refresh indicator uses inline style objects instead of Tailwind utility classes",
+      "impact": "Slightly larger CSS-in-JS bundle; skips JIT compilation",
+      "fix": "Convert to Tailwind utility classes where possible"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Data Display",
+      "file": "apps/web/components/chat/search-bar.tsx:37, apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx:39",
+      "issue": "highlightText function duplicated in 2 files",
+      "impact": "DRY violation; fix in one place will miss the other",
+      "fix": "Extract to shared lib/highlight-text.ts or lib/search.ts"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Data Display",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Pagination logic duplicated across 3 admin tabs (users, channels, workspaces)",
+      "impact": "Maintenance burden; bug fixes must be applied 3 times",
+      "fix": "Extract a shared Pagination component or hook"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Mobile UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin stat grid uses grid-cols-2 on mobile \u2014 narrow cells",
+      "impact": "Stat cards feel cramped on small screens",
+      "fix": "Use grid-cols-1 on mobile, grid-cols-2 on sm+ breakpoint"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Error Handling",
+      "file": "apps/web/components/chat/chat-view.tsx, app-sidebar.tsx, emoji-picker.tsx, notification-bell.tsx, cookie-banner.tsx, and 45+ more locations",
+      "issue": "console.warn used instead of user-facing toast in 50+ catch blocks",
+      "impact": "Users don't see error feedback for many failed operations",
+      "fix": "Replace console.warn with addToast for user-visible operations; keep console.warn only for background operations"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Design System",
+      "file": "apps/web/app/globals.css, packages/ui/src/styles.css",
+      "issue": "Two parallel CSS variable systems active (Mattermost + design tokens) used interchangeably",
+      "impact": "Visual inconsistency risk; harder to maintain theming",
+      "fix": "Document boundary: shared UI components use --color-* vars, app components use Mattermost vars; plan consolidation"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Theme",
+      "file": "apps/web/app/globals.css:342",
+      "issue": "Dark mode --text-secondary hardcoded rgba(..., 0.8) instead of using --text-secondary-alpha variable",
+      "impact": "Dark mode text opacity differs from intended design token consistency",
+      "fix": "Use rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))"
     },
     {
       "severity": "P3",
       "domain": "frontend",
-      "category": "accessibility",
-      "file": "apps/web/components/chat/message-list/message-item.tsx:472-476",
-      "issue": "Reaction tooltips use native HTML title attribute \u00e2\u20ac\u201d not keyboard accessible, no user names shown",
-      "impact": "Reaction tooltips ('You and X others') cannot be triggered by keyboard users and do not display the names of who reacted. Screen readers only get minimal count info without detailed participant context",
-      "fix": "Add a proper tooltip component listing names of users who reacted on hover/focus, or use aria-label with aggregated count and names. Consider a small popover listing reactors on click"
+      "category": "Design System",
+      "file": "apps/web/app/globals.css:124",
+      "issue": "--border-default includes 'solid 1px' \u2014 not composable as border-left/border-top",
+      "impact": "14+ files use less-than-ideal border declaration patterns",
+      "fix": "Split into --border-default-width, --border-default-style, --border-default-color vars"
     },
     {
       "severity": "P3",
       "domain": "frontend",
-      "category": "accessibility",
-      "file": "apps/web/components/chat/message-list/message-item.tsx:421-457",
-      "issue": "Post-menu action buttons (post-menu__item) have 28px height/width which is below WCAG 2.5.5 minimum 44px touch target size on mobile",
-      "impact": "Users on small touch screens may struggle to accurately tap 28px icon buttons on mobile devices, especially the reaction, bookmark, edit, and delete action buttons in the post-menu",
-      "fix": "Increase post-menu__item min-width and min-height to 44px on touch devices via CSS media query (hover: none). Add adequate padding/spacing between adjacent buttons"
+      "category": "Search",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx",
+      "issue": "No result count shown in search results",
+      "impact": "Users don't know the size of their result set",
+      "fix": "Show 'X results found' counter at top of search results"
     },
     {
       "severity": "P3",
       "domain": "frontend",
-      "category": "accessibility",
-      "file": "apps/web/components/chat/thread-panel.tsx:294-306",
-      "issue": "Thread panel inline delete confirmation dialog lacks focus trap and keyboard navigation",
-      "impact": "Keyboard users can tab outside the inline delete confirmation in the thread panel, breaking the modal interaction pattern. Unlike the main DeleteDialog component which has proper focus trapping, the thread version is a raw overlay with no focus management",
-      "fix": "Add focus trap (Tab cycle) to the inline delete dialog in thread-panel.tsx using same pattern as DeleteDialog's handleTab, or extract shared DeleteDialog component for use in both contexts"
+      "category": "Forms",
+      "file": "apps/web/components/auth/login-form.tsx",
+      "issue": "Login form has no password strength indicator",
+      "impact": "Users don't know if their password meets requirements during signup",
+      "fix": "Add visual password strength indicator with requirements checklist"
     },
     {
       "severity": "P3",
       "domain": "frontend",
-      "category": "observability",
-      "file": "apps/web/components/chat/chat-view.tsx:63, apps/web/components/chat/message-input.tsx:215, apps/web/components/workspace/app-sidebar.tsx:205 (representative of 39 instances)",
-      "issue": "Vague console.warn messages lack error context, request IDs, and component names across 39 catch blocks",
-      "impact": "Reduced debuggability of production errors; no way to correlate warnings to specific operations, users, or API calls. When a warning appears in logs, there's insufficient context to identify the root cause",
-      "fix": "Include component name, operation context, and error details in every console.warn call. Route through structured logging service that captures stack traces, component hierarchy, and request context"
+      "category": "Forms",
+      "file": "apps/web/components/auth/login-form.tsx",
+      "issue": "Login form no 'Forgot password?' link",
+      "impact": "Users who forget password have no recovery path on login page",
+      "fix": "Add 'Forgot password?' link that triggers password reset flow"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/auth/login-form.tsx",
+      "issue": "Login form status container has no aria-live",
+      "impact": "Screen reader users may miss status updates after form submission",
+      "fix": "Add aria-live=polite and role=status to the message container"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Interaction",
+      "file": "apps/web/components/chat/notification-preferences-modal.tsx",
+      "issue": "Notification preferences modal has no unsaved-changes detection",
+      "impact": "Users can close modal and lose changes without warning",
+      "fix": "Add dirty-state detection and confirm-before-close dialog"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Search",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx",
+      "issue": "Search date range not validated (dateFrom > dateTo allowed)",
+      "impact": "Users can submit invalid date ranges with no error feedback",
+      "fix": "Add client-side validation: dateFrom must be before dateTo"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Search",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "Search operator hint has hardcoded year '2025'",
+      "impact": "Outdated hint text in 2026+",
+      "fix": "Use dynamic year from new Date().getFullYear()"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Forms",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Settings page shows 'Loading...' text instead of Skeleton component",
+      "impact": "Inconsistent loading UX compared to rest of app",
+      "fix": "Replace 'Loading...' with Skeleton component from @chat/ui"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Forms",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Auto-responder textarea lacks character counter",
+      "impact": "Users may exceed API limits without warning",
+      "fix": "Add character count display near auto-responder textarea"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Interaction",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "'Clear all' recent searches has no confirmation dialog",
+      "impact": "Accidental tap clears all recent search history with no undo",
+      "fix": "Add confirmation dialog before clearing recent searches"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Admin UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin export buttons lack loading spinner during export",
+      "impact": "No visual feedback during export operation",
+      "fix": "Add loading state with spinner to export buttons"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Admin UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin panel has no error boundary per tab \u2014 one failure kills all tabs",
+      "impact": "Error in one admin tab crashes entire admin panel",
+      "fix": "Wrap each admin tab content in its own ErrorBoundary"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Admin UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin panel document.title hardcoded instead of using i18n",
+      "impact": "Cannot localize admin page title",
+      "fix": "Use t() for document.title or i18n metadata"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Design System",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Inline StatusBadge and Card in admin \u2014 duplicates shared components from ui package",
+      "impact": "Duplicate component concerns; harder to maintain consistency",
+      "fix": "Use StatusBadge from @chat/ui and extract Card component if needed"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Design System",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "ToggleRow defined inline in settings page instead of shared component",
+      "impact": "Cannot reuse ToggleRow pattern across the app",
+      "fix": "Extract ToggleRow to packages/ui/src/components/"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Admin UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "CSV parser uses line.split(',') \u2014 breaks on quoted fields with commas",
+      "impact": "Imported CSV data with commas inside quoted fields will parse incorrectly",
+      "fix": "Use a proper CSV parser library (e.g., papaparse) instead of naive split"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Code Quality",
+      "file": "apps/web/components/workspace/app-sidebar.tsx",
+      "issue": "Dead CSS property gridArea: 'team-sidebar' \u2014 no CSS Grid parent present",
+      "impact": "Unused CSS property adds noise with no effect",
+      "fix": "Remove orphaned gridArea property"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Code Quality",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:581",
+      "issue": "Encoding artifact \u2014 '\u00e2\u0153\u201c' should be Unicode checkmark character",
+      "impact": "Character displays incorrectly in some viewers",
+      "fix": "Replace '\u00e2\u0153\u201c' with Unicode '\\u2713' (\u2713) or '\\u2714' (\u2714)"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Design System",
+      "file": "packages/ui/src/tokens/spacing.ts",
+      "issue": "Density modes defined in tokens but unused in any component",
+      "impact": "Dead code that creates confusion about available design tokens",
+      "fix": "Either implement density mode support or remove unused token definitions"
     }
   ]
 }

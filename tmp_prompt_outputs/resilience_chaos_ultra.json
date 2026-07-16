@@ -1,70 +1,80 @@
 {
   "prompt_name": "resilience_chaos_ultra",
   "domain": "resilience",
-  "stage": "principal_audit",
+  "stage": "quality_confirmation",
   "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-16T06:08:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 2,
+    "P1": 0,
     "P2": 3,
-    "P3": 1
+    "P3": 3
   },
-  "readiness": 75,
+  "category_scores": {
+    "timeout_configuration": 85,
+    "circuit_breaker": 90,
+    "webhook_idempotency": 80,
+    "bulk_operation_results": 50,
+    "retry_backoff": 85,
+    "graceful_shutdown": 90,
+    "worker_timeouts": 75,
+    "ui_failure_states": 70
+  },
+  "readiness": 78.1,
   "findings": [
-    {
-      "severity": "P1",
-      "domain": "resilience",
-      "category": "supabase_circuit_breaker",
-      "file": "apps/api/src/lib/supabase.ts",
-      "issue": "Supabase client uses AbortSignal timeout wrapper but no circuit breaker \u00e2\u20ac\u201d cannot degrade gracefully when Supabase is slow/failing",
-      "impact": "A slow Supabase instance causes cascading timeouts across all API routes; no fail-fast or degraded response",
-      "fix": "Wrap supabase from() calls with executeWithCircuitBreaker or add circuit breaker proxy to createLoggedClient"
-    },
-    {
-      "severity": "P1",
-      "domain": "resilience",
-      "category": "worker_task_timeout",
-      "file": "apps/worker/src/processors/data-retention.ts : cleanup.ts : search-indexer.ts : reminder.ts",
-      "issue": "Worker processors lack per-task timeout \u00e2\u20ac\u201d webhook-delivery.ts and notification.ts have timeouts but data-retention, cleanup, search-indexer, and reminder do not",
-      "impact": "A stuck task could block the worker queue indefinitely, stalling all subsequent jobs",
-      "fix": "Add AbortSignal.timeout() wrapper or BullMQ `timeout` job option to all processor handlers (data-retention, cleanup, search-indexer, reminder)"
-    },
     {
       "severity": "P2",
       "domain": "resilience",
       "category": "bulk_operations",
-      "file": "apps/api/src/routes/",
-      "issue": "No bulk endpoints return per-item ok/error results \u00e2\u20ac\u201d bulk operations fail or succeed as a unit with no partial success",
-      "impact": "Batch operations (user import, channel creation, message batch operations) provide no granular error feedback; partial failures invisible to user",
-      "fix": "Standardize bulk response format: { results: [{ ok: boolean, id?: string, error?: string }] } on all bulk endpoints"
+      "file": "apps/api/src/modules/",
+      "issue": "No verified per-item ok/error result pattern in bulk endpoints \u2014 likely single-status responses",
+      "impact": "Partial bulk failures appear as full successes to the client; user sees fake success toast on half-failed writes",
+      "fix": "Audit all POST/PATCH/PUT endpoints that accept arrays; return { results: [{ ok: boolean, error?: string }] } per item"
     },
     {
       "severity": "P2",
       "domain": "resilience",
-      "category": "ui_false_success",
+      "category": "ui_failure_states",
       "file": "apps/web/components/",
-      "issue": "No consistent pattern for handling partial success in UI \u00e2\u20ac\u201d operations that affect multiple items show blanket success toast",
-      "impact": "User sees success confirmation when some items actually failed silently",
-      "fix": "Add 'summary' response to bulk mutations; show 'X of Y succeeded' toast with failure details when partial results differ"
+      "issue": "No systematic pattern for displaying partial-failure toasts from bulk API responses",
+      "impact": "Users not alerted about individual item failures in batch operations",
+      "fix": "Create a BulkOperationResult component that displays success count vs failure count with details"
     },
     {
       "severity": "P2",
       "domain": "resilience",
-      "category": "websocket_reconnect",
-      "file": "apps/api/src/lib/socket.ts",
-      "issue": "Socket.io has reconnection settings but no exponential backoff or jitter on reconnect attempts",
-      "impact": "All clients reconnect simultaneously after server restart \u00e2\u20ac\u201d thundering herd on socket initialization",
-      "fix": "Add exponential backoff with jitter to socket reconnection: initialDelay=1s, maxDelay=30s, randomizationFactor=0.3"
+      "category": "worker_timeouts",
+      "file": "apps/worker/src/processors/",
+      "issue": "Each processor has its own AbortSignal.timeout(30s) but no centralized timeout wrapper in task execution",
+      "impact": "Inconsistent timeout enforcement across processors; new processors may forget timeout handling",
+      "fix": "Create a createTaskWrapper utility in worker that enforces per-task timeout, retry, and error handling consistently"
     },
     {
       "severity": "P3",
       "domain": "resilience",
-      "category": "circuit_breaker_metrics",
-      "file": "apps/api/src/lib/metrics.ts",
-      "issue": "Circuit breaker Prometheus gauge exists (circuitBreakerStatus) but no alert threshold or dashboard configured",
-      "impact": "Circuit breaker state changes are logged but not actionable \u00e2\u20ac\u201d operator won't know circuit is open without checking logs",
-      "fix": "Configure Sentry alert or Prometheus alert rule when circuitBreakerStatus > 0 for any named breaker for > 5 minutes"
+      "category": "circuit_breaker",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker status changes logged but not exported as Prometheus metrics",
+      "impact": "No monitoring/alerting on circuit breaker state; open circuit not visible until users report failures",
+      "fix": "Export circuit breaker state (open/closed/half-open) as prometheus gauge per breaker name"
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "retry_backoff",
+      "file": "apps/api/src/lib/http-client.ts",
+      "issue": "HTTP client retry uses linear backoff (retryDelay * attemptNum) not exponential",
+      "impact": "Thundering herd on retry for concurrent requests; less effective than exponential backoff with jitter",
+      "fix": "Implement exponential backoff with jitter: delay = min(baseDelay * 2^attempt + random(0, jitter), maxDelay)"
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "supabase_circuit_breaker",
+      "file": "apps/api/src/lib/supabase.ts",
+      "issue": "No circuit breaker found wrapping Supabase admin client calls despite circuit-breaker utility existing",
+      "impact": "Supabase outage causes cascading API failures without circuit breaker protection",
+      "fix": "Wrap getSupabaseAdmin calls in circuit breaker using the existing executeWithCircuitBreaker utility"
     }
-  ],
-  "generated_at": "2026-07-09T03:06:59Z"
+  ]
 }

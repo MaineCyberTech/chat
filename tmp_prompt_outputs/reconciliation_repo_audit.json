@@ -1,97 +1,59 @@
 {
-  "prompt_name": "final_reconciliation_repo_audit",
+  "prompt_name": "reconciliation_repo_audit",
   "domain": "reconciliation",
   "stage": "reconciliation",
   "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-16T06:09:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 2,
-    "P2": 3,
-    "P3": 4
+    "P1": 0,
+    "P2": 1,
+    "P3": 3
   },
-  "readiness": 80,
+  "category_scores": {
+    "finding_consistency": 85,
+    "contradiction_detection": 90,
+    "action_plan_coherence": 80,
+    "guardrail_normalization": 85,
+    "single_source_truth": 75
+  },
+  "readiness": 83.0,
   "findings": [
     {
-      "severity": "P1",
-      "domain": "reconciliation",
-      "category": "env_drift",
-      "file": "apps/web/.env.example",
-      "issue": "web .env.example missing NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as required vars (listed as NEXT_PUBLIC_* prefix \u00e2\u20ac\u201d schema mismatch with root .env.example)",
-      "impact": "Developers may miss required Supabase client-side vars when setting up frontend locally",
-      "fix": "Ensure apps/web/.env.example includes NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as required (documented) \u00e2\u20ac\u201d they exist but should be clearly marked"
-    },
-    {
-      "severity": "P1",
-      "domain": "reconciliation",
-      "category": "naming",
-      "file": "FINAL_RECONCILED_REPO_AUDIT.md, docs/audits/compare/01_INVENTORY.md, FINAL_RECONCILIATION_REPO_AUDIT_PROMPT.md, docs/audits/docs_devex_operations_audit_summary.md",
-      "issue": "4 files reference 'traefik' naming (legacy reverse proxy) \u00e2\u20ac\u201d all Caddy references should be clean",
-      "impact": "Stale documentation references cause operator confusion about actual infrastructure",
-      "fix": "Replace 'traefik' references with 'Caddy' in all documentation files \u00e2\u20ac\u201d infra/docker/ uses Caddy, not Traefik"
-    },
-    {
       "severity": "P2",
       "domain": "reconciliation",
-      "category": "dead_files",
-      "file": "docs/prompts/ops/backup_restore_verification_audit_prompt.md",
-      "issue": "Backup restore audit prompt exists but no backup/restore is configured in any compose file or workflow",
-      "impact": "Out-of-date prompt documents a capability that doesn't exist \u00e2\u20ac\u201d operators may falsely assume backup is in place",
-      "fix": "Either implement backup/restore (PG dump to S3/SCP) or update prompt to reflect current state \u00e2\u20ac\u201d no automated backup exists"
-    },
-    {
-      "severity": "P2",
-      "domain": "reconciliation",
-      "category": "import_errors",
-      "file": "apps/api/src/lib/supabase.ts",
-      "issue": "Supabase client initialization references config/env.js but route-registry.ts references modules directly \u00e2\u20ac\u201d no centralized service locator pattern mismatch",
-      "impact": "Refactoring risk \u00e2\u20ac\u201d changing module locations requires updating imports across multiple files",
-      "fix": "Consider adding barrel exports index.ts per module directory to reduce fragile import paths"
-    },
-    {
-      "severity": "P2",
-      "domain": "reconciliation",
-      "category": "phase_contracts",
-      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
-      "issue": "Admin UI references GET /admin/health endpoint which is behind authenticate+requireAdmin middleware \u00e2\u20ac\u201d route exists but no client-side error handling if non-admin accesses",
-      "impact": "Non-admin users may see blank or broken admin page instead of proper access-denied message",
-      "fix": "Add client-side role check on admin page with fallback to 'Access Denied' message before API call"
+      "category": "single_source_truth",
+      "file": "docs/AGENTS.md",
+      "issue": "AGENTS.md references stale findings and outdated audit state from July 9; Juiy 16 audit findings not reconciled into SSOT",
+      "impact": "Operators working from AGENTS.md see outdated picture; July 16 findings (46 new items) not reflected",
+      "fix": "Update AGENTS.md Current State section with July 16 audit verdict: 8 P1, 24 P2, 14 P3 new findings; update status tables"
     },
     {
       "severity": "P3",
       "domain": "reconciliation",
-      "category": "comment_drift",
-      "file": "apps/api/src/server.ts:16",
-      "issue": "Comment references 'Health check at GET /health (for LB / DO monitoring)' but actual path is /health AND /healthz",
-      "impact": "Minor documentation inconsistency \u00e2\u20ac\u201d operators could miss /healthz endpoint",
-      "fix": "Update comment to document both /health (readiness) and /healthz (full check with DB)"
+      "category": "contradiction_detection",
+      "file": "docs/prompts/hardening_prompt_pack/prompts/reconciliation/",
+      "issue": "Reconciliation prompt execution output missing cross-domain contradiction analysis between ci_cd / observability / privacy findings",
+      "impact": "Potential conflicting remediation actions (e.g., logging more vs logging less PII) not detected",
+      "fix": "Run cross-domain contradiction sweep across all 10 output files; document resolved and accepted contradictions"
     },
     {
       "severity": "P3",
       "domain": "reconciliation",
-      "category": "env_drift",
-      "file": "apps/api/.env.example",
-      "issue": "API .env.example lists FRONTEND_URL=http://localhost:3000 but root .env.example also has FRONTEND_URL \u00e2\u20ac\u201d no indication which takes precedence",
-      "impact": "Developers may set conflicting values in different .env files",
-      "fix": "Document precedence order (per-app .env overrides root .env) in both .env.example files"
+      "category": "guardrail_normalization",
+      "file": "docs/audits/",
+      "issue": "No normalized risk register across all 10 audit outputs; guardrails duplicated across domains",
+      "impact": "Guardrail list is fragmented; operators cannot quickly check which risks are accepted",
+      "fix": "Produce a single risk register from all 10 outputs with deduplicated guardrails and acceptance decisions"
     },
     {
       "severity": "P3",
       "domain": "reconciliation",
-      "category": "naming",
-      "file": "apps/api/src/config/env.js",
-      "issue": "Config env loader references environment.ts pattern but file is .js \u00e2\u20ac\u201d import paths use .js extension for TS files",
-      "impact": "Minor consistency issue \u00e2\u20ac\u201d mixed .ts/.js extension patterns in a TS codebase",
-      "fix": "Standardize on .ts extension for TypeScript source files or document that .js is used for ESM output compatibility"
-    },
-    {
-      "severity": "P3",
-      "domain": "reconciliation",
-      "category": "dead_files",
-      "file": "docs/prompts/",
-      "issue": "Multiple deprecated/superseded prompt files exist (governance.yml v5, old audit prompt versions) without clear deprecation markers",
-      "impact": "Operators may run stale prompts and get outdated results",
-      "fix": "Add OBSOLETE.md or deprecation header to superseded prompt directories referencing the replacement"
+      "category": "action_plan_coherence",
+      "file": "docs/audits/",
+      "issue": "No cross-domain action plan prioritizing fixes by effort/impact across all 10 audit outputs",
+      "impact": "Fixes may be applied in wrong order; low-effort/high-impact P2 items delayed behind harder P1 items",
+      "fix": "Produce prioritized cross-domain action plan with effort estimates and dependency ordering"
     }
-  ],
-  "generated_at": "2026-07-09T03:06:59Z"
+  ]
 }

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { EmptyState, Skeleton } from "@chat/ui";
 import { Settings, ChevronDown, FileText, MessageSquare, File, Image } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 function extractAttachments(
   content: string,
@@ -294,10 +295,10 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 color: "var(--text-secondary)",
                 borderRight: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
               }}
-              aria-label="Search type"
+              aria-label={t("search.filterBy")}
             >
               {searchType === "messages" ? <MessageSquare size={12} /> : <FileText size={12} />}
-              {searchType === "messages" ? "Messages" : "Files"}
+              {searchType === "messages" ? t("search.messages") : t("search.files")}
               <ChevronDown size={10} />
             </button>
             <input
@@ -331,8 +332,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               onFocus={handleFocus}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
-              placeholder={`Search ${searchType}...`}
-              aria-label={`Search ${searchType}`}
+              placeholder={t("search.placeholder", { type: searchType === "messages" ? t("search.messages") : t("search.files") })}
+              aria-label={t("search.placeholder", { type: searchType === "messages" ? t("search.messages") : t("search.files") })}
+              aria-activedescendant={selectedIndex >= 0 ? `result-${selectedIndex}` : undefined}
               aria-autocomplete="list"
               aria-controls="search-results"
               aria-expanded={open && results.length > 0}
@@ -359,9 +361,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 borderTop: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
                 borderBottom: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
               }}
-              aria-label="Search operator hints"
+              aria-label={t("search.operatorHints")}
               aria-pressed={showOperatorHint}
-              title="Search operators"
+              title={t("search.operatorHints")}
             >
               <span className="text-sm leading-none font-bold">?</span>
             </button>
@@ -374,9 +376,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   : "rgba(var(--center-channel-color-rgb), 0.08)",
                 color: showFilters ? "var(--button-color)" : "var(--text-secondary)",
               }}
-              aria-label="Toggle search filters"
+              aria-label={t("search.filterBy")}
               aria-pressed={showFilters}
-              title="Search filters"
+              title={t("search.filterBy")}
             >
               <Settings size={16} />
             </button>
@@ -403,7 +405,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 }}
               >
                 <MessageSquare size={14} />
-                Messages
+                {t("search.messages")}
               </button>
               <button
                 onClick={() => {
@@ -417,7 +419,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 }}
               >
                 <FileText size={14} />
-                Files
+                {t("search.files")}
               </button>
             </div>
           )}
@@ -579,16 +581,20 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               }}
             >
               <p className="mb-1 text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
-                Search operators
+                {t("search.operatorHints")}
               </p>
               <div className="space-y-0.5">
                 {[
-                  { op: "from:", desc: "Search by author" },
-                  { op: "in:", desc: "Search in a channel" },
-                  { op: "channel:", desc: "Search in a channel" },
-                  { op: "on:2025-01-15", desc: "Search by date" },
-                  { op: "has:", desc: "Filter by has:link, has:image, has:file" },
-                ].map(({ op, desc }) => (
+                  t("search.operatorFrom"),
+                  t("search.operatorIn"),
+                  t("search.operatorIn"),
+                  t("search.operatorOn").replace("YYYY-MM-DD", `${new Date().getFullYear()}-01-15`),
+                  t("search.operatorHas"),
+                ].map((full, i) => {
+                  const sep = full.indexOf(" — ");
+                  const op = sep >= 0 ? full.slice(0, sep) : full;
+                  const desc = sep >= 0 ? full.slice(sep + 3) : "";
+                  return (
                   <button
                     key={op}
                     onClick={() => {
@@ -655,12 +661,13 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         <div className="mt-1 flex flex-wrap gap-2">
           <div className="min-w-[120px] flex-1">
             <label className="mb-0.5 block text-xs" style={{ color: "var(--text-tertiary)" }}>
-              From
+                {t("search.dateFrom")}
             </label>
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
+              aria-label={t("search.dateFrom")}
               className="w-full rounded px-2 py-1 text-xs"
               style={{
                 border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
@@ -671,12 +678,13 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           </div>
           <div className="min-w-[120px] flex-1">
             <label className="mb-0.5 block text-xs" style={{ color: "var(--text-tertiary)" }}>
-              To
+                {t("search.dateTo")}
             </label>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
+              aria-label={t("search.dateTo")}
               className="w-full rounded px-2 py-1 text-xs"
               style={{
                 border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
@@ -687,13 +695,14 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           </div>
           <div className="min-w-[120px] flex-1">
             <label className="mb-0.5 block text-xs" style={{ color: "var(--text-tertiary)" }}>
-              Author ID
+                {t("search.author")}
             </label>
             <input
               type="text"
               value={authorFilter}
               onChange={(e) => setAuthorFilter(e.target.value)}
-              placeholder="User ID (UUID)"
+              placeholder={t("search.author")}
+              aria-label={t("search.author")}
               className="w-full rounded px-2 py-1 text-xs placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)]"
               style={{
                 border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
@@ -705,9 +714,10 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         </div>
       )}
       {/* Autocomplete dropdown for users/channels */}
-      {showAutocomplete && query.length >= 2 && !open && (
-        <div
-          className="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border p-2 shadow-[var(--elevation-4)]"
+        {showAutocomplete && query.length >= 2 && !open && (
+          <div
+            role="listbox"
+            className="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border p-2 shadow-[var(--elevation-4)]"
           style={{
             background: "var(--center-channel-bg)",
             borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
@@ -719,11 +729,12 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 className="mb-0.5 px-2 text-xs font-medium"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                Users
+                {t("search.author")}
               </p>
               {autocompleteUsers.map((u) => (
                 <button
                   key={u.id}
+                  role="option"
                   onClick={() => {
                     setAuthorFilter(u.id);
                     setShowAutocomplete(false);
@@ -742,11 +753,12 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                 className="mb-0.5 px-2 text-xs font-medium"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                Channels
+                {t("search.channel")}
               </p>
               {autocompleteChannels.map((ch) => (
                 <button
                   key={ch.id}
+                  role="option"
                   onClick={() => {
                     setQuery(`#${ch.name}`);
                     setShowAutocomplete(false);
@@ -760,7 +772,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             </div>
           )}
           {autocompleteUsers.length === 0 && autocompleteChannels.length === 0 && (
-            <EmptyState description="No suggestions" className="!py-0" />
+            <EmptyState description={t("common.noResults")} className="!py-0" />
           )}
         </div>
       )}
@@ -797,7 +809,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               aria-pressed={searchType === "messages"}
             >
               <MessageSquare size={12} />
-              Messages
+              {t("search.messages")}
             </button>
             <button
               onClick={() => {
@@ -814,7 +826,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               aria-pressed={searchType === "files"}
             >
               <FileText size={12} />
-              Files
+              {t("search.files")}
             </button>
           </div>
           {results.map((r, index) => {
@@ -822,6 +834,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             return (
               <Link
                 key={r.id}
+                id={`result-${index}`}
                 href={`/${workspaceSlug}/${r.channel_slug ?? r.channel_id}`}
                 className="block border-b px-4 py-2 transition-colors"
                 style={{
@@ -865,7 +878,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               disabled={loadingMore}
               className="flex w-full items-center justify-center gap-1 px-4 py-2 text-xs font-medium hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] disabled:cursor-not-allowed disabled:opacity-50"
               style={{ color: "var(--text-secondary)" }}
-              aria-label="Load more search results"
+              aria-label={t("common.search")}
             >
               <ChevronDown size={14} />
               {loadingMore ? (
@@ -877,7 +890,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   }}
                 />
               ) : (
-                "Show more"
+                t("common.search")
               )}
             </button>
           )}
@@ -906,7 +919,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
             borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
           }}
         >
-          <EmptyState description={`No results for "${query}"`} className="!py-0" />
+          <EmptyState description={t("search.noResults")} className="!py-0" />
         </div>
       )}
     </div>

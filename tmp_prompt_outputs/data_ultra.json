@@ -1,55 +1,122 @@
 {
   "prompt_name": "data_ultra",
   "domain": "data",
-  "stage": "reconciliation",
-  "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-09T12:00:00.000Z",
+  "stage": "principal_audit",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-16T12:00:00.000Z",
+  "readiness": 4.0,
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
-    "P2": 2,
-    "P3": 1
+    "P1": 3,
+    "P2": 5,
+    "P3": 3
   },
   "category_scores": {
-    "data_isolation": 72,
-    "data_export": 75,
-    "data_retention": 85,
-    "gdpr_compliance": 78
+    "cross_cutting_security": 3,
+    "cross_cutting_api": 6,
+    "cross_cutting_database": 3,
+    "incident_response": 6,
+    "monitoring": 7
   },
-  "readiness": 77,
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "data",
-      "category": "data_isolation",
-      "file": "supabase/policies/06_reactions.sql",
-      "line": 7,
-      "issue": "Cross-tenant reaction visibility: reactions SELECT policy allows all authenticated users to read reactions across all workspaces",
-      "impact": "Reaction data (emoji + user_id mappings) is visible across tenant boundaries. While low-sensitivity, this violates the strict tenant isolation model used by all other tables. Combined with other data points, it enables cross-tenant user activity correlation.",
-      "fix": "Scope reactions RLS to workspace membership via messages -> channels -> workspace_members join chain.",
-      "scenario": "User A in Workspace X can enumerate reactions on messages in Workspace Y by guessing message IDs, discovering user-emoji relationships across tenants."
+      "category": "cross_cutting",
+      "file": "supabase/policies/06_reactions.sql, apps/api/src/modules/reactions/routes.ts",
+      "issue": "Reactions data leaked via open RLS and unguarded batch endpoint",
+      "impact": "Two parallel paths leak reaction data: (1) RLS `using (true)` on reactions table, (2) batch endpoint without message access verification. Combined, any authenticated user can enumerate reactions on any message.",
+      "fix": "Fix RLS to scope by channel membership. Add access control to batch endpoint."
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
+      "issue": "User presence data exposed across workspace boundaries",
+      "impact": "All authenticated users can see online/offline/dnd status and custom status messages for all users system-wide.",
+      "fix": "Scope presence visibility to workspace co-members."
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260709000003_add_compliance_exports.sql",
+      "issue": "Compliance exports visible across workspaces \u2014 lacks workspace_id column",
+      "impact": "Admin in workspace A can read compliance exports (messages, audit logs) belonging to workspace B. The table has no workspace scoping.",
+      "fix": "Add workspace_id FK and scope RLS accordingly."
     },
     {
       "severity": "P2",
       "domain": "data",
-      "category": "data_export",
+      "category": "cross_cutting",
+      "file": "apps/web/lib/socket.ts",
+      "issue": "No missed-event recovery on websocket reconnect \u2014 permanent data loss window",
+      "impact": "Socket reconnection has no sequence tracking or event replay. Messages, reactions, presence updates sent during disconnect are permanently lost.",
+      "fix": "Implement event sequence tracking with replay endpoint."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260709000004_add_announcements.sql",
+      "issue": "Announcements visible across all workspaces",
+      "impact": "Unlike the API endpoint which likely filters by workspace, the RLS allows any authenticated user to read all announcements.",
+      "fix": "Scope announcements RLS to workspace membership."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR delete not atomic \u2014 partial deletion risk",
+      "impact": "12 sequential delete calls without transaction wrapping. Partial failure leaves inconsistent user data.",
+      "fix": "Use transactional RPC or add compensation logic."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/policies/03_channels.sql",
+      "issue": "Private channel creation not restricted to admins",
+      "impact": "Any workspace member can create private channels. No rate limit or approval flow.",
+      "fix": "Restrict to admins/owners or add audit/approval."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
       "file": "apps/api/src/modules/messages/routes.ts",
-      "line": 422,
-      "issue": "Channel export endpoint fetches unbounded message data without pagination",
-      "impact": "GET /channels/:channelId/export loads ALL messages into memory and returns them as a single JSON/CSV response. Channels with >10K messages cause memory exhaustion on both server and client. No rate limiting or size cap on this endpoint.",
-      "fix": "Add pagination with max limit (e.g., 1000 per page), streaming response, or document-based export with chunking.",
-      "endpoint": "GET /channels/:channelId/export",
-      "scenario": "A channel with 50K messages hit the export endpoint: API server allocates ~100MB+ for the response, Node.js hits memory limit, process crashes."
+      "issue": "Mixed pagination (cursor vs offset) across list/search endpoints",
+      "impact": "Inconsistent pagination forces frontend to handle two strategies, complicating cache and data reconciliation.",
+      "fix": "Consolidate to cursor-based pagination."
     },
     {
       "severity": "P3",
       "domain": "data",
-      "category": "gdpr_compliance",
-      "file": "apps/api/src/modules/auth/routes.ts",
-      "line": 182,
-      "issue": "GDPR data export uses getSupabaseAdmin() bypassing RLS for data collection",
-      "impact": "GDPR export endpoint uses service_role key (admin client) to collect user data. While user_id is constrained to req.userId, this pattern centralizes data access authority. If a bug in user_id handling occurs, or if the endpoint is called before full authentication, other users' data could leak. Service_role key exposure amplifies this risk.",
-      "fix": "Use per-user Supabase client (req.supabase) where RLS policies enforce user scoping. Only fall back to admin client for auth.admin operations that require service_role."
+      "category": "cross_cutting",
+      "file": "apps/api/src/middleware/input-sanitizer.ts",
+      "issue": "SQL injection sanitizer causes false positives on natural language text",
+      "impact": "Keywords like 'select', 'from', 'where' in natural language trigger false positive rejections on non-content fields.",
+      "fix": "Use syntax-aware detection instead of keyword matching."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "issue": "CSP lacks nonce support for inline scripts",
+      "impact": "Future frontend work requiring inline scripts will be blocked.",
+      "fix": "Add nonce generation when frontend requires inline scripts."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "Webhook body limit uses spoofable Content-Length header",
+      "impact": "Content-Length can be manipulated; actual body size enforcement is in express.json middleware already.",
+      "fix": "Remove redundant middleware."
     }
   ]
 }

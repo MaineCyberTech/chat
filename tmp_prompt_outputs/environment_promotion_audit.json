@@ -1,61 +1,80 @@
 {
   "prompt_name": "environment_promotion_audit",
   "domain": "environment",
-  "stage": "principal_audit",
+  "stage": "quality_confirmation",
   "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-16T06:04:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 1,
+    "P1": 0,
     "P2": 3,
-    "P3": 1
+    "P3": 3
   },
-  "readiness": 82,
+  "category_scores": {
+    "domain_alignment": 100,
+    "port_consistency": 100,
+    "caddy_tls": 90,
+    "secret_parity": 80,
+    "health_endpoints": 85,
+    "resource_limits": 75,
+    "image_tags": 80,
+    "backup_config": 50
+  },
+  "readiness": 82.5,
   "findings": [
     {
-      "severity": "P1",
+      "severity": "P2",
       "domain": "environment",
-      "category": "health_check",
+      "category": "backup_config",
       "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "Web service (Next.js) missing healthcheck in prod compose \u00e2\u20ac\u201d dev compose has healthcheck",
-      "impact": "Deploy health check only validates API container; web container crash won't be detected",
-      "fix": "Add healthcheck: test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000'] to web service in prod compose"
+      "issue": "No backup volume configuration or backup service defined for production data",
+      "impact": "Redis data and Caddy certs have no automated backup; loss of volumes = data loss",
+      "fix": "Add automated backup volume to production compose or document manual backup procedure"
     },
     {
       "severity": "P2",
       "domain": "environment",
-      "category": "caddy_routes",
-      "file": "infra/docker/Caddyfile.prod",
-      "issue": "Prod Caddyfile missing /healthz route \u00e2\u20ac\u201d only /health is routed to API",
-      "impact": "Full health check (DB, Redis) not accessible via Caddy on prod; requires direct API access",
-      "fix": "Add @healthz path block routing to api:4000 in Caddyfile.prod"
+      "category": "resource_limits",
+      "file": "infra/docker/docker-compose.devremote.yml",
+      "issue": "Dev environment has no explicit mem_limit on services unlike production",
+      "impact": "Dev environment may over-consume droplet resources, masking OOM issues in production",
+      "fix": "Add matching mem_limit values to dev compose for api (192m), worker (128m), web (256m), redis (64m), caddy (64m)"
     },
     {
       "severity": "P2",
       "domain": "environment",
-      "category": "compose_env",
+      "category": "worker_healthcheck",
       "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "Prod compose web service lacks env_file: .env \u00e2\u20ac\u201d dev compose has it",
-      "impact": "Web prod container may miss required env vars; dev and prod env injection differs",
-      "fix": "Add env_file: .env to web service in docker-compose.prod.yml"
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "image_tags",
-      "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "Prod compose uses :latest tags (not SHA-pinned) for all images \u00e2\u20ac\u201d rollback races could pull wrong version",
-      "impact": "Concurrent deploys may cause race condition where :latest tag points to different SHA during rollback",
-      "fix": "Pin prod image tags to SHA digest after pull in deploy-production.yml deploy step"
+      "issue": "Worker healthcheck port (4100) not exposed in Dockerfile EXPOSE or compose ports",
+      "impact": "Health check works via internal network but container metadata incomplete",
+      "fix": "Add EXPOSE 4100 to worker Dockerfile for consistency"
     },
     {
       "severity": "P3",
       "domain": "environment",
-      "category": "mem_limits",
+      "category": "image_tags",
       "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "Prod compose has same mem_limit values as dev compose (e.g. api: 192m, web: 256m)",
-      "impact": "Production may need higher memory limits under real load \u00e2\u20ac\u201d potential OOM risk",
-      "fix": "Review and increase prod memory limits based on load testing: api: 512m, web: 512m, worker: 256m recommended"
+      "issue": "Production compose uses :latest tag as fallback; deploy overrides to SHA but :latest not uniquely pinned",
+      "impact": "Manual compose up could pull stale images if deploy script not run",
+      "fix": "Remove :latest defaults from production compose; require explicit SHA tag via .env"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "image_tags",
+      "file": "infra/docker/docker-compose.devremote.yml",
+      "issue": "Dev compose uses :dev tag fallback; deploy pulls SHA tag and retags to :dev \u2014 potential race",
+      "impact": "Race condition between build-push completing and deploy pulling :dev before retag",
+      "fix": "Use SHA tag directly in dev compose via WEB_IMAGE env var, remove :dev fallback"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "livekit_config",
+      "file": "infra/docker/docker-compose.devremote.yml",
+      "issue": "Dev LiveKit config uses localhost for TURN domain while prod uses DOMAIN variable",
+      "impact": "Dev TURN may not work correctly for external clients testing WebRTC",
+      "fix": "Use ${DOMAIN:-localhost} for dev LiveKit TURN domain matching prod pattern"
     }
-  ],
-  "generated_at": "2026-07-09T03:06:59Z"
+  ]
 }

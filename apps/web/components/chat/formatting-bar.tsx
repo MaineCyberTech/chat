@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { t } from "@/lib/i18n";
 import {
   Bold,
   Italic,
@@ -101,22 +102,22 @@ function applyFormat(editor: Editor, mode: FormatMode) {
   }
 }
 
-const FORMAT_BUTTONS: { mode: FormatMode; icon: React.ReactNode; label: string }[] = [
-  { mode: "bold", icon: <Bold size={14} />, label: "Bold" },
-  { mode: "italic", icon: <Italic size={14} />, label: "Italic" },
-  { mode: "underline", icon: <Underline size={14} />, label: "Underline" },
-  { mode: "strike", icon: <Strikethrough size={14} />, label: "Strikethrough" },
-  { mode: "code", icon: <Code size={14} />, label: "Code" },
-  { mode: "highlight", icon: <Highlighter size={14} />, label: "Highlight" },
-  { mode: "link", icon: <Link size={14} />, label: "Link" },
-  { mode: "quote", icon: <Quote size={14} />, label: "Quote" },
-  { mode: "ul", icon: <List size={14} />, label: "Bullet list" },
-  { mode: "ol", icon: <ListOrdered size={14} />, label: "Numbered list" },
-  { mode: "taskList", icon: <CheckSquare size={14} />, label: "Task list" },
-  { mode: "image", icon: <Image size={14} />, label: "Image" },
-  { mode: "alignLeft", icon: <AlignLeft size={14} />, label: "Align left" },
-  { mode: "alignCenter", icon: <AlignCenter size={14} />, label: "Align center" },
-  { mode: "alignRight", icon: <AlignRight size={14} />, label: "Align right" },
+const FORMAT_BUTTONS: { mode: FormatMode; icon: React.ReactNode; i18nKey: string }[] = [
+  { mode: "bold", icon: <Bold size={14} />, i18nKey: "formatting.bold" },
+  { mode: "italic", icon: <Italic size={14} />, i18nKey: "formatting.italic" },
+  { mode: "underline", icon: <Underline size={14} />, i18nKey: "formatting.underline" },
+  { mode: "strike", icon: <Strikethrough size={14} />, i18nKey: "formatting.strikethrough" },
+  { mode: "code", icon: <Code size={14} />, i18nKey: "formatting.code" },
+  { mode: "highlight", icon: <Highlighter size={14} />, i18nKey: "formatting.highlight" },
+  { mode: "link", icon: <Link size={14} />, i18nKey: "formatting.link" },
+  { mode: "quote", icon: <Quote size={14} />, i18nKey: "formatting.blockquote" },
+  { mode: "ul", icon: <List size={14} />, i18nKey: "formatting.bulletList" },
+  { mode: "ol", icon: <ListOrdered size={14} />, i18nKey: "formatting.orderedList" },
+  { mode: "taskList", icon: <CheckSquare size={14} />, i18nKey: "formatting.taskList" },
+  { mode: "image", icon: <Image size={14} />, i18nKey: "formatting.image" },
+  { mode: "alignLeft", icon: <AlignLeft size={14} />, i18nKey: "formatting.alignLeft" },
+  { mode: "alignCenter", icon: <AlignCenter size={14} />, i18nKey: "formatting.alignCenter" },
+  { mode: "alignRight", icon: <AlignRight size={14} />, i18nKey: "formatting.alignRight" },
 ];
 
 function isActive(editor: Editor | null, mode: FormatMode): boolean {
@@ -163,6 +164,7 @@ export function FormattingBar({ editorRef }: Props) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [urlInput, setUrlInput] = useState<{ mode: "link" | "image"; value: string } | null>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (urlInput) requestAnimationFrame(() => urlInputRef.current?.focus());
@@ -181,8 +183,21 @@ export function FormattingBar({ editorRef }: Props) {
     setUrlInput(null);
   }
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const buttons = toolbarRef.current?.querySelectorAll<HTMLButtonElement>("button:not([type=submit]):not([type=button])");
+    if (!buttons || buttons.length === 0) return;
+    const currentIndex = Array.from(buttons).findIndex((btn) => btn === document.activeElement);
+    if (currentIndex === -1) return;
+    e.preventDefault();
+    const nextIndex = e.key === "ArrowRight"
+      ? (currentIndex + 1) % buttons.length
+      : (currentIndex - 1 + buttons.length) % buttons.length;
+    buttons[nextIndex]?.focus();
+  }, []);
+
   return (
-    <div className="mb-1 flex flex-wrap gap-0.5" role="toolbar" aria-label="Text formatting">
+    <div ref={toolbarRef} className="mb-1 flex flex-wrap gap-0.5" role="toolbar" aria-orientation="horizontal" aria-label="Text formatting" onKeyDown={handleKeyDown}>
       {urlInput && (
         <form
           onSubmit={handleUrlSubmit}
@@ -193,7 +208,7 @@ export function FormattingBar({ editorRef }: Props) {
             className="text-xs font-medium"
             style={{ color: "rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))" }}
           >
-            {urlInput.mode === "link" ? "URL:" : "Image URL:"}
+            {urlInput.mode === "link" ? t("formatting.urlLabel") : t("formatting.imageUrlLabel")}
           </span>
           <input
             ref={urlInputRef}
@@ -212,7 +227,7 @@ export function FormattingBar({ editorRef }: Props) {
             className="rounded px-1 py-0.5 text-xs font-medium"
             style={{ color: "var(--button-bg)" }}
           >
-            Add
+            {t("formatting.add")}
           </button>
           <button
             type="button"
@@ -224,8 +239,9 @@ export function FormattingBar({ editorRef }: Props) {
           </button>
         </form>
       )}
-      {FORMAT_BUTTONS.map(({ mode, icon, label }, index) => {
+      {FORMAT_BUTTONS.map(({ mode, icon, i18nKey }, index) => {
         const active = isActive(editorRef.current, mode);
+        const label = t(i18nKey);
         return (
           <button
             key={mode}
@@ -237,7 +253,7 @@ export function FormattingBar({ editorRef }: Props) {
                 applyFormat(editorRef.current, mode);
               }
             }}
-            className="flex h-7 w-7 items-center justify-center rounded transition-colors"
+            className="flex min-h-[44px] min-w-[44px] md:min-h-7 md:min-w-7 items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:ring-[var(--button-bg)]"
             style={{
               color:
                 hoveredIndex === index
@@ -254,6 +270,7 @@ export function FormattingBar({ editorRef }: Props) {
             onMouseLeave={() => setHoveredIndex(null)}
             aria-label={label}
             aria-pressed={mode === "link" || mode === "image" ? undefined : active}
+            aria-haspopup={mode === "link" || mode === "image" ? "dialog" : undefined}
             title={label}
           >
             {icon}

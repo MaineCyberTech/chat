@@ -1,0 +1,426 @@
+{
+  "stage": "quality_confirmation",
+  "run_id": "full_audit_consolidated_20260716_061537",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-16T06:15:37Z",
+  "severity_counts": {
+    "P0": 1,
+    "P1": 4,
+    "P2": 19,
+    "P3": 16
+  },
+  "category_scores": {
+    "secrets_management": 75,
+    "workflow_permissions": 90,
+    "path_filtering": 85,
+    "prod_approval_gates": 90,
+    "branch_protection": 100,
+    "artifact_handling": 80,
+    "supply_chain_config": 95,
+    "Test Infrastructure": 25,
+    "WebSocket Coverage": 20,
+    "File Upload": 25,
+    "Negative Paths": 15,
+    "Integration Tests": 20,
+    "Visual Regression": 40,
+    "Chaos Testing": 30,
+    "Load Testing": 40,
+    "Accessibility": 10,
+    "Unit Tests": 35,
+    "Offline": 10,
+    "domain_alignment": 100,
+    "port_consistency": 100,
+    "caddy_tls": 90,
+    "secret_parity": 80,
+    "health_endpoints": 85,
+    "resource_limits": 75,
+    "image_tags": 80,
+    "backup_config": 50,
+    "policy_file_structure": 75,
+    "tier_inheritance": 60,
+    "workflow_mapping": 70,
+    "hotfix_exceptions": 50,
+    "policy_auditability": 80,
+    "approval_workflows": 85,
+    "timeout_configuration": 85,
+    "circuit_breaker": 90,
+    "webhook_idempotency": 80,
+    "bulk_operation_results": 50,
+    "retry_backoff": 85,
+    "graceful_shutdown": 90,
+    "worker_timeouts": 75,
+    "ui_failure_states": 70,
+    "lockfile_committed": 100,
+    "dependabot_config": 95,
+    "docker_nonroot_user": 90,
+    "docker_healthcheck": 80,
+    "multi_stage_builds": 100,
+    "dockerignore": 30,
+    "image_pinning": 70,
+    "audit_config": 85
+  },
+  "readiness": 67.5,
+  "finding_count": 40,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "ci_cd",
+      "category": "secrets_management",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "Secrets written to .env file via heredoc in SSH script \u2014 exposed in CI logs if script fails",
+      "impact": "If the SSH step fails or is debugged, ALL production secrets (Supabase keys, VAPID keys, LiveKit keys) are visible in plaintext in CI logs",
+      "fix": "Pass secrets to the droplet via environment variables or GitHub Actions secrets injection at compose time; use docker compose --env-file with GH secret masking"
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "secrets_management",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "Secrets written to .env file via heredoc with conditional injection \u2014 potential secrets leakage in logs",
+      "impact": "Development secrets visible in CI logs if debug enabled or SSH command errors",
+      "fix": "Use docker compose environment variables or GH Actions secrets injection instead of heredoc; set secrets only at container runtime"
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "path_filtering",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No path filtering on push to main \u2014 triggers full deploy on any file change",
+      "impact": "Documentation or config changes trigger expensive Terraform provision + Docker build + deploy cycle unnecessarily",
+      "fix": "Add paths filter to restrict deploy on push to relevant directories: apps/api/**, apps/web/**, apps/worker/**, infra/docker/**, .github/workflows/deploy-production.yml"
+    },
+    {
+      "severity": "P2",
+      "domain": "ci_cd",
+      "category": "workflow_triggers",
+      "file": ".github/workflows/platform.yml",
+      "issue": "Platform workflow runs pwsh script from automation dir \u2014 no input validation or scope limiting",
+      "impact": "Any workflow_dispatch caller can execute arbitrary pwsh scripts with GITHUB_TOKEN that has packages:write scope",
+      "fix": "Add explicit permissions block restricting token, add environment gates, validate inputs"
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "artifact_handling",
+      "file": ".github/workflows/validate.yml",
+      "issue": "No explicit artifact retention period set for test-results and coverage artifacts",
+      "impact": "Artifacts retained indefinitely by default, consuming GH Actions storage quota",
+      "fix": "Add retention-days: 7 to all uses of actions/upload-artifact"
+    },
+    {
+      "severity": "P3",
+      "domain": "ci_cd",
+      "category": "workflow_permissions",
+      "file": ".github/workflows/governance.yml",
+      "issue": "Governance workflow has no explicit permissions block (inherits default write-all)",
+      "impact": "GITHUB_TOKEN has more permissions than needed, potential supply chain risk",
+      "fix": "Add explicit permissions: contents: read at the workflow level"
+    },
+    {
+      "severity": "P0",
+      "domain": "testing",
+      "category": "Test Infrastructure",
+      "file": "tests/e2e/messaging.spec.ts, tests/e2e/auth.spec.ts, tests/e2e/file-upload.spec.ts",
+      "issue": "No CI-compatible auth fixture \u2014 all E2E tests skip without test-signin.json",
+      "impact": "CI validates nothing beyond 'does login page render'. Real E2E tests never run in CI.",
+      "fix": "Create test user via Supabase Admin API in CI setup, or mock Supabase auth. Add CI secrets for test credentials."
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "WebSocket Coverage",
+      "file": "apps/web/components/chat/chat-view.tsx (ConnectionBanner component)",
+      "issue": "No WebSocket reconnection E2E test exists",
+      "impact": "Reconnection logic (banner, auto-reconnect, message delivery after reconnect) is untested end-to-end",
+      "fix": "Add E2E test that stops/restarts API server during test and verifies reconnection UI + message flow"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "File Upload",
+      "file": "tests/e2e/file-upload.spec.ts",
+      "issue": "File upload E2E test skipped without test-signin.json \u2014 never runs in CI",
+      "impact": "File upload flow is completely untested in CI",
+      "fix": "Use Supabase admin API test user setup or mock file upload endpoint for CI execution"
+    },
+    {
+      "severity": "P1",
+      "domain": "testing",
+      "category": "Negative Paths",
+      "file": "apps/web/components/chat/message-input.tsx, apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "No E2E tests for permission-denied or error states",
+      "impact": "Error UX (403/404 handling, read-only channel, non-member access) is completely untested",
+      "fix": "Add tests for 403/404 error handling, read-only channel send attempt, non-member channel access"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "Integration Tests",
+      "file": "tests/integration/health.test.ts",
+      "issue": "Only 2 integration tests exist \u2014 both for health endpoints only",
+      "impact": "API contract changes (messages, auth, channels, notifications, etc.) have no automated validation",
+      "fix": "Add API integration tests for all CRUD endpoints: auth, messages, channels, workspaces, notifications, flags, pins"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "Visual Regression",
+      "file": "apps/web/e2e/visual-snapshot.spec.ts",
+      "issue": "Visual snapshot tests exist but are not integrated into CI pipeline",
+      "impact": "Visual regressions go undetected in CI \u2014 no baseline comparison",
+      "fix": "Add visual snapshot CI job with baseline comparison and diff threshold"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "Chaos Testing",
+      "file": "tests/chaos/scenarios/api-crash.sh, tests/chaos/scenarios/redis-down.sh",
+      "issue": "Chaos tests are shell scripts with no CI integration or runner",
+      "impact": "Resiliency coverage is only manual \u2014 no automated validation",
+      "fix": "Integrate chaos tests with CI: run api-crash.sh and verify reconnection and graceful degradation"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "Load Testing",
+      "file": "tests/k6/load-test.js, tests/k6/smoke-test.js",
+      "issue": "k6 load tests exist but are only on schedule/manual, not in CI on push",
+      "impact": "Performance regressions go undetected until scheduled load test run",
+      "fix": "Run k6 smoke test (low load) in CI on every push to main/develop"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "Accessibility",
+      "file": "apps/web/playwright.config.ts",
+      "issue": "No accessibility E2E tests \u2014 no axe-core or pa11y integration",
+      "impact": "Accessibility regressions only caught by manual audit \u2014 no automated regression detection",
+      "fix": "Add @axe-core/playwright to E2E suite and run a11y checks on critical pages"
+    },
+    {
+      "severity": "P2",
+      "domain": "testing",
+      "category": "Offline",
+      "file": "apps/web/components/chat/message-list.tsx, apps/web/components/chat/chat-view.tsx",
+      "issue": "No offline/online state E2E tests",
+      "impact": "Offline UX (queued messages, reconnection banner, retry logic) is untested",
+      "fix": "Use Playwright context.route interception to simulate network failures and offline state"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "Unit Tests",
+      "file": "packages/ui/src/components/__tests__/ (only 1 test directory found)",
+      "issue": "Low component unit test coverage \u2014 only one __tests__ directory exists",
+      "impact": "Component-level regressions may slip through",
+      "fix": "Set minimum 30% coverage threshold for new components; add tests for state-heavy components"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "Flaky Tests",
+      "file": "tests/e2e/ (all spec files)",
+      "issue": "E2E tests use fixed timeouts without smart async waiting for WebSocket/optimistic UI",
+      "impact": "Tests may fail intermittently in CI due to timing issues",
+      "fix": "Use waitForResponse API interceptors for async operations instead of fixed timeouts"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "Visual Regression",
+      "file": "apps/web/e2e/visual-snapshot.spec.ts",
+      "issue": "Visual snapshot tests exist only for login page \u2014 no empty-state snapshots",
+      "impact": "Visual regressions in empty states go undetected",
+      "fix": "Add snapshot tests for empty states: no messages, no channels, no search results"
+    },
+    {
+      "severity": "P3",
+      "domain": "testing",
+      "category": "Integration Tests",
+      "file": "tests/integration/ (no test files beyond health.test.ts)",
+      "issue": "No API integration tests for search, notifications, reactions, or admin endpoints",
+      "impact": "Backend search, notification, and admin logic is untested",
+      "fix": "Add integration tests for search API, notification preferences CRUD, and admin endpoints"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "backup_config",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "No backup volume configuration or backup service defined for production data",
+      "impact": "Redis data and Caddy certs have no automated backup; loss of volumes = data loss",
+      "fix": "Add automated backup volume to production compose or document manual backup procedure"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "resource_limits",
+      "file": "infra/docker/docker-compose.devremote.yml",
+      "issue": "Dev environment has no explicit mem_limit on services unlike production",
+      "impact": "Dev environment may over-consume droplet resources, masking OOM issues in production",
+      "fix": "Add matching mem_limit values to dev compose for api (192m), worker (128m), web (256m), redis (64m), caddy (64m)"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "worker_healthcheck",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Worker healthcheck port (4100) not exposed in Dockerfile EXPOSE or compose ports",
+      "impact": "Health check works via internal network but container metadata incomplete",
+      "fix": "Add EXPOSE 4100 to worker Dockerfile for consistency"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "image_tags",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Production compose uses :latest tag as fallback; deploy overrides to SHA but :latest not uniquely pinned",
+      "impact": "Manual compose up could pull stale images if deploy script not run",
+      "fix": "Remove :latest defaults from production compose; require explicit SHA tag via .env"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "image_tags",
+      "file": "infra/docker/docker-compose.devremote.yml",
+      "issue": "Dev compose uses :dev tag fallback; deploy pulls SHA tag and retags to :dev \u2014 potential race",
+      "impact": "Race condition between build-push completing and deploy pulling :dev before retag",
+      "fix": "Use SHA tag directly in dev compose via WEB_IMAGE env var, remove :dev fallback"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "livekit_config",
+      "file": "infra/docker/docker-compose.devremote.yml",
+      "issue": "Dev LiveKit config uses localhost for TURN domain while prod uses DOMAIN variable",
+      "impact": "Dev TURN may not work correctly for external clients testing WebRTC",
+      "fix": "Use ${DOMAIN:-localhost} for dev LiveKit TURN domain matching prod pattern"
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "tier_inheritance",
+      "file": "docs/hardening_super_bundle/policies/",
+      "issue": "No documented policy tier inheritance hierarchy; 4 standalone policy files with no parent chain",
+      "impact": "Policy changes must be duplicated across files; risk of drift between dev/rc/prod policies",
+      "fix": "Define base policy defaults in a gate-policy.base.json with per-tier overrides; document inheritance chain in README"
+    },
+    {
+      "severity": "P2",
+      "domain": "governance",
+      "category": "hotfix_exceptions",
+      "file": "docs/hardening_super_bundle/policies/gate-policy.hotfix.json",
+      "issue": "Hotfix policy file exists but no documented compensating controls or post-hotfix validation requirements",
+      "impact": "Hotfix path could become permanent bypass; no mandatory post-mortem or re-validation after hotfix",
+      "fix": "Add compensating controls section: mandatory peer review, 24h post-mortem, re-apply full gate within 7 days"
+    },
+    {
+      "severity": "P3",
+      "domain": "governance",
+      "category": "policy_auditability",
+      "file": ".github/workflows/governance.yml",
+      "issue": "Governance workflow is a thin wrapper calling external pwsh script with no audit trail of policy decisions",
+      "impact": "Policy evaluation results not captured as deploy artifacts; no traceability for compliance",
+      "fix": "Add policy evaluation output to workflow logs and upload as build artifact; capture decision summary"
+    },
+    {
+      "severity": "P3",
+      "domain": "governance",
+      "category": "workflow_mapping",
+      "file": "docs/hardening_super_bundle/policies/",
+      "issue": "No documented mapping between environments and policy tiers (which policy applies to which workflow/branch)",
+      "impact": "Operators unclear which gate policy applies to deploy-development vs deploy-production vs hotfix flows",
+      "fix": "Add workflow-to-policy mapping table in policy directory README or docs/runbooks/release-process.md"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "bulk_operations",
+      "file": "apps/api/src/modules/",
+      "issue": "No verified per-item ok/error result pattern in bulk endpoints \u2014 likely single-status responses",
+      "impact": "Partial bulk failures appear as full successes to the client; user sees fake success toast on half-failed writes",
+      "fix": "Audit all POST/PATCH/PUT endpoints that accept arrays; return { results: [{ ok: boolean, error?: string }] } per item"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "ui_failure_states",
+      "file": "apps/web/components/",
+      "issue": "No systematic pattern for displaying partial-failure toasts from bulk API responses",
+      "impact": "Users not alerted about individual item failures in batch operations",
+      "fix": "Create a BulkOperationResult component that displays success count vs failure count with details"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "worker_timeouts",
+      "file": "apps/worker/src/processors/",
+      "issue": "Each processor has its own AbortSignal.timeout(30s) but no centralized timeout wrapper in task execution",
+      "impact": "Inconsistent timeout enforcement across processors; new processors may forget timeout handling",
+      "fix": "Create a createTaskWrapper utility in worker that enforces per-task timeout, retry, and error handling consistently"
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "circuit_breaker",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker status changes logged but not exported as Prometheus metrics",
+      "impact": "No monitoring/alerting on circuit breaker state; open circuit not visible until users report failures",
+      "fix": "Export circuit breaker state (open/closed/half-open) as prometheus gauge per breaker name"
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "retry_backoff",
+      "file": "apps/api/src/lib/http-client.ts",
+      "issue": "HTTP client retry uses linear backoff (retryDelay * attemptNum) not exponential",
+      "impact": "Thundering herd on retry for concurrent requests; less effective than exponential backoff with jitter",
+      "fix": "Implement exponential backoff with jitter: delay = min(baseDelay * 2^attempt + random(0, jitter), maxDelay)"
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "supabase_circuit_breaker",
+      "file": "apps/api/src/lib/supabase.ts",
+      "issue": "No circuit breaker found wrapping Supabase admin client calls despite circuit-breaker utility existing",
+      "impact": "Supabase outage causes cascading API failures without circuit breaker protection",
+      "fix": "Wrap getSupabaseAdmin calls in circuit breaker using the existing executeWithCircuitBreaker utility"
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "dockerignore",
+      "file": "apps/api/Dockerfile",
+      "issue": "No .dockerignore found in repo root or app directories \u2014 entire context sent to Docker daemon",
+      "impact": "Slower builds, larger image cache, risk of leaking .env or node_modules into build context",
+      "fix": "Create .dockerignore in each app directory or repo root excluding node_modules, .git, .env, dist, coverage"
+    },
+    {
+      "severity": "P2",
+      "domain": "supply_chain",
+      "category": "data_dockerfile",
+      "file": "apps/worker/Dockerfile",
+      "issue": "Worker Dockerfile has no HEALTHCHECK directive",
+      "impact": "Docker daemon cannot determine worker container health; compose uses external API health instead",
+      "fix": "Add HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:4100/healthz || exit 1"
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "image_pinning",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "LiveKit image uses :latest tag without SHA pinning",
+      "impact": "Unpredictable version pulls across deployments; no reproducible builds for WebRTC server",
+      "fix": "Pin livekit/livekit-server to specific SHA digest or semver tag in production compose"
+    },
+    {
+      "severity": "P3",
+      "domain": "supply_chain",
+      "category": "base_image_pinning",
+      "file": "apps/api/Dockerfile",
+      "issue": "Base images use 'node:22-alpine' without SHA digest pinning",
+      "impact": "Non-reproducible builds \u2014 node:22-alpine tag can change without notice",
+      "fix": "Pin base images to SHA256 digest: node:22-alpine@sha256:<specific_digest>"
+    }
+  ]
+}

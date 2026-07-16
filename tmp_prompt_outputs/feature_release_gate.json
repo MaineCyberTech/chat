@@ -2,77 +2,137 @@
   "prompt_name": "feature_release_gate",
   "domain": "release",
   "stage": "frontend_release_gate",
-  "decision": "GO",
-  "generated_at": "2026-07-09T15:00:00Z",
-  "readiness": 63,
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-16T14:00:00Z",
+  "readiness": 60.0,
   "severity_counts": {
     "P0": 0,
-    "P1": 0,
-    "P2": 3,
-    "P3": 3
+    "P1": 2,
+    "P2": 6,
+    "P3": 4
   },
   "category_scores": {
-    "e2e_coverage": 40,
-    "visual_regression": 35,
-    "rollback_readiness": 75,
-    "feature_flag_coverage": 70,
-    "release_automation": 70,
-    "operator_handoff": 65
+    "Artifact Versioning": 40,
+    "Rollback Path": 45,
+    "Feature Flags": 30,
+    "Operator Runbooks": 50,
+    "Validation": 55,
+    "Data Compatibility": 65,
+    "Health Checks": 50,
+    "Backup Strategy": 70,
+    "Communication": 60,
+    "CI/CD": 65,
+    "Monitoring": 55,
+    "Observability": 60
   },
   "findings": [
     {
-      "severity": "P2",
+      "severity": "P1",
       "domain": "release",
-      "category": "E2E Coverage \u00e2\u20ac\u201d Core Journeys",
-      "file": "apps/web/e2e/comprehensive.spec.ts (24 of 28 tests skipped), tests/e2e/ (depends on external credentials)",
-      "issue": "No automated regression validation of core user journeys in CI \u00e2\u20ac\u201d sign-in, workspace creation, channel creation, message send, and real-time delivery all lack reliable automated testing",
-      "impact": "Every release requires manual full-regression testing for the core value proposition (auth -> workspace -> channel -> message). The skip pattern has been present since test files were created with no resolution plan. External credential dependency blocks CI execution",
-      "fix": "Provision a test Supabase project or local emulator with CI credentials. Create seed SQL for test workspaces, channels, users, and messages. Add CI job: migrate -> seed -> run E2E -> teardown. Remove all test.skip() and implement real assertions against seeded data"
+      "category": "Artifact Versioning",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Docker images use :latest tags without SHA pinning \u2014 cannot trace which version is deployed",
+      "impact": "Rollback requires knowing which previous :latest was deployed; no traceability",
+      "fix": "Tag images with git commit SHA (git rev-parse --short HEAD) and push SHA tag alongside latest"
+    },
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "Rollback Path",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No automated rollback trigger in CI/CD if deploy fails health checks",
+      "impact": "Manual rollback requires operator SSH access to production droplet, increasing MTTR",
+      "fix": "Add rollback job that re-deploys previous SHA tag if health checks fail after deploy"
     },
     {
       "severity": "P2",
       "domain": "release",
-      "category": "Visual Regression \u00e2\u20ac\u201d Baseline Coverage",
-      "file": "apps/web/e2e/visual-snapshot.spec.ts",
-      "issue": "Visual snapshot coverage limited to 3 pages (login, settings, 404) with no authenticated states, no workspace layout, no channel view, no dark mode",
-      "impact": "Only login page, settings page (unauthenticated), and 404 page have snapshot tests. No coverage for the workspace layout, channel view, message list, thread panel, emoji picker, or dark mode. Critical visual regressions in these areas are undetectable in CI",
-      "fix": "Add visual snapshots for: workspace layout with sidebar, channel view with messages, message input with formatting toolbar, emoji picker open, thread panel, settings page dark mode, mobile breakpoint (375px) for key pages. Use mock API responses for deterministic snapshots"
+      "category": "Feature Flags",
+      "file": "apps/web (no feature flag system exists at all)",
+      "issue": "No feature flag system for emergency kill-switch on any feature",
+      "impact": "Any bug in new feature requires full code deploy to disable",
+      "fix": "Implement feature flag table in Supabase with admin toggle UI; start with message send kill-switch"
     },
     {
       "severity": "P2",
       "domain": "release",
-      "category": "Rollback Readiness \u00e2\u20ac\u201d Migration Testing",
-      "file": "supabase/rollback/ (rollback scripts exist but no automated migration rollback test in CI)",
-      "issue": "Rollback scripts exist for database migrations but there is no automated CI validation that rollbacks execute cleanly and restore previous state",
-      "impact": "While migration rollback scripts exist, they are verified only through CI checking their existence, not through actual execution. In a real rollback scenario, operators cannot be confident that rollback scripts will succeed without data loss",
-      "fix": "Add CI job that applies pending migrations, creates test data, then executes rollback scripts and verifies: (1) rollback SQL completes without error, (2) previous schema is restored, (3) test data integrity is verified. Integrate into the deployment pipeline"
+      "category": "Operator Runbooks",
+      "file": "docs/runbooks/ (rollback runbook missing)",
+      "issue": "No rollback runbook in docs \u2014 operators have no documented procedure",
+      "impact": "Operator uncertainty during incident increases MTTR",
+      "fix": "Write rollback runbook covering detection, DB rollback, image revert, verification, communication"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Validation",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No post-deploy smoke test in CI to verify deployment health",
+      "impact": "Deploy failures may go undetected until users report them",
+      "fix": "Add post-deploy smoke test job: check /health, /healthz, attempt message send via API"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Data Compatibility",
+      "file": "docs/ (no forward-fix strategy documented)",
+      "issue": "No forward-fix strategy documented for irreversible data migrations",
+      "impact": "Some data migrations may not be cleanly reversible",
+      "fix": "Document forward-fix approach: corrective migration instead of revert. Add migration PR template question"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Health Checks",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "No Docker healthcheck directives in compose for web or api services",
+      "impact": "Caddy may route traffic to unhealthy containers during deploy",
+      "fix": "Add healthcheck to web and api services in docker-compose.prod.yml"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Backup Strategy",
+      "file": "docs/runbooks/ (no backup verification documented)",
+      "issue": "No documented verification process for Supabase backup restorability",
+      "impact": "Backup existence does not guarantee restorability",
+      "fix": "Document weekly backup status check and quarterly restore test in runbook"
     },
     {
       "severity": "P3",
       "domain": "release",
-      "category": "Release Automation \u00e2\u20ac\u201d Artifact Versioning",
+      "category": "Communication",
+      "file": "docs/runbooks/ (no communication template)",
+      "issue": "No communication template for rollback incidents",
+      "impact": "Ad-hoc communication during incident may omit key details",
+      "fix": "Create rollback communication template with sections: status, impact, ETA, what changed"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "CI/CD",
       "file": ".github/workflows/build-push.yml",
-      "issue": "Docker images tagged with :dev and :latest tags but no semantic versioning or git SHA tagging that allows traceability between release artifacts and source code",
-      "impact": "In a rollback scenario, operators cannot easily determine which image tag corresponds to the previous working release. The :latest tag is mutable and overwritten. There's no immutable reference linking artifacts to specific git commits",
-      "fix": "Tag Docker images with git SHA (e.g., :sha-abc1234) in addition to :dev/:latest. Store the mapping in a deployment manifest. Update deploy workflows to reference SHA-tagged images explicitly"
+      "issue": "Deploy workflow doesn't capture image SHA256 digest for traceability",
+      "impact": "Cannot verify exact image running in production",
+      "fix": "Store pushed image digest in workflow summary or deployment environment variable"
     },
     {
       "severity": "P3",
       "domain": "release",
-      "category": "Rollback Readiness \u00e2\u20ac\u201d Kill Switches",
-      "file": "apps/api/src/modules/feature-flags/__tests__/feature-flags.test.ts",
-      "issue": "Feature flag tests exist but no production kill-switch mechanism is documented or tested for rapid feature disablement without code deployment",
-      "impact": "Critical features (file upload, notifications, AI rewrite, search) do not have emergency stop paths that can be activated without a code deployment. If a feature causes production issues, the only recovery path is rollback or hotfix deployment",
-      "fix": "Expose a feature flag management API endpoint (PATCH /v1/feature-flags/:name) that can be toggled remotely. Add dashboard UI for operators. Document kill-switch activation procedure in runbook"
+      "category": "Monitoring",
+      "file": "apps/api/src/ (health endpoint)",
+      "issue": "API /health endpoint returns status but not deployed version/commit SHA",
+      "impact": "Cannot confirm which version is serving requests at a glance",
+      "fix": "Inject GIT_SHA at build time and expose in health endpoint response"
     },
     {
       "severity": "P3",
       "domain": "release",
-      "category": "Operator Handoff \u00e2\u20ac\u201d Runbook Completeness",
-      "file": "docs/runbooks/ (check for deployment rollback runbook)",
-      "issue": "Deployment rollback runbook exists but lacks specific validation steps for data integrity, cache invalidation, and WebSocket connection drain procedures",
-      "impact": "Operators following the rollback runbook may miss critical post-rollback validation steps. Incomplete drain of WebSocket connections could cause message loss. Cache inconsistency after rollback could show stale data",
-      "fix": "Update deployment rollback runbook with: (1) WebSocket drain and reconnect verification after rollback, (2) cache invalidation steps (Redis flush if schema changed), (3) data integrity SQL queries to run before/after rollback, (4) smoke test checklist for operator"
+      "category": "Observability",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No release notes or changelog diff generated in deploy workflow",
+      "impact": "Operators must manually check git log to understand what changed",
+      "fix": "Add step that generates changelog diff (git log since last tag) and posts to deploy summary"
     }
   ]
 }

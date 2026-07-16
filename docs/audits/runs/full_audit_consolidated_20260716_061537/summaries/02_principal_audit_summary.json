@@ -1,0 +1,958 @@
+{
+  "stage": "principal_audit",
+  "run_id": "full_audit_consolidated_20260716_061537",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-16T06:15:37Z",
+  "severity_counts": {
+    "P0": 6,
+    "P1": 15,
+    "P2": 44,
+    "P3": 33
+  },
+  "category_scores": {
+    "rest_schema": 7,
+    "realtime_payload": 6,
+    "reconnect_behavior": 5,
+    "pagination": 7,
+    "auth_scoping": 6,
+    "idempotency": 9,
+    "cross_cutting_security": 3,
+    "cross_cutting_api": 6,
+    "cross_cutting_database": 3,
+    "incident_response": 6,
+    "monitoring": 7,
+    "migration_safety": 9,
+    "rollback_feasibility": 9,
+    "rls_posture": 3,
+    "indexing": 8,
+    "schema_drift": 7,
+    "data_integrity": 6,
+    "F1-Design System": 75,
+    "F2-Layout & Navigation": 70,
+    "F3-Chat UX": 80,
+    "F4-State Management": 78,
+    "F5-Accessibility": 55,
+    "F6-Responsive Design": 72,
+    "F7-Performance": 75,
+    "F8-Interaction Quality": 68,
+    "F9-Visual Consistency": 65,
+    "F10-Component Architecture": 70,
+    "structured_logging": 90,
+    "request_correlation": 90,
+    "health_endpoints": 95,
+    "error_tracking": 30,
+    "metrics": 40,
+    "audit_logging": 85,
+    "incident_runbooks": 50,
+    "pii_column_identification": 85,
+    "retention_policies": 90,
+    "pii_leak_prevention": 75,
+    "access_controls": 90,
+    "encryption": 70,
+    "consent_management": 85,
+    "compliance_readiness": 75,
+    "authentication": 8,
+    "authorization": 3,
+    "secret_handling": 8,
+    "cors_csrf": 9,
+    "rate_limiting": 8,
+    "logging_monitoring": 7,
+    "data_protection": 4
+  },
+  "readiness": 39.83,
+  "finding_count": 98,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "api",
+      "category": "auth_scoping",
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "issue": "Reactions batch endpoint lacks message access control verification",
+      "impact": "GET `/reactions/batch?message_ids=...` at line 24-41 accepts arbitrary message IDs without requiring message access. Any authenticated user can query reactions on messages in private channels they don't belong to, by guessing or enumerating message UUIDs.",
+      "fix": "Apply access filtering: either add `requireMessageAccess` middleware for each ID or query only message IDs the user can access via channel membership join."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "reconnect_behavior",
+      "file": "apps/web/lib/socket.ts",
+      "issue": "No reconnect resync mechanism \u2014 clients can miss events during disconnect",
+      "impact": "The frontend socket client at `apps/web/lib/socket.ts` implements reconnection with exponential backoff (lines 37-47) but has no mechanism to request missed events after reconnection. There is no `last_event_id` tracking, sequence number, or event replay endpoint. If a client disconnects for even a few seconds, messages sent during that window are permanently lost.",
+      "fix": "Implement event sequence tracking: (1) add a monotonically increasing sequence number to broadcast events, (2) store `last_sequence` in client localStorage, (3) on reconnect, call a `/messages/since?seq=N` endpoint to replay missed events."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "rest_schema",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Mixed pagination strategies \u2014 cursor-based for message list, offset-based for search",
+      "impact": "`GET /channels/:channelId/messages` (line 89-103) uses cursor-based pagination while search and most other list endpoints use offset-based pagination. This inconsistency forces frontend to implement two pagination strategies and complicates caching.",
+      "fix": "Consolidate on a single pagination strategy. Cursor-based is preferred for real-time feeds (avoids duplication on new insertions). Consider migrating search to cursor-based as well."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "rest_schema",
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "issue": "DM channels list endpoint doesn't use channel access middleware \u2014 relies solely on RLS",
+      "impact": "`GET /dm-channels` at line 248-255 lacks `requireChannelAccess` middleware. It uses `responseCache` but no authz middleware beyond `authenticate`, relying entirely on RLS for access control.",
+      "fix": "Add `requireChannelAccess` middleware for defense-in-depth, or ensure the RLS policy on `dm_channels` is correct (currently scoped to `user1_id`/`user2_id` which is sufficient)."
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "category": "realtime_payload",
+      "file": "apps/api/src/lib/socket.ts",
+      "issue": "Socket channel join verifies workspace membership but not private channel membership correctly",
+      "impact": "The `channel:join` handler at line 155-212 checks workspace membership and private channel membership, but the RLS layer doesn't enforce private channel filtering for SELECT on channels/messages. This means a malicious client could bypass the socket-level check by reading channel data directly via Supabase.",
+      "fix": "Fix the underlying RLS policies (see security audit) so both layers are aligned."
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "rest_schema",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "Webhook enforceBodyLimit checks spoofable Content-Length header instead of actual body size",
+      "impact": "The `enforceBodyLimit` middleware at line 20-29 reads `content-length` header which can be spoofed by an attacker. A request with small `content-length` header but large actual body would bypass the limit.",
+      "fix": "Remove the middleware and rely on Express's `express.json({ limit: '1mb' })` which enforces actual body size after parsing."
+    },
+    {
+      "severity": "P3",
+      "domain": "api",
+      "category": "realtime_payload",
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "issue": "Socket broadcast for reactions fires asynchronously with no error propagation",
+      "impact": "Reaction add/remove broadcasts at lines 65-80 and 101-116 use an IIFE with empty catch blocks (`catch { // Socket broadcast best-effort }`). Failure is silently swallowed, making debugging difficult when broadcasts fail.",
+      "fix": "At minimum log the error: `catch (err) { logger.warn('Reaction broadcast failed', { error: String(err) }) }`"
+    },
+    {
+      "severity": "P0",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/policies/03_channels.sql, supabase/policies/04_messages.sql",
+      "issue": "CRITICAL: Private channel data exposure \u2014 RLS fails to filter private channels across channels and messages tables",
+      "impact": "Combined channels + messages RLS gap: any workspace member can enumerate all private channels and read all messages within them. This is the single most impactful finding across all three audits. The API middleware provides partial protection but RLS is the last line of defense.",
+      "fix": "Fix both RLS policies to include private channel membership check. See security_principal_audit and database_integrity_migration_audit for details."
+    },
+    {
+      "severity": "P0",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260626000022_apply_rls_policies.sql, supabase/migrations/20260704000008_add_post_priority.sql",
+      "issue": "CRITICAL: Additive RLS insert policies bypass channel membership for message posting",
+      "impact": "Two insert policies on messages (`messages_insert_own` + `channel_member_insert`) are OR-combined, allowing any authenticated user to post to any channel via direct Supabase client calls.",
+      "fix": "Drop `messages_insert_own` policy."
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/policies/06_reactions.sql, apps/api/src/modules/reactions/routes.ts",
+      "issue": "Reactions data leaked via open RLS and unguarded batch endpoint",
+      "impact": "Two parallel paths leak reaction data: (1) RLS `using (true)` on reactions table, (2) batch endpoint without message access verification. Combined, any authenticated user can enumerate reactions on any message.",
+      "fix": "Fix RLS to scope by channel membership. Add access control to batch endpoint."
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
+      "issue": "User presence data exposed across workspace boundaries",
+      "impact": "All authenticated users can see online/offline/dnd status and custom status messages for all users system-wide.",
+      "fix": "Scope presence visibility to workspace co-members."
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260709000003_add_compliance_exports.sql",
+      "issue": "Compliance exports visible across workspaces \u2014 lacks workspace_id column",
+      "impact": "Admin in workspace A can read compliance exports (messages, audit logs) belonging to workspace B. The table has no workspace scoping.",
+      "fix": "Add workspace_id FK and scope RLS accordingly."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/web/lib/socket.ts",
+      "issue": "No missed-event recovery on websocket reconnect \u2014 permanent data loss window",
+      "impact": "Socket reconnection has no sequence tracking or event replay. Messages, reactions, presence updates sent during disconnect are permanently lost.",
+      "fix": "Implement event sequence tracking with replay endpoint."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260709000004_add_announcements.sql",
+      "issue": "Announcements visible across all workspaces",
+      "impact": "Unlike the API endpoint which likely filters by workspace, the RLS allows any authenticated user to read all announcements.",
+      "fix": "Scope announcements RLS to workspace membership."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR delete not atomic \u2014 partial deletion risk",
+      "impact": "12 sequential delete calls without transaction wrapping. Partial failure leaves inconsistent user data.",
+      "fix": "Use transactional RPC or add compensation logic."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/policies/03_channels.sql",
+      "issue": "Private channel creation not restricted to admins",
+      "impact": "Any workspace member can create private channels. No rate limit or approval flow.",
+      "fix": "Restrict to admins/owners or add audit/approval."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Mixed pagination (cursor vs offset) across list/search endpoints",
+      "impact": "Inconsistent pagination forces frontend to handle two strategies, complicating cache and data reconciliation.",
+      "fix": "Consolidate to cursor-based pagination."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/middleware/input-sanitizer.ts",
+      "issue": "SQL injection sanitizer causes false positives on natural language text",
+      "impact": "Keywords like 'select', 'from', 'where' in natural language trigger false positive rejections on non-content fields.",
+      "fix": "Use syntax-aware detection instead of keyword matching."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "issue": "CSP lacks nonce support for inline scripts",
+      "impact": "Future frontend work requiring inline scripts will be blocked.",
+      "fix": "Add nonce generation when frontend requires inline scripts."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "Webhook body limit uses spoofable Content-Length header",
+      "impact": "Content-Length can be manipulated; actual body size enforcement is in express.json middleware already.",
+      "fix": "Remove redundant middleware."
+    },
+    {
+      "severity": "P0",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/policies/03_channels.sql",
+      "issue": "Channel select RLS does not filter private channels \u2014 workspace members see all channels",
+      "impact": "The `channels_select_member` policy at `supabase/policies/03_channels.sql:4-14` only verifies workspace membership. Private channels (`is_private = true`) are not filtered out. Any workspace member can query all channels including private ones via Supabase client with their JWT.",
+      "fix": "Add private channel guard: `and (channels.is_private = false or exists (select 1 from channel_members cm where cm.channel_id = channels.id and cm.user_id = auth.uid()))`"
+    },
+    {
+      "severity": "P0",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260626000022_apply_rls_policies.sql, supabase/migrations/20260704000008_add_post_priority.sql",
+      "issue": "Two additive RLS insert policies on messages table create a bypass for channel membership checks",
+      "impact": "Policy `messages_insert_own` (checks `auth.uid() = user_id`) OR `channel_member_insert` (checks channel membership) exist simultaneously. Since Supabase uses OR logic for same-table/same-operation policies, any authenticated user can insert messages into any channel by setting `user_id = auth.uid()`. This completely bypasses the channel membership requirement.",
+      "fix": "Remove the `messages_insert_own` policy: `DROP POLICY IF EXISTS messages_insert_own ON public.messages;`"
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/policies/06_reactions.sql",
+      "issue": "Reactions SELECT policy is open to all authenticated users \u2014 no channel/workspace scoping",
+      "impact": "`reactions_select` at `supabase/policies/06_reactions.sql:5-7` is `using (true)`. Any authenticated user can enumerate reactions on any message, including messages in private channels. This leaks engagement patterns.",
+      "fix": "Add channel membership check via message join: scope to messages in channels the user can access."
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
+      "issue": "user_presence SELECT policy is open to all authenticated users across all workspaces",
+      "impact": "The `user_presence` select policy uses `using (true)`, allowing any authenticated user to see the online status and custom status of every user in the system, regardless of workspace membership.",
+      "fix": "Scope presence visibility to users who share at least one workspace."
+    },
+    {
+      "severity": "P1",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "supabase/migrations/20260709000003_add_compliance_exports.sql",
+      "issue": "Compliance exports table has no workspace_id column \u2014 cross-workspace data exposure via RLS",
+      "impact": "The `compliance_exports` table lacks a `workspace_id` column. The SELECT policy allows any workspace admin/owner to read ALL rows. An admin in workspace A can see compliance exports generated for workspace B. Exports may contain sensitive message content and audit data.",
+      "fix": "Add `workspace_id UUID NOT NULL REFERENCES workspaces(id)` column. Update the SELECT policy to filter by workspace membership with admin role."
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/migrations/20260709000004_add_announcements.sql",
+      "issue": "Announcements SELECT policy is `using (true)` \u2014 all authenticated users see all announcements",
+      "impact": "The `announcements_select` policy allows any authenticated user to read all announcements across all workspaces. Announcement content may be workspace-sensitive.",
+      "fix": "Scope to workspace membership: `exists (select 1 from workspace_members wm where wm.workspace_id = announcements.workspace_id and wm.user_id = auth.uid())`"
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "rls_posture",
+      "file": "supabase/policies/03_channels.sql",
+      "issue": "Channels INSERT policy does not restrict private channel creation to admins",
+      "impact": "The `channels_insert_member` policy at `supabase/policies/03_channels.sql:18-27` allows any workspace member to create channels, including private channels. This enables unauthorized private channel creation with no admin oversight.",
+      "fix": "Restrict private channel creation to workspace admins/owners, or add a rate limit / approval flow."
+    },
+    {
+      "severity": "P2",
+      "domain": "database",
+      "category": "migration_safety",
+      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
+      "issue": "Migration includes data-seeding operations (INSERT ... SELECT) that may lock large tables",
+      "impact": "Lines 87-101 run `INSERT INTO sidebar_categories SELECT DISTINCT ... FROM workspace_members` which scans the entire`workspace_members` table. On a production database with thousands of members, this can cause long-running locks and table bloat.",
+      "fix": "Move seeding to a separate post-deploy script or application-level migration that runs in batches."
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "category": "schema_drift",
+      "file": "supabase/policies/04_messages.sql",
+      "issue": "Message select RLS does not filter private channels",
+      "impact": "Same root cause as the channels RLS gap \u2014 messages in private channels are exposed through the messages SELECT policy which only checks workspace membership.",
+      "fix": "Scope messages SELECT to include private channel membership check via join to channels + channel_members."
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "Layout & Navigation",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin tab navigation broken on mobile \u2014 sidebar hidden md:block",
+      "impact": "Admin users on mobile cannot navigate between tabs",
+      "fix": "Add mobile tab bar or dropdown selector for admin sub-pages on screens <768px"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "Chat UX",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Formatting bar buttons 28px on mobile fail WCAG 44px touch target minimum",
+      "impact": "Users on mobile have difficulty tapping formatting buttons",
+      "fix": "Increase button size to min 36px (44px preferred) on mobile via media query or responsive classes"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "Search-bar missing aria-activedescendant on autocomplete input",
+      "impact": "Screen reader users cannot effectively use search autocomplete",
+      "fix": "Add role=combobox, aria-expanded, aria-activedescendant to input; role=listbox to results container"
+    },
+    {
+      "severity": "P1",
+      "domain": "frontend",
+      "category": "Interaction Quality",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Settings reset/delete dialogs lack focus traps \u2014 Tab escapes backdrop",
+      "impact": "Keyboard users can interact with page content behind confirmation dialogs",
+      "fix": "Use shared Dialog component (packages/ui) which has built-in focus trap support"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "Search-bar type dropdown/autocomplete lack role=listbox",
+      "impact": "Screen readers may not announce list navigation properly",
+      "fix": "Add role=listbox to container and role=option to each item"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx",
+      "issue": "Search results container lacks aria-live=polite",
+      "impact": "Screen reader users get no feedback when search results update",
+      "fix": "Add aria-live=polite to the search results container"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Formatting toolbar no arrow-key keyboard navigation (Tab-only through 15 buttons)",
+      "impact": "Keyboard users must Tab 15 times to reach end of toolbar",
+      "fix": "Add arrow-key navigation within toolbar with visual focus indicator"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Formatting toolbar no visible focus ring on buttons",
+      "impact": "Keyboard users cannot see which button is focused",
+      "fix": "Add focus-visible:outline-2 or ring classes to all formatting bar buttons"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Link/image buttons have aria-pressed: undefined for toggle states",
+      "impact": "Screen reader users don't know if formatting is active",
+      "fix": "Add aria-pressed={isActive} for toggle buttons like bold, italic"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/shared/keyboard-shortcuts.tsx",
+      "issue": "Keyboard shortcuts shows Ctrl+K on macOS \u2014 no Mac modifier detection",
+      "impact": "Mac users see incorrect modifier keys",
+      "fix": "Detect platform via navigator.platform and show Cmd on macOS, Ctrl on Windows/Linux"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/shared/keyboard-shortcuts.tsx",
+      "issue": "Keyboard shortcuts filter has no aria-live for result count",
+      "impact": "Screen reader users get no feedback when filtering shortcuts",
+      "fix": "Add aria-live=polite region showing filtered result count"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/app/error.tsx, apps/web/app/(workspace)/error.tsx, apps/web/app/(auth)/error.tsx",
+      "issue": "All error boundaries (5+ files) lack role=alert",
+      "impact": "Screen readers may not announce error state changes",
+      "fix": "Add role=alert to the error message container in each error.tsx"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/app/loading.tsx, apps/web/app/(auth)/loading.tsx, apps/web/app/(workspace)/loading.tsx",
+      "issue": "All loading states (5+ files) lack aria-busy=true / role=status",
+      "impact": "Screen reader users don't know content is loading",
+      "fix": "Add aria-busy=true on loading containers and role=status with aria-live=polite"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/app/loading.tsx, apps/web/app/(auth)/loading.tsx",
+      "issue": "Root and auth loading show bare spinner instead of layout skeleton",
+      "impact": "Poor perceived performance; layout shift on content paint",
+      "fix": "Match the loading layout to actual page structure (AppHeader + main skeleton for root)"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/workspace/onboarding-tour.tsx",
+      "issue": "Onboarding tour no role=dialog, no focus trap",
+      "impact": "Keyboard/screen reader users can Tab behind the tour dialog",
+      "fix": "Add role=dialog, aria-modal=true, and implement focus trap"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "Cookie banner no focus trap, no aria-modal=true",
+      "impact": "Users can interact with page content behind the consent dialog",
+      "fix": "Add aria-modal=true and focus trap when banner is visible"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/channel-info.tsx",
+      "issue": "Channel-info tab bar missing role=tablist, aria-selected",
+      "impact": "Screen readers don't announce tab semantics",
+      "fix": "Add role=tablist on container, role=tab on buttons, aria-selected on active tab"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "State Design",
+      "file": "apps/web/components/chat/channel-info.tsx",
+      "issue": "Channel-info empty states lack actionable buttons or CTAs",
+      "impact": "Users see empty state but don't know how to populate it",
+      "fix": "Add contextual action buttons to empty states (Pin a message, Invite members)"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Interaction Quality",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Settings dual save mechanism \u2014 auto-save AND Save button confusing",
+      "impact": "Users may be confused about whether changes persist",
+      "fix": "Standardize on one pattern: auto-save with visual indicator, or manual save without auto-save"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Interaction Quality",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Language change triggers window.location.reload()",
+      "impact": "Poor UX \u2014 full page flash on locale change",
+      "fix": "Use router.refresh() or i18n provider locale switch without full browser reload"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Performance",
+      "file": "apps/web/components/chat/message-list.tsx:456-468",
+      "issue": "Message list 30-frame RAF loop for initial scroll may jank on low-end devices",
+      "impact": "Potential jank on low-end mobile devices",
+      "fix": "Use virtualizer.scrollToIndex with align:'end' once after short delay rather than RAF loop"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Performance",
+      "file": "apps/web/components/chat/message-list.tsx:502-521",
+      "issue": "Pull-to-refresh indicator uses inline style objects instead of Tailwind utility classes",
+      "impact": "Slightly larger CSS-in-JS bundle; skips JIT compilation",
+      "fix": "Convert to Tailwind utility classes where possible"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Data Display",
+      "file": "apps/web/components/chat/search-bar.tsx:37, apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx:39",
+      "issue": "highlightText function duplicated in 2 files",
+      "impact": "DRY violation; fix in one place will miss the other",
+      "fix": "Extract to shared lib/highlight-text.ts or lib/search.ts"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Data Display",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Pagination logic duplicated across 3 admin tabs (users, channels, workspaces)",
+      "impact": "Maintenance burden; bug fixes must be applied 3 times",
+      "fix": "Extract a shared Pagination component or hook"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Mobile UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin stat grid uses grid-cols-2 on mobile \u2014 narrow cells",
+      "impact": "Stat cards feel cramped on small screens",
+      "fix": "Use grid-cols-1 on mobile, grid-cols-2 on sm+ breakpoint"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Error Handling",
+      "file": "apps/web/components/chat/chat-view.tsx, app-sidebar.tsx, emoji-picker.tsx, notification-bell.tsx, cookie-banner.tsx, and 45+ more locations",
+      "issue": "console.warn used instead of user-facing toast in 50+ catch blocks",
+      "impact": "Users don't see error feedback for many failed operations",
+      "fix": "Replace console.warn with addToast for user-visible operations; keep console.warn only for background operations"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Design System",
+      "file": "apps/web/app/globals.css, packages/ui/src/styles.css",
+      "issue": "Two parallel CSS variable systems active (Mattermost + design tokens) used interchangeably",
+      "impact": "Visual inconsistency risk; harder to maintain theming",
+      "fix": "Document boundary: shared UI components use --color-* vars, app components use Mattermost vars; plan consolidation"
+    },
+    {
+      "severity": "P2",
+      "domain": "frontend",
+      "category": "Theme",
+      "file": "apps/web/app/globals.css:342",
+      "issue": "Dark mode --text-secondary hardcoded rgba(..., 0.8) instead of using --text-secondary-alpha variable",
+      "impact": "Dark mode text opacity differs from intended design token consistency",
+      "fix": "Use rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Design System",
+      "file": "apps/web/app/globals.css:124",
+      "issue": "--border-default includes 'solid 1px' \u2014 not composable as border-left/border-top",
+      "impact": "14+ files use less-than-ideal border declaration patterns",
+      "fix": "Split into --border-default-width, --border-default-style, --border-default-color vars"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Search",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx",
+      "issue": "No result count shown in search results",
+      "impact": "Users don't know the size of their result set",
+      "fix": "Show 'X results found' counter at top of search results"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Forms",
+      "file": "apps/web/components/auth/login-form.tsx",
+      "issue": "Login form has no password strength indicator",
+      "impact": "Users don't know if their password meets requirements during signup",
+      "fix": "Add visual password strength indicator with requirements checklist"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Forms",
+      "file": "apps/web/components/auth/login-form.tsx",
+      "issue": "Login form no 'Forgot password?' link",
+      "impact": "Users who forget password have no recovery path on login page",
+      "fix": "Add 'Forgot password?' link that triggers password reset flow"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Accessibility",
+      "file": "apps/web/components/auth/login-form.tsx",
+      "issue": "Login form status container has no aria-live",
+      "impact": "Screen reader users may miss status updates after form submission",
+      "fix": "Add aria-live=polite and role=status to the message container"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Interaction",
+      "file": "apps/web/components/chat/notification-preferences-modal.tsx",
+      "issue": "Notification preferences modal has no unsaved-changes detection",
+      "impact": "Users can close modal and lose changes without warning",
+      "fix": "Add dirty-state detection and confirm-before-close dialog"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Search",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx",
+      "issue": "Search date range not validated (dateFrom > dateTo allowed)",
+      "impact": "Users can submit invalid date ranges with no error feedback",
+      "fix": "Add client-side validation: dateFrom must be before dateTo"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Search",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "Search operator hint has hardcoded year '2025'",
+      "impact": "Outdated hint text in 2026+",
+      "fix": "Use dynamic year from new Date().getFullYear()"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Forms",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Settings page shows 'Loading...' text instead of Skeleton component",
+      "impact": "Inconsistent loading UX compared to rest of app",
+      "fix": "Replace 'Loading...' with Skeleton component from @chat/ui"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Forms",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Auto-responder textarea lacks character counter",
+      "impact": "Users may exceed API limits without warning",
+      "fix": "Add character count display near auto-responder textarea"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Interaction",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "'Clear all' recent searches has no confirmation dialog",
+      "impact": "Accidental tap clears all recent search history with no undo",
+      "fix": "Add confirmation dialog before clearing recent searches"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Admin UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin export buttons lack loading spinner during export",
+      "impact": "No visual feedback during export operation",
+      "fix": "Add loading state with spinner to export buttons"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Admin UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin panel has no error boundary per tab \u2014 one failure kills all tabs",
+      "impact": "Error in one admin tab crashes entire admin panel",
+      "fix": "Wrap each admin tab content in its own ErrorBoundary"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Admin UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin panel document.title hardcoded instead of using i18n",
+      "impact": "Cannot localize admin page title",
+      "fix": "Use t() for document.title or i18n metadata"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Design System",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Inline StatusBadge and Card in admin \u2014 duplicates shared components from ui package",
+      "impact": "Duplicate component concerns; harder to maintain consistency",
+      "fix": "Use StatusBadge from @chat/ui and extract Card component if needed"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Design System",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "ToggleRow defined inline in settings page instead of shared component",
+      "impact": "Cannot reuse ToggleRow pattern across the app",
+      "fix": "Extract ToggleRow to packages/ui/src/components/"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Admin UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "CSV parser uses line.split(',') \u2014 breaks on quoted fields with commas",
+      "impact": "Imported CSV data with commas inside quoted fields will parse incorrectly",
+      "fix": "Use a proper CSV parser library (e.g., papaparse) instead of naive split"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Code Quality",
+      "file": "apps/web/components/workspace/app-sidebar.tsx",
+      "issue": "Dead CSS property gridArea: 'team-sidebar' \u2014 no CSS Grid parent present",
+      "impact": "Unused CSS property adds noise with no effect",
+      "fix": "Remove orphaned gridArea property"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Code Quality",
+      "file": "apps/web/components/workspace/app-sidebar.tsx:581",
+      "issue": "Encoding artifact \u2014 '\u00e2\u0153\u201c' should be Unicode checkmark character",
+      "impact": "Character displays incorrectly in some viewers",
+      "fix": "Replace '\u00e2\u0153\u201c' with Unicode '\\u2713' (\u2713) or '\\u2714' (\u2714)"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "category": "Design System",
+      "file": "packages/ui/src/tokens/spacing.ts",
+      "issue": "Density modes defined in tokens but unused in any component",
+      "impact": "Dead code that creates confusion about available design tokens",
+      "fix": "Either implement density mode support or remove unused token definitions"
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "error_tracking",
+      "file": "apps/api/src/app.ts",
+      "issue": "No Sentry or external error tracking integration found \u2014 errors not captured outside console/pino",
+      "impact": "Silent errors in production cannot be aggregated, alerted on, or traced without external monitoring",
+      "fix": "Add Sentry.init in app.ts before routes mount; add captureException to all catch blocks in middleware"
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "metrics",
+      "file": "apps/api/src/lib/metrics.ts",
+      "issue": "No Prometheus metrics endpoint or gauge export visible \u2014 metrics only used internally via recordWebhookDelivery",
+      "impact": "Operators cannot monitor request rates, error rates, or latency without external APM",
+      "fix": "Add prometheus client counter/histogram exports and expose /metrics endpoint behind auth middleware"
+    },
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "metrics",
+      "file": "apps/worker/src/main.ts",
+      "issue": "Worker has no Prometheus metrics \u2014 no visibility into job processing rates, failures, or queue depth",
+      "impact": "Worker failures or queue backlogs invisible until user impact occurs",
+      "fix": "Add prom-client to worker, track job completion/failure metrics per processor"
+    },
+    {
+      "severity": "P3",
+      "domain": "observability",
+      "category": "structured_logging",
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "Logger wraps pino but has no serialization config for errors (err property) or request context",
+      "impact": "Error objects logged as generic strings, losing stack traces and structured metadata",
+      "fix": "Add pino serializers for err, req, res objects to ensure structured error logging"
+    },
+    {
+      "severity": "P3",
+      "domain": "observability",
+      "category": "health_endpoints",
+      "file": "apps/worker/Dockerfile",
+      "issue": "Worker Dockerfile has no HEALTHCHECK directive",
+      "impact": "Docker/docker-compose cannot detect worker process health; compose healthcheck depends on outside endpoint",
+      "fix": "Add HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:4100/healthz || exit 1"
+    },
+    {
+      "severity": "P3",
+      "domain": "observability",
+      "category": "incident_readiness",
+      "file": "docs/runbooks/",
+      "issue": "No incident response runbook found in docs directory",
+      "impact": "Operators lack documented procedures for diagnosing and responding to common failure modes",
+      "fix": "Create docs/runbooks/incident-response.md with escalation paths, health check procedures, and recovery steps"
+    },
+    {
+      "severity": "P3",
+      "domain": "observability",
+      "category": "audit_logging",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit log failure queue uses in-memory array \u2014 lost on process restart; no Redis persistence",
+      "impact": "Pending audit log entries are lost if the API process restarts during queue backpressure",
+      "fix": "Replace in-memory audit queue with Redis-backed queue (BullMQ) or at minimum a DB-backed retry table"
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_leak_prevention",
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "No PII scrubbing or redaction in logger \u2014 generic pino instance without sensitive field filtering",
+      "impact": "If any catch block logs request body or user data, PII (email, name, phone) could appear in logs",
+      "fix": "Add pino redaction config for sensitive fields: email, phone, full_name, secret, token, password \u2014 use redact: ['req.headers.authorization', 'email', 'phone']"
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_storage",
+      "file": "supabase/migrations/",
+      "issue": "PII columns (email, full_name, phone, avatar_url) in profiles table stored without column-level encryption",
+      "impact": "PII accessible to any query with sufficient RLS bypass; no encryption-at-rest for sensitive user data",
+      "fix": "Implement application-level encryption for phone and full_name fields; add column encryption note to schema docs"
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "compliance_readiness",
+      "file": "docs/",
+      "issue": "No GDPR compliance documentation, data processing register, or DPA reference found in docs",
+      "impact": "Cannot demonstrate GDPR compliance without documented data flows and retention schedules",
+      "fix": "Create docs/compliance/gdpr.md with data inventory, retention schedule, and subject access request procedure"
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Consent routes exist but no documented consent types, withdrawal procedure, or audit trail linkage",
+      "impact": "Users cannot easily withdraw consent or see what they consented to",
+      "fix": "Document consent types, add GET /consent/types endpoint, add consent withdrawal audit event"
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "authorization",
+      "file": "supabase/policies/03_channels.sql",
+      "issue": "Private channel data exposed via channels select RLS \u2014 no private channel filtering",
+      "impact": "Any workspace member can list ALL channels including private ones. The `channels_select_member` policy only checks workspace membership, not whether the user is a member of private channels. Combined with the messages RLS gap, this exposes private channel names and content to all workspace members.",
+      "fix": "Add private channel membership check to `channels_select_member`: `and (channels.is_private = false or exists (select 1 from channel_members cm where cm.channel_id = channels.id and cm.user_id = auth.uid()))`",
+      "exploitability": "High \u2014 any workspace member can enumerate private channels and read their messages via the API"
+    },
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "authorization",
+      "file": "supabase/migrations/20260626000022_apply_rls_policies.sql, supabase/migrations/20260704000008_add_post_priority.sql",
+      "issue": "Conflicting RLS insert policies on messages table \u2014 `messages_insert_own` allows posting to ANY channel",
+      "impact": "Two insert policies exist on `messages`: `messages_insert_own` (checks `auth.uid() = user_id`) and `channel_member_insert` (checks channel membership). Supabase OR-combines same-operation policies, so any authenticated user can insert messages into ANY channel by setting `user_id` to their own ID. The API middleware prevents this but direct Supabase client calls bypass it.",
+      "fix": "Drop `messages_insert_own` policy: `DROP POLICY IF EXISTS messages_insert_own ON public.messages;` The `channel_member_insert` policy is sufficient and correct.",
+      "exploitability": "High \u2014 any authenticated user with direct Supabase access can post to any channel"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authorization",
+      "file": "supabase/policies/06_reactions.sql",
+      "issue": "Reactions RLS SELECT is `using (true)` \u2014 any authenticated user sees ALL reactions",
+      "impact": "The `reactions_select` policy allows any authenticated user to see all reactions across the system, including on messages in private channels they don't have access to. This leaks engagement patterns and channel membership information.",
+      "fix": "Add workspace/channel membership check: scope `reactions_select` to messages in channels the user can access, e.g. via `exists (select 1 from messages m join channels ch on ch.id = m.channel_id join workspace_members wm on wm.workspace_id = ch.workspace_id where m.id = reactions.message_id and wm.user_id = auth.uid())`",
+      "exploitability": "Medium \u2014 reaction data is low-sensitivity but can reveal private channel activity"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "authorization",
+      "file": "supabase/policies/06_reactions.sql",
+      "issue": "Reactions batch endpoint lacks message access control",
+      "impact": "The `GET /reactions/batch?message_ids=...` endpoint at `apps/api/src/modules/reactions/routes.ts:24-41` accepts arbitrary message IDs and returns reactions without verifying user access. This allows enumerating reactions on messages in private channels.",
+      "fix": "Add `requireMessageAccess` middleware to the batch endpoint, or filter by message IDs the user can access.",
+      "exploitability": "Medium \u2014 requires brute-forcing message IDs but no rate limit on this endpoint"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "data_protection",
+      "file": "supabase/migrations/20260709000003_add_compliance_exports.sql",
+      "issue": "Compliance exports RLS lacks workspace scoping \u2014 cross-workspace admin data leak",
+      "impact": "The `compliance_exports_select` policy allows any workspace admin/owner to see ALL compliance exports across all workspaces. The table has no `workspace_id` column. Exports may contain sensitive message/audit data.",
+      "fix": "Add `workspace_id` column to `compliance_exports` and scope the SELECT policy to admin/owner of the matching workspace.",
+      "exploitability": "Medium \u2014 requires admin role in any workspace"
+    },
+    {
+      "severity": "P1",
+      "domain": "security",
+      "category": "data_protection",
+      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
+      "issue": "user_presence RLS SELECT is `using (true)` \u2014 all authenticated users see all presence data",
+      "impact": "Any authenticated user can see the online/away/dnd status and custom status of all users across workspaces. This leaks user activity patterns.",
+      "fix": "Scope presence visibility to users sharing a workspace: add `exists (select 1 from workspace_members wm1 join workspace_members wm2 on wm1.workspace_id = wm2.workspace_id where wm1.user_id = user_presence.user_id and wm2.user_id = auth.uid())`",
+      "exploitability": "Low \u2014 presence is generally public in chat apps but still a privacy concern"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "data_protection",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR account deletion uses sequential deletes without transaction wrapping",
+      "impact": "The GDPR delete handler at line 260-276 runs 12 sequential `supabase.from(...).delete().eq(...)` calls without wrapping in a transaction. A failure mid-way leaves orphaned data (e.g., consent logs deleted but messages not, or user record remaining with no memberships).",
+      "fix": "Use Supabase RPC or a server-side function to execute all deletes atomically, or implement a compensation mechanism on failure.",
+      "exploitability": "Low \u2014 requires authenticated user deleting own account"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "logging_monitoring",
+      "file": "apps/api/src/modules/webhooks/service.ts",
+      "issue": "Webhook retries use in-process setTimeout \u2014 lost on server restart",
+      "impact": "Webhook delivery retries at lines 405-409 use `setTimeout()` which does not survive process restarts or crashes. Failed deliveries with retries pending are lost if the server restarts.",
+      "fix": "Use persistent scheduling via BullMQ (existing worker infrastructure) or a database-based retry queue with cron-based processor.",
+      "exploitability": "Low \u2014 webhook deliveries are best-effort but the expectation is reliable delivery"
+    },
+    {
+      "severity": "P2",
+      "domain": "security",
+      "category": "authentication",
+      "file": "apps/api/src/middleware/input-sanitizer.ts",
+      "issue": "Input sanitizer SQL injection patterns cause false positives on legitimate message content",
+      "impact": "The SQL injection patterns at line 17-21 match common English words like `select`, `from`, `where`, `insert`, `update`, `delete` occurring in normal message text. The `content` field is exempt but other string fields are not, potentially blocking legitimate input.",
+      "fix": "Use a more targeted SQL injection detection approach: check for SQL syntax anomalies rather than keyword presence, or only apply to fields where SQL injection is a realistic threat (e.g., channel names, workspace slugs).",
+      "exploitability": "N/A \u2014 this is a usability issue, not an exploit"
+    },
+    {
+      "severity": "P3",
+      "domain": "security",
+      "category": "cors_csrf",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "issue": "CSP policy lacks nonce/hash support for inline scripts",
+      "impact": "The Content-Security-Policy header uses `script-src 'self'` without nonce or hash support. If any inline scripts need to execute (e.g., in frontend rendering), they will be blocked.",
+      "fix": "If the application ever needs inline scripts, add nonce generation to the middleware and pass nonces through response locals. For now, this is acceptable since the API server doesn't serve HTML.",
+      "exploitability": "N/A \u2014 informational for future frontend work"
+    }
+  ]
+}

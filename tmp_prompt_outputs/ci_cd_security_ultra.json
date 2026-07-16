@@ -1,88 +1,79 @@
 {
   "prompt_name": "ci_cd_security_ultra",
   "domain": "ci_cd",
-  "stage": "principal_audit",
+  "stage": "quality_confirmation",
   "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-16T06:01:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 3,
+    "P1": 1,
     "P2": 3,
     "P3": 2
   },
-  "readiness": 78,
+  "category_scores": {
+    "secrets_management": 75,
+    "workflow_permissions": 90,
+    "path_filtering": 85,
+    "prod_approval_gates": 90,
+    "branch_protection": 100,
+    "artifact_handling": 80,
+    "supply_chain_config": 95
+  },
+  "readiness": 87.9,
   "findings": [
     {
       "severity": "P1",
       "domain": "ci_cd",
-      "category": "secrets_in_run",
-      "file": ".github/workflows/supabase-migrations.yml:28",
-      "issue": "Secrets injected inline in run: command via heredoc",
-      "impact": "Secrets visible in CI logs if command fails or debug enabled",
-      "fix": "Move SUPABASE_PROJECT_REF to env: block instead of inline in run: supabase link command"
-    },
-    {
-      "severity": "P1",
-      "domain": "ci_cd",
-      "category": "permissions",
-      "file": ".github/workflows/deploy-development.yml",
-      "issue": "No explicit GITHUB_TOKEN permissions block \u00e2\u20ac\u201d uses default write-all",
-      "impact": "Deploy workflow has full write scope to all resources unnecessarily",
-      "fix": "Add permissions: contents: read, packages: write at top of workflow"
-    },
-    {
-      "severity": "P1",
-      "domain": "ci_cd",
-      "category": "permissions",
+      "category": "secrets_management",
       "file": ".github/workflows/deploy-production.yml",
-      "issue": "No explicit GITHUB_TOKEN permissions block \u00e2\u20ac\u201d uses default write-all",
-      "impact": "Production deploy workflow has full write scope to all resources",
-      "fix": "Add permissions: contents: read, packages: write, id-token: write at top of workflow"
+      "issue": "Secrets written to .env file via heredoc in SSH script \u2014 exposed in CI logs if script fails",
+      "impact": "If the SSH step fails or is debugged, ALL production secrets (Supabase keys, VAPID keys, LiveKit keys) are visible in plaintext in CI logs",
+      "fix": "Pass secrets to the droplet via environment variables or GitHub Actions secrets injection at compose time; use docker compose --env-file with GH secret masking"
     },
     {
       "severity": "P2",
       "domain": "ci_cd",
-      "category": "permissions",
-      "file": ".github/workflows/",
-      "issue": "16 of 20 workflows lack explicit GITHUB_TOKEN permissions block",
-      "impact": "Default permissive token scope on most workflows (write-all on contents, packages, etc.)",
-      "fix": "Add explicit permissions: block to each workflow with least-privilege scopes"
+      "category": "secrets_management",
+      "file": ".github/workflows/deploy-development.yml",
+      "issue": "Secrets written to .env file via heredoc with conditional injection \u2014 potential secrets leakage in logs",
+      "impact": "Development secrets visible in CI logs if debug enabled or SSH command errors",
+      "fix": "Use docker compose environment variables or GH Actions secrets injection instead of heredoc; set secrets only at container runtime"
     },
     {
       "severity": "P2",
       "domain": "ci_cd",
       "category": "path_filtering",
-      "file": ".github/workflows/ci.yml",
-      "issue": "ci.yml triggers on push to main/develop but no path filter on schedule",
-      "impact": "Scheduled runs trigger full CI stack even with no code changes",
-      "fix": "Add path filter to schedule trigger or use paths-ignore for docs-only changes"
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No path filtering on push to main \u2014 triggers full deploy on any file change",
+      "impact": "Documentation or config changes trigger expensive Terraform provision + Docker build + deploy cycle unnecessarily",
+      "fix": "Add paths filter to restrict deploy on push to relevant directories: apps/api/**, apps/web/**, apps/worker/**, infra/docker/**, .github/workflows/deploy-production.yml"
     },
     {
       "severity": "P2",
       "domain": "ci_cd",
-      "category": "secrets_in_run",
-      "file": ".github/workflows/deploy-development.yml:50-58",
-      "issue": "DO_API_TOKEN and other secrets used inline in run: commands via heredoc style",
-      "impact": "Secrets could leak in logs if curl commands fail",
-      "fix": "Pass DO_API_TOKEN and CF_API_TOKEN via env: block, reference as $DO_API_TOKEN in scripts"
+      "category": "workflow_triggers",
+      "file": ".github/workflows/platform.yml",
+      "issue": "Platform workflow runs pwsh script from automation dir \u2014 no input validation or scope limiting",
+      "impact": "Any workflow_dispatch caller can execute arbitrary pwsh scripts with GITHUB_TOKEN that has packages:write scope",
+      "fix": "Add explicit permissions block restricting token, add environment gates, validate inputs"
     },
     {
       "severity": "P3",
       "domain": "ci_cd",
-      "category": "artifact_retention",
+      "category": "artifact_handling",
       "file": ".github/workflows/validate.yml",
-      "issue": "No explicit retention period set on test results and coverage artifacts",
-      "impact": "Artifacts stored indefinitely, accumulating storage costs",
-      "fix": "Add retention-days: 30 to upload-artifact steps"
+      "issue": "No explicit artifact retention period set for test-results and coverage artifacts",
+      "impact": "Artifacts retained indefinitely by default, consuming GH Actions storage quota",
+      "fix": "Add retention-days: 7 to all uses of actions/upload-artifact"
     },
     {
       "severity": "P3",
       "domain": "ci_cd",
-      "category": "path_filtering",
-      "file": ".github/workflows/build-push.yml",
-      "issue": "build-push.yml triggers on PR to develop and main \u00e2\u20ac\u201d builds images on every PR even for doc-only changes",
-      "impact": "Unnecessary image builds consuming CI minutes",
-      "fix": "Add paths-ignore: ['docs/**', '*.md', 'AGENTS.md'] to PR trigger"
+      "category": "workflow_permissions",
+      "file": ".github/workflows/governance.yml",
+      "issue": "Governance workflow has no explicit permissions block (inherits default write-all)",
+      "impact": "GITHUB_TOKEN has more permissions than needed, potential supply chain risk",
+      "fix": "Add explicit permissions: contents: read at the workflow level"
     }
-  ],
-  "generated_at": "2026-07-09T03:06:59Z"
+  ]
 }

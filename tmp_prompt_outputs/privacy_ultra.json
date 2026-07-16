@@ -2,69 +2,60 @@
   "prompt_name": "privacy_ultra",
   "domain": "privacy",
   "stage": "principal_audit",
-  "decision": "GO WITH RISKS",
+  "decision": "GO",
+  "generated_at": "2026-07-16T06:07:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 1,
-    "P2": 3,
+    "P1": 0,
+    "P2": 2,
     "P3": 2
   },
-  "readiness": 78,
+  "category_scores": {
+    "pii_column_identification": 85,
+    "retention_policies": 90,
+    "pii_leak_prevention": 75,
+    "access_controls": 90,
+    "encryption": 70,
+    "consent_management": 85,
+    "compliance_readiness": 75
+  },
+  "readiness": 81.4,
   "findings": [
     {
-      "severity": "P1",
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_leak_prevention",
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "No PII scrubbing or redaction in logger \u2014 generic pino instance without sensitive field filtering",
+      "impact": "If any catch block logs request body or user data, PII (email, name, phone) could appear in logs",
+      "fix": "Add pino redaction config for sensitive fields: email, phone, full_name, secret, token, password \u2014 use redact: ['req.headers.authorization', 'email', 'phone']"
+    },
+    {
+      "severity": "P2",
       "domain": "privacy",
       "category": "pii_storage",
       "file": "supabase/migrations/",
-      "issue": "PII columns (email, phone, full_name, avatar_url) in profiles table stored without explicit encryption-at-rest annotation or column-level encryption",
-      "impact": "PII readable by anyone with database access (service_role key compromise would expose all PII)",
-      "fix": "Document that Supabase provides encryption at rest (AWS KMS); add column-level encryption for email/phone using pgcrypto or Vault, or document compensating controls (RLS, admin-only access)"
-    },
-    {
-      "severity": "P2",
-      "domain": "privacy",
-      "category": "pii_access_review",
-      "file": "apps/api/src/",
-      "issue": "No documented PII access review mechanism \u00e2\u20ac\u201d no audit of who reads PII columns and when",
-      "impact": "Cannot detect unauthorized PII access by internal users or compromised accounts",
-      "fix": "Add audit trigger on profiles table for SELECT on email/phone columns, log to audit_logs; create PII access review runbook"
-    },
-    {
-      "severity": "P2",
-      "domain": "privacy",
-      "category": "retention_policy",
-      "file": "apps/worker/src/processors/data-retention.ts",
-      "issue": "Data retention job exists but retention periods are hardcoded in processor (audit_logs=90d, consent_logs=730d, etc.) \u00e2\u20ac\u201d not configurable via env vars",
-      "impact": "Retention periods cannot be adjusted without code deploy; no way to comply with varying jurisdictional requirements",
-      "fix": "Extract retention periods to env vars: AUDIT_LOG_RETENTION_DAYS=90, CONSENT_LOG_RETENTION_DAYS=730, etc."
-    },
-    {
-      "severity": "P2",
-      "domain": "privacy",
-      "category": "pii_logging",
-      "file": "apps/api/src/lib/logger.ts : apps/worker/src/",
-      "issue": "No automated PII redaction in structured logging \u00e2\u20ac\u201d logger allows any field to be logged without filtering",
-      "impact": "Developer error could log PII fields (email, phone) to production logs with no guardrail",
-      "fix": "Add PII field allowlist/blocklist to logger that redacts known PII field patterns from log output"
+      "issue": "PII columns (email, full_name, phone, avatar_url) in profiles table stored without column-level encryption",
+      "impact": "PII accessible to any query with sufficient RLS bypass; no encryption-at-rest for sensitive user data",
+      "fix": "Implement application-level encryption for phone and full_name fields; add column encryption note to schema docs"
     },
     {
       "severity": "P3",
       "domain": "privacy",
-      "category": "gdpr_export",
-      "file": "apps/api/src/modules/",
-      "issue": "No GDPR data export endpoint \u00e2\u20ac\u201d user data export requires direct DB queries",
-      "impact": "Cannot fulfill data subject access requests without operator intervention",
-      "fix": "Add GET /v1/users/:id/export endpoint that collects all user data (profile, messages, channels, sessions) in JSON format"
+      "category": "compliance_readiness",
+      "file": "docs/",
+      "issue": "No GDPR compliance documentation, data processing register, or DPA reference found in docs",
+      "impact": "Cannot demonstrate GDPR compliance without documented data flows and retention schedules",
+      "fix": "Create docs/compliance/gdpr.md with data inventory, retention schedule, and subject access request procedure"
     },
     {
       "severity": "P3",
       "domain": "privacy",
-      "category": "gdpr_delete",
-      "file": "apps/api/src/modules/",
-      "issue": "No GDPR right-to-erasure endpoint that cascades deletes across all user data",
-      "impact": "Cannot programmatically fulfill deletion requests; manual DB cleanup required",
-      "fix": "Add DELETE /v1/users/:id/erase endpoint that cascades: messages (anonymize), channels (remove member), profiles (delete), sessions (revoke)"
+      "category": "consent_management",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Consent routes exist but no documented consent types, withdrawal procedure, or audit trail linkage",
+      "impact": "Users cannot easily withdraw consent or see what they consented to",
+      "fix": "Document consent types, add GET /consent/types endpoint, add consent withdrawal audit event"
     }
-  ],
-  "generated_at": "2026-07-09T03:06:59Z"
+  ]
 }

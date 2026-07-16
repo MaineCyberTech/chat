@@ -1,0 +1,61 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "privacy_ultra",
+  "decision": "GO",
+  "generated_at": "2026-07-16T06:07:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 2,
+    "P3": 2
+  },
+  "category_scores": {
+    "pii_column_identification": 85,
+    "retention_policies": 90,
+    "pii_leak_prevention": 75,
+    "access_controls": 90,
+    "encryption": 70,
+    "consent_management": 85,
+    "compliance_readiness": 75
+  },
+  "readiness": 81.4,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_leak_prevention",
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "No PII scrubbing or redaction in logger \u2014 generic pino instance without sensitive field filtering",
+      "impact": "If any catch block logs request body or user data, PII (email, name, phone) could appear in logs",
+      "fix": "Add pino redaction config for sensitive fields: email, phone, full_name, secret, token, password \u2014 use redact: ['req.headers.authorization', 'email', 'phone']"
+    },
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_storage",
+      "file": "supabase/migrations/",
+      "issue": "PII columns (email, full_name, phone, avatar_url) in profiles table stored without column-level encryption",
+      "impact": "PII accessible to any query with sufficient RLS bypass; no encryption-at-rest for sensitive user data",
+      "fix": "Implement application-level encryption for phone and full_name fields; add column encryption note to schema docs"
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "compliance_readiness",
+      "file": "docs/",
+      "issue": "No GDPR compliance documentation, data processing register, or DPA reference found in docs",
+      "impact": "Cannot demonstrate GDPR compliance without documented data flows and retention schedules",
+      "fix": "Create docs/compliance/gdpr.md with data inventory, retention schedule, and subject access request procedure"
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "category": "consent_management",
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "issue": "Consent routes exist but no documented consent types, withdrawal procedure, or audit trail linkage",
+      "impact": "Users cannot easily withdraw consent or see what they consented to",
+      "fix": "Document consent types, add GET /consent/types endpoint, add consent withdrawal audit event"
+    }
+  ],
+  "run_id": "privacy_ultra_20260716_060610"
+}

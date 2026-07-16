@@ -1,0 +1,60 @@
+{
+  "stage": "reconciliation",
+  "prompt_name": "environment_drift_audit",
+  "decision": "GO",
+  "generated_at": "2026-07-16T06:03:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 2,
+    "P3": 2
+  },
+  "category_scores": {
+    "domain_configuration": 100,
+    "env_variable_parity": 90,
+    "docker_compose_alignment": 85,
+    "caddy_configuration": 85,
+    "secret_presence": 80,
+    "deployment_targets": 95
+  },
+  "readiness": 89.2,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "caddy_alignment",
+      "file": "infra/docker/Caddyfile",
+      "issue": "Dev Caddyfile lacks static asset caching rules present in prod Caddyfile.prod",
+      "impact": "Static assets in dev not cached with immutable headers, but may cause minor difference vs prod behavior",
+      "fix": "Add @static handle to dev Caddyfile matching prod patterns for consistency"
+    },
+    {
+      "severity": "P2",
+      "domain": "environment",
+      "category": "worker_healthcheck",
+      "file": "infra/docker/docker-compose.devremote.yml",
+      "issue": "Dev worker healthcheck uses 'kill -0 1' instead of proper HTTP health check like prod",
+      "impact": "Dev healthcheck only checks process existence, not actual worker readiness; misses Redis connectivity failures",
+      "fix": "Replace with proper HTTP health check: test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:4100/healthz']"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "env_example_drift",
+      "file": "infra/docker/.env.devremote.example",
+      "issue": "Dev example missing DOMAIN and ENVIRONMENT variable placeholders present in deploy scripts",
+      "impact": "Operators may not know DOMAIN and ENVIRONMENT variables are expected",
+      "fix": "Add DOMAIN=mainecybertech.us and ENVIRONMENT=development to .env.devremote.example"
+    },
+    {
+      "severity": "P3",
+      "domain": "environment",
+      "category": "env_example_drift",
+      "file": "infra/docker/.env.prod.example",
+      "issue": "Prod example missing DOMAIN and ENVIRONMENT variable placeholders present in deploy scripts",
+      "impact": "Operators may not know DOMAIN and ENVIRONMENT variables are expected",
+      "fix": "Add DOMAIN=mainecybertech.com and ENVIRONMENT=production to .env.prod.example"
+    }
+  ],
+  "run_id": "environment_drift_audit_20260716_060610"
+}

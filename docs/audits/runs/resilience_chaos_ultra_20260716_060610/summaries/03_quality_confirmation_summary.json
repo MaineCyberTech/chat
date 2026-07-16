@@ -1,0 +1,80 @@
+{
+  "stage": "quality_confirmation",
+  "prompt_name": "resilience_chaos_ultra",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-16T06:08:00.000Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 3,
+    "P3": 3
+  },
+  "category_scores": {
+    "timeout_configuration": 85,
+    "circuit_breaker": 90,
+    "webhook_idempotency": 80,
+    "bulk_operation_results": 50,
+    "retry_backoff": 85,
+    "graceful_shutdown": 90,
+    "worker_timeouts": 75,
+    "ui_failure_states": 70
+  },
+  "readiness": 78.1,
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "bulk_operations",
+      "file": "apps/api/src/modules/",
+      "issue": "No verified per-item ok/error result pattern in bulk endpoints \u2014 likely single-status responses",
+      "impact": "Partial bulk failures appear as full successes to the client; user sees fake success toast on half-failed writes",
+      "fix": "Audit all POST/PATCH/PUT endpoints that accept arrays; return { results: [{ ok: boolean, error?: string }] } per item"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "ui_failure_states",
+      "file": "apps/web/components/",
+      "issue": "No systematic pattern for displaying partial-failure toasts from bulk API responses",
+      "impact": "Users not alerted about individual item failures in batch operations",
+      "fix": "Create a BulkOperationResult component that displays success count vs failure count with details"
+    },
+    {
+      "severity": "P2",
+      "domain": "resilience",
+      "category": "worker_timeouts",
+      "file": "apps/worker/src/processors/",
+      "issue": "Each processor has its own AbortSignal.timeout(30s) but no centralized timeout wrapper in task execution",
+      "impact": "Inconsistent timeout enforcement across processors; new processors may forget timeout handling",
+      "fix": "Create a createTaskWrapper utility in worker that enforces per-task timeout, retry, and error handling consistently"
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "circuit_breaker",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker status changes logged but not exported as Prometheus metrics",
+      "impact": "No monitoring/alerting on circuit breaker state; open circuit not visible until users report failures",
+      "fix": "Export circuit breaker state (open/closed/half-open) as prometheus gauge per breaker name"
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "retry_backoff",
+      "file": "apps/api/src/lib/http-client.ts",
+      "issue": "HTTP client retry uses linear backoff (retryDelay * attemptNum) not exponential",
+      "impact": "Thundering herd on retry for concurrent requests; less effective than exponential backoff with jitter",
+      "fix": "Implement exponential backoff with jitter: delay = min(baseDelay * 2^attempt + random(0, jitter), maxDelay)"
+    },
+    {
+      "severity": "P3",
+      "domain": "resilience",
+      "category": "supabase_circuit_breaker",
+      "file": "apps/api/src/lib/supabase.ts",
+      "issue": "No circuit breaker found wrapping Supabase admin client calls despite circuit-breaker utility existing",
+      "impact": "Supabase outage causes cascading API failures without circuit breaker protection",
+      "fix": "Wrap getSupabaseAdmin calls in circuit breaker using the existing executeWithCircuitBreaker utility"
+    }
+  ],
+  "run_id": "resilience_chaos_ultra_20260716_060610"
+}

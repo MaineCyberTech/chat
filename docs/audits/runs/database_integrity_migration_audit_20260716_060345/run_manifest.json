@@ -1,0 +1,7 @@
+{
+  "run_id": "database_integrity_migration_audit_20260716_060345",
+  "created_at": "2026-07-16T06:03:45+00:00",
+  "prompt_name": "database_integrity_migration_audit",
+  "domain": "database",
+  "status": "initialized"
+}

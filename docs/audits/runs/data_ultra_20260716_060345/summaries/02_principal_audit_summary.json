@@ -1,0 +1,140 @@
+{
+  "stage": "principal_audit",
+  "prompt_name": "data_ultra",
+  "decision": "NO-GO",
+  "generated_at": "2026-07-16T12:00:00.000Z",
+  "severity_counts": {
+    "P0": 2,
+    "P1": 5,
+    "P2": 6,
+    "P3": 3
+  },
+  "category_scores": {
+    "cross_cutting_security": 3,
+    "cross_cutting_api": 6,
+    "cross_cutting_database": 3,
+    "incident_response": 6,
+    "monitoring": 7
+  },
+  "readiness": 4.0,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/policies/03_channels.sql, supabase/policies/04_messages.sql",
+      "issue": "CRITICAL: Private channel data exposure \u2014 RLS fails to filter private channels across channels and messages tables",
+      "impact": "Combined channels + messages RLS gap: any workspace member can enumerate all private channels and read all messages within them. This is the single most impactful finding across all three audits. The API middleware provides partial protection but RLS is the last line of defense.",
+      "fix": "Fix both RLS policies to include private channel membership check. See security_principal_audit and database_integrity_migration_audit for details."
+    },
+    {
+      "severity": "P0",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260626000022_apply_rls_policies.sql, supabase/migrations/20260704000008_add_post_priority.sql",
+      "issue": "CRITICAL: Additive RLS insert policies bypass channel membership for message posting",
+      "impact": "Two insert policies on messages (`messages_insert_own` + `channel_member_insert`) are OR-combined, allowing any authenticated user to post to any channel via direct Supabase client calls.",
+      "fix": "Drop `messages_insert_own` policy."
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/policies/06_reactions.sql, apps/api/src/modules/reactions/routes.ts",
+      "issue": "Reactions data leaked via open RLS and unguarded batch endpoint",
+      "impact": "Two parallel paths leak reaction data: (1) RLS `using (true)` on reactions table, (2) batch endpoint without message access verification. Combined, any authenticated user can enumerate reactions on any message.",
+      "fix": "Fix RLS to scope by channel membership. Add access control to batch endpoint."
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
+      "issue": "User presence data exposed across workspace boundaries",
+      "impact": "All authenticated users can see online/offline/dnd status and custom status messages for all users system-wide.",
+      "fix": "Scope presence visibility to workspace co-members."
+    },
+    {
+      "severity": "P1",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260709000003_add_compliance_exports.sql",
+      "issue": "Compliance exports visible across workspaces \u2014 lacks workspace_id column",
+      "impact": "Admin in workspace A can read compliance exports (messages, audit logs) belonging to workspace B. The table has no workspace scoping.",
+      "fix": "Add workspace_id FK and scope RLS accordingly."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/web/lib/socket.ts",
+      "issue": "No missed-event recovery on websocket reconnect \u2014 permanent data loss window",
+      "impact": "Socket reconnection has no sequence tracking or event replay. Messages, reactions, presence updates sent during disconnect are permanently lost.",
+      "fix": "Implement event sequence tracking with replay endpoint."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/migrations/20260709000004_add_announcements.sql",
+      "issue": "Announcements visible across all workspaces",
+      "impact": "Unlike the API endpoint which likely filters by workspace, the RLS allows any authenticated user to read all announcements.",
+      "fix": "Scope announcements RLS to workspace membership."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "issue": "GDPR delete not atomic \u2014 partial deletion risk",
+      "impact": "12 sequential delete calls without transaction wrapping. Partial failure leaves inconsistent user data.",
+      "fix": "Use transactional RPC or add compensation logic."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "supabase/policies/03_channels.sql",
+      "issue": "Private channel creation not restricted to admins",
+      "impact": "Any workspace member can create private channels. No rate limit or approval flow.",
+      "fix": "Restrict to admins/owners or add audit/approval."
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "issue": "Mixed pagination (cursor vs offset) across list/search endpoints",
+      "impact": "Inconsistent pagination forces frontend to handle two strategies, complicating cache and data reconciliation.",
+      "fix": "Consolidate to cursor-based pagination."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/middleware/input-sanitizer.ts",
+      "issue": "SQL injection sanitizer causes false positives on natural language text",
+      "impact": "Keywords like 'select', 'from', 'where' in natural language trigger false positive rejections on non-content fields.",
+      "fix": "Use syntax-aware detection instead of keyword matching."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/middleware/security-headers.ts",
+      "issue": "CSP lacks nonce support for inline scripts",
+      "impact": "Future frontend work requiring inline scripts will be blocked.",
+      "fix": "Add nonce generation when frontend requires inline scripts."
+    },
+    {
+      "severity": "P3",
+      "domain": "data",
+      "category": "cross_cutting",
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "issue": "Webhook body limit uses spoofable Content-Length header",
+      "impact": "Content-Length can be manipulated; actual body size enforcement is in express.json middleware already.",
+      "fix": "Remove redundant middleware."
+    }
+  ],
+  "run_id": "data_ultra_20260716_060345"
+}

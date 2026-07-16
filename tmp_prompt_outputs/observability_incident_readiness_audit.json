@@ -3,59 +3,86 @@
   "domain": "observability",
   "stage": "principal_audit",
   "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-16T06:02:00.000Z",
   "severity_counts": {
     "P0": 0,
-    "P1": 1,
-    "P2": 2,
-    "P3": 2
+    "P1": 0,
+    "P2": 3,
+    "P3": 4
   },
-  "readiness": 82,
+  "category_scores": {
+    "structured_logging": 90,
+    "request_correlation": 90,
+    "health_endpoints": 95,
+    "error_tracking": 30,
+    "metrics": 40,
+    "audit_logging": 85,
+    "incident_runbooks": 50
+  },
+  "readiness": 68.6,
   "findings": [
     {
-      "severity": "P1",
+      "severity": "P2",
       "domain": "observability",
-      "category": "trace_correlation",
-      "file": "apps/web/: apps/api/src/middleware/request-id.ts",
-      "issue": "No frontend-to-API trace ID propagation \u00e2\u20ac\u201d browser does not send x-request-id header",
-      "impact": "Cannot correlate frontend errors with API request logs; debugging client-side issues requires manual log digging",
-      "fix": "Add request ID generation to Next.js middleware or BFF route handler, propagate x-request-id header on all API calls"
+      "category": "error_tracking",
+      "file": "apps/api/src/app.ts",
+      "issue": "No Sentry or external error tracking integration found \u2014 errors not captured outside console/pino",
+      "impact": "Silent errors in production cannot be aggregated, alerted on, or traced without external monitoring",
+      "fix": "Add Sentry.init in app.ts before routes mount; add captureException to all catch blocks in middleware"
     },
     {
       "severity": "P2",
       "domain": "observability",
-      "category": "alerting",
-      "file": ".github/",
-      "issue": "No automated alerting configured for any failure mode",
-      "impact": "Operators rely on manual health check polling; no push notifications for degraded DB, worker failure, or API down",
-      "fix": "Configure Sentry alert rules for error thresholds, add uptime monitoring with PagerDuty/webhook integration, add DO monitoring alerts for CPU/memory/disk"
+      "category": "metrics",
+      "file": "apps/api/src/lib/metrics.ts",
+      "issue": "No Prometheus metrics endpoint or gauge export visible \u2014 metrics only used internally via recordWebhookDelivery",
+      "impact": "Operators cannot monitor request rates, error rates, or latency without external APM",
+      "fix": "Add prometheus client counter/histogram exports and expose /metrics endpoint behind auth middleware"
     },
     {
       "severity": "P2",
+      "domain": "observability",
+      "category": "metrics",
+      "file": "apps/worker/src/main.ts",
+      "issue": "Worker has no Prometheus metrics \u2014 no visibility into job processing rates, failures, or queue depth",
+      "impact": "Worker failures or queue backlogs invisible until user impact occurs",
+      "fix": "Add prom-client to worker, track job completion/failure metrics per processor"
+    },
+    {
+      "severity": "P3",
       "domain": "observability",
       "category": "structured_logging",
-      "file": "apps/api/src/: apps/worker/src/",
-      "issue": "No structured error taxonomy or error codes \u00e2\u20ac\u201d errors are strings not grouped by category",
-      "impact": "Cannot easily aggregate or alert on specific error types across services",
-      "fix": "Define AppError codes enum (AUTH_xxx, VALIDATION_xxx, DB_xxx, RATE_xxx) and enforce in all route handlers and services"
+      "file": "apps/api/src/lib/logger.ts",
+      "issue": "Logger wraps pino but has no serialization config for errors (err property) or request context",
+      "impact": "Error objects logged as generic strings, losing stack traces and structured metadata",
+      "fix": "Add pino serializers for err, req, res objects to ensure structured error logging"
     },
     {
       "severity": "P3",
       "domain": "observability",
-      "category": "metrics_export",
-      "file": "apps/api/src/lib/metrics.ts",
-      "issue": "Prometheus metrics endpoint exists but no metrics export from worker service",
-      "impact": "Worker health and throughput not visible in monitoring dashboards",
-      "fix": "Expose /metrics endpoint in worker HTTP server with BullMQ queue stats and job counters"
+      "category": "health_endpoints",
+      "file": "apps/worker/Dockerfile",
+      "issue": "Worker Dockerfile has no HEALTHCHECK directive",
+      "impact": "Docker/docker-compose cannot detect worker process health; compose healthcheck depends on outside endpoint",
+      "fix": "Add HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:4100/healthz || exit 1"
     },
     {
       "severity": "P3",
       "domain": "observability",
-      "category": "runbooks",
+      "category": "incident_readiness",
       "file": "docs/runbooks/",
-      "issue": "No incident response runbook covering worker failure, API crash, or database degradation scenarios",
-      "impact": "Operators lack documented playbooks for common failure modes, increasing MTTR",
-      "fix": "Create incident response runbook covering: worker crash recovery, API restart procedure, DB connection pool exhaustion, Redis failure fallback"
+      "issue": "No incident response runbook found in docs directory",
+      "impact": "Operators lack documented procedures for diagnosing and responding to common failure modes",
+      "fix": "Create docs/runbooks/incident-response.md with escalation paths, health check procedures, and recovery steps"
+    },
+    {
+      "severity": "P3",
+      "domain": "observability",
+      "category": "audit_logging",
+      "file": "apps/api/src/services/audit.ts",
+      "issue": "Audit log failure queue uses in-memory array \u2014 lost on process restart; no Redis persistence",
+      "impact": "Pending audit log entries are lost if the API process restarts during queue backpressure",
+      "fix": "Replace in-memory audit queue with Redis-backed queue (BullMQ) or at minimum a DB-backed retry table"
     }
-  ],
-  "generated_at": "2026-07-09T03:06:59Z"
+  ]
 }

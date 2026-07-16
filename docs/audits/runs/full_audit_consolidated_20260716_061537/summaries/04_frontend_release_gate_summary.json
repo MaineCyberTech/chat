@@ -1,0 +1,477 @@
+{
+  "stage": "frontend_release_gate",
+  "run_id": "full_audit_consolidated_20260716_061537",
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-16T06:15:37Z",
+  "severity_counts": {
+    "P0": 0,
+    "P1": 10,
+    "P2": 34,
+    "P3": 4
+  },
+  "category_scores": {
+    "Admin UX": 50,
+    "Accessibility": 55,
+    "Mobile UX": 60,
+    "i18n": 35,
+    "State Design": 65,
+    "Forms": 60,
+    "Search": 60,
+    "Interaction": 65,
+    "Visual Consistency": 65,
+    "Theme": 70,
+    "Design System": 65,
+    "Error Handling": 55,
+    "Performance": 70,
+    "Responsive": 65,
+    "Data Display": 65,
+    "Artifact Versioning": 40,
+    "Rollback Path": 45,
+    "Feature Flags": 30,
+    "Operator Runbooks": 50,
+    "Validation": 55,
+    "Data Compatibility": 65,
+    "Health Checks": 50,
+    "Backup Strategy": 70,
+    "Communication": 60,
+    "CI/CD": 65,
+    "Monitoring": 55,
+    "Observability": 60
+  },
+  "readiness": 57.41,
+  "finding_count": 48,
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "Admin UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin tab navigation broken on mobile \u2014 sidebar hidden md:block",
+      "impact": "Admin users on mobile cannot navigate between tabs at all",
+      "fix": "Add mobile tab bar or dropdown selector for admin sub-pages on screens <768px"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "Search-bar missing aria-activedescendant on autocomplete input",
+      "impact": "Screen reader users cannot effectively use search autocomplete",
+      "fix": "Add role=combobox, aria-expanded, aria-activedescendant to input; role=listbox to results"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "Mobile UX",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Formatting bar buttons 28px on mobile fail WCAG 44px touch target minimum",
+      "impact": "Mobile users struggle to tap small formatting buttons",
+      "fix": "Increase button size to min 36px (44px preferred) on mobile via responsive classes"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "i18n",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin page: 150+ hardcoded strings, zero i18n usage",
+      "impact": "Cannot localize admin interface for non-English users",
+      "fix": "Extract all UI strings to en.json and use t() function from @/lib/i18n"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "i18n",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Settings page: 80+ hardcoded strings, zero i18n usage",
+      "impact": "Cannot localize settings for non-English users",
+      "fix": "Extract all UI strings to en.json and use t() function"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "i18n",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "Search-bar: 50+ hardcoded strings, zero i18n usage",
+      "impact": "Cannot localize search for non-English users",
+      "fix": "Extract all UI strings to en.json and use t() function"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Settings reset/delete dialogs lack focus traps \u2014 Tab escapes backdrop",
+      "impact": "Keyboard users can interact with page behind confirmation dialogs",
+      "fix": "Use shared Dialog component from @chat/ui which has built-in focus trap"
+    },
+    {
+      "severity": "P1",
+      "domain": "uxui",
+      "category": "State Design",
+      "file": "apps/web/components/chat/channel-info.tsx:31-34",
+      "issue": "Channel-info silently catches API failures, returns empty arrays",
+      "impact": "Silent failure \u2014 users see empty data with no indication of error",
+      "fix": "Surface error state with retry option instead of .catch(() => ({ messages: [] }))"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Forms",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Settings dual save mechanism \u2014 auto-save AND Save button confusing",
+      "impact": "Users confused about whether changes persist",
+      "fix": "Standardize on one pattern: auto-save with indicator or manual save without auto-save"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Forms",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx",
+      "issue": "Language change triggers window.location.reload()",
+      "impact": "Full page flash on locale change \u2014 poor UX",
+      "fix": "Use router.refresh() or i18n provider locale switch without full reload"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Search",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx",
+      "issue": "No result count shown in search results",
+      "impact": "Users don't know result set size",
+      "fix": "Add 'X results found' counter at top of results"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/search-bar.tsx",
+      "issue": "Search-bar type dropdown/autocomplete lack role=listbox",
+      "impact": "Screen readers don't announce list navigation",
+      "fix": "Add role=listbox to container, role=option to items"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx",
+      "issue": "Search results container lacks aria-live=polite",
+      "impact": "Screen reader users get no feedback when results update",
+      "fix": "Add aria-live=polite to results container"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Interaction",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Formatting toolbar no arrow-key navigation \u2014 Tab-only through 15 buttons",
+      "impact": "Inefficient keyboard navigation",
+      "fix": "Add arrow-key navigation within toolbar"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Formatting toolbar buttons lack visible focus ring",
+      "impact": "Keyboard users can't see focus position",
+      "fix": "Add focus-visible:ring or outline to all buttons"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Link/image formatting buttons have aria-pressed: undefined",
+      "impact": "Screen reader users don't know if formatting is active",
+      "fix": "Add aria-pressed={isActive} to toggle buttons"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "i18n",
+      "file": "apps/web/components/chat/formatting-bar.tsx",
+      "issue": "Formatting bar: 20+ hardcoded strings, zero i18n",
+      "impact": "Cannot localize formatting UI for non-English users",
+      "fix": "Use t() for button aria-labels and tooltips"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "i18n",
+      "file": "apps/web/components/chat/notification-preferences-modal.tsx",
+      "issue": "Notification preferences modal: 20+ hardcoded strings, zero i18n",
+      "impact": "Cannot localize notification preferences",
+      "fix": "Use t() for all modal UI strings"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "i18n",
+      "file": "apps/web/components/shared/keyboard-shortcuts.tsx",
+      "issue": "Keyboard shortcuts modal: 25+ hardcoded strings, zero i18n",
+      "impact": "Cannot localize keyboard shortcuts",
+      "fix": "Use t() for all shortcut labels and categories"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/components/shared/keyboard-shortcuts.tsx",
+      "issue": "Keyboard shortcuts show 'Ctrl+K' on macOS \u2014 no platform detection",
+      "impact": "Mac users see incorrect modifier labels",
+      "fix": "Detect platform and show Cmd on macOS, Ctrl on Windows/Linux"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/components/shared/keyboard-shortcuts.tsx",
+      "issue": "Keyboard shortcuts filter has no aria-live for result count",
+      "impact": "Screen reader users have no feedback when filtering",
+      "fix": "Add aria-live=polite region for filtered count"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/app/error.tsx, apps/web/app/(workspace)/error.tsx, apps/web/app/(auth)/error.tsx",
+      "issue": "All error boundaries (5+ files) lack role=alert",
+      "impact": "Screen readers may not announce errors",
+      "fix": "Add role=alert to error message containers in each error.tsx"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/app/loading.tsx, apps/web/app/(auth)/loading.tsx, apps/web/app/(workspace)/loading.tsx",
+      "issue": "All loading states (5+ files) lack aria-busy=true / role=status",
+      "impact": "Screen reader users don't know content is loading",
+      "fix": "Add aria-busy=true and role=status with aria-live=polite"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "State Design",
+      "file": "apps/web/app/loading.tsx, apps/web/app/(auth)/loading.tsx",
+      "issue": "Root and auth loading show bare spinner instead of layout skeleton",
+      "impact": "Poor perceived performance; layout shift",
+      "fix": "Match loading skeleton to actual page layout"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Responsive",
+      "file": "apps/web/app/(workspace)/loading.tsx",
+      "issue": "Workspace loading skeleton shown on mobile includes sidebar unconditionally",
+      "impact": "Loading skeleton doesn't match mobile layout",
+      "fix": "Show mobile-appropriate skeleton on small screens"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/components/workspace/onboarding-tour.tsx",
+      "issue": "Onboarding tour has no role=dialog, no focus trap",
+      "impact": "Keyboard users can Tab behind the tour",
+      "fix": "Add role=dialog, aria-modal=true, focus trap"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/components/cookie-banner.tsx",
+      "issue": "Cookie banner has role=dialog but no focus trap and no aria-modal=true",
+      "impact": "Users can interact behind the consent dialog",
+      "fix": "Add aria-modal=true and focus trap when visible"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Accessibility",
+      "file": "apps/web/components/chat/channel-info.tsx",
+      "issue": "Channel-info tab bar missing role=tablist, aria-selected on tabs",
+      "impact": "Screen readers don't get tab semantics",
+      "fix": "Add proper ARIA tab pattern: role=tablist, role=tab, aria-selected"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "State Design",
+      "file": "apps/web/components/chat/channel-info.tsx",
+      "issue": "Channel-info empty states lack actionable buttons",
+      "impact": "Dead-end empty states without guidance",
+      "fix": "Add contextual action buttons (Pin a message, Invite members)"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Data Display",
+      "file": "apps/web/components/chat/search-bar.tsx:37, apps/web/app/(workspace)/[workspaceSlug]/search/page.tsx:39",
+      "issue": "highlightText function duplicated in 2 files",
+      "impact": "DRY violation \u2014 maintenance risk",
+      "fix": "Extract to shared lib/highlight-text.ts"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Data Display",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Pagination logic duplicated across 3 admin tabs",
+      "impact": "Maintenance burden \u2014 bugs fixed 3x",
+      "fix": "Extract shared Pagination component"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Mobile UX",
+      "file": "apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
+      "issue": "Admin stat grid uses grid-cols-2 on mobile \u2014 narrow cells",
+      "impact": "Cramped mobile stats display",
+      "fix": "Use grid-cols-1 on mobile, grid-cols-2 on sm+"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Performance",
+      "file": "apps/web/components/chat/message-list.tsx:456-468",
+      "issue": "Message list 30-frame RAF loop for initial scroll may jank",
+      "impact": "Potential jank on low-end devices",
+      "fix": "Replace with single scrollToIndex call after short delay"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Design System",
+      "file": "apps/web/app/globals.css, packages/ui/src/styles.css",
+      "issue": "Two parallel CSS variable systems (Mattermost + design tokens) active interchangeably",
+      "impact": "Theming consistency risk",
+      "fix": "Document component boundaries for each var system; plan consolidation"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Error Handling",
+      "file": "apps/web/components/chat/chat-view.tsx, app-sidebar.tsx, emoji-picker.tsx, and 45+ more",
+      "issue": "console.warn used instead of user-facing toast in 50+ catch blocks",
+      "impact": "Silent failures \u2014 users don't see errors",
+      "fix": "Replace console.warn with addToast for user-visible operations"
+    },
+    {
+      "severity": "P2",
+      "domain": "uxui",
+      "category": "Theme",
+      "file": "apps/web/app/globals.css:342",
+      "issue": "Dark mode --text-secondary hardcoded rgba instead of using --text-secondary-alpha var",
+      "impact": "Dark mode opacity differs from design token",
+      "fix": "Use rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha))"
+    },
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "Artifact Versioning",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "Docker images use :latest tags without SHA pinning \u2014 cannot trace which version is deployed",
+      "impact": "Rollback requires knowing which previous :latest was deployed; no traceability",
+      "fix": "Tag images with git commit SHA (git rev-parse --short HEAD) and push SHA tag alongside latest"
+    },
+    {
+      "severity": "P1",
+      "domain": "release",
+      "category": "Rollback Path",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No automated rollback trigger in CI/CD if deploy fails health checks",
+      "impact": "Manual rollback requires operator SSH access to production droplet, increasing MTTR",
+      "fix": "Add rollback job that re-deploys previous SHA tag if health checks fail after deploy"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Feature Flags",
+      "file": "apps/web (no feature flag system exists at all)",
+      "issue": "No feature flag system for emergency kill-switch on any feature",
+      "impact": "Any bug in new feature requires full code deploy to disable",
+      "fix": "Implement feature flag table in Supabase with admin toggle UI; start with message send kill-switch"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Operator Runbooks",
+      "file": "docs/runbooks/ (rollback runbook missing)",
+      "issue": "No rollback runbook in docs \u2014 operators have no documented procedure",
+      "impact": "Operator uncertainty during incident increases MTTR",
+      "fix": "Write rollback runbook covering detection, DB rollback, image revert, verification, communication"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Validation",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No post-deploy smoke test in CI to verify deployment health",
+      "impact": "Deploy failures may go undetected until users report them",
+      "fix": "Add post-deploy smoke test job: check /health, /healthz, attempt message send via API"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Data Compatibility",
+      "file": "docs/ (no forward-fix strategy documented)",
+      "issue": "No forward-fix strategy documented for irreversible data migrations",
+      "impact": "Some data migrations may not be cleanly reversible",
+      "fix": "Document forward-fix approach: corrective migration instead of revert. Add migration PR template question"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Health Checks",
+      "file": "infra/docker/docker-compose.prod.yml",
+      "issue": "No Docker healthcheck directives in compose for web or api services",
+      "impact": "Caddy may route traffic to unhealthy containers during deploy",
+      "fix": "Add healthcheck to web and api services in docker-compose.prod.yml"
+    },
+    {
+      "severity": "P2",
+      "domain": "release",
+      "category": "Backup Strategy",
+      "file": "docs/runbooks/ (no backup verification documented)",
+      "issue": "No documented verification process for Supabase backup restorability",
+      "impact": "Backup existence does not guarantee restorability",
+      "fix": "Document weekly backup status check and quarterly restore test in runbook"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "Communication",
+      "file": "docs/runbooks/ (no communication template)",
+      "issue": "No communication template for rollback incidents",
+      "impact": "Ad-hoc communication during incident may omit key details",
+      "fix": "Create rollback communication template with sections: status, impact, ETA, what changed"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "CI/CD",
+      "file": ".github/workflows/build-push.yml",
+      "issue": "Deploy workflow doesn't capture image SHA256 digest for traceability",
+      "impact": "Cannot verify exact image running in production",
+      "fix": "Store pushed image digest in workflow summary or deployment environment variable"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "Monitoring",
+      "file": "apps/api/src/ (health endpoint)",
+      "issue": "API /health endpoint returns status but not deployed version/commit SHA",
+      "impact": "Cannot confirm which version is serving requests at a glance",
+      "fix": "Inject GIT_SHA at build time and expose in health endpoint response"
+    },
+    {
+      "severity": "P3",
+      "domain": "release",
+      "category": "Observability",
+      "file": ".github/workflows/deploy-production.yml",
+      "issue": "No release notes or changelog diff generated in deploy workflow",
+      "impact": "Operators must manually check git log to understand what changed",
+      "fix": "Add step that generates changelog diff (git log since last tag) and posts to deploy summary"
+    }
+  ]
+}

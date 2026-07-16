@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
 import { Button, EmptyState, SidebarGroup, Skeleton, useToast, useTheme } from "@chat/ui";
@@ -52,6 +52,9 @@ export default function SettingsPage() {
   const [autoResponderEnabled, setAutoResponderEnabled] = useState(false);
   const [autoResponderMessage, setAutoResponderMessage] = useState("");
   const [autoResponderSaving, setAutoResponderSaving] = useState(false);
+  const resetDialogRef = useRef<HTMLDivElement>(null);
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   async function handleResetPreferences() {
     setResetting(true);
@@ -88,6 +91,54 @@ export default function SettingsPage() {
     fetchTriggerWords();
     fetchAutoResponder();
   }, [authLoading]);
+
+  useEffect(() => {
+    if (!resetConfirmOpen) return;
+    const prevFocus = document.activeElement as HTMLElement;
+    const dialog = resetDialogRef.current;
+    if (!dialog) return;
+    const firstFocusable = dialog.querySelector<HTMLElement>("button");
+    firstFocusable?.focus();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      e.preventDefault();
+      const focusable = dialog.querySelectorAll<HTMLElement>("button");
+      if (focusable.length < 2) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) last?.focus();
+      else if (!e.shiftKey && document.activeElement === last) first?.focus();
+    };
+    dialog.addEventListener("keydown", handleKeyDown);
+    return () => {
+      dialog.removeEventListener("keydown", handleKeyDown);
+      prevFocus?.focus();
+    };
+  }, [resetConfirmOpen]);
+
+  useEffect(() => {
+    if (!deleteConfirmOpen) return;
+    const prevFocus = document.activeElement as HTMLElement;
+    const dialog = deleteDialogRef.current;
+    if (!dialog) return;
+    const firstFocusable = dialog.querySelector<HTMLElement>("button");
+    firstFocusable?.focus();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      e.preventDefault();
+      const focusable = dialog.querySelectorAll<HTMLElement>("button");
+      if (focusable.length < 2) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) last?.focus();
+      else if (!e.shiftKey && document.activeElement === last) first?.focus();
+    };
+    dialog.addEventListener("keydown", handleKeyDown);
+    return () => {
+      dialog.removeEventListener("keydown", handleKeyDown);
+      prevFocus?.focus();
+    };
+  }, [deleteConfirmOpen]);
 
   async function fetchChannels() {
     try {
@@ -236,7 +287,10 @@ export default function SettingsPage() {
       notification_prefs: { ...current, [key]: value },
     } as UserPreferences;
     setPreferences(updated);
-    savePreferences(updated).catch(() => {});
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      savePreferences(updated).catch(() => {});
+    }, 300);
   }
 
   async function savePreferences(patch: Partial<UserPreferences>) {
@@ -254,18 +308,6 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
-  }
-
-  async function handleSaveAll() {
-    if (!preferences) return;
-    await savePreferences({
-      theme: preferences.theme,
-      clock_format: preferences.clock_format,
-      message_display: preferences.message_display,
-      sidebar_show_display_name: preferences.sidebar_show_display_name,
-      sidebar_sort_alphabetical: preferences.sidebar_sort_alphabetical,
-      notification_prefs: preferences.notification_prefs,
-    });
   }
 
   if (authLoading || loading) {
@@ -407,9 +449,11 @@ export default function SettingsPage() {
             <select
               value={locale}
               onChange={(e) => {
-                setLocale(e.target.value);
-                localStorage.setItem("chat-locale", e.target.value);
-                window.location.reload();
+                const newLocale = e.target.value;
+                setLocale(newLocale);
+                localStorage.setItem("chat-locale", newLocale);
+                addToast({ title: "Language changed", variant: "success", duration: 500 });
+                setTimeout(() => window.location.reload(), 500);
               }}
               className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
               style={{
@@ -680,10 +724,6 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <Button variant="primary" onClick={handleSaveAll} disabled={saving}>
-        {saving ? "Saving..." : "Save Preferences"}
-      </Button>
-
       <SidebarGroup title="Per-Channel Notifications" defaultOpen={false}>
         <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
           Configure notification preferences for individual channels.
@@ -806,6 +846,7 @@ export default function SettingsPage() {
       {resetConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
+            ref={resetDialogRef}
             className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
             role="alertdialog"
           >
@@ -849,6 +890,7 @@ export default function SettingsPage() {
       {deleteConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
+            ref={deleteDialogRef}
             className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
             role="alertdialog"
           >
