@@ -453,19 +453,10 @@ export function MessageList({
     if (didInitialScrollRef.current) return;
     didInitialScrollRef.current = true;
 
-    let frameCount = 0;
     const lastIdx = messagesWithMeta.length - 1;
-
-    const tick = () => {
+    requestAnimationFrame(() => {
       virtualizer.scrollToIndex(lastIdx, { align: "end" });
-      frameCount++;
-      if (frameCount < 30) {
-        requestAnimationFrame(tick);
-      }
-    };
-
-    const raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    });
   }, [messagesWithMeta.length, channelChanged]);
 
   if (messages.length === 0) {
@@ -501,29 +492,20 @@ export function MessageList({
       >
         {pullDistance > 0 && (
           <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-center"
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
               height: pullDistance,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 10,
-              pointerEvents: "none",
               transition: pullDistance === 0 ? "height 0.2s ease" : undefined,
             }}
           >
-            <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+            <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
               {pullDistance > 60 ? "Release to refresh" : "Pull to refresh"}
             </span>
           </div>
         )}
         {loadingOlder && (
           <div
-            className="flex justify-center py-3"
-            style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 5 }}
+            className="absolute inset-x-0 top-0 z-[5] flex justify-center py-3"
           >
             <div
               className="h-5 w-5 animate-spin rounded-full border-2"

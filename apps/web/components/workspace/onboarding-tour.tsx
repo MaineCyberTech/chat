@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { X, Check, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -95,6 +95,7 @@ export function OnboardingTour() {
   const [visible, setVisible] = useState(false);
   const [taskStates, setTaskStates] = useState<Record<string, boolean>>({});
   const [completedCount, setCompletedCount] = useState(0);
+  const onboardingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (getOnboardingCompleted()) return;
@@ -116,6 +117,30 @@ export function OnboardingTour() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!visible) return;
+    const prevFocus = document.activeElement as HTMLElement;
+    const el = onboardingRef.current;
+    if (el) {
+      const focusable = el.querySelectorAll<HTMLElement>("button, [tabindex]:not([tabindex='-1'])");
+      if (focusable.length > 0) focusable[0]?.focus();
+      const handler = (e: KeyboardEvent) => {
+        if (e.key === "Escape") { dismiss(); return; }
+        if (e.key !== "Tab") return;
+        e.preventDefault();
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) last?.focus();
+        else if (!e.shiftKey && document.activeElement === last) first?.focus();
+      };
+      el.addEventListener("keydown", handler);
+      return () => {
+        el.removeEventListener("keydown", handler);
+        prevFocus?.focus();
+      };
+    }
+  }, [visible]);
+
   const dismiss = useCallback(() => {
     setOnboardingDismissed();
     setVisible(false);
@@ -128,6 +153,10 @@ export function OnboardingTour() {
 
   return (
     <div
+      ref={onboardingRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Getting started"
       className="fixed right-6 bottom-6 z-50 w-80 rounded-lg border shadow-[var(--elevation-5)]"
       style={{
         background: "var(--center-channel-bg)",
@@ -163,6 +192,9 @@ export function OnboardingTour() {
             }}
           >
             <div
+              role="progressbar"
+              aria-valuenow={completedCount}
+              aria-valuemax={totalTasks}
               className="h-full rounded-full transition-all"
               style={{
                 width: `${(completedCount / totalTasks) * 100}%`,

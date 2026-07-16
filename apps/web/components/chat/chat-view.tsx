@@ -63,7 +63,7 @@ function ConnectionBanner() {
         s.on("reconnect_attempt", () => setStatus("reconnecting"));
         s.io.on("reconnect_error", () => setStatus("disconnected"));
       })
-      .catch(() => console.warn("Failed to get socket for connection status"));
+      .catch(() => {});
 
     return () => {
       mounted = false;
@@ -75,7 +75,7 @@ function ConnectionBanner() {
           s.off("reconnect_attempt");
           s.io.off("reconnect_error");
         })
-        .catch(() => console.warn("Failed to cleanup socket connection listeners"));
+        .catch(() => {});
     };
   }, []);
 
@@ -204,7 +204,7 @@ export function ChatView({
         return next;
       });
     } catch (error) {
-      console.warn("Failed to load user profiles", error);
+      addToast({ title: "Failed to load user profiles", variant: "error", duration: 3000 });
     }
   }, []);
 
@@ -220,7 +220,7 @@ export function ChatView({
       if (!res.nextCursor) setHasMoreOlder(false);
       loadProfiles(res.messages);
     } catch {
-      console.warn("Failed to load older messages, user can scroll up to retry");
+      addToast({ title: "Failed to load older messages", description: "Scroll up to retry", variant: "error", duration: 3000 });
     }
     setLoadingOlder(false);
   }, [channelId, nextCursor, loadingOlder, hasMoreOlder, loadProfiles]);
@@ -379,7 +379,7 @@ export function ChatView({
 
     getSocket()
       .then(setup)
-      .catch(() => console.warn("Failed to get socket for chat channel setup"));
+      .catch(() => addToast({ title: "Failed to connect", description: "Could not set up real-time connection", variant: "error", duration: 3000 }));
 
     return () => {
       offReconnect(() => {});
@@ -579,7 +579,7 @@ export function ChatView({
     }
     getSocket()
       .then((s) => s.emit("typing:start", channelId))
-      .catch(() => console.warn("Failed to emit typing:start"));
+      .catch(() => {});
 
     typingTimeoutRef.current = setTimeout(() => {
       handleTypingStop();
@@ -593,7 +593,7 @@ export function ChatView({
     }
     getSocket()
       .then((s) => s.emit("typing:stop", channelId))
-      .catch(() => console.warn("Failed to emit typing:stop"));
+      .catch(() => {});
   }, [channelId]);
 
   useEffect(() => {
@@ -1063,6 +1063,7 @@ export function ChatView({
           <div className="hidden md:block" style={{ borderLeft: "var(--border-default)" }}>
             <ChannelInfo
               channelId={channelId}
+              workspaceId={workspaceId}
               onClose={() => setShowChannelInfo(false)}
               initialTab={showChannelInfo === "bookmarks" ? "bookmarks" : "members"}
             />
@@ -1103,6 +1104,7 @@ export function ChatView({
               <div className="flex-1 overflow-hidden">
                 <ChannelInfo
                   channelId={channelId}
+                  workspaceId={workspaceId}
                   onClose={() => setShowChannelInfo(false)}
                   initialTab={showChannelInfo === "bookmarks" ? "bookmarks" : "members"}
                 />

@@ -14,6 +14,8 @@ export default function ChannelError({
 
   return (
     <div
+      role="alert"
+      aria-live="assertive"
       className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center"
       style={{ backgroundColor: "var(--center-channel-bg)" }}
     >

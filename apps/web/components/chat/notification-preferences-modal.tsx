@@ -1,8 +1,9 @@
 ﻿"use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useToast } from "@chat/ui";
+import { t } from "@/lib/i18n";
 
 interface Props {
   channelId: string;
@@ -17,10 +18,10 @@ interface Props {
   }) => void;
 }
 
-const NOTIFY_OPTIONS: { value: "all" | "mentions" | "none"; label: string; desc: string }[] = [
-  { value: "all", label: "All messages", desc: "Notify on every message" },
-  { value: "mentions", label: "Mentions only", desc: "Only when you're mentioned" },
-  { value: "none", label: "Nothing", desc: "Mute this channel" },
+const OPTIONS: { value: "all" | "mentions" | "none"; label: () => string; desc: () => string }[] = [
+  { value: "all", label: () => t("notificationModal.allMessages"), desc: () => t("notificationModal.allMessagesDesc") },
+  { value: "mentions", label: () => t("notificationModal.mentionsOnly"), desc: () => t("notificationModal.mentionsOnlyDesc") },
+  { value: "none", label: () => t("notificationModal.nothing"), desc: () => t("notificationModal.nothingDesc") },
 ];
 
 export function NotificationPreferencesModal({
@@ -35,6 +36,9 @@ export function NotificationPreferencesModal({
   const [sound, setSound] = useState(currentSound);
   const [notifyEveryone, setNotifyEveryone] = useState<boolean>(currentNotifyEveryone ?? true);
   const [saving, setSaving] = useState(false);
+  const [initialNotify, setInitialNotify] = useState(currentNotify);
+  const [initialSound, setInitialSound] = useState(currentSound);
+  const [initialNotifyEveryone, setInitialNotifyEveryone] = useState(currentNotifyEveryone ?? true);
   const dialogRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
 
@@ -47,13 +51,22 @@ export function NotificationPreferencesModal({
     return () => prev?.focus();
   }, []);
 
+  const hasChanges = notify !== initialNotify || sound !== initialSound || notifyEveryone !== initialNotifyEveryone;
+
+  const handleClose = useCallback(() => {
+    if (hasChanges) {
+      if (!window.confirm(t("notificationModal.unsavedChanges"))) return;
+    }
+    onClose();
+  }, [hasChanges, onClose]);
+
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [onClose]);
+  }, [handleClose]);
 
   async function handleSave() {
     setSaving(true);
@@ -67,7 +80,7 @@ export function NotificationPreferencesModal({
       onClose();
     } catch {
       addToast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to save notification preferences",
         variant: "error",
       });
@@ -81,20 +94,22 @@ export function NotificationPreferencesModal({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Notification preferences"
+        aria-label={t("notificationModal.title")}
         className="w-full max-w-sm rounded-xl bg-[var(--center-channel-bg)] p-5 shadow-[var(--elevation-5)]"
       >
         <h3 className="mb-2 text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
-          Notification Preferences
+          {t("notificationModal.title")}
         </h3>
         <p className="mb-4 text-xs" style={{ color: "var(--text-secondary)" }}>
-          Configure notifications for this channel
+          {t("notificationModal.description")}
         </p>
 
-        <div className="mb-4 space-y-2">
-          {NOTIFY_OPTIONS.map((opt) => (
+        <div className="mb-4 space-y-2" role="radiogroup" aria-label={t("notificationModal.title")}>
+          {OPTIONS.map((opt) => (
             <button
               key={opt.value}
+              role="radio"
+              aria-checked={notify === opt.value}
               onClick={() => setNotify(opt.value)}
               className="flex w-full items-start gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors"
               style={{
@@ -117,9 +132,9 @@ export function NotificationPreferencesModal({
                 {notify === opt.value ? "\u2713" : ""}
               </span>
               <div>
-                <div className="font-medium">{opt.label}</div>
+                <div className="font-medium">{opt.label()}</div>
                 <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  {opt.desc}
+                  {opt.desc()}
                 </div>
               </div>
             </button>
@@ -131,7 +146,7 @@ export function NotificationPreferencesModal({
           style={{ background: "rgba(var(--center-channel-color-rgb), 0.04)" }}
         >
           <label className="text-sm" style={{ color: "var(--center-channel-color)" }}>
-            Notification sound
+            {t("notificationModal.enableSound")}
           </label>
           <button
             role="switch"
@@ -154,7 +169,7 @@ export function NotificationPreferencesModal({
           style={{ background: "rgba(var(--center-channel-color-rgb), 0.04)" }}
         >
           <label className="text-sm" style={{ color: "var(--center-channel-color)" }}>
-            Notify for <strong>@everyone</strong>
+            {t("notificationModal.notifyEveryone")}
           </label>
           <button
             role="switch"
@@ -176,19 +191,19 @@ export function NotificationPreferencesModal({
 
         <div className="flex justify-end gap-2">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-md px-3 py-1.5 text-xs font-medium"
             style={{ color: "var(--text-secondary)" }}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || !hasChanges}
             className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
             style={{ background: "var(--button-bg)" }}
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? t("notificationModal.saving") : t("common.save")}
           </button>
         </div>
       </div>

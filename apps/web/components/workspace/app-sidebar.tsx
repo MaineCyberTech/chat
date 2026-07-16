@@ -490,7 +490,6 @@ export function AppSidebar({
           background: "var(--sidebar-bg)",
           color: "var(--sidebar-text)",
           minWidth: collapsed ? 60 : 200,
-          gridArea: "team-sidebar",
           overflowX: "visible",
           position: "relative",
         }}
@@ -578,7 +577,7 @@ export function AppSidebar({
                           <span className="truncate">{w.name}</span>
                           {w.slug === workspaceSlug && (
                             <span className="ml-auto text-xs" style={{ color: "var(--button-bg)" }}>
-                              âœ“
+                              ✓
                             </span>
                           )}
                         </Link>

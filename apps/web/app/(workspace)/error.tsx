@@ -1,27 +1,22 @@
 ﻿"use client";
 
+import { Button } from "@chat/ui";
+
 export default function WorkspaceError({ reset }: { error: Error; reset: () => void }) {
   return (
     <div
+      role="alert"
+      aria-live="assertive"
       className="flex h-screen flex-col items-center justify-center gap-4"
       style={{ backgroundColor: "var(--center-channel-bg)" }}
     >
-      <h2 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
+      <h1 className="text-xl font-semibold" style={{ color: "var(--center-channel-color)" }}>
         Something went wrong
-      </h2>
+      </h1>
       <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
         An error occurred in the workspace view.
       </p>
-      <button
-        onClick={reset}
-        className="rounded-md px-4 py-2 text-sm"
-        style={{
-          backgroundColor: "var(--center-channel-color)",
-          color: "var(--center-channel-bg)",
-        }}
-      >
-        Try again
-      </button>
+      <Button onClick={() => reset()}>Try Again</Button>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { t, tn } from "@/lib/i18n";
 import {
   ArrowLeft,
   Search as SearchIcon,
@@ -13,7 +14,7 @@ import {
   Hash,
   ChevronDown,
 } from "lucide-react";
-import { EmptyState } from "@chat/ui";
+import { EmptyState, HighlightText } from "@chat/ui";
 
 interface SearchResult {
   id: string;
@@ -36,34 +37,12 @@ interface ChannelInfo {
   slug: string;
 }
 
-function highlightText(text: string, query: string): React.ReactNode {
-  if (!query || query.length < 2) return text;
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
-  return parts.map((part, i) =>
-    part.toLowerCase() === query.toLowerCase() ? (
-      <mark
-        key={i}
-        className="rounded-sm px-0.5"
-        style={{
-          background: "rgba(var(--button-bg-rgb), 0.2)",
-          color: "var(--center-channel-color)",
-        }}
-      >
-        {part}
-      </mark>
-    ) : (
-      part
-    ),
-  );
-}
-
 export default function SearchPage() {
   const params = useParams<{ workspaceSlug: string }>();
   const router = useRouter();
 
   useEffect(() => {
-    document.title = "Search - Chat";
+    document.title = `${t("common.search")} - Chat`;
   }, []);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -144,7 +123,7 @@ export default function SearchPage() {
           <button onClick={() => router.back()} className="mm-button-icon" aria-label="Go back">
             <ArrowLeft size={18} />
           </button>
-          <h1 className="mm-font-heading text-base font-semibold">Search</h1>
+          <h1 className="mm-font-heading text-base font-semibold">{t("common.search")}</h1>
         </div>
       </div>
 
@@ -173,8 +152,8 @@ export default function SearchPage() {
                   router.back();
                 }
               }}
-              placeholder="Search messages..."
-              aria-label="Search messages"
+              placeholder={t("search.placeholder", { type: t("search.messages") })}
+              aria-label={t("search.placeholder", { type: t("search.messages") })}
               className="w-full rounded-lg px-9 py-2 text-sm outline-none"
               style={{
                 border: "solid 1px rgba(var(--center-channel-color-rgb), 0.16)",
@@ -227,7 +206,7 @@ export default function SearchPage() {
               color: "var(--center-channel-color)",
             }}
           >
-            Messages
+            {t("search.messages")}
           </button>
           <button
             onClick={() => {
@@ -241,46 +220,53 @@ export default function SearchPage() {
               color: "var(--center-channel-color)",
             }}
           >
-            Files
+            {t("search.files")}
           </button>
         </div>
 
         {showFilters && (
-          <div className="mt-3 flex flex-wrap gap-3">
-            <div className="flex items-center gap-1.5">
-              <Calendar size={14} style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }} />
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="rounded px-2 py-1 text-xs"
-                style={{
-                  border: "solid 1px rgba(var(--center-channel-color-rgb), 0.16)",
-                  background: "var(--center-channel-bg)",
-                  color: "var(--center-channel-color)",
-                }}
-                aria-label="From date"
-              />
-              <span
-                className="text-xs"
-                style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
-              >
-                to
-              </span>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="rounded px-2 py-1 text-xs"
-                style={{
-                  border: "solid 1px rgba(var(--center-channel-color-rgb), 0.16)",
-                  background: "var(--center-channel-bg)",
-                  color: "var(--center-channel-color)",
-                }}
-                aria-label="To date"
-              />
+          <>
+            <div className="mt-3 flex flex-wrap gap-3">
+              <div className="flex items-center gap-1.5">
+                <Calendar size={14} style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }} />
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="rounded px-2 py-1 text-xs"
+                  style={{
+                    border: "solid 1px rgba(var(--center-channel-color-rgb), 0.16)",
+                    background: "var(--center-channel-bg)",
+                    color: "var(--center-channel-color)",
+                  }}
+                  aria-label="From date"
+                />
+                <span
+                  className="text-xs"
+                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
+                >
+                  {t("common.or", "to")}
+                </span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="rounded px-2 py-1 text-xs"
+                  style={{
+                    border: "solid 1px rgba(var(--center-channel-color-rgb), 0.16)",
+                    background: "var(--center-channel-bg)",
+                    color: "var(--center-channel-color)",
+                  }}
+                  aria-label="To date"
+                />
+              </div>
             </div>
-          </div>
+            {dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo) && (
+              <p className="mt-2 text-xs" style={{ color: "var(--dnd-indicator)" }} role="alert">
+                {t("search.dateInvalid", "Start date must be before end date")}
+              </p>
+            )}
+          </>
         )}
       </div>
 
@@ -297,11 +283,11 @@ export default function SearchPage() {
             className="rounded-md px-4 py-2 text-xs font-medium text-white"
             style={{ background: "var(--button-bg)" }}
           >
-            Retry
+            {t("errors.tryAgain")}
           </button>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" aria-live="polite" aria-atomic="true">
           {loading && (
             <div className="space-y-3 p-4">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -330,13 +316,16 @@ export default function SearchPage() {
           {!loading && query.length >= 2 && results.length === 0 && (
             <EmptyState
               icon={<SearchIcon size={20} />}
-              title="No results found"
-              description="Try a different search term"
+              title={t("search.noResults")}
+              description={t("common.noResults")}
             />
           )}
 
           {!loading && results.length > 0 && (
             <div className="space-y-2 p-4">
+              <p className="mb-2 text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+                {tn("search.resultsCount", results.length)}
+              </p>
               {results.map((r) => {
                 const channel = channels.find((c) => c.id === r.channel_id);
                 return (
@@ -362,7 +351,7 @@ export default function SearchPage() {
                       className="text-sm leading-relaxed"
                       style={{ color: "var(--center-channel-color)" }}
                     >
-                      {highlightText(r.content.slice(0, 500), query)}
+                      <HighlightText text={r.content.slice(0, 500)} query={query} />
                     </p>
                   </Link>
                 );
@@ -385,7 +374,7 @@ export default function SearchPage() {
                         }}
                       />
                     ) : (
-                      "Show more results"
+                      t("common.search")
                     )}
                     <ChevronDown size={14} />
                   </button>
@@ -403,7 +392,7 @@ export default function SearchPage() {
                 <SearchIcon size={24} style={{ color: "var(--button-bg)" }} />
               </div>
               <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
-                Type at least 2 characters to search
+                {t("search.minQueryLength", "Type at least 2 characters to search")}
               </p>
             </div>
           )}

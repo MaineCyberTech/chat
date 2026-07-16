@@ -1,8 +1,8 @@
 export default function WorkspaceLoading() {
   return (
-    <div className="flex h-screen" style={{ backgroundColor: "var(--center-channel-bg)" }}>
+    <div className="flex h-screen" role="status" aria-busy="true" style={{ backgroundColor: "var(--center-channel-bg)" }}>
       <div
-        className="flex w-60 flex-col gap-2 border-r p-3"
+        className="hidden md:flex w-60 flex-col gap-2 border-r p-3"
         style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
       >
         <div className="h-8 animate-pulse rounded-md bg-[var(--color-skeleton-bg)]" />

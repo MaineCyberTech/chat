@@ -11,5 +11,7 @@ export { useTheme, ThemeProvider } from "./hooks/use-theme";
 export { ScreenReaderOnly, type ScreenReaderOnlyProps } from "./components/screen-reader-only";
 export { StatusBadge, type StatusBadgeProps, type StatusValue } from "./components/status-badge";
 export { EmptyState, type EmptyStateProps } from "./components/empty-state";
+export { HighlightText, type HighlightTextProps } from "./utils/highlight-text";
+export { ToggleRow, type ToggleRowProps } from "./components/toggle-row";
 
 export * from "./tokens";

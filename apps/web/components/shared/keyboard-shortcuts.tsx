@@ -3,43 +3,52 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { EmptyState } from "@chat/ui";
 import { getCallback } from "@/lib/keyboard-shortcut-registry";
+import { t } from "@/lib/i18n";
 
 const SHORTCUT_CATEGORIES = [
   {
-    name: "Navigation",
+    nameKey: "navigation",
     shortcuts: [
-      { keys: "Ctrl+K", label: "Open search / command palette" },
-      { keys: "Ctrl+Shift+F", label: "Channel search" },
-      { keys: "Ctrl+Shift+Up", label: "Previous channel" },
-      { keys: "Ctrl+Shift+Down", label: "Next channel" },
-      { keys: "Escape", label: "Close dialog / cancel reply" },
+      { keys: "Ctrl+K", labelKey: "openSearch" },
+      { keys: "Ctrl+Shift+F", labelKey: "channelSearch" },
+      { keys: "Ctrl+Shift+Up", labelKey: "previousChannel" },
+      { keys: "Ctrl+Shift+Down", labelKey: "nextChannel" },
+      { keys: "Escape", labelKey: "closeDialog" },
     ],
   },
   {
-    name: "Messaging",
+    nameKey: "messaging",
     shortcuts: [
-      { keys: "Enter", label: "Send message" },
-      { keys: "Shift+Enter", label: "New line" },
-      { keys: "Ctrl+Shift+\\", label: "Create slash command" },
+      { keys: "Enter", labelKey: "sendMessage" },
+      { keys: "Shift+Enter", labelKey: "newLine" },
+      { keys: "Ctrl+Shift+\\", labelKey: "createSlashCommand" },
     ],
   },
   {
-    name: "Formatting",
+    nameKey: "formatting",
     shortcuts: [
-      { keys: "Ctrl+B", label: "Bold" },
-      { keys: "Ctrl+I", label: "Italic" },
-      { keys: "Ctrl+Shift+X", label: "Strikethrough" },
-      { keys: "Ctrl+K", label: "Insert link" },
+      { keys: "Ctrl+B", labelKey: "bold" },
+      { keys: "Ctrl+I", labelKey: "italic" },
+      { keys: "Ctrl+Shift+X", labelKey: "strikethrough" },
+      { keys: "Ctrl+K", labelKey: "insertLink" },
     ],
   },
   {
-    name: "General",
+    nameKey: "general",
     shortcuts: [
-      { keys: "?", label: "Show keyboard shortcuts" },
-      { keys: "Ctrl+Shift+/", label: "Show markdown help" },
+      { keys: "?", labelKey: "showShortcuts" },
+      { keys: "Ctrl+Shift+/", labelKey: "showMarkdownHelp" },
     ],
   },
 ];
+
+const isMac = typeof navigator !== "undefined" && navigator.platform.toLowerCase().includes("mac");
+const modKey = isMac ? "⌘" : "Ctrl";
+const altKey = isMac ? "⌥" : "Alt";
+
+function replaceModKeys(keys: string): string {
+  return keys.replace(/\bCtrl\b/g, modKey).replace(/\bAlt\b/g, altKey);
+}
 
 export function KeyboardShortcuts() {
   const [open, setOpen] = useState(false);
@@ -53,7 +62,7 @@ export function KeyboardShortcuts() {
     return SHORTCUT_CATEGORIES.map((cat) => ({
       ...cat,
       shortcuts: cat.shortcuts.filter(
-        (s) => s.label.toLowerCase().includes(q) || s.keys.toLowerCase().includes(q),
+        (s) => t(`keyboardShortcuts.${s.labelKey}`).toLowerCase().includes(q) || s.keys.toLowerCase().includes(q),
       ),
     })).filter((cat) => cat.shortcuts.length > 0);
   }, [search]);
@@ -157,7 +166,7 @@ export function KeyboardShortcuts() {
       onTouchStart={() => setOpen(false)}
       role="dialog"
       aria-modal="true"
-      aria-label="Keyboard shortcuts"
+      aria-label={t("keyboardShortcuts.title")}
     >
       <div
         ref={dialogRef}
@@ -166,7 +175,7 @@ export function KeyboardShortcuts() {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-4 text-lg font-semibold text-[var(--center-channel-color)]">
-          Keyboard Shortcuts
+          {t("keyboardShortcuts.title")}
         </h2>
 
         <input
@@ -174,29 +183,29 @@ export function KeyboardShortcuts() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search shortcuts..."
+          placeholder={t("keyboardShortcuts.searchPlaceholder")}
           className="mb-4 w-full rounded-md border px-3 py-1.5 text-sm outline-none"
           style={{
             borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
             background: "var(--center-channel-bg)",
             color: "var(--center-channel-color)",
           }}
-          aria-label="Search keyboard shortcuts"
+          aria-label={t("keyboardShortcuts.searchPlaceholder")}
         />
 
         <div className="max-h-80 space-y-4 overflow-y-auto">
           {filteredCategories.map((cat) => (
-            <div key={cat.name}>
+            <div key={cat.nameKey}>
               <h3
                 className="mb-1 text-xs font-semibold tracking-wide uppercase"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                {cat.name}
+                {t(`keyboardShortcuts.${cat.nameKey}`)}
               </h3>
               <div className="space-y-1">
                 {cat.shortcuts.map((s) => (
                   <div key={s.keys} className="flex items-center justify-between">
-                    <span className="text-sm text-[var(--center-channel-color)]">{s.label}</span>
+                    <span className="text-sm text-[var(--center-channel-color)]">{t(`keyboardShortcuts.${s.labelKey}`)}</span>
                     <kbd
                       className="rounded-md border px-2 py-0.5 font-mono text-xs"
                       style={{
@@ -205,16 +214,23 @@ export function KeyboardShortcuts() {
                         color: "var(--center-channel-color)",
                       }}
                     >
-                      {s.keys}
+                      {replaceModKeys(s.keys)}
                     </kbd>
                   </div>
                 ))}
               </div>
             </div>
           ))}
-          {filteredCategories.length === 0 && (
-            <EmptyState description={`No shortcuts match "${search}"`} className="!py-0" />
-          )}
+          <div aria-live="polite" aria-atomic="true">
+            {search.trim() && filteredCategories.length > 0 && (
+              <span className="sr-only" role="status">
+                {filteredCategories.reduce((acc, c) => acc + c.shortcuts.length, 0)} shortcuts match
+              </span>
+            )}
+            {filteredCategories.length === 0 && (
+              <EmptyState description={t("keyboardShortcuts.noResults", { search })} className="!py-0" />
+            )}
+          </div>
         </div>
 
         <button
@@ -225,7 +241,7 @@ export function KeyboardShortcuts() {
             color: "var(--center-channel-bg)",
           }}
         >
-          Close
+          {t("common.close")}
         </button>
       </div>
     </div>

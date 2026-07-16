@@ -36,6 +36,8 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
       return (
         <div
+          role="alert"
+          aria-live="assertive"
           className="flex h-screen flex-col items-center justify-center gap-4 p-8 text-center"
           style={{ backgroundColor: "var(--center-channel-bg)" }}
         >

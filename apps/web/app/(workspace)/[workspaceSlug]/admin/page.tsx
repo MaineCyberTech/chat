@@ -1,10 +1,12 @@
 ﻿"use client";
 export const dynamic = "force-dynamic";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { Component, useEffect, useState, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { EmptyState, Skeleton, useToast } from "@chat/ui";
+import { t } from "@/lib/i18n";
 
 import {
   Shield,
@@ -139,6 +141,7 @@ interface SidebarSection {
   items: { id: Tab; label: string; icon: React.ReactNode }[];
 }
 
+/* Admin-specific status indicator (distinct from @chat/ui StatusBadge which is for user presence) */
 function StatusBadge({ status }: { status: string }) {
   const color =
     status === "healthy" || status === "enabled" || status === "connected"
@@ -174,11 +177,68 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
   );
 }
 
+class TabErrorBoundary extends Component<{ children: React.ReactNode; tabName: string }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return <p className="p-4 text-sm" style={{ color: "var(--error-text, var(--dnd-indicator))" }}>{t("admin.failedToLoadTab", { name: this.props.tabName })}</p>;
+    }
+    return this.props.children;
+  }
+}
+
+function Pagination({ currentPage, totalPages, onPrev, onNext }: {
+  currentPage: number;
+  totalPages: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="mt-4 flex items-center justify-between">
+      <button onClick={onPrev} disabled={currentPage <= 1}
+        className="rounded-md px-3 py-1 text-xs transition-colors"
+        style={{ color: currentPage <= 1 ? "var(--text-tertiary)" : "var(--button-bg)" }}>
+        {t("admin.previous", "Previous")}
+      </button>
+      <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+        {t("admin.page", { current: currentPage, total: totalPages })}
+      </span>
+      <button onClick={onNext} disabled={currentPage >= totalPages}
+        className="rounded-md px-3 py-1 text-xs transition-colors"
+        style={{ color: currentPage >= totalPages ? "var(--text-tertiary)" : "var(--button-bg)" }}>
+        {t("admin.next", "Next")}
+      </button>
+    </div>
+  );
+}
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
 export default function AdminPage() {
+  const params = useParams<{ workspaceSlug?: string }>();
   useEffect(() => {
-    document.title = "Admin - Chat";
-  }, []);
+    document.title = `${t("admin.title", "Admin")} - ${params.workspaceSlug || "Chat"}`;
+  }, [params.workspaceSlug]);
   const [tab, setTab] = useState<Tab>("overview");
+  const [mobileTabOpen, setMobileTabOpen] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<AuthUser[]>([]);
@@ -213,6 +273,7 @@ export default function AdminPage() {
   const [csvPreview, setCsvPreview] = useState<string[][] | null>(null);
   const [showCsvConfirm, setShowCsvConfirm] = useState(false);
   const [exportFormat, setExportFormat] = useState<"csv" | "json">("csv");
+  const [exporting, setExporting] = useState<string | null>(null);
 
   async function downloadExport(path: string) {
     try {
@@ -236,7 +297,7 @@ export default function AdminPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Export failed");
+      setError(e instanceof Error ? e.message : t("admin.exportFailed", "Export failed"));
     }
   }
 
@@ -249,7 +310,7 @@ export default function AdminPage() {
     try {
       const text = await file.text();
       const lines = text.split("\n").filter(Boolean);
-      const rows = lines.slice(0, 6).map((l) => l.split(",").map((c) => c.trim()));
+      const rows = lines.slice(0, 6).map((l) => parseCSVLine(l));
       setCsvPreview(rows);
     } catch {
       /* ignore */
@@ -270,7 +331,7 @@ export default function AdminPage() {
       setImportResult(res);
       setShowCsvConfirm(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Import failed");
+      setError(e instanceof Error ? e.message : t("admin.importFailed", "Import failed"));
     }
     setImporting(false);
   }
@@ -278,42 +339,42 @@ export default function AdminPage() {
   async function handleUserRoleChange(userId: string, role: string) {
     try {
       await api.put(`/admin/users/${userId}/role`, { role });
-      addToast({ title: "Role updated", variant: "success", duration: 3000 });
+      addToast({ title: t("admin.roleChanged", "Role updated"), variant: "success", duration: 3000 });
     } catch {
-      addToast({ title: "Error", description: "Failed to update role", variant: "error" });
+      addToast({ title: t("common.error", "Error"), description: t("admin.roleChangeFailed", "Failed to update role"), variant: "error" });
     }
   }
 
   const fetchTab = useCallback(
-    async (t: Tab) => {
+    async (tabParam: Tab) => {
       setError(null);
       setLoading(true);
       try {
-        if (t === "overview") {
+        if (tabParam === "overview") {
           const res = await api.get<{ stats: Stats }>("/admin/stats");
           setStats(res.stats);
-        } else if (t === "users") {
+        } else if (tabParam === "users") {
           const res = await api.get<{ users: AuthUser[]; total: number }>(
             `/admin/users?search=${encodeURIComponent(userSearch)}&page=${userPage}`,
           );
           setUsers(res.users);
           setUserTotal(res.total);
-        } else if (t === "channels") {
+        } else if (tabParam === "channels") {
           const res = await api.get<{ channels: AdminChannel[]; total: number }>(
             `/admin/channels?page=${channelPage}`,
           );
           setChannels(res.channels);
           setChannelTotal(res.total);
-        } else if (t === "workspaces") {
+        } else if (tabParam === "workspaces") {
           const res = await api.get<{ workspaces: AdminWorkspace[] }>("/admin/workspaces");
           setWorkspaces(res.workspaces);
-        } else if (t === "integrations") {
+        } else if (tabParam === "integrations") {
           const res = await api.get<{ integrations: AdminIntegration[] }>("/admin/integrations");
           setIntegrations(res.integrations);
-        } else if (t === "security") {
+        } else if (tabParam === "security") {
           const res = await api.get<SecurityInfo>("/admin/security");
           setSecurity(res);
-        } else if (t === "audit-log") {
+        } else if (tabParam === "audit-log") {
           const params = new URLSearchParams({ page: String(auditPage), limit: "50" });
           if (auditFilter.action) params.set("action", auditFilter.action);
           if (auditFilter.dateFrom) params.set("dateFrom", auditFilter.dateFrom);
@@ -323,24 +384,24 @@ export default function AdminPage() {
           );
           setAuditLogs(res.logs);
           setAuditTotal(res.total);
-        } else if (t === "system") {
+        } else if (tabParam === "system") {
           const [hRes, sRes] = await Promise.all([
             api.get<HealthInfo>("/admin/health"),
             api.get<SystemInfo>("/admin/system"),
           ]);
           setHealth(hRes);
           setSystem(sRes);
-        } else if (t === "site-config") {
+        } else if (tabParam === "site-config") {
           const res = await api.get<SiteConfig>("/admin/config");
           setSiteConfig(res);
-        } else if (t === "logs") {
+        } else if (tabParam === "logs") {
           const params = new URLSearchParams({ limit: "200" });
           if (logLevel) params.set("level", logLevel);
           const res = await api.get<{ logs: LogEntry[] }>(`/admin/logs?${params.toString()}`);
           setLogs(res.logs);
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load");
+        setError(e instanceof Error ? e.message : t("admin.failedToLoad", "Failed to load"));
       }
       setLoading(false);
     },
@@ -368,37 +429,37 @@ export default function AdminPage() {
 
   const sidebarSections: SidebarSection[] = [
     {
-      label: "System Settings",
+      label: t("admin.systemSettings", "System Settings"),
       items: [
-        { id: "overview", label: "Overview", icon: <Shield size={16} /> },
-        { id: "security", label: "Security", icon: <Lock size={16} /> },
-        { id: "site-config", label: "Site Configuration", icon: <Settings size={16} /> },
+        { id: "overview", label: t("admin.overview", "Overview"), icon: <Shield size={16} /> },
+        { id: "security", label: t("admin.security", "Security"), icon: <Lock size={16} /> },
+        { id: "site-config", label: t("admin.siteConfig", "Site Configuration"), icon: <Settings size={16} /> },
       ],
     },
     {
-      label: "User Management",
+      label: t("admin.userManagement", "User Management"),
       items: [
-        { id: "users", label: "Users", icon: <Users size={16} /> },
-        { id: "channels", label: "Channels", icon: <Hash size={16} /> },
-        { id: "workspaces", label: "Workspaces", icon: <Globe size={16} /> },
+        { id: "users", label: t("admin.users", "Users"), icon: <Users size={16} /> },
+        { id: "channels", label: t("admin.channels", "Channels"), icon: <Hash size={16} /> },
+        { id: "workspaces", label: t("admin.workspaces", "Workspaces"), icon: <Globe size={16} /> },
       ],
     },
     {
-      label: "Integrations",
-      items: [{ id: "integrations", label: "Webhooks", icon: <Webhook size={16} /> }],
+      label: t("admin.integrations", "Integrations"),
+      items: [{ id: "integrations", label: t("admin.webhooks", "Webhooks"), icon: <Webhook size={16} /> }],
     },
     {
-      label: "Compliance",
+      label: t("admin.compliance", "Compliance"),
       items: [
-        { id: "audit-log", label: "Audit Log", icon: <FileText size={16} /> },
-        { id: "import-export", label: "Import/Export", icon: <Download size={16} /> },
+        { id: "audit-log", label: t("admin.auditLog", "Audit Log"), icon: <FileText size={16} /> },
+        { id: "import-export", label: t("admin.importExport", "Import / Export"), icon: <Download size={16} /> },
       ],
     },
     {
-      label: "Troubleshooting",
+      label: t("admin.troubleshooting", "Troubleshooting"),
       items: [
-        { id: "system", label: "System Info", icon: <Server size={16} /> },
-        { id: "logs", label: "Logs", icon: <Activity size={16} /> },
+        { id: "system", label: t("admin.system", "System Info"), icon: <Server size={16} /> },
+        { id: "logs", label: t("admin.logs", "Logs"), icon: <Activity size={16} /> },
       ],
     },
   ];
@@ -408,7 +469,7 @@ export default function AdminPage() {
   function renderContent() {
     if (loading) {
       return (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -438,7 +499,7 @@ export default function AdminPage() {
             className="rounded-md px-4 py-2 text-xs font-medium text-white"
             style={{ background: "var(--button-bg)" }}
           >
-            Retry
+            {t("common.retry", "Retry")}
           </button>
         </div>
       );
@@ -446,27 +507,27 @@ export default function AdminPage() {
 
     switch (tab) {
       case "overview":
-        return renderOverview();
+        return <TabErrorBoundary tabName="overview">{renderOverview()}</TabErrorBoundary>;
       case "users":
-        return renderUsers();
+        return <TabErrorBoundary tabName="users">{renderUsers()}</TabErrorBoundary>;
       case "channels":
-        return renderChannels();
+        return <TabErrorBoundary tabName="channels">{renderChannels()}</TabErrorBoundary>;
       case "workspaces":
-        return renderWorkspaces();
+        return <TabErrorBoundary tabName="workspaces">{renderWorkspaces()}</TabErrorBoundary>;
       case "integrations":
-        return renderIntegrations();
+        return <TabErrorBoundary tabName="integrations">{renderIntegrations()}</TabErrorBoundary>;
       case "import-export":
-        return renderImportExport();
+        return <TabErrorBoundary tabName="import-export">{renderImportExport()}</TabErrorBoundary>;
       case "security":
-        return renderSecurity();
+        return <TabErrorBoundary tabName="security">{renderSecurity()}</TabErrorBoundary>;
       case "audit-log":
-        return renderAuditLog();
+        return <TabErrorBoundary tabName="audit-log">{renderAuditLog()}</TabErrorBoundary>;
       case "system":
-        return renderSystem();
+        return <TabErrorBoundary tabName="system">{renderSystem()}</TabErrorBoundary>;
       case "site-config":
-        return renderSiteConfig();
+        return <TabErrorBoundary tabName="site-config">{renderSiteConfig()}</TabErrorBoundary>;
       case "logs":
-        return renderLogs();
+        return <TabErrorBoundary tabName="logs">{renderLogs()}</TabErrorBoundary>;
       default:
         return null;
     }
@@ -475,28 +536,28 @@ export default function AdminPage() {
   function renderOverview() {
     if (!stats) return null;
     return (
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         {[
           {
-            label: "Users",
+            label: t("admin.users", "Users"),
             value: stats.users,
             icon: <Users size={24} />,
             color: "var(--button-bg)",
           },
           {
-            label: "Workspaces",
+            label: t("admin.workspaces", "Workspaces"),
             value: stats.workspaces,
             icon: <Globe size={24} />,
             color: "var(--online-indicator)",
           },
           {
-            label: "Channels",
+            label: t("admin.channels", "Channels"),
             value: stats.channels,
             icon: <Hash size={24} />,
             color: "var(--away-indicator)",
           },
           {
-            label: "Messages",
+            label: t("admin.messages", "Messages"),
             value: stats.messages,
             icon: <MessageSquare size={24} />,
             color: "var(--dnd-indicator)",
@@ -541,7 +602,7 @@ export default function AdminPage() {
                 setUserSearch(e.target.value);
                 setUserPage(0);
               }}
-              placeholder="Search users..."
+              placeholder={t("admin.searchUsers", "Search users...")}
               className="w-full rounded-lg border px-8 py-2 text-sm focus:outline-none"
               style={{
                 borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
@@ -583,7 +644,7 @@ export default function AdminPage() {
                   {u.display_name || u.email.split("@")[0]}
                 </div>
                 <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  {u.email} &middot; Joined {new Date(u.created_at).toLocaleDateString()}
+                  {u.email} &middot; {t("admin.joined", "Joined")} {new Date(u.created_at).toLocaleDateString()}
                 </div>
               </div>
               <select
@@ -595,38 +656,22 @@ export default function AdminPage() {
                   color: "var(--center-channel-color)",
                   background: "var(--center-channel-bg)",
                 }}
-                aria-label={`Role for ${u.display_name ?? u.email}`}
+                aria-label={t("admin.roleFor", { name: u.display_name ?? u.email })}
               >
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-                <option value="owner">Owner</option>
+                <option value="member">{t("admin.roleMember", "Member")}</option>
+                <option value="admin">{t("admin.roleAdmin", "Admin")}</option>
+                <option value="owner">{t("admin.roleOwner", "Owner")}</option>
               </select>
             </div>
           ))}
         </div>
         {userTotal > 20 && (
-          <div
-            className="mt-4 flex items-center justify-center gap-2 text-xs"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            <button
-              disabled={userPage === 0}
-              onClick={() => setUserPage((p) => p - 1)}
-              className="rounded px-2 py-1 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] disabled:opacity-30"
-            >
-              Previous
-            </button>
-            <span>
-              Page {userPage + 1} of {Math.ceil(userTotal / 20)}
-            </span>
-            <button
-              disabled={(userPage + 1) * 20 >= userTotal}
-              onClick={() => setUserPage((p) => p + 1)}
-              className="rounded px-2 py-1 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] disabled:opacity-30"
-            >
-              Next
-            </button>
-          </div>
+          <Pagination
+            currentPage={userPage + 1}
+            totalPages={Math.ceil(userTotal / 20)}
+            onPrev={() => setUserPage((p) => p - 1)}
+            onNext={() => setUserPage((p) => p + 1)}
+          />
         )}
       </div>
     );
@@ -650,11 +695,11 @@ export default function AdminPage() {
                 {ch.name}
               </div>
               <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                {ch.workspaces?.name} &middot; Created{" "}
+                {ch.workspaces?.name} &middot; {t("admin.created", "Created")}{" "}
                 {new Date(ch.created_at).toLocaleDateString()}
               </div>
             </div>
-            {ch.is_private && (
+              {ch.is_private && (
               <span
                 className="rounded px-1.5 py-0.5 text-[10px] font-medium"
                 style={{
@@ -662,29 +707,18 @@ export default function AdminPage() {
                   color: "var(--away-indicator)",
                 }}
               >
-                Private
+                {t("admin.private", "Private")}
               </span>
             )}
           </div>
         ))}
         {channelTotal > 20 && (
-          <div
-            className="mt-4 flex items-center justify-center gap-2 text-xs"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            <button disabled={channelPage === 0} onClick={() => setChannelPage((p) => p - 1)}>
-              Previous
-            </button>
-            <span>
-              Page {channelPage + 1} of {Math.ceil(channelTotal / 20)}
-            </span>
-            <button
-              disabled={(channelPage + 1) * 20 >= channelTotal}
-              onClick={() => setChannelPage((p) => p + 1)}
-            >
-              Next
-            </button>
-          </div>
+          <Pagination
+            currentPage={channelPage + 1}
+            totalPages={Math.ceil(channelTotal / 20)}
+            onPrev={() => setChannelPage((p) => p - 1)}
+            onNext={() => setChannelPage((p) => p + 1)}
+          />
         )}
       </div>
     );
@@ -713,7 +747,7 @@ export default function AdminPage() {
                 {ws.name}
               </div>
               <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                /{ws.slug} &middot; {ws.workspace_members?.[0]?.count ?? 0} members
+                /{ws.slug} &middot; {t("admin.membersCount", { count: String(ws.workspace_members?.[0]?.count ?? 0) })}
               </div>
             </div>
           </div>
@@ -726,7 +760,7 @@ export default function AdminPage() {
     return (
       <div className="space-y-1">
         {integrations.length === 0 && (
-          <EmptyState description="No webhooks configured." className="!py-0" />
+          <EmptyState description={t("admin.noWebhooks", "No webhooks configured.")} className="!py-0" />
         )}
         {integrations.map((i) => (
           <div
@@ -758,11 +792,11 @@ export default function AdminPage() {
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold" style={{ color: "var(--center-channel-color)" }}>
-              Export Data
+              {t("admin.exportData", "Export Data")}
             </h2>
             <div className="flex items-center gap-2">
               <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                Format:
+                {t("admin.format", "Format:")}
               </span>
               {(["csv", "json"] as const).map((f) => (
                 <button
@@ -785,19 +819,27 @@ export default function AdminPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { label: "Workspaces", path: "/admin/export/workspaces", icon: <Globe size={16} /> },
-              { label: "Users", path: "/admin/export/users", icon: <Users size={16} /> },
-              { label: "Channels", path: "/admin/export/channels", icon: <Hash size={16} /> },
+              { label: t("admin.workspaces", "Workspaces"), path: "/admin/export/workspaces", icon: <Globe size={16} /> },
+              { label: t("admin.users", "Users"), path: "/admin/export/users", icon: <Users size={16} /> },
+              { label: t("admin.channels", "Channels"), path: "/admin/export/channels", icon: <Hash size={16} /> },
               {
-                label: "Messages",
+                label: t("admin.messages", "Messages"),
                 path: "/admin/export/messages",
                 icon: <MessageSquare size={16} />,
               },
             ].map((item) => (
               <button
                 key={item.label}
-                onClick={() => downloadExport(item.path)}
-                className="flex items-center gap-3 rounded-lg border p-4 text-left transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"
+                onClick={async () => {
+                  setExporting(item.label);
+                  try {
+                    await downloadExport(item.path);
+                  } finally {
+                    setExporting(null);
+                  }
+                }}
+                disabled={exporting === item.label}
+                className="flex items-center gap-3 rounded-lg border p-4 text-left transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.04)] disabled:opacity-50"
                 style={{
                   borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
                   background: "var(--center-channel-bg)",
@@ -814,9 +856,9 @@ export default function AdminPage() {
                   {item.icon}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium">{item.label}</div>
+                  <div className="text-sm font-medium">{exporting === item.label ? t("admin.exporting", "Exporting...") : item.label}</div>
                   <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                    Download as {exportFormat.toUpperCase()}
+                    {t("admin.downloadAs", { format: exportFormat.toUpperCase() })}
                   </div>
                 </div>
                 <Download
@@ -834,7 +876,7 @@ export default function AdminPage() {
             className="mb-4 text-lg font-semibold"
             style={{ color: "var(--center-channel-color)" }}
           >
-            Import Data
+            {t("admin.importData", "Import Data")}
           </h2>
           <div
             className="space-y-4 rounded-lg border p-4"
@@ -848,7 +890,7 @@ export default function AdminPage() {
                 className="text-sm font-medium"
                 style={{ color: "var(--center-channel-color)" }}
               >
-                Entity type:
+                {t("admin.entityType", "Entity type:")}
               </label>
               <select
                 value={importEndpoint}
@@ -863,8 +905,8 @@ export default function AdminPage() {
                   color: "var(--center-channel-color)",
                 }}
               >
-                <option value="workspaces">Workspaces</option>
-                <option value="users">Users</option>
+                <option value="workspaces">{t("admin.workspaces", "Workspaces")}</option>
+                <option value="users">{t("admin.users", "Users")}</option>
               </select>
             </div>
             <div className="flex items-center gap-3">
@@ -876,7 +918,7 @@ export default function AdminPage() {
                 }}
               >
                 <Upload size={16} />
-                {importFile ? importFile.name : "Choose CSV file"}
+                {importFile ? importFile.name : t("admin.chooseCSV", "Choose CSV file")}
                 <input
                   type="file"
                   accept=".csv,.txt"
@@ -896,7 +938,7 @@ export default function AdminPage() {
                   className="rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
                   style={{ background: "var(--button-bg)" }}
                 >
-                  {importing ? "Importing..." : "Import"}
+                  {importing ? t("admin.importing", "Importing...") : t("admin.import", "Import")}
                 </button>
               ) : (
                 <button
@@ -905,7 +947,7 @@ export default function AdminPage() {
                   className="rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
                   style={{ background: "var(--dnd-indicator)" }}
                 >
-                  {importing ? "Importing..." : `Confirm import ${importEndpoint}`}
+                  {importing ? t("admin.importing", "Importing...") : t("admin.confirmImport", { type: importEndpoint })}
                 </button>
               )}
             </div>
@@ -915,7 +957,7 @@ export default function AdminPage() {
                 style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.12)" }}
               >
                 <p className="mb-1 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-                  Preview (first {csvPreview.length} rows):
+                  {t("admin.previewRows", { count: csvPreview.length })}
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
@@ -954,12 +996,12 @@ export default function AdminPage() {
                 }}
               >
                 <p style={{ color: "var(--center-channel-color)" }}>
-                  Successfully imported <strong>{importResult.imported}</strong> {importEndpoint}.
+                  {t("admin.importResult", { count: importResult.imported, type: importEndpoint })}
                 </p>
                 {importResult.errors && importResult.errors.length > 0 && (
                   <div className="mt-2">
                     <p className="text-xs font-medium" style={{ color: "var(--dnd-indicator)" }}>
-                      {importResult.errors.length} error(s):
+                      {t("admin.errorCount", { count: importResult.errors.length })}
                     </p>
                     <ul className="mt-1 space-y-0.5">
                       {importResult.errors.map((err, i) => (
@@ -987,7 +1029,7 @@ export default function AdminPage() {
             className="mb-3 text-sm font-semibold"
             style={{ color: "var(--center-channel-color)" }}
           >
-            Authentication Providers
+            {t("admin.authProviders", "Authentication Providers")}
           </h3>
           <div className="space-y-2">
             {Object.entries(security.authProviders).map(([key, provider]) => (
@@ -1010,7 +1052,7 @@ export default function AdminPage() {
             className="mb-3 text-sm font-semibold"
             style={{ color: "var(--center-channel-color)" }}
           >
-            Rate Limiting
+            {t("admin.rateLimiting", "Rate Limiting")}
           </h3>
           <div className="space-y-2">
             {security.rateLimiters.map((rl) => (
@@ -1035,7 +1077,7 @@ export default function AdminPage() {
             className="mb-3 text-sm font-semibold"
             style={{ color: "var(--center-channel-color)" }}
           >
-            Security Headers
+            {t("admin.securityHeaders", "Security Headers")}
           </h3>
           <div className="space-y-2">
             {security.securityHeaders.map((h) => (
@@ -1058,18 +1100,18 @@ export default function AdminPage() {
             className="mb-3 text-sm font-semibold"
             style={{ color: "var(--center-channel-color)" }}
           >
-            Session Configuration
+            {t("admin.sessionConfig", "Session Configuration")}
           </h3>
           <div className="grid grid-cols-3 gap-4">
             {[
               {
-                label: "JWT Auth",
-                value: security.sessionConfig.jwtEnabled ? "Enabled" : "Disabled",
+                label: t("admin.jwtAuth", "JWT Auth"),
+                value: security.sessionConfig.jwtEnabled ? t("admin.enabled", "Enabled") : t("admin.disabled", "Disabled"),
               },
-              { label: "Session Duration", value: security.sessionConfig.sessionDuration },
+              { label: t("admin.sessionDuration", "Session Duration"), value: security.sessionConfig.sessionDuration },
               {
-                label: "Refresh Token Rotation",
-                value: security.sessionConfig.refreshTokenRotation ? "Enabled" : "Disabled",
+                label: t("admin.refreshTokenRotation", "Refresh Token Rotation"),
+                value: security.sessionConfig.refreshTokenRotation ? t("admin.enabled", "Enabled") : t("admin.disabled", "Disabled"),
               },
             ].map((item) => (
               <div key={item.label}>
@@ -1096,12 +1138,12 @@ export default function AdminPage() {
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-              Action:
+              {t("admin.action", "Action:")}
             </label>
             <input
               value={auditFilter.action}
               onChange={(e) => setAuditFilter((f) => ({ ...f, action: e.target.value }))}
-              placeholder="Filter by action..."
+              placeholder={t("admin.filterByAction", "Filter by action...")}
               className="rounded border px-2 py-1 text-xs focus:outline-none"
               style={{
                 borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
@@ -1113,7 +1155,7 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <label className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-              From:
+              {t("admin.from", "From:")}
             </label>
             <input
               type="date"
@@ -1129,7 +1171,7 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <label className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-              To:
+              {t("admin.to", "To:")}
             </label>
             <input
               type="date"
@@ -1195,32 +1237,16 @@ export default function AdminPage() {
             </div>
           ))}
           {auditLogs.length === 0 && (
-            <EmptyState description="No audit log entries found." className="!py-0" />
+            <EmptyState description={t("admin.noAuditLogs", "No audit log entries found.")} className="!py-0" />
           )}
         </div>
         {auditTotal > 50 && (
-          <div
-            className="mt-4 flex items-center justify-center gap-2 text-xs"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            <button
-              disabled={auditPage === 0}
-              onClick={() => setAuditPage((p) => p - 1)}
-              className="rounded px-2 py-1 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] disabled:opacity-30"
-            >
-              Previous
-            </button>
-            <span>
-              Page {auditPage + 1} of {Math.ceil(auditTotal / 50)}
-            </span>
-            <button
-              disabled={(auditPage + 1) * 50 >= auditTotal}
-              onClick={() => setAuditPage((p) => p + 1)}
-              className="rounded px-2 py-1 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)] disabled:opacity-30"
-            >
-              Next
-            </button>
-          </div>
+          <Pagination
+            currentPage={auditPage + 1}
+            totalPages={Math.ceil(auditTotal / 50)}
+            onPrev={() => setAuditPage((p) => p - 1)}
+            onNext={() => setAuditPage((p) => p + 1)}
+          />
         )}
       </div>
     );
@@ -1234,19 +1260,19 @@ export default function AdminPage() {
             className="mb-3 text-sm font-semibold"
             style={{ color: "var(--center-channel-color)" }}
           >
-            Server Health
+            {t("admin.serverHealth", "Server Health")}
           </h3>
           {health ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm" style={{ color: "var(--center-channel-color)" }}>
-                  Overall Status
+                  {t("admin.overallStatus", "Overall Status")}
                 </span>
                 <StatusBadge status={health.status} />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm" style={{ color: "var(--center-channel-color)" }}>
-                  Uptime
+                  {t("admin.uptime", "Uptime")}
                 </span>
                 <span className="font-mono text-sm" style={{ color: "var(--text-secondary)" }}>
                   {formatUptime(health.uptime)}
@@ -1284,7 +1310,7 @@ export default function AdminPage() {
                         className="font-mono text-[10px]"
                         style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
                       >
-                        {Object.values(check.queueCounts).reduce((a, b) => a + b, 0)} queued
+                        {t("admin.queued", { count: String(Object.values(check.queueCounts).reduce((a, b) => a + b, 0)) })}
                       </span>
                     )}
                   </div>
@@ -1296,7 +1322,7 @@ export default function AdminPage() {
                     className="mb-2 text-xs font-medium"
                     style={{ color: "var(--text-tertiary)" }}
                   >
-                    Queue Counts
+                    {t("admin.queueCounts", "Queue Counts")}
                   </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {Object.entries(health.checks.workers.queueCounts).map(([name, count]) => (
@@ -1322,7 +1348,7 @@ export default function AdminPage() {
             </div>
           ) : (
             <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
-              Could not fetch health data.
+              {t("admin.noHealthData", "Could not fetch health data.")}
             </p>
           )}
         </Card>
@@ -1332,20 +1358,20 @@ export default function AdminPage() {
             className="mb-3 text-sm font-semibold"
             style={{ color: "var(--center-channel-color)" }}
           >
-            System Information
+            {t("admin.systemInfo", "System Information")}
           </h3>
           {system ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               {[
-                { label: "Version", value: system.version },
-                { label: "Environment", value: system.environment },
-                { label: "DB Status", value: system.database, badge: true },
+                { label: t("admin.version", "Version"), value: system.version },
+                { label: t("admin.environment", "Environment"), value: system.environment },
+                { label: t("admin.dbStatus", "DB Status"), value: system.database, badge: true },
                 {
-                  label: "DB Latency",
+                  label: t("admin.dbLatency", "DB Latency"),
                   value: system.db_latency_ms ? `${system.db_latency_ms}ms` : "-",
                 },
-                { label: "Uptime", value: formatUptime(system.uptime_seconds) },
-                { label: "Last Check", value: new Date(system.timestamp).toLocaleString() },
+                { label: t("admin.uptime", "Uptime"), value: formatUptime(system.uptime_seconds) },
+                { label: t("admin.lastCheck", "Last Check"), value: new Date(system.timestamp).toLocaleString() },
               ].map((item) => (
                 <div key={item.label}>
                   <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
@@ -1362,7 +1388,7 @@ export default function AdminPage() {
             </div>
           ) : (
             <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
-              Could not fetch system info.
+              {t("admin.noSystemInfo", "Could not fetch system info.")}
             </p>
           )}
         </Card>
@@ -1379,13 +1405,13 @@ export default function AdminPage() {
             className="mb-3 text-sm font-semibold"
             style={{ color: "var(--center-channel-color)" }}
           >
-            Application
+            {t("admin.application", "Application")}
           </h3>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {[
-              { label: "App Name", value: siteConfig.appName },
-              { label: "Version", value: siteConfig.version },
-              { label: "Environment", value: siteConfig.environment },
+              { label: t("admin.appName", "App Name"), value: siteConfig.appName },
+              { label: t("admin.version", "Version"), value: siteConfig.version },
+              { label: t("admin.environment", "Environment"), value: siteConfig.environment },
             ].map((item) => (
               <div key={item.label}>
                 <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
@@ -1407,13 +1433,13 @@ export default function AdminPage() {
             className="mb-3 text-sm font-semibold"
             style={{ color: "var(--center-channel-color)" }}
           >
-            URLs
+            {t("admin.urls", "URLs")}
           </h3>
           <div className="space-y-2">
             {[
-              { label: "Frontend URL", value: siteConfig.frontendUrl },
-              { label: "API URL", value: siteConfig.apiUrl },
-              { label: "Supabase Project", value: siteConfig.supabaseProjectRef ?? "N/A" },
+              { label: t("admin.frontendUrl", "Frontend URL"), value: siteConfig.frontendUrl },
+              { label: t("admin.apiUrl", "API URL"), value: siteConfig.apiUrl },
+              { label: t("admin.supabaseProject", "Supabase Project"), value: siteConfig.supabaseProjectRef ?? t("common.na", "N/A") },
             ].map((item) => (
               <div
                 key={item.label}
@@ -1436,14 +1462,14 @@ export default function AdminPage() {
             className="mb-3 text-sm font-semibold"
             style={{ color: "var(--center-channel-color)" }}
           >
-            Services
+            {t("admin.services", "Services")}
           </h3>
           <div className="space-y-2">
             {[
-              { label: "Redis", configured: siteConfig.redisConfigured },
-              { label: "SMTP", configured: siteConfig.smtpConfigured },
-              { label: "Sentry", configured: siteConfig.sentryConfigured },
-              { label: "VAPID (Web Push)", configured: siteConfig.vapidConfigured },
+              { label: t("admin.redis", "Redis"), configured: siteConfig.redisConfigured },
+              { label: t("admin.smtp", "SMTP"), configured: siteConfig.smtpConfigured },
+              { label: t("admin.sentry", "Sentry"), configured: siteConfig.sentryConfigured },
+              { label: t("admin.vapid", "VAPID (Web Push)"), configured: siteConfig.vapidConfigured },
             ].map((item) => (
               <div
                 key={item.label}
@@ -1467,7 +1493,7 @@ export default function AdminPage() {
       <div>
         <div className="mb-4 flex items-center gap-3">
           <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-            Level:
+            {t("admin.level", "Level:")}
           </span>
           {["", "error", "warn"].map((l) => (
             <button
@@ -1482,7 +1508,7 @@ export default function AdminPage() {
                 color: logLevel === l ? "var(--button-color)" : "var(--center-channel-color)",
               }}
             >
-              {l || "all"}
+              {l || t("admin.all", "all")}
             </button>
           ))}
           <button
@@ -1494,7 +1520,7 @@ export default function AdminPage() {
             }}
           >
             <RefreshCw size={12} className="mr-1 inline" />
-            Refresh
+            {t("admin.refresh", "Refresh")}
           </button>
         </div>
         <div className="space-y-1">
@@ -1545,17 +1571,17 @@ export default function AdminPage() {
                   className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]"
                   style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
                 >
-                  {log.path && <span>Path: {log.path}</span>}
-                  {log.requestId && <span>Req: {log.requestId.slice(0, 8)}...</span>}
-                  {log.code && <span>Code: {log.code}</span>}
-                  {log.statusCode && <span>Status: {log.statusCode}</span>}
+                  {log.path && <span>{t("admin.path", "Path:")} {log.path}</span>}
+                  {log.requestId && <span>{t("admin.req", "Req:")} {log.requestId.slice(0, 8)}...</span>}
+                  {log.code && <span>{t("admin.code", "Code:")} {log.code}</span>}
+                  {log.statusCode && <span>{t("admin.statusLabel", "Status:")} {log.statusCode}</span>}
                   <span>{new Date(log.timestamp).toLocaleString()}</span>
                 </div>
               </div>
             </div>
           ))}
           {logs.length === 0 && (
-            <EmptyState description="No log entries captured yet." className="!py-0" />
+            <EmptyState description={t("admin.noLogs", "No log entries captured yet.")} className="!py-0" />
           )}
         </div>
       </div>
@@ -1577,7 +1603,7 @@ export default function AdminPage() {
             className="text-sm font-bold"
             style={{ color: "var(--sidebar-header-text-color, var(--center-channel-color))" }}
           >
-            System Console
+            {t("admin.systemConsole", "System Console")}
           </h2>
         </div>
         {sidebarSections.map((section) => (
@@ -1620,13 +1646,26 @@ export default function AdminPage() {
           className="mb-5 flex items-center gap-1.5 text-xs"
           style={{ color: "rgba(var(--center-channel-color-rgb), 0.48)" }}
         >
-          <span>System Console</span>
+          <span>{t("admin.systemConsole", "System Console")}</span>
           <ChevronRight size={12} />
           <span style={{ color: "var(--center-channel-color)" }}>{tabLabel}</span>
         </div>
         <h1 className="mb-6 text-xl font-bold" style={{ color: "var(--center-channel-color)" }}>
           {tabLabel}
         </h1>
+        {/* Mobile tab selector */}
+        <select
+          className="mb-4 w-full rounded-md border p-2 text-sm md:hidden"
+          value={tab}
+          onChange={(e) => setTab(e.target.value as Tab)}
+          style={{ backgroundColor: "var(--center-channel-bg)", color: "var(--center-channel-color)" }}
+        >
+          {sidebarSections.map((section) =>
+            section.items.map((item) => (
+              <option key={item.id} value={item.id}>{item.label}</option>
+            ))
+          )}
+        </select>
         {renderContent()}
       </div>
     </div>

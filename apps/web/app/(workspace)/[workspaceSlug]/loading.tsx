@@ -2,6 +2,8 @@ export default function WorkspaceLoading() {
   return (
     <div
       className="app__body"
+      role="status"
+      aria-busy="true"
       style={{
         flex: 1,
         display: "grid",

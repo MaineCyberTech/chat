@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Button } from "@chat/ui";
 import { api } from "@/lib/api";
 
@@ -8,6 +8,7 @@ const COOKIE_CONSENT_KEY = "cookie-consent-given";
 
 export function CookieBanner() {
   const [visible, setVisible] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const dnt =
@@ -48,12 +49,36 @@ export function CookieBanner() {
     setVisible(false);
   }
 
+  useEffect(() => {
+    if (!visible) return;
+    const el = bannerRef.current;
+    if (!el) return;
+    const prevFocus = document.activeElement as HTMLElement;
+    const focusable = el.querySelectorAll<HTMLElement>("button, [tabindex]:not([tabindex='-1'])");
+    if (focusable.length > 0) focusable[0]?.focus();
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      e.preventDefault();
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) last?.focus();
+      else if (!e.shiftKey && document.activeElement === last) first?.focus();
+    };
+    el.addEventListener("keydown", handler);
+    return () => {
+      el.removeEventListener("keydown", handler);
+      prevFocus?.focus();
+    };
+  }, [visible]);
+
   if (!visible) return null;
 
   return (
     <div
+      ref={bannerRef}
       className="fixed right-0 bottom-0 left-0 z-50 border-t p-4 shadow-[var(--shadow-xl)]"
       role="dialog"
+      aria-modal="true"
       aria-label="Cookie consent"
       aria-live="polite"
       style={{

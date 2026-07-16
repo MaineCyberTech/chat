@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
-import { Button, EmptyState, SidebarGroup, Skeleton, useToast, useTheme } from "@chat/ui";
+import { Button, EmptyState, SidebarGroup, Skeleton, ToggleRow, useToast, useTheme } from "@chat/ui";
+import { t } from "@/lib/i18n";
 import { Bell, BellOff, AlertTriangle, X, Plus, Play } from "lucide-react";
 import { playNotificationSound } from "@/lib/notification-sound";
 import type { UserPreferences, ThemePreference } from "@chat/db";
@@ -23,7 +24,7 @@ export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    document.title = "Settings - Chat";
+    document.title = t("settings.title");
   }, []);
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,9 +63,9 @@ export default function SettingsPage() {
       await api.delete("/preferences");
       setPreferences(null);
       setResetConfirmOpen(false);
-      addToast({ title: "Preferences reset", variant: "success", duration: 3000 });
+      addToast({ title: t("settings.resetSuccess"), variant: "success", duration: 3000 });
     } catch {
-      addToast({ title: "Error", description: "Failed to reset preferences.", variant: "error" });
+      addToast({ title: t("common.error"), description: t("settings.saveFailed"), variant: "error" });
     } finally {
       setResetting(false);
     }
@@ -74,10 +75,10 @@ export default function SettingsPage() {
     setDeleting(true);
     try {
       await api.delete("/auth/account");
-      addToast({ title: "Account deleted", variant: "success", duration: 3000 });
+      addToast({ title: t("settings.accountDeleted"), variant: "success", duration: 3000 });
       setTimeout(() => (window.location.href = "/sign-in"), 1500);
     } catch {
-      addToast({ title: "Error", description: "Failed to delete account.", variant: "error" });
+      addToast({ title: t("common.error"), description: t("settings.deleteFailed"), variant: "error" });
     } finally {
       setDeleting(false);
     }
@@ -187,9 +188,9 @@ export default function SettingsPage() {
         enabled: autoResponderEnabled,
         message: autoResponderMessage,
       });
-      addToast({ title: "Auto-responder saved", variant: "success", duration: 2000 });
+      addToast({ title: t("settings.autoResponderSaved"), variant: "success", duration: 2000 });
     } catch {
-      addToast({ title: "Error", description: "Failed to save auto-responder", variant: "error" });
+      addToast({ title: t("common.error"), description: t("settings.autoResponderSaveFailed"), variant: "error" });
     } finally {
       setAutoResponderSaving(false);
     }
@@ -219,10 +220,10 @@ export default function SettingsPage() {
       }>("/notifications/trigger-words", { word });
       setTriggerWords((prev) => [...prev, res.trigger_word]);
       setNewTriggerWord("");
-      addToast({ title: "Trigger word added", variant: "success", duration: 2000 });
+      addToast({ title: t("settings.triggerWordAdded"), variant: "success", duration: 2000 });
     } catch (err) {
       addToast({
-        title: "Failed to add trigger word",
+        title: t("settings.triggerWordAddFailed"),
         description: err instanceof Error ? err.message : "Unknown error",
         variant: "error",
       });
@@ -235,9 +236,9 @@ export default function SettingsPage() {
     try {
       await api.delete(`/notifications/trigger-words/${id}`);
       setTriggerWords((prev) => prev.filter((tw) => tw.id !== id));
-      addToast({ title: "Trigger word removed", variant: "success", duration: 2000 });
+      addToast({ title: t("settings.triggerWordRemoved"), variant: "success", duration: 2000 });
     } catch {
-      addToast({ title: "Failed to remove trigger word", variant: "error" });
+      addToast({ title: t("settings.triggerWordRemoveFailed"), variant: "error" });
     }
   }
 
@@ -251,7 +252,7 @@ export default function SettingsPage() {
         return next;
       });
     } catch {
-      addToast({ title: "Failed to update notification preference", variant: "error" });
+      addToast({ title: t("settings.notificationPrefUpdateFailed"), variant: "error" });
     } finally {
       setNotifSaving(null);
     }
@@ -300,11 +301,11 @@ export default function SettingsPage() {
     try {
       await api.patch("/preferences", patch);
       setSaveStatus("success");
-      setSaveMessage("Preferences saved");
+      setSaveMessage(t("settings.saved"));
       setTimeout(() => setSaveStatus("idle"), 3000);
     } catch (err) {
       setSaveStatus("error");
-      setSaveMessage(err instanceof Error ? err.message : "Failed to save");
+      setSaveMessage(err instanceof Error ? err.message : t("settings.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -347,7 +348,7 @@ export default function SettingsPage() {
           className="rounded-md px-4 py-2 text-xs font-medium text-white"
           style={{ background: "var(--button-bg)" }}
         >
-          Retry
+          {t("common.retry")}
         </button>
       </div>
     );
@@ -362,28 +363,28 @@ export default function SettingsPage() {
     <div className="h-full overflow-y-auto px-4 py-2">
     <div className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
       <h1 className="text-2xl font-bold" style={{ color: "var(--center-channel-color)" }}>
-        Preferences
+        {t("settings.title")}
       </h1>
 
-      <SidebarGroup title="Appearance" defaultOpen>
+      <SidebarGroup title={t("settings.appearance")} defaultOpen>
         <div className="space-y-4">
           <div>
             <label
               className="mb-2 block text-sm font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
-              Theme
+              {t("settings.theme")}
             </label>
             <div className="flex gap-2">
-              {(["system", "light", "dark"] as ThemePreference[]).map((t) => (
+              {(["system", "light", "dark"] as ThemePreference[]).map((themeVal) => (
                 <Button
-                  key={t}
-                  variant={theme === t ? "primary" : "ghost"}
+                  key={themeVal}
+                  variant={theme === themeVal ? "primary" : "ghost"}
                   size="sm"
-                  onClick={() => handleThemeChange(t)}
+                  onClick={() => handleThemeChange(themeVal)}
                   disabled={saving}
                 >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {themeVal === "light" ? t("settings.themeLight") : themeVal === "dark" ? t("settings.themeDark") : t("settings.themeSystem")}
                 </Button>
               ))}
             </div>
@@ -393,7 +394,7 @@ export default function SettingsPage() {
               className="mb-2 block text-sm font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
-              Clock format
+              {t("settings.clockFormat")}
             </label>
             <select
               value={preferences?.clock_format ?? "12h"}
@@ -408,8 +409,8 @@ export default function SettingsPage() {
                 color: "var(--center-channel-color)",
               }}
             >
-              <option value="12h">12-hour (2:30 PM)</option>
-              <option value="24h">24-hour (14:30)</option>
+              <option value="12h">{t("settings.clock12h")}</option>
+              <option value="24h">{t("settings.clock24h")}</option>
             </select>
           </div>
           <div>
@@ -417,7 +418,7 @@ export default function SettingsPage() {
               className="mb-2 block text-sm font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
-              Message display
+              {t("settings.messageDisplay")}
             </label>
             <select
               value={preferences?.message_display ?? "standard"}
@@ -435,8 +436,8 @@ export default function SettingsPage() {
                 color: "var(--center-channel-color)",
               }}
             >
-              <option value="standard">Standard (full profile)</option>
-              <option value="compact">Compact (minimal)</option>
+              <option value="standard">{t("settings.standard")}</option>
+              <option value="compact">{t("settings.compact")}</option>
             </select>
           </div>
           <div>
@@ -444,7 +445,7 @@ export default function SettingsPage() {
               className="mb-2 block text-sm font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
-              Language
+              {t("settings.language")}
             </label>
             <select
               value={locale}
@@ -452,7 +453,7 @@ export default function SettingsPage() {
                 const newLocale = e.target.value;
                 setLocale(newLocale);
                 localStorage.setItem("chat-locale", newLocale);
-                addToast({ title: "Language changed", variant: "success", duration: 500 });
+                addToast({ title: t("settings.languageChanged"), variant: "success", duration: 500 });
                 setTimeout(() => window.location.reload(), 500);
               }}
               className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
@@ -473,11 +474,11 @@ export default function SettingsPage() {
         </div>
       </SidebarGroup>
 
-      <SidebarGroup title="Sidebar" defaultOpen>
+      <SidebarGroup title={t("settings.sidebar")} defaultOpen>
         <div className="space-y-4">
           <ToggleRow
-            label="Show channel display names"
-            description="Display channel names instead of IDs in the sidebar"
+            label={t("settings.sidebarShowDisplayName")}
+            description={t("settings.sidebarShowDisplayNameDesc")}
             checked={preferences?.sidebar_show_display_name ?? true}
             onChange={(v) => {
               const updated = { ...preferences, sidebar_show_display_name: v } as UserPreferences;
@@ -486,8 +487,8 @@ export default function SettingsPage() {
             disabled={saving}
           />
           <ToggleRow
-            label="Sort channels alphabetically"
-            description="Alphabetically sort channels within categories"
+            label={t("settings.sidebarSortAlphabetical")}
+            description={t("settings.sidebarSortAlphabeticalDesc")}
             checked={preferences?.sidebar_sort_alphabetical ?? false}
             onChange={(v) => {
               const updated = { ...preferences, sidebar_sort_alphabetical: v } as UserPreferences;
@@ -498,32 +499,32 @@ export default function SettingsPage() {
         </div>
       </SidebarGroup>
 
-      <SidebarGroup title="Notifications" defaultOpen>
+      <SidebarGroup title={t("settings.notifications")} defaultOpen>
         <div className="space-y-4">
           <ToggleRow
-            label="Desktop notifications"
-            description="Receive notifications in your browser"
+            label={t("settings.desktopNotifications")}
+            description={t("settings.desktopNotificationsDesc")}
             checked={notifPrefs.desktop_notifications ?? true}
             onChange={(v) => handleNotificationChange("desktop_notifications", v)}
             disabled={saving}
           />
           <ToggleRow
-            label="Message notifications"
-            description="Get notified when new messages are posted"
+            label={t("settings.messageNotifications")}
+            description={t("settings.messageNotificationsDesc")}
             checked={notifPrefs.message_notifications ?? true}
             onChange={(v) => handleNotificationChange("message_notifications", v)}
             disabled={saving}
           />
           <ToggleRow
-            label="Mention notifications"
-            description="Get notified when someone mentions you"
+            label={t("settings.mentionNotifications")}
+            description={t("settings.mentionNotificationsDesc")}
             checked={notifPrefs.mention_notifications ?? true}
             onChange={(v) => handleNotificationChange("mention_notifications", v)}
             disabled={saving}
           />
           <ToggleRow
-            label="Mention notification sound"
-            description="Play a sound when someone mentions you"
+            label={t("settings.mentionSound")}
+            description={t("settings.mentionSound")}
             checked={notifPrefs.mention_notification_sound ?? true}
             onChange={(v) => handleNotificationChange("mention_notification_sound", v)}
             disabled={saving}
@@ -533,7 +534,7 @@ export default function SettingsPage() {
               className="mb-2 block text-sm font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
-              Notification sound
+              {t("settings.notificationSound")}
             </label>
             <div className="flex gap-2">
               <select
@@ -547,25 +548,25 @@ export default function SettingsPage() {
                   color: "var(--center-channel-color)",
                 }}
               >
-                <option value="none">None (silent)</option>
-                <option value="subtle">Subtle</option>
-                <option value="standard">Standard</option>
-                <option value="urgent">Urgent</option>
-                <option value="chime">Chime</option>
-                <option value="bell">Bell</option>
-                <option value="ding">Ding</option>
-                <option value="pop">Pop</option>
-                <option value="tri-tone">Tri-tone</option>
+                <option value="none">{t("settings.soundNone")}</option>
+                <option value="subtle">{t("settings.soundSubtle")}</option>
+                <option value="standard">{t("settings.soundStandard")}</option>
+                <option value="urgent">{t("settings.soundUrgent")}</option>
+                <option value="chime">{t("settings.soundChime")}</option>
+                <option value="bell">{t("settings.soundBell")}</option>
+                <option value="ding">{t("settings.soundDing")}</option>
+                <option value="pop">{t("settings.soundPop")}</option>
+                <option value="tri-tone">{t("settings.soundTriTone")}</option>
               </select>
               <button
                 onClick={() => playNotificationSound(notifPrefs.sound ?? "standard")}
                 disabled={saving}
                 className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
                 style={{ color: "var(--button-bg)", border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)" }}
-                aria-label="Test notification sound"
+                aria-label={t("settings.testSound")}
               >
                 <Play size={14} />
-                Test
+                {t("settings.testSound")}
               </button>
             </div>
           </div>
@@ -574,7 +575,7 @@ export default function SettingsPage() {
               className="mb-2 block text-sm font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
-              Email notifications
+              {t("settings.emailNotifications")}
             </label>
             <select
               value={notifPrefs.email_mode ?? "immediate"}
@@ -587,9 +588,9 @@ export default function SettingsPage() {
                 color: "var(--center-channel-color)",
               }}
             >
-              <option value="immediate">Immediate</option>
-              <option value="digest">Digest (daily)</option>
-              <option value="off">Off</option>
+              <option value="immediate">{t("settings.emailImmediate")}</option>
+              <option value="digest">{t("settings.emailDigest")}</option>
+              <option value="off">{t("settings.emailOff")}</option>
             </select>
           </div>
           <div>
@@ -597,10 +598,10 @@ export default function SettingsPage() {
               className="mb-2 block text-sm font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
-              Trigger words
+              {t("settings.triggerWords")}
             </label>
             <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
-              Get notified when these words are mentioned in any channel
+              {t("settings.triggerWordsDesc")}
             </p>
             <div className="mb-3 flex gap-2">
               <input
@@ -611,7 +612,7 @@ export default function SettingsPage() {
                   if (e.key === "Enter") addTriggerWord();
                 }}
                 disabled={triggerSaving}
-                placeholder="e.g. deploy, urgent"
+                placeholder={t("settings.triggerWordPlaceholder")}
                 className="flex-1 rounded-lg border px-3 py-2 text-sm placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus-visible:outline-none"
                 style={{
                   borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
@@ -626,15 +627,13 @@ export default function SettingsPage() {
                 disabled={triggerSaving || !newTriggerWord.trim()}
               >
                 <Plus size={14} className="mr-1" />
-                Add
+                {t("settings.triggerWordAdd")}
               </Button>
             </div>
             {triggerLoading ? (
-              <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                Loading...
-              </p>
+              <Skeleton className="h-8 w-full" />
             ) : triggerWords.length === 0 ? (
-              <EmptyState description="No trigger words added yet" className="!py-0" />
+              <EmptyState description={t("settings.noTriggerWords")} className="!py-0" />
             ) : (
               <div className="flex flex-wrap gap-2">
                 {triggerWords.map((tw) => (
@@ -650,7 +649,7 @@ export default function SettingsPage() {
                     <button
                       onClick={() => deleteTriggerWord(tw.id)}
                       className="ml-0.5 rounded-full p-0.5 hover:bg-[rgba(var(--button-bg-rgb),0.2)]"
-                      aria-label={`Remove ${tw.word}`}
+                      aria-label={t("common.remove") + " " + tw.word}
                     >
                       <X size={12} />
                     </button>
@@ -662,14 +661,14 @@ export default function SettingsPage() {
         </div>
       </SidebarGroup>
 
-      <SidebarGroup title="Auto-Responder" defaultOpen={false}>
+      <SidebarGroup title={t("settings.autoResponder")} defaultOpen={false}>
         <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
-          Auto-reply to direct messages when you&apos;re away or busy.
+          {t("settings.autoResponderDesc")}
         </p>
         <div className="space-y-3">
           <ToggleRow
-            label="Enable auto-responder"
-            description="Automatically reply to DMs based on your status"
+            label={t("settings.autoResponderEnabled")}
+            description={t("settings.autoResponderHint")}
             checked={autoResponderEnabled}
             onChange={setAutoResponderEnabled}
             disabled={autoResponderSaving}
@@ -681,7 +680,7 @@ export default function SettingsPage() {
                   className="mb-1 block text-xs font-medium"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  Auto-reply message
+                  {t("settings.autoResponderMessageLabel")}
                 </label>
                 <textarea
                   value={autoResponderMessage}
@@ -689,7 +688,7 @@ export default function SettingsPage() {
                   disabled={autoResponderSaving}
                   maxLength={500}
                   rows={3}
-                  placeholder="I'm currently away. I'll get back to you soon."
+                  placeholder={t("settings.autoResponderPlaceholderMsg")}
                   className="w-full rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
                   style={{
                     borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
@@ -697,6 +696,16 @@ export default function SettingsPage() {
                     color: "var(--center-channel-color)",
                   }}
                 />
+                <span
+                  className="text-xs"
+                  style={{
+                    color: autoResponderMessage.length > 400
+                      ? "var(--error-text)"
+                      : "var(--text-tertiary)",
+                  }}
+                >
+                  {autoResponderMessage.length}/500
+                </span>
               </div>
               <Button
                 variant="primary"
@@ -704,7 +713,7 @@ export default function SettingsPage() {
                 onClick={saveAutoResponder}
                 disabled={autoResponderSaving}
               >
-                {autoResponderSaving ? "Saving..." : "Save Auto-Responder"}
+                {autoResponderSaving ? t("settings.saving") : t("settings.saveAutoResponder")}
               </Button>
             </>
           )}
@@ -724,13 +733,13 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <SidebarGroup title="Per-Channel Notifications" defaultOpen={false}>
+      <SidebarGroup title={t("settings.perChannel")} defaultOpen={false}>
         <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
-          Configure notification preferences for individual channels.
+          {t("settings.perChannelDesc")}
         </p>
         <div className="space-y-1">
           {channels.length === 0 && (
-            <EmptyState description="No channels found" className="!py-0" />
+            <EmptyState description={t("settings.noChannels")} className="!py-0" />
           )}
           {channels.map((ch) => {
             const notify = channelPrefs.get(ch.id) ?? true;
@@ -753,7 +762,7 @@ export default function SettingsPage() {
                   style={{
                     color: notify ? "var(--button-bg)" : "var(--text-tertiary)",
                   }}
-                  aria-label={notify ? `Mute ${ch.name}` : `Unmute ${ch.name}`}
+                  aria-label={(notify ? t("channel.mute") + " " : t("channel.unmute") + " ") + ch.name}
                 >
                   {notify ? <Bell size={14} /> : <BellOff size={14} />}
                 </button>
@@ -763,9 +772,9 @@ export default function SettingsPage() {
         </div>
       </SidebarGroup>
 
-      <SidebarGroup title="Danger Zone" defaultOpen={false}>
+      <SidebarGroup title={t("settings.dangerZone")} defaultOpen={false}>
         <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
-          Destructive actions that cannot be undone.
+          {t("settings.dangerZoneDesc")}
         </p>
         <div className="space-y-3">
           <div
@@ -773,10 +782,10 @@ export default function SettingsPage() {
             style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
           >
             <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
-              Reset all preferences
+              {t("settings.resetPreferences")}
             </p>
             <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
-              Restore all settings to their default values.
+              {t("settings.resetPreferencesDesc")}
             </p>
             <Button
               variant="ghost"
@@ -785,7 +794,7 @@ export default function SettingsPage() {
               className="mt-2"
               style={{ color: "var(--dnd-indicator)" }}
             >
-              Reset preferences
+              {t("settings.resetPreferencesButton")}
             </Button>
           </div>
           <div
@@ -793,10 +802,10 @@ export default function SettingsPage() {
             style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
           >
             <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
-              Export data
+              {t("settings.exportData")}
             </p>
             <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
-              Download a JSON export of your messages.
+              {t("settings.exportDataDesc")}
             </p>
             <Button
               variant="ghost"
@@ -810,13 +819,13 @@ export default function SettingsPage() {
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a"); a.href = url; a.download = "chat-export.json"; a.click();
                   URL.revokeObjectURL(url);
-                  addToast({ title: "Export complete", variant: "success" });
+                  addToast({ title: t("settings.exportComplete"), variant: "success" });
                 } catch {
-                  addToast({ title: "Export failed", variant: "error" });
+                  addToast({ title: t("settings.exportFailed"), variant: "error" });
                 }
               }}
             >
-              Export data
+              {t("settings.exportData")}
             </Button>
           </div>
           <div
@@ -824,10 +833,10 @@ export default function SettingsPage() {
             style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
           >
             <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
-              Delete account
+              {t("settings.deleteAccount")}
             </p>
             <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
-              Permanently delete your account and all associated data.
+              {t("settings.deleteAccountDesc")}
             </p>
             <Button
               variant="ghost"
@@ -836,7 +845,7 @@ export default function SettingsPage() {
               className="mt-2"
               style={{ color: "var(--dnd-indicator)" }}
             >
-              Delete account
+              {t("settings.deleteAccountButton")}
             </Button>
           </div>
         </div>
@@ -860,10 +869,10 @@ export default function SettingsPage() {
               className="text-center text-sm font-semibold"
               style={{ color: "var(--center-channel-color)" }}
             >
-              Reset preferences?
+              {t("settings.resetConfirmTitle")}
             </h3>
             <p className="mt-2 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
-              All your settings will be restored to their default values. This cannot be undone.
+              {t("settings.resetConfirmDesc")}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -871,7 +880,7 @@ export default function SettingsPage() {
                 className="rounded-md px-3 py-1.5 text-xs font-medium"
                 style={{ color: "var(--text-secondary)" }}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleResetPreferences}
@@ -879,7 +888,7 @@ export default function SettingsPage() {
                 className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
                 style={{ background: "var(--dnd-indicator)" }}
               >
-                {resetting ? "Resetting..." : "Reset"}
+                {resetting ? t("settings.resetting") : t("settings.reset")}
               </button>
             </div>
           </div>
@@ -904,11 +913,10 @@ export default function SettingsPage() {
               className="text-center text-sm font-semibold"
               style={{ color: "var(--center-channel-color)" }}
             >
-              Delete account?
+              {t("settings.deleteConfirmTitle")}
             </h3>
             <p className="mt-2 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
-              This will permanently delete your account and all associated data, including messages,
-              channels, and workspaces. This cannot be undone.
+              {t("settings.deleteConfirmDesc")}
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -916,7 +924,7 @@ export default function SettingsPage() {
                 className="rounded-md px-3 py-1.5 text-xs font-medium"
                 style={{ color: "var(--text-secondary)" }}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleDeleteAccount}
@@ -924,7 +932,7 @@ export default function SettingsPage() {
                 className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
                 style={{ background: "var(--dnd-indicator)" }}
               >
-                {deleting ? "Deleting..." : "Delete"}
+                {deleting ? t("settings.deleting") : t("common.delete")}
               </button>
             </div>
           </div>
@@ -935,45 +943,4 @@ export default function SettingsPage() {
   );
 }
 
-function ToggleRow({
-  label,
-  description,
-  checked,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  disabled: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex-1">
-        <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
-          {label}
-        </p>
-        <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-          {description}
-        </p>
-      </div>
-      <button
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        disabled={disabled}
-        className={`relative ml-4 inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:ring-2 focus-visible:outline-none`}
-        style={{
-          background: checked ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.08)",
-        }}
-      >
-        <span
-          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-            checked ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
-      </button>
-    </div>
-  );
-}
+// ToggleRow now imported from @chat/ui

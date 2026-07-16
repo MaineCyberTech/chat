@@ -48,6 +48,8 @@ export const spacingTokens = {
 
 export type SpacingTokens = typeof spacingTokens;
 
+// Density modes defined for future use — not yet implemented in components
+// See: docs/audits/ux-audit/20260716/design_system_audit.md
 export const density = {
   comfortable: {
     multiplier: 1,

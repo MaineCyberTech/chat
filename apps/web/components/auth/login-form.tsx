@@ -105,7 +105,7 @@ export function LoginForm() {
           backgroundColor: "rgba(var(--online-indicator-rgb,6,214,160),0.12)",
         }}
       >
-        <p style={{ color: "var(--online-indicator)" }}>{message}</p>
+        <p style={{ color: "var(--online-indicator)" }} aria-live="polite" aria-atomic="true">{message}</p>
       </div>
     );
   }
@@ -193,8 +193,25 @@ export function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder={t("auth.passwordPlaceholder", "Enter your password")}
         />
+        {mode === "signin" && (
+          <p className="mt-[-8px] text-xs" style={{ color: "var(--text-tertiary)" }}>
+            {t("auth.forgotPassword", "Forgot password? Use the magic link above or contact support.")}
+          </p>
+        )}
+        {mode === "signup" && password && (
+          <p
+            className="text-xs"
+            style={{ color: password.length >= 8 ? "var(--online-indicator)" : "var(--dnd-indicator)" }}
+            role="status"
+            aria-live="polite"
+          >
+            {password.length >= 8
+              ? t("auth.passwordStrong", "Strong")
+              : t("auth.passwordWeak", "Weak - at least 8 characters")}
+          </p>
+        )}
         {status === "error" && (
-          <p className="text-sm" style={{ color: "var(--dnd-indicator)" }} role="alert">
+          <p className="text-sm" style={{ color: "var(--dnd-indicator)" }} role="alert" aria-live="polite" aria-atomic="true">
             {message}
           </p>
         )}

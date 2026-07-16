@@ -3,6 +3,8 @@
 export default function AuthError({ reset }: { error: Error; reset: () => void }) {
   return (
     <div
+      role="alert"
+      aria-live="assertive"
       className="flex min-h-screen flex-col items-center justify-center gap-4"
       style={{ backgroundColor: "var(--center-channel-bg)" }}
     >

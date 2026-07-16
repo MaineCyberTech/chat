@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { EmptyState, Skeleton } from "@chat/ui";
+import { EmptyState, Skeleton, HighlightText } from "@chat/ui";
 import { Settings, ChevronDown, FileText, MessageSquare, File, Image } from "lucide-react";
 import { t } from "@/lib/i18n";
 
@@ -33,21 +33,6 @@ function extractAttachments(
     }
   }
   return attachments;
-}
-
-function highlightText(text: string, query: string): React.ReactNode {
-  if (!query || query.length < 2) return text;
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
-  return parts.map((part, i) =>
-    part.toLowerCase() === query.toLowerCase() ? (
-      <mark key={i} className="rounded-sm bg-yellow-200 px-0.5 dark:bg-yellow-800">
-        {part}
-      </mark>
-    ) : (
-      part
-    ),
-  );
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -157,6 +142,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
   }
 
   function clearRecentSearches() {
+    if (recentSearches.length > 0 && !window.confirm(t("search.clearConfirm", "Clear all recent searches?"))) return;
     setRecentSearches([]);
     try {
       localStorage.removeItem("recent-searches");
@@ -615,7 +601,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                     </code>
                     <span style={{ color: "var(--text-tertiary)" }}>{desc}</span>
                   </button>
-                ))}
+                )})}
               </div>
             </div>
           )}
@@ -864,7 +850,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   </div>
                 )}
                 <p className="text-sm break-words">
-                  {highlightText(r.content.slice(0, 200), query)}
+                  <HighlightText text={r.content.slice(0, 200)} query={query} />
                 </p>
                 <p className="mt-0.5 text-xs" style={{ color: "var(--text-tertiary)" }}>
                   {new Date(r.created_at).toLocaleDateString()}
@@ -925,3 +911,4 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
     </div>
   );
 }
+
