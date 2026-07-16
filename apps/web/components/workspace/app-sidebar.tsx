@@ -87,6 +87,12 @@ export function AppSidebar({
   const teamMenuRef = useRef<HTMLDivElement>(null);
   const statusMenuRef = useRef<HTMLDivElement>(null);
   const [dmExpanded, setDmExpanded] = useState(true);
+  const [wsExpanded, setWsExpanded] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sidebar:ws-expanded") !== "false";
+    }
+    return true;
+  });
   const [showUnreads, setShowUnreads] = useState(false);
   const [unreads, setUnreads] = useState<Map<string, { count: number; mentions: number }>>(
     new Map(),
@@ -104,6 +110,10 @@ export function AppSidebar({
   useEffect(() => {
     collapsedRef.current = collapsed;
   }, [collapsed]);
+
+  useEffect(() => {
+    localStorage.setItem("sidebar:ws-expanded", String(wsExpanded));
+  }, [wsExpanded]);
 
   const handleCreated = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -657,13 +667,30 @@ export function AppSidebar({
           {/* Workspaces section */}
           {!collapsed && (
             <div className="mb-2">
-              <div className="mm-sidebar-group-header">Workspaces</div>
-              <div key={refreshKey}>
-                <WorkspaceList activeSlug={workspaceSlug} />
-              </div>
-              <div className="mt-1 px-3">
-                <CreateWorkspaceDialog onCreated={handleCreated} />
-              </div>
+              <button
+                onClick={() => setWsExpanded(!wsExpanded)}
+                className="mm-sidebar-group-header w-full cursor-pointer"
+              >
+                <ChevronDown
+                  size={12}
+                  className="mr-1"
+                  style={{
+                    transform: wsExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+                    transition: "transform 200ms",
+                  }}
+                />
+                Workspaces
+              </button>
+              {wsExpanded && (
+                <>
+                  <div key={refreshKey}>
+                    <WorkspaceList activeSlug={workspaceSlug} />
+                  </div>
+                  <div className="mt-1 px-3">
+                    <CreateWorkspaceDialog onCreated={handleCreated} />
+                  </div>
+                </>
+              )}
             </div>
           )}
 
