@@ -51,10 +51,9 @@ router.get(
       ? parsed.data.channel_ids.split(",").filter(Boolean)
       : null;
     const resultLimit = parsed.data.limit;
-    // Current search is tsvector-based on message content only.
-    // File content search (e.g., PDFs, documents) could be added via pgvector
-    // embeddings or an external search index like Elasticsearch/MeiliSearch.
-    const { data, error } = await req.supabase.rpc("search_messages", {
+
+    // Try RPC first (optimized with tsvector ranking), fall back to direct query
+    const { data: rpcData, error: rpcError } = await req.supabase.rpc("search_messages", {
       workspace_id: parsed.data.workspace_id,
       query_text: sanitizedQuery,
       result_limit: resultLimit,
@@ -65,14 +64,34 @@ router.get(
       result_offset: parsed.data.offset,
     });
 
-    if (error) {
-      logger.error("search_messages RPC failed", {
-        query: sanitizedQuery,
-        workspace_id: parsed.data.workspace_id,
-        code: error.code,
-        message: error.message,
-        details: error.details,
-      });
+    if (!rpcError && rpcData) {
+      let messages = rpcData;
+      if (parsed.data.type === "files") {
+        messages = messages.filter((m: { content?: string }) => {
+          const c = m.content ?? "";
+          return /!\[.*?\]\(|\[.*?\]\(.*?\.\w+\)|attachment|upload|\.(png|jpg|jpeg|gif|pdf|docx?|xlsx?|pptx?|txt|csv|svg|webp|mp[34]|mov|avi)/i.test(
+            c,
+          );
+        });
+      }
+      const hasMore = messages.length === resultLimit;
+      res.json({ messages, hasMore, offset: parsed.data.offset, limit: parsed.data.limit });
+      return;
+    }
+
+    logger.warn("search_messages RPC failed, falling back to direct query", {
+      code: rpcError?.code,
+      message: rpcError?.message,
+    });
+
+    // Fallback: fetch workspace channel IDs, then ILIKE search messages
+    const { data: workspaceChannels } = await req.supabase
+      .from("channels")
+      .select("id")
+      .eq("workspace_id", parsed.data.workspace_id);
+
+    const wsChannelIds = (workspaceChannels ?? []).map((c: { id: string }) => c.id);
+    if (wsChannelIds.length === 0) {
       res.json({
         messages: [],
         hasMore: false,
@@ -82,11 +101,47 @@ router.get(
       return;
     }
 
-    let messages = data ?? [];
+    const targetChannelIds = channelIds
+      ? wsChannelIds.filter((id: string) => channelIds.includes(id))
+      : wsChannelIds;
 
-    // When type is "files", filter to messages with file/attachment content
+    let searchQuery = req.supabase
+      .from("messages")
+      .select("id, channel_id, user_id, content, created_at")
+      .in("channel_id", targetChannelIds)
+      .is("deleted_at", null)
+      .not("content", "is", null)
+      .gt("content", "")
+      .ilike("content", `%${sanitizedQuery}%`)
+      .order("created_at", { ascending: false })
+      .range(parsed.data.offset, parsed.data.offset + resultLimit - 1);
+
+    if (parsed.data.date_from) {
+      searchQuery = searchQuery.gte("created_at", parsed.data.date_from);
+    }
+    if (parsed.data.date_to) {
+      searchQuery = searchQuery.lte("created_at", parsed.data.date_to);
+    }
+    if (parsed.data.author_id) {
+      searchQuery = searchQuery.eq("user_id", parsed.data.author_id);
+    }
+
+    const { data: messages, error: searchError } = await searchQuery;
+
+    if (searchError) {
+      logger.error("Direct search query failed", { error: searchError.message });
+      res.json({
+        messages: [],
+        hasMore: false,
+        offset: parsed.data.offset,
+        limit: parsed.data.limit,
+      });
+      return;
+    }
+
+    let results = messages ?? [];
     if (parsed.data.type === "files") {
-      messages = messages.filter((m: { content?: string }) => {
+      results = results.filter((m: { content?: string }) => {
         const c = m.content ?? "";
         return /!\[.*?\]\(|\[.*?\]\(.*?\.\w+\)|attachment|upload|\.(png|jpg|jpeg|gif|pdf|docx?|xlsx?|pptx?|txt|csv|svg|webp|mp[34]|mov|avi)/i.test(
           c,
@@ -94,8 +149,8 @@ router.get(
       });
     }
 
-    const hasMore = messages.length === resultLimit;
-    res.json({ messages, hasMore, offset: parsed.data.offset, limit: parsed.data.limit });
+    const hasMore = results.length === resultLimit;
+    res.json({ messages: results, hasMore, offset: parsed.data.offset, limit: parsed.data.limit });
   }),
 );
 
