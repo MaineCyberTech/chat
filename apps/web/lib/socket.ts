@@ -20,24 +20,8 @@ const logger = {
 
 let pendingSocket: Promise<Socket> | null = null;
 
-export async function getSocket(): Promise<Socket> {
-  if (socket?.connected) return socket;
-  if (pendingSocket) return pendingSocket;
-
-  const supabase = getSupabaseBrowserClient();
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-
-  if (!token) throw new Error("Not authenticated");
-
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-
-  reconnectAttempts = 0;
-
-  socket = io(API_BASE, {
+function createSocket(token: string): Socket {
+  const s = io(API_BASE, {
     auth: { token },
     path: "/v1/socket.io",
     transports: ["websocket", "polling"],
@@ -49,7 +33,7 @@ export async function getSocket(): Promise<Socket> {
     timeout: CONNECTION_TIMEOUT,
   } as Partial<ManagerOptions & SocketOptions>);
 
-  socket.io.on("reconnect_attempt", () => {
+  s.io.on("reconnect_attempt", () => {
     reconnectAttempts++;
     const baseDelay = Math.min(
       RECONNECT_BASE_DELAY * Math.pow(2, reconnectAttempts - 1),
@@ -61,40 +45,65 @@ export async function getSocket(): Promise<Socket> {
     );
   });
 
-  socket.io.on("reconnect_failed", () => {
+  s.io.on("reconnect_failed", () => {
     logger.warn(`Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached — giving up`);
   });
 
-  socket.on("connect", () => {
+  s.on("connect", () => {
     reconnectAttempts = 0;
   });
 
-  socket.on("disconnect", (reason) => {
+  s.on("disconnect", (reason) => {
     logger.warn(`Disconnected: ${reason}`);
   });
 
-  pendingSocket = new Promise<Socket>((resolve, reject) => {
-    const onConnect = () => {
-      socket!.off("connect", onConnect);
-      socket!.off("connect_error", onError);
-      pendingSocket = null;
-      resolve(socket!);
-    };
-    const onError = (err: Error) => {
-      socket!.off("connect", onConnect);
-      socket!.off("connect_error", onError);
-      pendingSocket = null;
-      reject(new Error(err.message));
-    };
-    socket!.on("connect", onConnect);
-    socket!.on("connect_error", onError);
-    setTimeout(() => {
-      socket!.off("connect", onConnect);
-      socket!.off("connect_error", onError);
-      pendingSocket = null;
-      reject(new Error("Connection timeout"));
-    }, CONNECTION_TIMEOUT);
-  });
+  return s;
+}
+
+export function getSocket(): Promise<Socket> {
+  if (socket?.connected) return Promise.resolve(socket);
+  if (pendingSocket) return pendingSocket;
+
+  reconnectAttempts = 0;
+
+  pendingSocket = (async () => {
+    const supabase = getSupabaseBrowserClient();
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+
+    if (!token) throw new Error("Not authenticated");
+
+    if (socket?.connected) return socket;
+
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
+
+    socket = createSocket(token);
+
+    return new Promise<Socket>((resolve, reject) => {
+      const onConnect = () => {
+        socket!.off("connect", onConnect);
+        socket!.off("connect_error", onError);
+        resolve(socket!);
+      };
+      const onError = (err: Error) => {
+        socket!.off("connect", onConnect);
+        socket!.off("connect_error", onError);
+        pendingSocket = null;
+        reject(new Error(err.message));
+      };
+      socket!.on("connect", onConnect);
+      socket!.on("connect_error", onError);
+      setTimeout(() => {
+        socket!.off("connect", onConnect);
+        socket!.off("connect_error", onError);
+        pendingSocket = null;
+        reject(new Error("Connection timeout"));
+      }, CONNECTION_TIMEOUT);
+    });
+  })();
 
   return pendingSocket;
 }

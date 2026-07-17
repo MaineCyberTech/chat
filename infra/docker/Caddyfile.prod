@@ -30,6 +30,19 @@ chat.mainecybertech.com {
     @api {
         path /v1/*
     }
+    @socketio_ws {
+        path /v1/socket.io/*
+        header Connection *Upgrade*
+    }
+    handle @socketio_ws {
+        reverse_proxy api:4000 {
+            transport http {
+                dial_timeout 10s
+                response_header_timeout 0
+            }
+            flush_interval -1
+        }
+    }
     handle @api {
         reverse_proxy api:4000
     }

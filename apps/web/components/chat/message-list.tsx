@@ -161,7 +161,7 @@ export function MessageList({
   }, []);
 
   useEffect(() => {
-    const allIds = messages.map((m) => m.id);
+    const allIds = messages.map((m) => m.id).filter((id) => !id.startsWith("temp_"));
     if (allIds.length === 0) return;
     const newIds = allIds.filter((id) => !fetchedReactionsRef.current.has(id));
     if (newIds.length === 0) return;
@@ -302,6 +302,7 @@ export function MessageList({
   }, [isTouchDevice, onLoadOlder, hasMoreOlder, pullDistance]);
 
   async function toggleReaction(messageId: string, emoji: string) {
+    if (messageId.startsWith("temp_")) return;
     const msgReactions = reactions.get(messageId) ?? [];
     const existing = msgReactions.find((r) => r.user_id === currentUserId && r.emoji === emoji);
     if (existing) {
@@ -542,9 +543,7 @@ export function MessageList({
           </div>
         )}
         {loadingOlder && (
-          <div
-            className="absolute inset-x-0 top-0 z-[5] flex justify-center py-3"
-          >
+          <div className="absolute inset-x-0 top-0 z-[5] flex justify-center py-3">
             <div
               className="h-5 w-5 animate-spin rounded-full border-2"
               style={{

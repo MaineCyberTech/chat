@@ -9,6 +9,19 @@ chat.mainecybertech.us {
     handle /v1/livekit* {
         reverse_proxy livekit:7880
     }
+    @socketio_ws {
+        path /v1/socket.io/*
+        header Connection *Upgrade*
+    }
+    handle @socketio_ws {
+        reverse_proxy api:4000 {
+            transport http {
+                dial_timeout 10s
+                response_header_timeout 0
+            }
+            flush_interval -1
+        }
+    }
     handle /v1* {
         reverse_proxy api:4000
     }

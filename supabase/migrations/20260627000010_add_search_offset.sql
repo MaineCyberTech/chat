@@ -29,11 +29,13 @@ BEGIN
     m.user_id,
     m.content,
     m.created_at,
-    ts_rank(to_tsvector('english', m.content), plainto_tsquery('english', query_text)) AS rank
+    ts_rank(to_tsvector('english', COALESCE(m.content, '')), plainto_tsquery('english', query_text)) AS rank
   FROM public.messages m
   JOIN public.channels ch ON ch.id = m.channel_id
   WHERE ch.workspace_id = search_messages.workspace_id
     AND m.deleted_at IS NULL
+    AND m.content IS NOT NULL
+    AND length(m.content) > 0
     AND to_tsvector('english', m.content) @@ plainto_tsquery('english', query_text)
     AND (date_from IS NULL OR m.created_at >= date_from)
     AND (date_to IS NULL OR m.created_at <= date_to)

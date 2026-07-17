@@ -103,7 +103,7 @@ export function ThreadPanel({
 
   // Fetch reactions for all replies
   useEffect(() => {
-    const ids = replies.map((r) => r.id);
+    const ids = replies.map((r) => r.id).filter((id) => !id.startsWith("temp_"));
     if (ids.length === 0) return;
     const CHUNK_SIZE = 20;
     const chunks: string[][] = [];
@@ -136,6 +136,7 @@ export function ThreadPanel({
   }, [replies]);
 
   async function toggleReaction(messageId: string, emoji: string) {
+    if (messageId.startsWith("temp_")) return;
     try {
       const res = await api.post<{ reaction: Reaction; removed: boolean }>(
         `/messages/${messageId}/reactions`,
@@ -287,7 +288,9 @@ export function ThreadPanel({
               <p className="text-xs font-medium" style={{ color: "var(--center-channel-color)" }}>
                 {authorName(parentMessage.user_id, profiles)}
                 <span className="ml-2" style={{ color: "var(--text-tertiary)" }}>
-                  <time dateTime={new Date(parentMessage.created_at).toISOString()}>{formatTime(parentMessage.created_at)}</time>
+                  <time dateTime={new Date(parentMessage.created_at).toISOString()}>
+                    {formatTime(parentMessage.created_at)}
+                  </time>
                 </span>
               </p>
               <p
@@ -367,7 +370,9 @@ export function ThreadPanel({
                           >
                             {name}
                             <span className="ml-2" style={{ color: "var(--text-tertiary)" }}>
-                              <time dateTime={new Date(reply.created_at).toISOString()}>{formatTime(reply.created_at)}</time>
+                              <time dateTime={new Date(reply.created_at).toISOString()}>
+                                {formatTime(reply.created_at)}
+                              </time>
                             </span>
                           </p>
                           {isEditing ? (

@@ -203,7 +203,7 @@ export function ChatView({
         res.profiles.forEach((p) => next.set(p.id, p));
         return next;
       });
-    } catch (error) {
+    } catch {
       addToast({ title: "Failed to load user profiles", variant: "error", duration: 3000 });
     }
   }, []);
@@ -220,7 +220,12 @@ export function ChatView({
       if (!res.nextCursor) setHasMoreOlder(false);
       loadProfiles(res.messages);
     } catch {
-      addToast({ title: "Failed to load older messages", description: "Scroll up to retry", variant: "error", duration: 3000 });
+      addToast({
+        title: "Failed to load older messages",
+        description: "Scroll up to retry",
+        variant: "error",
+        duration: 3000,
+      });
     }
     setLoadingOlder(false);
   }, [channelId, nextCursor, loadingOlder, hasMoreOlder, loadProfiles]);
@@ -280,6 +285,7 @@ export function ChatView({
     let socket: Socket | null = null;
     let isConnectionAttempted = false;
     let presenceHandler: ((data: { total: number }) => void) | null = null;
+    let reconnectHandler: (() => void) | null = null;
 
     function setup(s: Socket) {
       socket = s;
@@ -288,9 +294,10 @@ export function ChatView({
         s.emit("channel:join", channelId);
       }
 
-      onReconnect(() => {
+      reconnectHandler = () => {
         socket?.emit("channel:join", channelId);
-      });
+      };
+      onReconnect(reconnectHandler);
 
       socket.on("message:new", ({ message }: { message: Message }) => {
         if (deduplicateEcho(message.id)) return;
@@ -379,10 +386,17 @@ export function ChatView({
 
     getSocket()
       .then(setup)
-      .catch(() => addToast({ title: "Failed to connect", description: "Could not set up real-time connection", variant: "error", duration: 3000 }));
+      .catch(() =>
+        addToast({
+          title: "Failed to connect",
+          description: "Could not set up real-time connection",
+          variant: "error",
+          duration: 3000,
+        }),
+      );
 
     return () => {
-      offReconnect(() => {});
+      if (reconnectHandler) offReconnect(reconnectHandler);
       if (socket) {
         socket.emit("channel:leave", channelId);
         socket.off("message:new");

@@ -5,6 +5,7 @@ import { requireChannelAccess, requireMessageAccess } from "../../middleware/req
 import { messageService } from "./service.js";
 import { logAuditEvent } from "../../services/audit.js";
 import { asyncHandler } from "../../lib/async-handler.js";
+import { logger } from "../../lib/logger.js";
 import {
   BadRequestError,
   NotFoundError,
@@ -65,7 +66,14 @@ router.get(
     });
 
     if (error) {
-      throw new InternalServerError(error.message);
+      logger.error("search_messages RPC failed", {
+        query: sanitizedQuery,
+        workspace_id: parsed.data.workspace_id,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+      });
+      throw new InternalServerError("Search failed. Please try again.");
     }
 
     let messages = data ?? [];
