@@ -124,7 +124,7 @@ Full report: `docs/audits/ux-audit/20260709/`
 | UX-222 | P2       | Data Display   | `highlightText` function duplicated in 2 files                         | `search-bar.tsx`, `search/page.tsx`                         |
 | UX-223 | P2       | Data Display   | Pagination duplicated across 3 admin tabs                              | `admin/page.tsx`                                            |
 | UX-224 | P2       | Mobile UX      | Admin stat grid uses `grid-cols-2` on mobile — narrow cells            | `admin/page.tsx`                                            |
-| UX-225 | P2       | Performance    | Message list 30-frame RAF loop for initial scroll may jank             | `message-list.tsx`                                          |
+| UX-225 | P2       | Performance    | Message list 30-frame RAF loop for initial scroll may jank — RETAINED: loop required to trigger virtualizer rendering; stability detection stops early when settled | `message-list.tsx`                                          |
 | UX-226 | P2       | Design System  | Two parallel CSS var systems (Mattermost + design tokens) active       | `globals.css`, `packages/ui/src/styles.css`                 |
 | UX-227 | P2       | Error Handling | `console.warn` used instead of user-facing toast in 5+ catch blocks    | `chat-view.tsx`, `context-menu.tsx`, `quick-switcher.tsx` + |
 | UX-228 | P2       | Theme          | Dark mode `--text-secondary` hardcoded rgba, not alpha var             | `globals.css`                                               |
@@ -144,7 +144,7 @@ Full report: `docs/audits/ux-audit/20260709/`
 | UX-314 | P3       | Design System  | Inline `StatusBadge` and `Card` in admin (duplicates shared comps)     | `admin/page.tsx`                                            |
 | UX-315 | P3       | Design System  | `ToggleRow` inline in settings — not shared                            | `settings/page.tsx`                                         |
 | UX-316 | P3       | Admin UX       | CSV parser uses `line.split(",")` — breaks on quoted fields            | `admin/page.tsx`                                            |
-| UX-317 | P3       | Performance    | Message list 30-frame RAF loop in useEffect (wasteful)                 | `message-list.tsx`                                          |
+| UX-317 | P3       | Performance    | Message list 30-frame RAF loop in useEffect (wasteful) — RETAINED: loop is required to render + measure items before scrollToIndex can compute correct position | `message-list.tsx`                                          |
 | UX-318 | P3       | Design System  | Pull-to-refresh indicator uses inline style not Tailwind               | `message-list.tsx`                                          |
 | UX-319 | P3       | Code Quality   | Dead CSS `gridArea: "team-sidebar"` — no grid parent                   | `app-sidebar.tsx`                                           |
 | UX-320 | P3       | Code Quality   | Encoding artifact line 581 — `âœ“` should be checkmark                 | `app-sidebar.tsx`                                           |
@@ -298,7 +298,7 @@ main                    flex: 1; min-height: 0; flex-col
 | **CSS Grid for message area**                           | `display: grid; gridTemplateRows: "1fr auto"` breaks both scrolling and message display. Grid creates implicit row constraints that fight `flex: 1`.  | `chat-view.tsx`                  |
 | **`.app__body` as CSS Grid**                            | `display: grid; gridTemplateRows: "1fr"` prevents sidebar from having a constrained height. Must be `display: flex; flex-direction: column`.          | `layout.tsx`                     |
 | **`overflow: hidden` on `[role="log"]`**                | Kills scroll on mobile. Only `overflow: auto` or `overflow: clip` works on the scroll container.                                                      | `globals.css` mobile media query |
-| **`el.scrollTop = el.scrollHeight` for initial scroll** | Only scrolls to top of last message, not bottom. Use `virtualizer.scrollToIndex(lastIdx, { align: "end" })` which accounts for measured item heights. | `message-list.tsx`               |
+| **`el.scrollTop = el.scrollHeight` alone**             | One-shot `scrollTop = scrollHeight` only scrolls to top of last message. Must use in a rAF loop until scrollHeight stabilizes, then final `scrollToIndex(align:"end")`. | `message-list.tsx`               |
 | **Fixed `height` on `.mm-post`**                        | Prevents `measureElement` from reading true content height. Message items must NOT have a fixed height — use `min-height` only.                       | `message-item.tsx`               |
 | **`height: virtualRow.size` on measured rows**          | Overwrites the measured height with the estimated height. For `measureElement` mode, do NOT set height on the virtual row div.                        | `message-list.tsx`               |
 
@@ -317,15 +317,51 @@ const virtualizer = useVirtualizer({
 
 #### Initial Scroll Strategy
 
+`scrollToIndex(align: "end")` alone doesn't work because it uses **estimated** sizes. The virtualizer only renders + measures items after the scroll position moves. The correct approach uses a two-phase strategy:
+
+**Phase 1 — Fill loop**: Repeatedly set `el.scrollTop = el.scrollHeight` in a rAF loop (up to 60 frames). Each iteration triggers the virtualizer to render more items at the new scroll position, and `measureElement` fires for each rendered item, growing the actual scroll height. Track when `scrollHeight` stabilizes (3 consecutive frames with the same value) — this means all items have been rendered and measured.
+
+**Phase 2 — Precision snap**: One final `scrollToIndex(lastIdx, { align: "end" })` using now-accurate measured heights.
+
 ```typescript
-// scrollToIndex with align: "end" handles measured heights correctly
-const lastIdx = messagesWithMeta.length - 1;
-requestAnimationFrame(() => {
-  virtualizer.scrollToIndex(lastIdx, { align: "end" });
-});
+let frameCount = 0;
+let lastHeight = 0;
+let stableCount = 0;
+
+const tick = () => {
+  const el = listRef.current;
+  if (!el) return;
+  el.scrollTop = el.scrollHeight;
+  frameCount++;
+
+  if (el.scrollHeight === lastHeight) {
+    stableCount++;
+  } else {
+    stableCount = 0;
+    lastHeight = el.scrollHeight;
+  }
+
+  if (frameCount < 60 && stableCount < 3) {
+    requestAnimationFrame(tick);
+  } else {
+    // Items are rendered and measured — snap to exact bottom
+    virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+  }
+};
+requestAnimationFrame(tick);
 ```
 
-Do NOT use `el.scrollTop = el.scrollHeight` — it only reaches the top of the last message, not the bottom.
+**Phase 3 — Async catch-up**: A ResizeObserver on the scroll container catches late height changes from async content loads (reactions, profile avatars, image embeds). When the content grows and the user is near the bottom (< 100px), it re-scrolls to keep the view anchored:
+
+```typescript
+const observer = new ResizeObserver(() => {
+  const { scrollTop, scrollHeight, clientHeight } = el;
+  if (scrollHeight - scrollTop - clientHeight < 100) {
+    virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+  }
+});
+observer.observe(el);
+```
 
 #### Scroll Restore Strategy (for prepend / pagination)
 
