@@ -8,7 +8,7 @@ export function VersionBadge() {
 
   return (
     <div
-      className="fixed top-2 right-2 z-40 flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-xs shadow-sm backdrop-blur-sm select-none"
+      className="fixed top-2 left-2 z-40 flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-xs shadow-sm backdrop-blur-sm select-none"
       style={{
         borderColor: "rgba(var(--center-channel-color-rgb), 0.08)",
         backgroundColor: "rgba(var(--center-channel-color-rgb), 0.032)",
