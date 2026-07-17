@@ -73,7 +73,13 @@ router.get(
         message: error.message,
         details: error.details,
       });
-      throw new InternalServerError("Search failed. Please try again.");
+      res.json({
+        messages: [],
+        hasMore: false,
+        offset: parsed.data.offset,
+        limit: parsed.data.limit,
+      });
+      return;
     }
 
     let messages = data ?? [];
