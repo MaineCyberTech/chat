@@ -454,13 +454,21 @@ export function MessageList({
     didInitialScrollRef.current = true;
 
     const lastIdx = messagesWithMeta.length - 1;
-    const scrollToEnd = () => virtualizer.scrollToIndex(lastIdx, { align: "end" });
-    // First scroll uses estimated sizes. Second scroll after measureElement
-    // runs, so the actual measured height is used for precise alignment.
-    requestAnimationFrame(() => {
-      scrollToEnd();
-      requestAnimationFrame(scrollToEnd);
-    });
+
+    // Recursively scroll until the bottom of the list is reached.
+    // Each iteration uses more accurate measured heights from measureElement,
+    // converging after 1-3 frames.
+    let attempts = 0;
+    function scrollUntilBottom() {
+      if (!listRef.current || attempts > 20) return;
+      attempts++;
+      const { scrollHeight, scrollTop, clientHeight } = listRef.current;
+      if (scrollHeight - scrollTop - clientHeight > 1) {
+        virtualizer.scrollToIndex(lastIdx, { align: "end" });
+        requestAnimationFrame(scrollUntilBottom);
+      }
+    }
+    requestAnimationFrame(scrollUntilBottom);
   }, [messagesWithMeta.length, channelChanged]);
 
   if (messages.length === 0) {
