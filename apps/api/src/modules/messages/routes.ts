@@ -52,43 +52,16 @@ router.get(
       : null;
     const resultLimit = parsed.data.limit;
 
-    // Try RPC first (optimized with tsvector ranking), fall back to direct query
-    const { data: rpcData, error: rpcError } = await req.supabase.rpc("search_messages", {
-      workspace_id: parsed.data.workspace_id,
-      query_text: sanitizedQuery,
-      result_limit: resultLimit,
-      date_from: parsed.data.date_from ?? null,
-      date_to: parsed.data.date_to ?? null,
-      author_id: parsed.data.author_id ?? null,
-      channel_ids: channelIds,
-      result_offset: parsed.data.offset,
-    });
-
-    if (!rpcError && rpcData) {
-      let messages = rpcData;
-      if (parsed.data.type === "files") {
-        messages = messages.filter((m: { content?: string }) => {
-          const c = m.content ?? "";
-          return /!\[.*?\]\(|\[.*?\]\(.*?\.\w+\)|attachment|upload|\.(png|jpg|jpeg|gif|pdf|docx?|xlsx?|pptx?|txt|csv|svg|webp|mp[34]|mov|avi)/i.test(
-            c,
-          );
-        });
-      }
-      const hasMore = messages.length === resultLimit;
-      res.json({ messages, hasMore, offset: parsed.data.offset, limit: parsed.data.limit });
-      return;
-    }
-
-    logger.warn("search_messages RPC failed, falling back to direct query", {
-      code: rpcError?.code,
-      message: rpcError?.message,
-    });
-
-    // Fallback: fetch workspace channel IDs, then ILIKE search messages
-    const { data: workspaceChannels } = await req.supabase
+    // Fetch workspace channel IDs (RLS-gated to user's memberships)
+    const { data: workspaceChannels, error: channelsError } = await req.supabase
       .from("channels")
       .select("id")
-      .eq("workspace_id", parsed.data.workspace_id);
+      .eq("workspace_id", parsed.data.workspace_id)
+      .is("deleted_at", null);
+
+    if (channelsError) {
+      logger.error("Channel lookup for search failed", { error: channelsError.message });
+    }
 
     const wsChannelIds = (workspaceChannels ?? []).map((c: { id: string }) => c.id);
     if (wsChannelIds.length === 0) {
@@ -105,6 +78,17 @@ router.get(
       ? wsChannelIds.filter((id: string) => channelIds.includes(id))
       : wsChannelIds;
 
+    if (targetChannelIds.length === 0) {
+      res.json({
+        messages: [],
+        hasMore: false,
+        offset: parsed.data.offset,
+        limit: parsed.data.limit,
+      });
+      return;
+    }
+
+    // Direct ILIKE search — works without the search_messages RPC function
     let searchQuery = req.supabase
       .from("messages")
       .select("id, channel_id, user_id, content, created_at")
@@ -129,7 +113,13 @@ router.get(
     const { data: messages, error: searchError } = await searchQuery;
 
     if (searchError) {
-      logger.error("Direct search query failed", { error: searchError.message });
+      logger.error("Search query failed", {
+        error: searchError.message,
+        code: searchError.code,
+        query: sanitizedQuery,
+        workspace_id: parsed.data.workspace_id,
+        channel_count: targetChannelIds.length,
+      });
       res.json({
         messages: [],
         hasMore: false,
@@ -148,6 +138,14 @@ router.get(
         );
       });
     }
+
+    logger.info("Search completed", {
+      query: sanitizedQuery,
+      workspace_id: parsed.data.workspace_id,
+      channel_count: targetChannelIds.length,
+      result_count: results.length,
+      has_more: results.length === resultLimit,
+    });
 
     const hasMore = results.length === resultLimit;
     res.json({ messages: results, hasMore, offset: parsed.data.offset, limit: parsed.data.limit });
