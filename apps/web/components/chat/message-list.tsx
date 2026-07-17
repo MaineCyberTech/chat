@@ -481,6 +481,22 @@ export function MessageList({
     requestAnimationFrame(tick);
   }, [messagesWithMeta.length, channelChanged]);
 
+  // Watch for async content loads (reactions, profiles) that increase
+  // message heights after the initial scroll. If near bottom, re-scroll.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const onResize = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      if (scrollHeight - scrollTop - clientHeight < 100) {
+        virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+      }
+    };
+    const observer = new ResizeObserver(onResize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [virtualizer, messagesWithMeta.length]);
+
   if (messages.length === 0) {
     return (
       <div className="relative flex-1 overflow-clip">
