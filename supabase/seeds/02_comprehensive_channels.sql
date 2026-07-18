@@ -180,33 +180,26 @@ ON CONFLICT (id) DO NOTHING;
 -- CHANNEL MEMBERS (all workspace channels)
 -- ======================================================================
 -- For each non-DM channel, add appropriate members based on workspace membership.
-DO $$
-DECLARE
-  ch RECORD;
-  wm RECORD;
-BEGIN
-  FOR ch IN SELECT id, workspace_id, channel_type, name FROM public.channels
-    WHERE workspace_id IN ('b0000001-0000-4000-8000-000000000001','b0000002-0000-4000-8000-000000000002','b0000003-0000-4000-8000-000000000003')
-      AND channel_type NOT IN ('dm')
-  LOOP
-    FOR wm IN SELECT user_id, joined_at FROM public.workspace_members WHERE workspace_id = ch.workspace_id LOOP
-      -- Skip certain users from certain channels to show partial membership
-      -- Non-announcement channels: all workspace members
-      -- Leadership channels: only owners and admins
-      IF ch.name = 'leadership' THEN
-        IF EXISTS (SELECT 1 FROM public.workspace_members WHERE workspace_id = ch.workspace_id AND user_id = wm.user_id AND role IN ('owner','admin')) THEN
-          INSERT INTO public.channel_members (channel_id, user_id, joined_at, last_viewed_at)
-          VALUES (ch.id, wm.user_id, wm.joined_at, '2026-01-18 09:00:00+00')
-          ON CONFLICT DO NOTHING;
-        END IF;
-      ELSE
-        INSERT INTO public.channel_members (channel_id, user_id, joined_at, last_viewed_at)
-        VALUES (ch.id, wm.user_id, wm.joined_at, '2026-01-18 09:00:00+00')
-        ON CONFLICT DO NOTHING;
-      END IF;
-    END LOOP;
-  END LOOP;
-END $$;
+-- Non-leadership channels: all workspace members
+INSERT INTO public.channel_members (channel_id, user_id, joined_at, last_viewed_at)
+SELECT ch.id, wm.user_id, wm.joined_at, '2026-01-18 09:00:00+00'
+FROM public.channels ch
+JOIN public.workspace_members wm ON wm.workspace_id = ch.workspace_id
+WHERE ch.workspace_id IN ('b0000001-0000-4000-8000-000000000001','b0000002-0000-4000-8000-000000000002','b0000003-0000-4000-8000-000000000003')
+  AND ch.channel_type NOT IN ('dm')
+  AND ch.name != 'leadership'
+ON CONFLICT DO NOTHING;
+
+-- Leadership channels: only owners and admins
+INSERT INTO public.channel_members (channel_id, user_id, joined_at, last_viewed_at)
+SELECT ch.id, wm.user_id, wm.joined_at, '2026-01-18 09:00:00+00'
+FROM public.channels ch
+JOIN public.workspace_members wm ON wm.workspace_id = ch.workspace_id
+WHERE ch.workspace_id IN ('b0000001-0000-4000-8000-000000000001','b0000002-0000-4000-8000-000000000002','b0000003-0000-4000-8000-000000000003')
+  AND ch.channel_type NOT IN ('dm')
+  AND ch.name = 'leadership'
+  AND wm.role IN ('owner', 'admin')
+ON CONFLICT DO NOTHING;
 
 -- Group DM members
 INSERT INTO public.channel_members (channel_id, user_id, joined_at, last_viewed_at)
@@ -219,44 +212,31 @@ ON CONFLICT DO NOTHING;
 -- ======================================================================
 -- CHANNEL NOTIFICATION PREFERENCES (varied across users/channels)
 -- ======================================================================
-DO $$
-DECLARE
-  cm RECORD;
-  pref RECORD;
-BEGIN
-  -- Default: all notifications enabled for all members
-  FOR cm IN SELECT channel_id, user_id FROM public.channel_members LOOP
-    INSERT INTO public.channel_notification_preferences (user_id, channel_id, notify, notify_sound, notify_everyone)
-    VALUES (cm.user_id, cm.channel_id, true, true, true)
-    ON CONFLICT (user_id, channel_id) DO NOTHING;
-  END LOOP;
+-- Default: all notifications enabled for all members
+INSERT INTO public.channel_notification_preferences (user_id, channel_id, notify, notify_sound, notify_everyone)
+SELECT cm.user_id, cm.channel_id, true, true, true
+FROM public.channel_members cm
+ON CONFLICT (user_id, channel_id) DO NOTHING;
 
-  -- Override: some users mute certain channels
-  -- Marcus mutes random
-  UPDATE public.channel_notification_preferences SET notify = false, notify_sound = false
-  WHERE user_id = 'a0000001-0000-4000-8000-000000000001'
-    AND channel_id = 'c0000004-0000-4000-8000-000000000004';
-  -- Priya mutes general (gets too noisy during testing)
-  UPDATE public.channel_notification_preferences SET notify = false
-  WHERE user_id = 'a0000006-0000-4000-8000-000000000006'
-    AND channel_id = 'c0000001-0000-4000-8000-000000000001';
-  -- Liam only wants mentions (not all messages) in engineering
-  UPDATE public.channel_notification_preferences SET notify_everyone = false
-  WHERE user_id = 'a0000009-0000-4000-8000-000000000009'
-    AND channel_id = 'c0000002-0000-4000-8000-000000000002';
-  -- Tom mutes leadership
-  UPDATE public.channel_notification_preferences SET notify = false, notify_sound = false
-  WHERE user_id = 'a0000015-0000-4000-8000-000000000015'
-    AND channel_id = 'c0000013-0000-4000-8000-000000000013';
-  -- Olivia only wants mentions in random (focused on engineering)
-  UPDATE public.channel_notification_preferences SET notify_everyone = false
-  WHERE user_id = 'a0000017-0000-4000-8000-000000000017'
-    AND channel_id = 'c0000004-0000-4000-8000-000000000004';
-  -- Ethan mutes standup (joins later, less active in daily)
-  UPDATE public.channel_notification_preferences SET notify = false, notify_sound = false
-  WHERE user_id = 'a0000021-0000-4000-8000-000000000021'
-    AND channel_id = 'c0000011-0000-4000-8000-000000000011';
-END $$;
+-- Override: some users mute certain channels
+UPDATE public.channel_notification_preferences SET notify = false, notify_sound = false
+WHERE user_id = 'a0000001-0000-4000-8000-000000000001'
+  AND channel_id = 'c0000004-0000-4000-8000-000000000004';
+UPDATE public.channel_notification_preferences SET notify = false
+WHERE user_id = 'a0000006-0000-4000-8000-000000000006'
+  AND channel_id = 'c0000001-0000-4000-8000-000000000001';
+UPDATE public.channel_notification_preferences SET notify_everyone = false
+WHERE user_id = 'a0000009-0000-4000-8000-000000000009'
+  AND channel_id = 'c0000002-0000-4000-8000-000000000002';
+UPDATE public.channel_notification_preferences SET notify = false, notify_sound = false
+WHERE user_id = 'a0000015-0000-4000-8000-000000000015'
+  AND channel_id = 'c0000013-0000-4000-8000-000000000013';
+UPDATE public.channel_notification_preferences SET notify_everyone = false
+WHERE user_id = 'a0000017-0000-4000-8000-000000000017'
+  AND channel_id = 'c0000004-0000-4000-8000-000000000004';
+UPDATE public.channel_notification_preferences SET notify = false, notify_sound = false
+WHERE user_id = 'a0000021-0000-4000-8000-000000000021'
+  AND channel_id = 'c0000011-0000-4000-8000-000000000011';
 
 -- ======================================================================
 -- CHANNEL BOOKMARKS (pinned links/resources in channels)
@@ -291,22 +271,13 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- Sidebar channel assignments (put channels in the Channels category)
-DO $$
-DECLARE
-  cat RECORD;
-  ch RECORD;
-  sort_idx INTEGER;
-BEGIN
-  FOR cat IN SELECT id, user_id, workspace_id FROM public.sidebar_categories WHERE name = 'Channels' LOOP
-    sort_idx := 0;
-    FOR ch IN SELECT id FROM public.channels WHERE workspace_id = cat.workspace_id AND channel_type NOT IN ('dm') ORDER BY sort_order LOOP
-      INSERT INTO public.sidebar_channel_assignments (category_id, channel_id, sort_order)
-      VALUES (cat.id, ch.id, sort_idx)
-      ON CONFLICT (category_id, channel_id) DO NOTHING;
-      sort_idx := sort_idx + 1;
-    END LOOP;
-  END LOOP;
-END $$;
+INSERT INTO public.sidebar_channel_assignments (category_id, channel_id, sort_order)
+SELECT cat.id, ch.id,
+  ROW_NUMBER() OVER (PARTITION BY cat.id ORDER BY ch.sort_order)
+FROM public.sidebar_categories cat
+JOIN public.channels ch ON ch.workspace_id = cat.workspace_id AND ch.channel_type NOT IN ('dm')
+WHERE cat.name = 'Channels'
+ON CONFLICT (category_id, channel_id) DO NOTHING;
 
 -- Create Starred and Archived categories for workspace owners
 INSERT INTO public.sidebar_categories (user_id, workspace_id, name, sort_order)
@@ -319,43 +290,34 @@ VALUES
 ON CONFLICT (user_id, workspace_id, name) DO NOTHING;
 
 -- Star channels for owners
-DO $$
-DECLARE
-  star_cat RECORD;
-BEGIN
-  -- Marcus stars #engineering and #leadership
-  SELECT id INTO star_cat FROM public.sidebar_categories WHERE user_id = 'a0000001-0000-4000-8000-000000000001' AND name = 'Starred' AND workspace_id = 'b0000001-0000-4000-8000-000000000001';
-  IF star_cat IS NOT NULL THEN
-    INSERT INTO public.sidebar_channel_assignments (category_id, channel_id, sort_order) VALUES
-      (star_cat.id, 'c0000002-0000-4000-8000-000000000002', 0),
-      (star_cat.id, 'c0000007-0000-4000-8000-000000000007', 1)
-    ON CONFLICT (category_id, channel_id) DO NOTHING;
-  END IF;
+-- Marcus stars #engineering and #leadership
+INSERT INTO public.sidebar_channel_assignments (category_id, channel_id, sort_order)
+SELECT cat.id, vals.channel_id, vals.sort_order
+FROM public.sidebar_categories cat
+CROSS JOIN (VALUES ('c0000002-0000-4000-8000-000000000002'::uuid, 0), ('c0000007-0000-4000-8000-000000000007'::uuid, 1)) AS vals(channel_id, sort_order)
+WHERE cat.user_id = 'a0000001-0000-4000-8000-000000000001' AND cat.name = 'Starred' AND cat.workspace_id = 'b0000001-0000-4000-8000-000000000001'
+ON CONFLICT (category_id, channel_id) DO NOTHING;
 
-  -- Sarah stars #product and #design-reviews
-  SELECT id INTO star_cat FROM public.sidebar_categories WHERE user_id = 'a0000002-0000-4000-8000-000000000002' AND name = 'Starred' AND workspace_id = 'b0000003-0000-4000-8000-000000000003';
-  IF star_cat IS NOT NULL THEN
-    INSERT INTO public.sidebar_channel_assignments (category_id, channel_id, sort_order) VALUES
-      (star_cat.id, 'c0000003-0000-4000-8000-000000000003', 0),
-      (star_cat.id, 'c0000015-0000-4000-8000-000000000015', 1)
-    ON CONFLICT (category_id, channel_id) DO NOTHING;
-  END IF;
+-- Sarah stars #product and #design-reviews
+INSERT INTO public.sidebar_channel_assignments (category_id, channel_id, sort_order)
+SELECT cat.id, vals.channel_id, vals.sort_order
+FROM public.sidebar_categories cat
+CROSS JOIN (VALUES ('c0000003-0000-4000-8000-000000000003'::uuid, 0), ('c0000015-0000-4000-8000-000000000015'::uuid, 1)) AS vals(channel_id, sort_order)
+WHERE cat.user_id = 'a0000002-0000-4000-8000-000000000002' AND cat.name = 'Starred' AND cat.workspace_id = 'b0000003-0000-4000-8000-000000000003'
+ON CONFLICT (category_id, channel_id) DO NOTHING;
 
-  -- Sarah stars #product in Acme Corp
-  SELECT id INTO star_cat FROM public.sidebar_categories WHERE user_id = 'a0000002-0000-4000-8000-000000000002' AND name = 'Starred' AND workspace_id = 'b0000001-0000-4000-8000-000000000001';
-  IF star_cat IS NOT NULL THEN
-    INSERT INTO public.sidebar_channel_assignments (category_id, channel_id, sort_order) VALUES
-      (star_cat.id, 'c0000003-0000-4000-8000-000000000003', 0)
-    ON CONFLICT (category_id, channel_id) DO NOTHING;
-  END IF;
+-- Sarah stars #product in Acme Corp
+INSERT INTO public.sidebar_channel_assignments (category_id, channel_id, sort_order)
+SELECT cat.id, 'c0000003-0000-4000-8000-000000000003', 0
+FROM public.sidebar_categories cat
+WHERE cat.user_id = 'a0000002-0000-4000-8000-000000000002' AND cat.name = 'Starred' AND cat.workspace_id = 'b0000001-0000-4000-8000-000000000001'
+ON CONFLICT (category_id, channel_id) DO NOTHING;
 
-  -- Nkechi stars #devops
-  SELECT id INTO star_cat FROM public.sidebar_categories WHERE user_id = 'a0000012-0000-4000-8000-000000000012' AND name = 'Starred' AND workspace_id = 'b0000002-0000-4000-8000-000000000002';
-  IF star_cat IS NOT NULL THEN
-    INSERT INTO public.sidebar_channel_assignments (category_id, channel_id, sort_order) VALUES
-      (star_cat.id, 'c0000010-0000-4000-8000-000000000010', 0)
-    ON CONFLICT (category_id, channel_id) DO NOTHING;
-  END IF;
-END $$;
+-- Nkechi stars #devops
+INSERT INTO public.sidebar_channel_assignments (category_id, channel_id, sort_order)
+SELECT cat.id, 'c0000010-0000-4000-8000-000000000010', 0
+FROM public.sidebar_categories cat
+WHERE cat.user_id = 'a0000012-0000-4000-8000-000000000012' AND cat.name = 'Starred' AND cat.workspace_id = 'b0000002-0000-4000-8000-000000000002'
+ON CONFLICT (category_id, channel_id) DO NOTHING;
 
 commit;

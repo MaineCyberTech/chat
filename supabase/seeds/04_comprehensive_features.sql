@@ -464,25 +464,22 @@ ON CONFLICT DO NOTHING;
 -- ======================================================================
 -- PUSH SUBSCRIPTIONS (browser push notification endpoints)
 -- ======================================================================
--- Check if push_subscriptions table exists before inserting
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'push_subscriptions') THEN
-    INSERT INTO public.push_subscriptions (user_id, endpoint, p256dh, auth, user_agent, created_at)
-    VALUES
-    ('a0000001-0000-4000-8000-000000000001', 'https://fcm.googleapis.com/fcm/send/acme-marcus-001', 'BH0key_base64_marcus==', 'auth_key_marcus_001', 'Mozilla/5.0 Chrome/125', '2025-12-01 09:00:00+00'),
-    ('a0000002-0000-4000-8000-000000000002', 'https://fcm.googleapis.com/fcm/send/designhub-sarah-001', 'BH0key_base64_sarah==', 'auth_key_sarah_001', 'Mozilla/5.0 Firefox/125', '2025-09-01 09:00:00+00'),
-    ('a0000012-0000-4000-8000-000000000012', 'https://fcm.googleapis.com/fcm/send/techstart-nkechi-001', 'BH0key_base64_nkechi==', 'auth_key_nkechi_001', 'Mozilla/5.0 Chrome/126', '2025-08-01 09:00:00+00'),
-    ('a0000016-0000-4000-8000-000000000016', 'https://fcm.googleapis.com/fcm/send/platform-alex-001', 'BH0key_base64_alex==', 'auth_key_alex_001', 'Mozilla/5.0 Chrome/126', '2025-07-20 09:00:00+00'),
-    ('a0000013-0000-4000-8000-000000000013', 'https://fcm.googleapis.com/fcm/send/techstart-raj-001', 'BH0key_base64_raj==', 'auth_key_raj_001', 'Mozilla/5.0 Chrome/125', '2025-08-01 09:00:00+00'),
-    ('a0000017-0000-4000-8000-000000000017', 'https://fcm.googleapis.com/fcm/send/acme-olivia-001', 'BH0key_base64_olivia==', 'auth_key_olivia_001', 'Mozilla/5.0 Chrome/127', '2026-02-01 09:00:00+00'),
-    ('a0000018-0000-4000-8000-000000000018', 'https://fcm.googleapis.com/fcm/send/techstart-jamal-001', 'BH0key_base64_jamal==', 'auth_key_jamal_001', 'Mozilla/5.0 Chrome/127', '2026-03-01 09:00:00+00'),
-    ('a0000019-0000-4000-8000-000000000019', 'https://fcm.googleapis.com/fcm/send/designhub-chen-001', 'BH0key_base64_chen==', 'auth_key_chen_001', 'Mozilla/5.0 Firefox/128', '2026-01-01 09:00:00+00'),
-    ('a0000020-0000-4000-8000-000000000020', 'https://fcm.googleapis.com/fcm/send/acme-sofia-001', 'BH0key_base64_sofia==', 'auth_key_sofia_001', 'Mozilla/5.0 Chrome/128', '2026-04-01 09:00:00+00'),
-    ('a0000021-0000-4000-8000-000000000021', 'https://fcm.googleapis.com/fcm/send/techstart-ethan-001', 'BH0key_base64_ethan==', 'auth_key_ethan_001', 'Mozilla/5.0 Chrome/128', '2026-05-01 09:00:00+00')
-    ON CONFLICT (user_id, endpoint) DO NOTHING;
-  END IF;
-END $$;
+-- PUSH SUBSCRIPTIONS (browser push notification endpoints)
+INSERT INTO public.push_subscriptions (user_id, endpoint, p256dh, auth, user_agent, created_at)
+SELECT * FROM (VALUES
+  ('a0000001-0000-4000-8000-000000000001'::uuid, 'https://fcm.googleapis.com/fcm/send/acme-marcus-001', 'BH0key_base64_marcus==', 'auth_key_marcus_001', 'Mozilla/5.0 Chrome/125', '2025-12-01 09:00:00+00'::timestamptz),
+  ('a0000002-0000-4000-8000-000000000002'::uuid, 'https://fcm.googleapis.com/fcm/send/designhub-sarah-001', 'BH0key_base64_sarah==', 'auth_key_sarah_001', 'Mozilla/5.0 Firefox/125', '2025-09-01 09:00:00+00'::timestamptz),
+  ('a0000012-0000-4000-8000-000000000012'::uuid, 'https://fcm.googleapis.com/fcm/send/techstart-nkechi-001', 'BH0key_base64_nkechi==', 'auth_key_nkechi_001', 'Mozilla/5.0 Chrome/126', '2025-08-01 09:00:00+00'::timestamptz),
+  ('a0000016-0000-4000-8000-000000000016'::uuid, 'https://fcm.googleapis.com/fcm/send/platform-alex-001', 'BH0key_base64_alex==', 'auth_key_alex_001', 'Mozilla/5.0 Chrome/126', '2025-07-20 09:00:00+00'::timestamptz),
+  ('a0000013-0000-4000-8000-000000000013'::uuid, 'https://fcm.googleapis.com/fcm/send/techstart-raj-001', 'BH0key_base64_raj==', 'auth_key_raj_001', 'Mozilla/5.0 Chrome/125', '2025-08-01 09:00:00+00'::timestamptz),
+  ('a0000017-0000-4000-8000-000000000017'::uuid, 'https://fcm.googleapis.com/fcm/send/acme-olivia-001', 'BH0key_base64_olivia==', 'auth_key_olivia_001', 'Mozilla/5.0 Chrome/127', '2026-02-01 09:00:00+00'::timestamptz),
+  ('a0000018-0000-4000-8000-000000000018'::uuid, 'https://fcm.googleapis.com/fcm/send/techstart-jamal-001', 'BH0key_base64_jamal==', 'auth_key_jamal_001', 'Mozilla/5.0 Chrome/127', '2026-03-01 09:00:00+00'::timestamptz),
+  ('a0000019-0000-4000-8000-000000000019'::uuid, 'https://fcm.googleapis.com/fcm/send/designhub-chen-001', 'BH0key_base64_chen==', 'auth_key_chen_001', 'Mozilla/5.0 Firefox/128', '2026-01-01 09:00:00+00'::timestamptz),
+  ('a0000020-0000-4000-8000-000000000020'::uuid, 'https://fcm.googleapis.com/fcm/send/acme-sofia-001', 'BH0key_base64_sofia==', 'auth_key_sofia_001', 'Mozilla/5.0 Chrome/128', '2026-04-01 09:00:00+00'::timestamptz),
+  ('a0000021-0000-4000-8000-000000000021'::uuid, 'https://fcm.googleapis.com/fcm/send/techstart-ethan-001', 'BH0key_base64_ethan==', 'auth_key_ethan_001', 'Mozilla/5.0 Chrome/128', '2026-05-01 09:00:00+00'::timestamptz)
+) AS v(user_id, endpoint, p256dh, auth, user_agent, created_at)
+WHERE EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'push_subscriptions')
+ON CONFLICT (user_id, endpoint) DO NOTHING;
 
 -- ======================================================================
 -- FEATURE FLAGS

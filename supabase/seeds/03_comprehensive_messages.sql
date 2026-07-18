@@ -890,30 +890,33 @@ ON CONFLICT (user_id, message_id) DO NOTHING;
 -- ======================================================================
 -- MESSAGE READS (simulating read receipts)
 -- ======================================================================
-DO $$
-DECLARE
-  msg RECORD;
-  reader UUID[];
-  r UUID;
-BEGIN
-  -- For each root message, mark as read by the channel members
-  FOR msg IN SELECT id, channel_id, user_id, created_at FROM public.messages WHERE parent_id IS NULL LIMIT 60 LOOP
-    reader := ARRAY['a0000001-0000-4000-8000-000000000001','a0000002-0000-4000-8000-000000000002',
-                     'a0000003-0000-4000-8000-000000000003','a0000004-0000-4000-8000-000000000004',
-                     'a0000005-0000-4000-8000-000000000005','a0000006-0000-4000-8000-000000000006',
-                     'a0000016-0000-4000-8000-000000000016',
-                     'a0000017-0000-4000-8000-000000000017','a0000018-0000-4000-8000-000000000018',
-                     'a0000019-0000-4000-8000-000000000019','a0000020-0000-4000-8000-000000000020',
-                     'a0000021-0000-4000-8000-000000000021'];
-    FOREACH r IN ARRAY reader LOOP
-      IF r != msg.user_id THEN
-        INSERT INTO public.message_reads (message_id, user_id, channel_id, read_at)
-        VALUES (msg.id, r, msg.channel_id, msg.created_at + interval '5 minutes')
-        ON CONFLICT (message_id, user_id) DO NOTHING;
-      END IF;
-    END LOOP;
-  END LOOP;
-END $$;
+-- MESSAGE READS (simulating read receipts)
+-- For each of the first 60 root messages, mark as read by 11 common users (excluding the author)
+INSERT INTO public.message_reads (message_id, user_id, channel_id, read_at)
+SELECT m.id, r.user_id, m.channel_id, m.created_at + interval '5 minutes'
+FROM (
+  SELECT id, channel_id, user_id, created_at
+  FROM public.messages
+  WHERE parent_id IS NULL
+  ORDER BY created_at
+  LIMIT 60
+) m
+CROSS JOIN (VALUES
+  ('a0000001-0000-4000-8000-000000000001'::uuid),
+  ('a0000002-0000-4000-8000-000000000002'::uuid),
+  ('a0000003-0000-4000-8000-000000000003'::uuid),
+  ('a0000004-0000-4000-8000-000000000004'::uuid),
+  ('a0000005-0000-4000-8000-000000000005'::uuid),
+  ('a0000006-0000-4000-8000-000000000006'::uuid),
+  ('a0000016-0000-4000-8000-000000000016'::uuid),
+  ('a0000017-0000-4000-8000-000000000017'::uuid),
+  ('a0000018-0000-4000-8000-000000000018'::uuid),
+  ('a0000019-0000-4000-8000-000000000019'::uuid),
+  ('a0000020-0000-4000-8000-000000000020'::uuid),
+  ('a0000021-0000-4000-8000-000000000021'::uuid)
+) AS r(user_id)
+WHERE r.user_id != m.user_id
+ON CONFLICT (message_id, user_id) DO NOTHING;
 
 -- ======================================================================
 -- SCHEDULED POSTS (future messages)

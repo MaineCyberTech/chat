@@ -102,48 +102,28 @@ VALUES
 ON CONFLICT (workspace_id, user_id) DO UPDATE SET role = EXCLUDED.role;
 
 -- Sidebar categories for all workspace members (default: Channels + Direct Messages)
-DO $$
-DECLARE
-  wm RECORD;
-  cat_channels UUID;
-  cat_dm UUID;
-BEGIN
-  FOR wm IN SELECT workspace_id, user_id, role FROM public.workspace_members LOOP
-    -- Channels category
-    INSERT INTO public.sidebar_categories (user_id, workspace_id, name, sort_order, is_collapsible)
-    VALUES (wm.user_id, wm.workspace_id, 'Channels', 0, false)
-    ON CONFLICT (user_id, workspace_id, name) DO NOTHING
-    RETURNING id INTO cat_channels;
+INSERT INTO public.sidebar_categories (user_id, workspace_id, name, sort_order, is_collapsible)
+SELECT wm.user_id, wm.workspace_id, 'Channels', 0, false
+FROM public.workspace_members wm
+ON CONFLICT (user_id, workspace_id, name) DO NOTHING;
 
-    -- If conflict (already exists), look it up
-    IF cat_channels IS NULL THEN
-      SELECT id INTO cat_channels FROM public.sidebar_categories
-      WHERE user_id = wm.user_id AND workspace_id = wm.workspace_id AND name = 'Channels';
-    END IF;
+INSERT INTO public.sidebar_categories (user_id, workspace_id, name, sort_order, is_collapsible)
+SELECT wm.user_id, wm.workspace_id, 'Direct Messages', 1, true
+FROM public.workspace_members wm
+ON CONFLICT (user_id, workspace_id, name) DO NOTHING;
 
-    -- Direct Messages category
-    INSERT INTO public.sidebar_categories (user_id, workspace_id, name, sort_order, is_collapsible)
-    VALUES (wm.user_id, wm.workspace_id, 'Direct Messages', 1, true)
-    ON CONFLICT (user_id, workspace_id, name) DO NOTHING
-    RETURNING id INTO cat_dm;
+-- Additional custom categories for workspace owners
+INSERT INTO public.sidebar_categories (user_id, workspace_id, name, sort_order, is_collapsible)
+SELECT wm.user_id, wm.workspace_id, 'Starred', 0, false
+FROM public.workspace_members wm
+WHERE wm.role = 'owner'
+ON CONFLICT (user_id, workspace_id, name) DO NOTHING;
 
-    IF cat_dm IS NULL THEN
-      SELECT id INTO cat_dm FROM public.sidebar_categories
-      WHERE user_id = wm.user_id AND workspace_id = wm.workspace_id AND name = 'Direct Messages';
-    END IF;
-
-    -- Additional custom categories for workspace owners
-    IF wm.role = 'owner' THEN
-      INSERT INTO public.sidebar_categories (user_id, workspace_id, name, sort_order, is_collapsible)
-      VALUES (wm.user_id, wm.workspace_id, 'Starred', 0, false)
-      ON CONFLICT (user_id, workspace_id, name) DO NOTHING;
-
-      INSERT INTO public.sidebar_categories (user_id, workspace_id, name, sort_order, is_collapsible)
-      VALUES (wm.user_id, wm.workspace_id, 'Archived', 5, true)
-      ON CONFLICT (user_id, workspace_id, name) DO NOTHING;
-    END IF;
-  END LOOP;
-END $$;
+INSERT INTO public.sidebar_categories (user_id, workspace_id, name, sort_order, is_collapsible)
+SELECT wm.user_id, wm.workspace_id, 'Archived', 5, true
+FROM public.workspace_members wm
+WHERE wm.role = 'owner'
+ON CONFLICT (user_id, workspace_id, name) DO NOTHING;
 
 -- Custom emoji per workspace
 INSERT INTO public.custom_emoji (workspace_id, name, image_url, created_by, created_at)
@@ -158,45 +138,37 @@ VALUES
 ON CONFLICT (workspace_id, name) DO NOTHING;
 
 -- User groups
-DO $$
-DECLARE
-  g1 UUID; g2 UUID; g3 UUID; g4 UUID;
-BEGIN
-  INSERT INTO public.user_groups (workspace_id, name, display_name, description, created_by, created_at)
-  VALUES ('b0000001-0000-4000-8000-000000000001', 'engineering', 'Engineering', 'All engineering team members', 'a0000001-0000-4000-8000-000000000001', '2025-07-20 10:00:00+00')
-  ON CONFLICT (workspace_id, name) DO UPDATE SET display_name = EXCLUDED.display_name
-  RETURNING id INTO g1;
+INSERT INTO public.user_groups (id, workspace_id, name, display_name, description, created_by, created_at)
+VALUES
+('a0f00001-0000-4000-8000-000000000001', 'b0000001-0000-4000-8000-000000000001', 'engineering', 'Engineering', 'All engineering team members', 'a0000001-0000-4000-8000-000000000001', '2025-07-20 10:00:00+00'),
+('a0f00002-0000-4000-8000-000000000002', 'b0000001-0000-4000-8000-000000000001', 'leadership', 'Leadership', 'Workspace owners and admins', 'a0000001-0000-4000-8000-000000000001', '2025-07-20 10:05:00+00'),
+('a0f00003-0000-4000-8000-000000000003', 'b0000002-0000-4000-8000-000000000002', 'founders', 'Founders', 'Company founders', 'a0000012-0000-4000-8000-000000000012', '2025-07-20 09:00:00+00'),
+('a0f00004-0000-4000-8000-000000000004', 'b0000003-0000-4000-8000-000000000003', 'designers', 'Designers', 'Design team', 'a0000002-0000-4000-8000-000000000002', '2025-08-05 10:00:00+00')
+ON CONFLICT (workspace_id, name) DO UPDATE SET display_name = EXCLUDED.display_name;
 
-  INSERT INTO public.user_groups (workspace_id, name, display_name, description, created_by, created_at)
-  VALUES ('b0000001-0000-4000-8000-000000000001', 'leadership', 'Leadership', 'Workspace owners and admins', 'a0000001-0000-4000-8000-000000000001', '2025-07-20 10:05:00+00')
-  ON CONFLICT (workspace_id, name) DO UPDATE SET display_name = EXCLUDED.display_name
-  RETURNING id INTO g2;
-
-  INSERT INTO public.user_groups (workspace_id, name, display_name, description, created_by, created_at)
-  VALUES ('b0000002-0000-4000-8000-000000000002', 'founders', 'Founders', 'Company founders', 'a0000012-0000-4000-8000-000000000012', '2025-07-20 09:00:00+00')
-  ON CONFLICT (workspace_id, name) DO UPDATE SET display_name = EXCLUDED.display_name
-  RETURNING id INTO g3;
-
-  INSERT INTO public.user_groups (workspace_id, name, display_name, description, created_by, created_at)
-  VALUES ('b0000003-0000-4000-8000-000000000003', 'designers', 'Designers', 'Design team', 'a0000002-0000-4000-8000-000000000002', '2025-08-05 10:00:00+00')
-  ON CONFLICT (workspace_id, name) DO UPDATE SET display_name = EXCLUDED.display_name
-  RETURNING id INTO g4;
-
-  -- Group members
-  INSERT INTO public.user_group_members (group_id, user_id) VALUES
-  (g1, 'a0000001-0000-4000-8000-000000000001'), (g1, 'a0000003-0000-4000-8000-000000000003'),
-  (g1, 'a0000004-0000-4000-8000-000000000004'), (g1, 'a0000005-0000-4000-8000-000000000005'),
-  (g1, 'a0000006-0000-4000-8000-000000000006'), (g1, 'a0000007-0000-4000-8000-000000000007'),
-  (g1, 'a0000009-0000-4000-8000-000000000009'), (g1, 'a0000011-0000-4000-8000-000000000011'),
-  (g1, 'a0000013-0000-4000-8000-000000000013'), (g1, 'a0000016-0000-4000-8000-000000000016'),
-  (g1, 'a0000017-0000-4000-8000-000000000017'),
-  (g2, 'a0000001-0000-4000-8000-000000000001'), (g2, 'a0000003-0000-4000-8000-000000000003'),
-  (g2, 'a0000008-0000-4000-8000-000000000008'),
-  (g3, 'a0000012-0000-4000-8000-000000000012'), (g3, 'a0000013-0000-4000-8000-000000000013'),
-  (g4, 'a0000002-0000-4000-8000-000000000002'), (g4, 'a0000008-0000-4000-8000-000000000008'),
-  (g4, 'a0000014-0000-4000-8000-000000000014'), (g4, 'a0000019-0000-4000-8000-000000000019')
-  ON CONFLICT (group_id, user_id) DO NOTHING;
-END $$;
+-- Group members
+INSERT INTO public.user_group_members (group_id, user_id) VALUES
+('a0f00001-0000-4000-8000-000000000001', 'a0000001-0000-4000-8000-000000000001'),
+('a0f00001-0000-4000-8000-000000000001', 'a0000003-0000-4000-8000-000000000003'),
+('a0f00001-0000-4000-8000-000000000001', 'a0000004-0000-4000-8000-000000000004'),
+('a0f00001-0000-4000-8000-000000000001', 'a0000005-0000-4000-8000-000000000005'),
+('a0f00001-0000-4000-8000-000000000001', 'a0000006-0000-4000-8000-000000000006'),
+('a0f00001-0000-4000-8000-000000000001', 'a0000007-0000-4000-8000-000000000007'),
+('a0f00001-0000-4000-8000-000000000001', 'a0000009-0000-4000-8000-000000000009'),
+('a0f00001-0000-4000-8000-000000000001', 'a0000011-0000-4000-8000-000000000011'),
+('a0f00001-0000-4000-8000-000000000001', 'a0000013-0000-4000-8000-000000000013'),
+('a0f00001-0000-4000-8000-000000000001', 'a0000016-0000-4000-8000-000000000016'),
+('a0f00001-0000-4000-8000-000000000001', 'a0000017-0000-4000-8000-000000000017'),
+('a0f00002-0000-4000-8000-000000000002', 'a0000001-0000-4000-8000-000000000001'),
+('a0f00002-0000-4000-8000-000000000002', 'a0000003-0000-4000-8000-000000000003'),
+('a0f00002-0000-4000-8000-000000000002', 'a0000008-0000-4000-8000-000000000008'),
+('a0f00003-0000-4000-8000-000000000003', 'a0000012-0000-4000-8000-000000000012'),
+('a0f00003-0000-4000-8000-000000000003', 'a0000013-0000-4000-8000-000000000013'),
+('a0f00004-0000-4000-8000-000000000004', 'a0000002-0000-4000-8000-000000000002'),
+('a0f00004-0000-4000-8000-000000000004', 'a0000008-0000-4000-8000-000000000008'),
+('a0f00004-0000-4000-8000-000000000004', 'a0000014-0000-4000-8000-000000000014'),
+('a0f00004-0000-4000-8000-000000000004', 'a0000019-0000-4000-8000-000000000019')
+ON CONFLICT (group_id, user_id) DO NOTHING;
 
 -- Announcements
 INSERT INTO public.announcements (workspace_id, title, body, active, created_by, created_at)
