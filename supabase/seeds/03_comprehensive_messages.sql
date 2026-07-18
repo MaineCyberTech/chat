@@ -38,6 +38,32 @@ DELETE FROM public.messages WHERE user_id IN (SELECT id FROM public.users WHERE 
 -- Temporarily disable read-only trigger for seeding
 ALTER TABLE public.messages DISABLE TRIGGER check_read_only_on_insert;
 
+-- Fix handle_thread_reply() trigger (hosted DB has ambiguous variable bug)
+CREATE OR REPLACE FUNCTION public.handle_thread_reply()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_thread_id UUID;
+BEGIN
+  INSERT INTO public.thread_metadata (message_id, reply_count, participant_count, last_activity_at)
+  VALUES (NEW.parent_id, 1, 1, NEW.created_at)
+  ON CONFLICT (message_id) DO UPDATE SET
+    reply_count = thread_metadata.reply_count + 1,
+    last_activity_at = GREATEST(thread_metadata.last_activity_at, NEW.created_at)
+  RETURNING id INTO v_thread_id;
+
+  INSERT INTO public.thread_participants (thread_id, user_id)
+  VALUES (v_thread_id, NEW.user_id)
+  ON CONFLICT (thread_id, user_id) DO UPDATE SET
+    last_read_at = NEW.created_at;
+
+  INSERT INTO public.thread_participants (thread_id, user_id)
+  SELECT v_thread_id, m.user_id FROM public.messages m WHERE m.id = NEW.parent_id
+  ON CONFLICT (thread_id, user_id) DO NOTHING;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = 'public';
+
 -- ======================================================================
 -- MESSAGES: Fixed seed conversations (root messages, no parent_id)
 -- ======================================================================
