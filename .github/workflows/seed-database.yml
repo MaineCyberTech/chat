@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Seed auth users via Admin API + data via Management API
+      - name: Seed auth users via Admin API
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -64,7 +64,6 @@ jobs:
 
           echo ""
           echo "=== Deleting broken seed users from auth via Admin API ==="
-          # First get all seed user IDs from auth
           USER_IDS=$(mgmt_query "SELECT id::text FROM auth.users WHERE email LIKE '%@seed.test'" | jq -r '.[].id' 2>/dev/null || true)
           DELETED=0
           for UID in $USER_IDS; do
@@ -82,7 +81,6 @@ jobs:
           echo ""
           echo "=== Creating auth users via Supabase Auth Admin API ==="
 
-          # Create all 21 auth users via the Admin API (properly handles instance_id + password hashing)
           declare -A USERS=(
             ["a0000001-0000-4000-8000-000000000001"]="marcus@seed.test|Marcus Chen"
             ["a0000002-0000-4000-8000-000000000002"]="sarah@seed.test|Sarah Patel"
@@ -116,6 +114,7 @@ jobs:
               echo "  Created: $EMAIL ($NAME)"
               CREATED=$((CREATED + 1))
             elif echo "$RESULT" | grep -q "already exists"; then
+              echo "  Exists: $EMAIL"
               SKIPPED=$((SKIPPED + 1))
             else
               echo "  WARN: $EMAIL - $(echo "$RESULT" | head -1)"
@@ -129,34 +128,46 @@ jobs:
           mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
 
           echo ""
-          echo "=== Running seed files 01-05 (data tables, skipping 00 which created auth users) ==="
+          echo "=== Verifying a user is login-ready ==="
+          mgmt_query "SELECT email, instance_id IS NOT NULL as has_instance, encrypted_password != '' as has_password FROM auth.users WHERE email = 'marcus@seed.test'" || true
+
+      - name: Seed data tables via psql
+        run: |
+          set -e
+          apt-get update -qq && apt-get install -y -qq postgresql-client >/dev/null 2>&1
+
+          DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
+
+          # Try direct connection first, then pooler session mode, then pooler transaction mode
+          if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
+            echo "Direct connection failed. Trying pooler session mode (port 5432)..."
+            DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+            if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
+              echo "Pooler session mode failed. Trying pooler transaction mode (port 6543)..."
+              DB_URL="postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+              psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1
+            fi
+          fi
+          echo "Database connection verified."
+
+          # Run seed files 01-05 (00 creates auth.users which we handled via Admin API)
           for f in supabase/seeds/0{1,2,3,4,5}*.sql; do
             [ -f "$f" ] || continue
             echo ""
             echo "-------------------------------------------"
             echo "Seeding $f..."
             echo "-------------------------------------------"
-
-            SQL=$(cat "$f")
-
-            RESPONSE=$(curl -sf -X POST "$MGMT_URL" \
-              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data-raw "$(jq -n --arg sql "$SQL" '{"query": $sql}')" 2>&1) || {
-                echo "WARN: $f had errors (may be idempotent, continuing...)"
-                echo "$RESPONSE" | head -3
-                continue
-              }
-            echo "OK: $f"
+            psql "$DB_URL" -f "$f" --set ON_ERROR_STOP=1 || { echo "WARN: $f had errors (may be idempotent, continuing...)"; }
           done
 
           echo ""
-          echo "=== Final auth.users count ==="
-          mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
-
-          echo ""
-          echo "=== Verifying a user is login-ready ==="
-          mgmt_query "SELECT email, instance_id IS NOT NULL as has_instance, encrypted_password != '' as has_password FROM auth.users WHERE email = 'marcus@seed.test'" || true
+          echo "=== Final verification ==="
+          psql "$DB_URL" -c "SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test'
+          UNION ALL SELECT 'workspaces', count(*) FROM workspaces
+          UNION ALL SELECT 'channels', count(*) FROM channels
+          UNION ALL SELECT 'messages', count(*) FROM messages
+          UNION ALL SELECT 'thread_replies', count(*) FROM thread_replies
+          UNION ALL SELECT 'reactions', count(*) FROM reactions" --set ON_ERROR_STOP=1 || true
 
           echo ""
           echo "=== Seeding complete ==="
