@@ -2,8 +2,6 @@
 -- 18 channels across 3 workspaces: public, private, DM, and group.
 -- Includes channel members, notification prefs, bookmarks, and role overrides.
 
-begin;
-
 -- Cleanup (in dependency order)
 DELETE FROM public.channel_role_overrides WHERE channel_id IN (
   SELECT id FROM public.channels WHERE workspace_id IN (
@@ -320,4 +318,3 @@ FROM public.sidebar_categories cat
 WHERE cat.user_id = 'a0000012-0000-4000-8000-000000000012' AND cat.name = 'Starred' AND cat.workspace_id = 'b0000002-0000-4000-8000-000000000002'
 ON CONFLICT (category_id, channel_id) DO NOTHING;
 
-commit;

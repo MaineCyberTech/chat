@@ -1,8 +1,6 @@
 -- 01_comprehensive_workspaces.sql
 -- 3 workspaces with diverse membership roles + super admin in all.
 
-begin;
-
 -- Cleanup
 DELETE FROM public.sidebar_channel_assignments WHERE category_id IN (
   SELECT id FROM public.sidebar_categories WHERE workspace_id IN (
@@ -211,4 +209,3 @@ VALUES
 ON CONFLICT (user_id, workspace_id) DO UPDATE SET
   message = EXCLUDED.message, enabled = EXCLUDED.enabled, trigger_status = EXCLUDED.trigger_status;
 
-commit;

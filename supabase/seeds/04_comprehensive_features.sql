@@ -1,8 +1,6 @@
 -- 04_comprehensive_features.sql
 -- Notifications, webhooks, audit logs, compliance exports, feature flags.
 
-begin;
-
 -- Cleanup
 DELETE FROM public.webhook_deliveries WHERE webhook_id IN (
   SELECT id FROM public.webhook_endpoints WHERE workspace_id IN (
@@ -499,4 +497,3 @@ ON CONFLICT (key) DO UPDATE SET
   enabled = EXCLUDED.enabled, rollout_percentage = EXCLUDED.rollout_percentage,
   target_roles = EXCLUDED.target_roles, updated_at = EXCLUDED.updated_at;
 
-commit;

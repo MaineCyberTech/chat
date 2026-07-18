@@ -3,8 +3,6 @@
 -- Includes threads, reactions, edit history, flags, message reads, scheduled posts.
 -- Super admin (Alex Admin) active in all workspaces. 5 new users active Feb-May 2026.
 
-begin;
-
 -- Cleanup message-related data
 DELETE FROM public.message_reads WHERE channel_id IN (
   SELECT id FROM public.channels WHERE workspace_id IN (
@@ -996,4 +994,3 @@ ON CONFLICT DO NOTHING;
 -- Re-enable read-only trigger
 ALTER TABLE public.messages ENABLE TRIGGER check_read_only_on_insert;
 
-commit;
