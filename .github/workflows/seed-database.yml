@@ -78,11 +78,10 @@ jobs:
 
           echo ""
           echo "=== Step 1: Insert missing identities for seed users ==="
-          echo "Auth.identities are missing. Try with simple VALUES first."
+          echo "Auth.identities missing. Insert with provider_id (required column)."
           mgmt_query "SELECT count(*) as users_found FROM auth.users WHERE email LIKE '%@seed.test'" || true
-          mgmt_query "INSERT INTO auth.identities (id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at) VALUES (gen_random_uuid(), (SELECT id FROM auth.users WHERE email LIKE '%@seed.test' LIMIT 1), '{}'::jsonb, 'email', now(), now(), now()) ON CONFLICT DO NOTHING" || true
-          mgmt_query "SELECT count(*) as identity_count FROM auth.identities WHERE provider = 'email'" || true
-          mgmt_query "DELETE FROM auth.identities WHERE identity_data = '{}'::jsonb AND provider = 'email'" || true
+          mgmt_query "INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at) SELECT gen_random_uuid(), u.id, ('{\"email\":\"' || u.email || '\",\"sub\":\"' || u.id::text || '\",\"email_verified\":true}')::jsonb, 'email', ('email:' || u.id::text), now(), now(), now() FROM auth.users u WHERE u.email LIKE '%@seed.test' AND NOT EXISTS (SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email')" || true
+          mgmt_query "SELECT count(*) as identity_count FROM auth.identities WHERE provider = 'email' AND user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test')" || true
           mgmt_query "SELECT count(*) as identity_count FROM auth.identities WHERE provider = 'email' AND email IN (SELECT email FROM auth.users WHERE email LIKE '%@seed.test')" || true
 
           echo ""
