@@ -22,60 +22,124 @@ jobs:
   seed:
     name: Seed ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
-      - name: Seed via Supabase Management API
+      - name: Seed auth users via Admin API + data via Management API
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: |
           set -e
 
           PROJECT_REF="${{ env.SUPABASE_PROJECT_REF }}"
-          API_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
+          MGMT_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
+          AUTH_URL="${SUPABASE_URL}/auth/v1/admin/users"
 
-          echo "=== Testing connectivity via Management API ==="
-          RESULT=$(curl -sf -X POST "$API_URL" \
-            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"query": "SELECT count(*) as user_count FROM auth.users"}' 2>&1) || {
-              echo "ERROR: Management API connection failed"
-              echo "$RESULT"
-              exit 1
-            }
-          echo "Current auth.users: $RESULT"
+          mgmt_query() {
+            local sql="$1"
+            curl -sf -X POST "$MGMT_URL" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data-raw "$(jq -n --arg sql "$sql" '{"query": $sql}')" 2>&1
+          }
+
+          auth_create() {
+            local id="$1" email="$2" name="$3"
+            curl -sf -X POST "$AUTH_URL" \
+              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Content-Type: application/json" \
+              --data-raw "$(jq -n \
+                --arg id "$id" \
+                --arg email "$email" \
+                --arg name "$name" \
+                '{id: $id, email: $email, password: "password123", email_confirm: true, user_metadata: {display_name: $name}}')" 2>&1 || true
+          }
+
+          echo "=== Current auth.users count ==="
+          mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
+
           echo ""
+          echo "=== Creating auth users via Supabase Auth Admin API ==="
 
-          echo "=== Running seed files ==="
-          for f in supabase/seeds/*.sql; do
+          # Create all 21 auth users via the Admin API (properly handles instance_id + password hashing)
+          declare -A USERS=(
+            ["a0000001-0000-4000-8000-000000000001"]="marcus@seed.test|Marcus Chen"
+            ["a0000002-0000-4000-8000-000000000002"]="sarah@seed.test|Sarah Patel"
+            ["a0000003-0000-4000-8000-000000000003"]="jake@seed.test|Jake Morrison"
+            ["a0000004-0000-4000-8000-000000000004"]="elena@seed.test|Elena Volkov"
+            ["a0000005-0000-4000-8000-000000000005"]="tyler@seed.test|Tyler Brooks"
+            ["a0000006-0000-4000-8000-000000000006"]="priya@seed.test|Priya Sharma"
+            ["a0000007-0000-4000-8000-000000000007"]="carlos@seed.test|Carlos Rivera"
+            ["a0000008-0000-4000-8000-000000000008"]="aisha@seed.test|Aisha Johnson"
+            ["a0000009-0000-4000-8000-000000000009"]="liam@seed.test|Liam O'Brien"
+            ["a0000010-0000-4000-8000-000000000010"]="mei@seed.test|Mei Lin"
+            ["a0000011-0000-4000-8000-000000000011"]="dmitri@seed.test|Dmitri Petrov"
+            ["a0000012-0000-4000-8000-000000000012"]="nkechi@seed.test|Nkechi Adeyemi"
+            ["a0000013-0000-4000-8000-000000000013"]="raj@seed.test|Raj Gupta"
+            ["a0000014-0000-4000-8000-000000000014"]="fatima@seed.test|Fatima Al-Rashid"
+            ["a0000015-0000-4000-8000-000000000015"]="tom@seed.test|Tom Nguyen"
+            ["a0000016-0000-4000-8000-000000000016"]="admin@seed.test|Alex Admin"
+            ["a0000017-0000-4000-8000-000000000017"]="olivia@seed.test|Olivia Foster"
+            ["a0000018-0000-4000-8000-000000000018"]="jamal@seed.test|Jamal Williams"
+            ["a0000019-0000-4000-8000-000000000019"]="chen@seed.test|Chen Wei"
+            ["a0000020-0000-4000-8000-000000000020"]="sofia@seed.test|Sofia Rodriguez"
+            ["a0000021-0000-4000-8000-000000000021"]="ethan@seed.test|Ethan Kowalski"
+          )
+
+          CREATED=0
+          SKIPPED=0
+          for ID in $(echo "${!USERS[@]}" | tr ' ' '\n' | sort); do
+            IFS='|' read -r EMAIL NAME <<< "${USERS[$ID]}"
+            RESULT=$(auth_create "$ID" "$EMAIL" "$NAME" 2>&1)
+            if echo "$RESULT" | jq -e '.id' >/dev/null 2>&1; then
+              echo "  Created: $EMAIL ($NAME)"
+              CREATED=$((CREATED + 1))
+            elif echo "$RESULT" | grep -q "already exists"; then
+              SKIPPED=$((SKIPPED + 1))
+            else
+              echo "  WARN: $EMAIL - $(echo "$RESULT" | head -1)"
+              SKIPPED=$((SKIPPED + 1))
+            fi
+          done
+          echo "Created: $CREATED, Skipped/Existing: $SKIPPED"
+
+          echo ""
+          echo "=== Auth users after creation ==="
+          mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
+
+          echo ""
+          echo "=== Running seed files 01-05 (data tables, skipping 00 which created auth users) ==="
+          for f in supabase/seeds/0{1,2,3,4,5}*.sql; do
+            [ -f "$f" ] || continue
             echo ""
             echo "-------------------------------------------"
             echo "Seeding $f..."
             echo "-------------------------------------------"
 
-            # Read SQL and escape for JSON
             SQL=$(cat "$f")
 
-            # Post SQL via Management API
-            RESPONSE=$(curl -sf -X POST "$API_URL" \
+            RESPONSE=$(curl -sf -X POST "$MGMT_URL" \
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
               -H "Content-Type: application/json" \
               --data-raw "$(jq -n --arg sql "$SQL" '{"query": $sql}')" 2>&1) || {
                 echo "WARN: $f had errors (may be idempotent, continuing...)"
-                echo "$RESPONSE"
+                echo "$RESPONSE" | head -3
                 continue
               }
             echo "OK: $f"
-            echo "$RESPONSE" | head -5
           done
 
           echo ""
           echo "=== Final auth.users count ==="
-          curl -sf -X POST "$API_URL" \
-            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"query": "SELECT count(*) as user_count FROM auth.users"}' || true
+          mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
+
+          echo ""
+          echo "=== Verifying a user is login-ready ==="
+          mgmt_query "SELECT email, instance_id IS NOT NULL as has_instance, encrypted_password != '' as has_password FROM auth.users WHERE email = 'marcus@seed.test'" || true
 
           echo ""
           echo "=== Seeding complete ==="
