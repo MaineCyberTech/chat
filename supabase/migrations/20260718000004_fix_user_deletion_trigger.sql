@@ -1,5 +1,5 @@
--- Clean up workspace/channel membership when a user is deleted
--- This trigger fires on auth.users DELETE and removes all associated rows
+-- Fix handle_user_deletion() trigger: channel_bookmarks uses created_by not user_id
+-- The original trigger crashes with: column "user_id" does not exist
 
 CREATE OR REPLACE FUNCTION public.handle_user_deletion()
 RETURNS TRIGGER AS $$
@@ -20,9 +20,3 @@ BEGIN
   RETURN OLD;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-DROP TRIGGER IF EXISTS on_auth_user_deleted ON auth.users;
-CREATE TRIGGER on_auth_user_deleted
-  BEFORE DELETE ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_user_deletion();
