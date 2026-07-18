@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { api } from "@/lib/api";
 import { useToast } from "@chat/ui";
-import { X, Link, ExternalLink, Plus, GripVertical } from "lucide-react";
+import { X, Link, ExternalLink, Plus, GripVertical, ChevronDown, ChevronRight } from "lucide-react";
 
 interface ChannelBookmark {
   id: string;
@@ -32,6 +32,7 @@ export function ChannelBookmarks({ channelId }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [reorderMode, setReorderMode] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const { addToast } = useToast();
@@ -113,7 +114,7 @@ export function ChannelBookmarks({ channelId }: Props) {
   return (
     <>
       {/* Inline bookmark bar */}
-      {bookmarks.length > 0 && (
+      {!collapsed && bookmarks.length > 0 && (
         <div
           className="flex shrink-0 flex-wrap items-center gap-1 border-b px-3 py-1.5"
           style={{
@@ -142,6 +143,32 @@ export function ChannelBookmarks({ channelId }: Props) {
             aria-label="Add bookmark"
           >
             <Plus size={12} />
+          </button>
+          <button
+            onClick={() => setCollapsed(true)}
+            className="ml-auto inline-flex items-center rounded-md p-0.5 text-xs transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.06)]"
+            style={{ color: "var(--text-tertiary)" }}
+            aria-label="Collapse bookmarks"
+          >
+            <ChevronDown size={14} />
+          </button>
+        </div>
+      )}
+      {collapsed && bookmarks.length > 0 && (
+        <div
+          className="flex shrink-0 items-center border-b px-3 py-0.5"
+          style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.08)" }}
+        >
+          <button
+            onClick={() => setCollapsed(false)}
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.06)]"
+            style={{ color: "var(--text-tertiary)" }}
+            aria-label="Expand bookmarks"
+          >
+            <ChevronRight size={14} />
+            <span>
+              {bookmarks.length} bookmark{bookmarks.length !== 1 ? "s" : ""}
+            </span>
           </button>
         </div>
       )}
