@@ -46,19 +46,6 @@ jobs:
               --data-raw "$(jq -n --arg sql "$sql" '{"query": $sql}')" 2>&1
           }
 
-          auth_create() {
-            local id="$1" email="$2" name="$3"
-            curl -sf -X POST "$AUTH_URL" \
-              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-              -H "Content-Type: application/json" \
-              --data-raw "$(jq -n \
-                --arg id "$id" \
-                --arg email "$email" \
-                --arg name "$name" \
-                '{id: $id, email: $email, password: "password123", email_confirm: true, user_metadata: {display_name: $name}}')" 2>&1 || true
-          }
-
           echo "=== Current auth.users count ==="
           mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
 
@@ -66,8 +53,8 @@ jobs:
           echo "=== Deleting broken seed users from auth via Admin API ==="
           USER_IDS=$(mgmt_query "SELECT id::text FROM auth.users WHERE email LIKE '%@seed.test'" | jq -r '.[].id' 2>/dev/null || true)
           DELETED=0
-          for UID in $USER_IDS; do
-            if curl -sf -X DELETE "${AUTH_URL}/${UID}" \
+          for SEED_UID in $USER_IDS; do
+            if curl -sf -X DELETE "${AUTH_URL}/${SEED_UID}" \
               -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" 2>/dev/null; then
               DELETED=$((DELETED + 1))
@@ -109,7 +96,15 @@ jobs:
           SKIPPED=0
           for ID in $(echo "${!USERS[@]}" | tr ' ' '\n' | sort); do
             IFS='|' read -r EMAIL NAME <<< "${USERS[$ID]}"
-            RESULT=$(auth_create "$ID" "$EMAIL" "$NAME" 2>&1)
+            RESULT=$(curl -sf -X POST "$AUTH_URL" \
+              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Content-Type: application/json" \
+              --data-raw "$(jq -n \
+                --arg id "$ID" \
+                --arg email "$EMAIL" \
+                --arg name "$NAME" \
+                '{id: $id, email: $email, password: "password123", email_confirm: true, user_metadata: {display_name: $name}}')" 2>&1 || true)
             if echo "$RESULT" | jq -e '.id' >/dev/null 2>&1; then
               echo "  Created: $EMAIL ($NAME)"
               CREATED=$((CREATED + 1))
