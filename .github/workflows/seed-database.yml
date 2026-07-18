@@ -80,30 +80,21 @@ jobs:
           mgmt_query "SELECT count(*) as null_tokens FROM auth.users WHERE confirmation_token IS NULL OR recovery_token IS NULL" || true
 
           echo ""
-          echo "=== Step 1: Get seed user IDs from auth.users ==="
-          SEED_IDS=$(mgmt_query "SELECT id::text FROM auth.users WHERE email LIKE '%@seed.test'" | jq -r '.[].id' 2>/dev/null || true)
+          echo "=== Step 1: Delete seed users via Management SQL ==="
+          echo "Admin API DELETE crashes GoTrue (trigger/FK issue). Use SQL directly."
+          mgmt_query "
+            DELETE FROM auth.refresh_tokens WHERE user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test');
+            DELETE FROM auth.sessions WHERE user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test');
+            DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test');
+            DELETE FROM auth.users WHERE email LIKE '%@seed.test';
+          " || true
 
           echo ""
-          echo "=== Step 2: Delete seed users via Admin API ==="
-          DELETED=0
-          FAILED=0
-          for SEED_UID in $SEED_IDS; do
-            DEL_RESP=$(curl -s -w "\n%{http_code}" -X DELETE "${AUTH_URL}/${SEED_UID}" \
-              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" 2>&1)
-            DEL_CODE=$(echo "$DEL_RESP" | tail -1)
-            if [ "$DEL_CODE" -ge 200 ] && [ "$DEL_CODE" -lt 300 ]; then
-              DELETED=$((DELETED + 1))
-            else
-              DEL_BODY=$(echo "$DEL_RESP" | head -n -1)
-              echo "  Failed to delete $SEED_UID: HTTP $DEL_CODE - $DEL_BODY"
-              FAILED=$((FAILED + 1))
-            fi
-          done
-          echo "Deleted: $DELETED, Failed: $FAILED"
+          echo "=== Verify deletion ==="
+          mgmt_query "SELECT count(*) as remaining FROM auth.users WHERE email LIKE '%@seed.test'" || true
 
           echo ""
-          echo "=== Step 3: Create auth users via Admin API ==="
+          echo "=== Step 2: Create auth users via Admin API ==="
           declare -A USERS=(
             ["a0000001-0000-4000-8000-000000000001"]="marcus@seed.test|Marcus Chen"
             ["a0000002-0000-4000-8000-000000000002"]="sarah@seed.test|Sarah Patel"
@@ -153,7 +144,7 @@ jobs:
           echo "Created: $CREATED, Skipped/Existing: $SKIPPED"
 
           echo ""
-          echo "=== Step 4: Verify identities ==="
+          echo "=== Step 3: Verify identities ==="
           echo "auth.users count:"
           mgmt_query "SELECT count(*) as user_count FROM auth.users WHERE email LIKE '%@seed.test'" || true
           echo "auth.identities count:"
@@ -162,7 +153,7 @@ jobs:
           mgmt_query "SELECT u.email, u.encrypted_password != '' as has_password, i.provider, i.identity_data FROM auth.users u JOIN auth.identities i ON i.user_id = u.id WHERE u.email = 'marcus@seed.test'" || true
 
           echo ""
-          echo "=== Step 5: Check if identities still missing and attempt manual fix ==="
+          echo "=== Step 4: Check if identities still missing ==="
           MISSING=$(mgmt_query "SELECT count(*) as cnt FROM auth.users u WHERE u.email LIKE '%@seed.test' AND NOT EXISTS (SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email')" | jq -r '.[0].cnt' 2>/dev/null || echo "-1")
           echo "Users missing identities: $MISSING"
 
