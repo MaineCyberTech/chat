@@ -126,43 +126,84 @@ jobs:
           echo "=== Verifying a user is login-ready ==="
           mgmt_query "SELECT email, instance_id IS NOT NULL as has_instance, encrypted_password != '' as has_password FROM auth.users WHERE email = 'marcus@seed.test'" || true
 
-      - name: Seed data tables via psql
+      - name: Seed data tables via Management API
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -e
-          apt-get update -qq && apt-get install -y -qq postgresql-client >/dev/null 2>&1
 
-          DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
+          PROJECT_REF="${{ env.SUPABASE_PROJECT_REF }}"
+          MGMT_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
 
-          # Try direct connection first, then pooler session mode, then pooler transaction mode
-          if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
-            echo "Direct connection failed. Trying pooler session mode (port 5432)..."
-            DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
-            if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
-              echo "Pooler session mode failed. Trying pooler transaction mode (port 6543)..."
-              DB_URL="postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
-              psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1
-            fi
-          fi
-          echo "Database connection verified."
+          mgmt_query() {
+            local sql="$1"
+            curl -sf -X POST "$MGMT_URL" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data-raw "$(jq -n --arg sql "$sql" '{"query": $sql}')" 2>&1
+          }
 
-          # Run seed files 01-05 (00 creates auth.users which we handled via Admin API)
+          echo "=== Running seed files 01-05 (data tables) ==="
           for f in supabase/seeds/0{1,2,3,4,5}*.sql; do
             [ -f "$f" ] || continue
             echo ""
             echo "-------------------------------------------"
             echo "Seeding $f..."
             echo "-------------------------------------------"
-            psql "$DB_URL" -f "$f" --set ON_ERROR_STOP=1 || { echo "WARN: $f had errors (may be idempotent, continuing...)"; }
+
+            SQL=$(cat "$f")
+            SQL_SIZE=${#SQL}
+            echo "SQL size: $SQL_SIZE bytes"
+
+            # Split large files into chunks at statement boundaries (every 500 statements)
+            if [ "$SQL_SIZE" -gt 80000 ]; then
+              echo "Large file detected, splitting into chunks..."
+              TMPDIR=$(mktemp -d)
+              # Split by blank lines (statement separators in our seed files)
+              csplit -z -f "$TMPDIR/chunk_" -b "%03d.sql" <(echo "$SQL") '/^$/;{0,499}' 2>/dev/null || true
+
+              CHUNK=0
+              for chunk_file in "$TMPDIR"/chunk_*.sql; do
+                [ -f "$chunk_file" ] || continue
+                CHUNK_SIZE=$(wc -c < "$chunk_file")
+                if [ "$CHUNK_SIZE" -gt 10 ]; then
+                  CHUNK_SQL=$(cat "$chunk_file")
+                  RESPONSE=$(curl -sf -X POST "$MGMT_URL" \
+                    -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+                    -H "Content-Type: application/json" \
+                    --data-raw "$(jq -n --arg sql "$CHUNK_SQL" '{"query": $sql}')" 2>&1) || {
+                      echo "  WARN: chunk $CHUNK of $f had errors"
+                      echo "$RESPONSE" | head -3
+                    }
+                  echo "  Chunk $CHUNK: $CHUNK_SIZE bytes - OK"
+                  CHUNK=$((CHUNK + 1))
+                fi
+              done
+              rm -rf "$TMPDIR"
+              echo "$f: $CHUNK chunks sent"
+            else
+              RESPONSE=$(curl -sf -X POST "$MGMT_URL" \
+                -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data-raw "$(jq -n --arg sql "$SQL" '{"query": $sql}')" 2>&1) || {
+                  echo "WARN: $f had errors"
+                  echo "$RESPONSE" | head -5
+                  continue
+                }
+              echo "OK: $f"
+            fi
           done
 
           echo ""
           echo "=== Final verification ==="
-          psql "$DB_URL" -c "SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test'
-          UNION ALL SELECT 'workspaces', count(*) FROM workspaces
-          UNION ALL SELECT 'channels', count(*) FROM channels
-          UNION ALL SELECT 'messages', count(*) FROM messages
-          UNION ALL SELECT 'thread_replies', count(*) FROM thread_replies
-          UNION ALL SELECT 'reactions', count(*) FROM reactions" --set ON_ERROR_STOP=1 || true
+          mgmt_query "
+            SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test'
+            UNION ALL SELECT 'workspaces', count(*) FROM workspaces
+            UNION ALL SELECT 'channels', count(*) FROM channels
+            UNION ALL SELECT 'messages', count(*) FROM messages
+            UNION ALL SELECT 'thread_replies', count(*) FROM thread_replies
+            UNION ALL SELECT 'reactions', count(*) FROM reactions
+          " || true
 
           echo ""
           echo "=== Seeding complete ==="
