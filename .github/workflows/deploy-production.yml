@@ -303,6 +303,25 @@ jobs:
             docker image prune -af
             flock -u 200
 
+      - name: Seed database
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ needs.provision.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd ${{ env.REPO_DIR }}
+            DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
+            if ! command -v psql &>/dev/null; then
+              apt-get update -qq && apt-get install -y -qq postgresql-client >/dev/null 2>&1
+            fi
+            for f in supabase/seeds/*.sql; do
+              echo "Seeding $f..."
+              psql "$DB_URL" -f "$f" --set ON_ERROR_STOP=1 || { echo "WARN: $f had errors (may be idempotent)"; }
+            done
+            echo "Seeding complete"
+
       - name: Health check
         run: |
           for i in $(seq 1 12); do

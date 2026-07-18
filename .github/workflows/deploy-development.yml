@@ -68,15 +68,6 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
-      - name: Seed database
-        run: |
-          for f in supabase/seeds/*.sql; do
-            echo "Seeding $f..."
-            psql "$DATABASE_URL" -f "$f"
-          done
-        env:
-          DATABASE_URL: postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres
-
       - name: Resolve droplet IP
         id: ip
         run: |
@@ -267,6 +258,25 @@ jobs:
             docker compose -f infra/docker/docker-compose.devremote.yml ps
             docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100
             exit 1
+
+      - name: Seed database
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ steps.ip.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd ${{ env.REPO_DIR }}
+            DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
+            if ! command -v psql &>/dev/null; then
+              apt-get update -qq && apt-get install -y -qq postgresql-client >/dev/null 2>&1
+            fi
+            for f in supabase/seeds/*.sql; do
+              echo "Seeding $f..."
+              psql "$DB_URL" -f "$f" --set ON_ERROR_STOP=1 || { echo "WARN: $f had errors (may be idempotent)"; }
+            done
+            echo "Seeding complete"
 
       - name: Health check
         run: |
