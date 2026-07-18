@@ -90,66 +90,66 @@ Full report: `docs/audits/ux-audit/20260709/`
 
 ### UI/UX Audit New Findings (July 16, 2026)
 
-| ID     | Severity | Category       | Finding                                                                | Location                                                    |
-| ------ | -------- | -------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
-| UX-101 | P1       | Admin UX       | Admin tab navigation broken on mobile — sidebar `hidden md:block`      | `admin/page.tsx`                                            |
-| UX-102 | P1       | Accessibility  | Search-bar missing `aria-activedescendant` on autocomplete input       | `search-bar.tsx`                                            |
-| UX-103 | P1       | Mobile UX      | Formatting bar buttons 28px — fail WCAG 44px touch target minimum      | `formatting-bar.tsx`                                        |
-| UX-104 | P1       | i18n           | Admin page: 150+ hardcoded strings, zero i18n                          | `admin/page.tsx`                                            |
-| UX-105 | P1       | i18n           | Settings page: 80+ hardcoded strings, zero i18n                        | `settings/page.tsx`                                         |
-| UX-106 | P1       | i18n           | Search-bar: 50+ hardcoded strings, zero i18n                           | `search-bar.tsx`                                            |
-| UX-107 | P1       | Accessibility  | Settings reset/delete dialogs lack focus traps — Tab escapes backdrop  | `settings/page.tsx`                                         |
-| UX-108 | P1       | State Design   | Channel-info silently catches API failures, returns empty arrays       | `channel-info.tsx`                                          |
-| UX-201 | P2       | Forms          | Settings dual save mechanism — auto-save AND Save button confusing     | `settings/page.tsx`                                         |
-| UX-202 | P2       | Forms          | Language change triggers `window.location.reload()`                    | `settings/page.tsx`                                         |
-| UX-203 | P2       | Search         | No result count shown in search results                                | `search/page.tsx`                                           |
-| UX-204 | P2       | Accessibility  | Search-bar type dropdown/autocomplete lack `role="listbox"`            | `search-bar.tsx`                                            |
-| UX-205 | P2       | Accessibility  | Search results container lacks `aria-live="polite"`                    | `search/page.tsx`                                           |
-| UX-206 | P2       | Interaction    | Formatting toolbar no arrow-key navigation (Tab-only through 15 btns)  | `formatting-bar.tsx`                                        |
-| UX-207 | P2       | Accessibility  | Formatting toolbar no visible focus ring                               | `formatting-bar.tsx`                                        |
-| UX-208 | P2       | Accessibility  | Link/image buttons have `aria-pressed: undefined`                      | `formatting-bar.tsx`                                        |
-| UX-209 | P2       | i18n           | Formatting bar: 20+ hardcoded strings, zero i18n                       | `formatting-bar.tsx`                                        |
-| UX-210 | P2       | i18n           | Notification preferences modal: 20+ hardcoded strings, zero i18n       | `notification-preferences-modal.tsx`                        |
-| UX-211 | P2       | i18n           | Keyboard shortcuts modal: 25+ hardcoded strings, zero i18n             | `keyboard-shortcuts.tsx`                                    |
-| UX-212 | P2       | Accessibility  | Keyboard shortcuts shows "Ctrl+K" on macOS — no Mac modifier detection | `keyboard-shortcuts.tsx`                                    |
-| UX-213 | P2       | Accessibility  | Keyboard shortcuts filter has no `aria-live` for result count          | `keyboard-shortcuts.tsx`                                    |
-| UX-214 | P2       | Accessibility  | All error boundaries lack `role="alert"`                               | `error.tsx` ×6 files                                        |
-| UX-215 | P2       | Accessibility  | All loading states lack `aria-busy="true"` / `role="status"`           | `loading.tsx` ×5 files                                      |
-| UX-216 | P2       | State Design   | Root and auth loading use bare spinner instead of layout skeleton      | `app/loading.tsx`, `(auth)/loading.tsx`                     |
-| UX-217 | P2       | Responsive     | Workspace loading skeleton shown on mobile (sidebar unconditional)     | `(workspace)/loading.tsx`                                   |
-| UX-218 | P2       | Accessibility  | Onboarding tour no `role="dialog"`, no focus trap                      | `onboarding-tour.tsx`                                       |
-| UX-219 | P2       | Accessibility  | Cookie banner no focus trap, no `aria-modal="true"`                    | `cookie-banner.tsx`                                         |
-| UX-220 | P2       | Accessibility  | Channel-info tab bar missing `role="tablist"`, `aria-selected`         | `channel-info.tsx`                                          |
-| UX-221 | P2       | State Design   | Channel-info empty states lack actionable buttons                      | `channel-info.tsx`                                          |
-| UX-222 | P2       | Data Display   | `highlightText` function duplicated in 2 files                         | `search-bar.tsx`, `search/page.tsx`                         |
-| UX-223 | P2       | Data Display   | Pagination duplicated across 3 admin tabs                              | `admin/page.tsx`                                            |
-| UX-224 | P2       | Mobile UX      | Admin stat grid uses `grid-cols-2` on mobile — narrow cells            | `admin/page.tsx`                                            |
+| ID     | Severity | Category       | Finding                                                                                                                                                             | Location                                                    |
+| ------ | -------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| UX-101 | P1       | Admin UX       | Admin tab navigation broken on mobile — sidebar `hidden md:block`                                                                                                   | `admin/page.tsx`                                            |
+| UX-102 | P1       | Accessibility  | Search-bar missing `aria-activedescendant` on autocomplete input                                                                                                    | `search-bar.tsx`                                            |
+| UX-103 | P1       | Mobile UX      | Formatting bar buttons 28px — fail WCAG 44px touch target minimum                                                                                                   | `formatting-bar.tsx`                                        |
+| UX-104 | P1       | i18n           | Admin page: 150+ hardcoded strings, zero i18n                                                                                                                       | `admin/page.tsx`                                            |
+| UX-105 | P1       | i18n           | Settings page: 80+ hardcoded strings, zero i18n                                                                                                                     | `settings/page.tsx`                                         |
+| UX-106 | P1       | i18n           | Search-bar: 50+ hardcoded strings, zero i18n                                                                                                                        | `search-bar.tsx`                                            |
+| UX-107 | P1       | Accessibility  | Settings reset/delete dialogs lack focus traps — Tab escapes backdrop                                                                                               | `settings/page.tsx`                                         |
+| UX-108 | P1       | State Design   | Channel-info silently catches API failures, returns empty arrays                                                                                                    | `channel-info.tsx`                                          |
+| UX-201 | P2       | Forms          | Settings dual save mechanism — auto-save AND Save button confusing                                                                                                  | `settings/page.tsx`                                         |
+| UX-202 | P2       | Forms          | Language change triggers `window.location.reload()`                                                                                                                 | `settings/page.tsx`                                         |
+| UX-203 | P2       | Search         | No result count shown in search results                                                                                                                             | `search/page.tsx`                                           |
+| UX-204 | P2       | Accessibility  | Search-bar type dropdown/autocomplete lack `role="listbox"`                                                                                                         | `search-bar.tsx`                                            |
+| UX-205 | P2       | Accessibility  | Search results container lacks `aria-live="polite"`                                                                                                                 | `search/page.tsx`                                           |
+| UX-206 | P2       | Interaction    | Formatting toolbar no arrow-key navigation (Tab-only through 15 btns)                                                                                               | `formatting-bar.tsx`                                        |
+| UX-207 | P2       | Accessibility  | Formatting toolbar no visible focus ring                                                                                                                            | `formatting-bar.tsx`                                        |
+| UX-208 | P2       | Accessibility  | Link/image buttons have `aria-pressed: undefined`                                                                                                                   | `formatting-bar.tsx`                                        |
+| UX-209 | P2       | i18n           | Formatting bar: 20+ hardcoded strings, zero i18n                                                                                                                    | `formatting-bar.tsx`                                        |
+| UX-210 | P2       | i18n           | Notification preferences modal: 20+ hardcoded strings, zero i18n                                                                                                    | `notification-preferences-modal.tsx`                        |
+| UX-211 | P2       | i18n           | Keyboard shortcuts modal: 25+ hardcoded strings, zero i18n                                                                                                          | `keyboard-shortcuts.tsx`                                    |
+| UX-212 | P2       | Accessibility  | Keyboard shortcuts shows "Ctrl+K" on macOS — no Mac modifier detection                                                                                              | `keyboard-shortcuts.tsx`                                    |
+| UX-213 | P2       | Accessibility  | Keyboard shortcuts filter has no `aria-live` for result count                                                                                                       | `keyboard-shortcuts.tsx`                                    |
+| UX-214 | P2       | Accessibility  | All error boundaries lack `role="alert"`                                                                                                                            | `error.tsx` ×6 files                                        |
+| UX-215 | P2       | Accessibility  | All loading states lack `aria-busy="true"` / `role="status"`                                                                                                        | `loading.tsx` ×5 files                                      |
+| UX-216 | P2       | State Design   | Root and auth loading use bare spinner instead of layout skeleton                                                                                                   | `app/loading.tsx`, `(auth)/loading.tsx`                     |
+| UX-217 | P2       | Responsive     | Workspace loading skeleton shown on mobile (sidebar unconditional)                                                                                                  | `(workspace)/loading.tsx`                                   |
+| UX-218 | P2       | Accessibility  | Onboarding tour no `role="dialog"`, no focus trap                                                                                                                   | `onboarding-tour.tsx`                                       |
+| UX-219 | P2       | Accessibility  | Cookie banner no focus trap, no `aria-modal="true"`                                                                                                                 | `cookie-banner.tsx`                                         |
+| UX-220 | P2       | Accessibility  | Channel-info tab bar missing `role="tablist"`, `aria-selected`                                                                                                      | `channel-info.tsx`                                          |
+| UX-221 | P2       | State Design   | Channel-info empty states lack actionable buttons                                                                                                                   | `channel-info.tsx`                                          |
+| UX-222 | P2       | Data Display   | `highlightText` function duplicated in 2 files                                                                                                                      | `search-bar.tsx`, `search/page.tsx`                         |
+| UX-223 | P2       | Data Display   | Pagination duplicated across 3 admin tabs                                                                                                                           | `admin/page.tsx`                                            |
+| UX-224 | P2       | Mobile UX      | Admin stat grid uses `grid-cols-2` on mobile — narrow cells                                                                                                         | `admin/page.tsx`                                            |
 | UX-225 | P2       | Performance    | Message list 30-frame RAF loop for initial scroll may jank — RETAINED: loop required to trigger virtualizer rendering; stability detection stops early when settled | `message-list.tsx`                                          |
-| UX-226 | P2       | Design System  | Two parallel CSS var systems (Mattermost + design tokens) active       | `globals.css`, `packages/ui/src/styles.css`                 |
-| UX-227 | P2       | Error Handling | `console.warn` used instead of user-facing toast in 5+ catch blocks    | `chat-view.tsx`, `context-menu.tsx`, `quick-switcher.tsx` + |
-| UX-228 | P2       | Theme          | Dark mode `--text-secondary` hardcoded rgba, not alpha var             | `globals.css`                                               |
-| UX-301 | P3       | Forms          | Settings page "Loading..." text instead of Skeleton                    | `settings/page.tsx`                                         |
-| UX-302 | P3       | Forms          | Auto-responder textarea lacks character counter                        | `settings/page.tsx`                                         |
-| UX-303 | P3       | Forms          | No debounce on preference saves — rapid toggles hammer API             | `settings/page.tsx`                                         |
-| UX-304 | P3       | Forms          | Login form no password strength indicator                              | `login-form.tsx`                                            |
-| UX-305 | P3       | Forms          | Login form no "Forgot password?" link                                  | `login-form.tsx`                                            |
-| UX-306 | P3       | Accessibility  | Login form status container no `aria-live`                             | `login-form.tsx`                                            |
-| UX-307 | P3       | Interaction    | Notification preferences modal no unsaved-changes detection            | `notification-preferences-modal.tsx`                        |
-| UX-308 | P3       | Search         | Search date range not validated (`dateFrom > dateTo`)                  | `search/page.tsx`                                           |
-| UX-309 | P3       | Search         | Search operator hint has hardcoded year "2025"                         | `search-bar.tsx`                                            |
-| UX-310 | P3       | Interaction    | "Clear all" recent searches has no confirmation                        | `search-bar.tsx`                                            |
-| UX-311 | P3       | Interaction    | Admin export buttons lack loading spinner                              | `admin/page.tsx`                                            |
-| UX-312 | P3       | Admin UX       | Admin panel no error boundary per tab                                  | `admin/page.tsx`                                            |
-| UX-313 | P3       | i18n           | Admin panel `document.title` hardcoded                                 | `admin/page.tsx`                                            |
-| UX-314 | P3       | Design System  | Inline `StatusBadge` and `Card` in admin (duplicates shared comps)     | `admin/page.tsx`                                            |
-| UX-315 | P3       | Design System  | `ToggleRow` inline in settings — not shared                            | `settings/page.tsx`                                         |
-| UX-316 | P3       | Admin UX       | CSV parser uses `line.split(",")` — breaks on quoted fields            | `admin/page.tsx`                                            |
-| UX-317 | P3       | Performance    | Message list 30-frame RAF loop in useEffect (wasteful) — RETAINED: loop is required to render + measure items before scrollToIndex can compute correct position | `message-list.tsx`                                          |
-| UX-318 | P3       | Design System  | Pull-to-refresh indicator uses inline style not Tailwind               | `message-list.tsx`                                          |
-| UX-319 | P3       | Code Quality   | Dead CSS `gridArea: "team-sidebar"` — no grid parent                   | `app-sidebar.tsx`                                           |
-| UX-320 | P3       | Code Quality   | Encoding artifact line 581 — `âœ“` should be checkmark                 | `app-sidebar.tsx`                                           |
-| UX-321 | P3       | Design System  | `--border-default` includes `solid 1px` — not composable               | `globals.css`                                               |
-| UX-322 | P3       | Design System  | Density modes defined in tokens but unused                             | `packages/ui/src/tokens/spacing.ts`                         |
+| UX-226 | P2       | Design System  | Two parallel CSS var systems (Mattermost + design tokens) active                                                                                                    | `globals.css`, `packages/ui/src/styles.css`                 |
+| UX-227 | P2       | Error Handling | `console.warn` used instead of user-facing toast in 5+ catch blocks                                                                                                 | `chat-view.tsx`, `context-menu.tsx`, `quick-switcher.tsx` + |
+| UX-228 | P2       | Theme          | Dark mode `--text-secondary` hardcoded rgba, not alpha var                                                                                                          | `globals.css`                                               |
+| UX-301 | P3       | Forms          | Settings page "Loading..." text instead of Skeleton                                                                                                                 | `settings/page.tsx`                                         |
+| UX-302 | P3       | Forms          | Auto-responder textarea lacks character counter                                                                                                                     | `settings/page.tsx`                                         |
+| UX-303 | P3       | Forms          | No debounce on preference saves — rapid toggles hammer API                                                                                                          | `settings/page.tsx`                                         |
+| UX-304 | P3       | Forms          | Login form no password strength indicator                                                                                                                           | `login-form.tsx`                                            |
+| UX-305 | P3       | Forms          | Login form no "Forgot password?" link                                                                                                                               | `login-form.tsx`                                            |
+| UX-306 | P3       | Accessibility  | Login form status container no `aria-live`                                                                                                                          | `login-form.tsx`                                            |
+| UX-307 | P3       | Interaction    | Notification preferences modal no unsaved-changes detection                                                                                                         | `notification-preferences-modal.tsx`                        |
+| UX-308 | P3       | Search         | Search date range not validated (`dateFrom > dateTo`)                                                                                                               | `search/page.tsx`                                           |
+| UX-309 | P3       | Search         | Search operator hint has hardcoded year "2025"                                                                                                                      | `search-bar.tsx`                                            |
+| UX-310 | P3       | Interaction    | "Clear all" recent searches has no confirmation                                                                                                                     | `search-bar.tsx`                                            |
+| UX-311 | P3       | Interaction    | Admin export buttons lack loading spinner                                                                                                                           | `admin/page.tsx`                                            |
+| UX-312 | P3       | Admin UX       | Admin panel no error boundary per tab                                                                                                                               | `admin/page.tsx`                                            |
+| UX-313 | P3       | i18n           | Admin panel `document.title` hardcoded                                                                                                                              | `admin/page.tsx`                                            |
+| UX-314 | P3       | Design System  | Inline `StatusBadge` and `Card` in admin (duplicates shared comps)                                                                                                  | `admin/page.tsx`                                            |
+| UX-315 | P3       | Design System  | `ToggleRow` inline in settings — not shared                                                                                                                         | `settings/page.tsx`                                         |
+| UX-316 | P3       | Admin UX       | CSV parser uses `line.split(",")` — breaks on quoted fields                                                                                                         | `admin/page.tsx`                                            |
+| UX-317 | P3       | Performance    | Message list 30-frame RAF loop in useEffect (wasteful) — RETAINED: loop is required to render + measure items before scrollToIndex can compute correct position     | `message-list.tsx`                                          |
+| UX-318 | P3       | Design System  | Pull-to-refresh indicator uses inline style not Tailwind                                                                                                            | `message-list.tsx`                                          |
+| UX-319 | P3       | Code Quality   | Dead CSS `gridArea: "team-sidebar"` — no grid parent                                                                                                                | `app-sidebar.tsx`                                           |
+| UX-320 | P3       | Code Quality   | Encoding artifact line 581 — `âœ“` should be checkmark                                                                                                              | `app-sidebar.tsx`                                           |
+| UX-321 | P3       | Design System  | `--border-default` includes `solid 1px` — not composable                                                                                                            | `globals.css`                                               |
+| UX-322 | P3       | Design System  | Density modes defined in tokens but unused                                                                                                                          | `packages/ui/src/tokens/spacing.ts`                         |
 
 Full report: `docs/audits/ux-audit/20260716/`
 
@@ -292,15 +292,15 @@ main                    flex: 1; min-height: 0; flex-col
 
 #### Critical Anti-Patterns (learned the hard way)
 
-| Anti-Pattern                                            | Why It Breaks                                                                                                                                         | Reference                        |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| **Swapped className on `#channel_view`**                | Loading state must be `flex h-full`, main state must be `flex min-h-0 flex-1`. Swapping these collapses the message area or causes infinite growth.   | `chat-view.tsx`                  |
-| **CSS Grid for message area**                           | `display: grid; gridTemplateRows: "1fr auto"` breaks both scrolling and message display. Grid creates implicit row constraints that fight `flex: 1`.  | `chat-view.tsx`                  |
-| **`.app__body` as CSS Grid**                            | `display: grid; gridTemplateRows: "1fr"` prevents sidebar from having a constrained height. Must be `display: flex; flex-direction: column`.          | `layout.tsx`                     |
-| **`overflow: hidden` on `[role="log"]`**                | Kills scroll on mobile. Only `overflow: auto` or `overflow: clip` works on the scroll container.                                                      | `globals.css` mobile media query |
-| **`el.scrollTop = el.scrollHeight` alone**             | One-shot `scrollTop = scrollHeight` only scrolls to top of last message. Must use in a rAF loop until scrollHeight stabilizes, then final `scrollToIndex(align:"end")`. | `message-list.tsx`               |
-| **Fixed `height` on `.mm-post`**                        | Prevents `measureElement` from reading true content height. Message items must NOT have a fixed height — use `min-height` only.                       | `message-item.tsx`               |
-| **`height: virtualRow.size` on measured rows**          | Overwrites the measured height with the estimated height. For `measureElement` mode, do NOT set height on the virtual row div.                        | `message-list.tsx`               |
+| Anti-Pattern                                   | Why It Breaks                                                                                                                                                           | Reference                        |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| **Swapped className on `#channel_view`**       | Loading state must be `flex h-full`, main state must be `flex min-h-0 flex-1`. Swapping these collapses the message area or causes infinite growth.                     | `chat-view.tsx`                  |
+| **CSS Grid for message area**                  | `display: grid; gridTemplateRows: "1fr auto"` breaks both scrolling and message display. Grid creates implicit row constraints that fight `flex: 1`.                    | `chat-view.tsx`                  |
+| **`.app__body` as CSS Grid**                   | `display: grid; gridTemplateRows: "1fr"` prevents sidebar from having a constrained height. Must be `display: flex; flex-direction: column`.                            | `layout.tsx`                     |
+| **`overflow: hidden` on `[role="log"]`**       | Kills scroll on mobile. Only `overflow: auto` or `overflow: clip` works on the scroll container.                                                                        | `globals.css` mobile media query |
+| **`el.scrollTop = el.scrollHeight` alone**     | One-shot `scrollTop = scrollHeight` only scrolls to top of last message. Must use in a rAF loop until scrollHeight stabilizes, then final `scrollToIndex(align:"end")`. | `message-list.tsx`               |
+| **Fixed `height` on `.mm-post`**               | Prevents `measureElement` from reading true content height. Message items must NOT have a fixed height — use `min-height` only.                                         | `message-item.tsx`               |
+| **`height: virtualRow.size` on measured rows** | Overwrites the measured height with the estimated height. For `measureElement` mode, do NOT set height on the virtual row div.                                          | `message-list.tsx`               |
 
 #### Virtual List Configuration
 
@@ -645,6 +645,8 @@ Plugin system (unjustified), boards/kanban (out of scope), desktop app (PWA suff
 pnpm dev                   # Start dev servers
 .\scripts\teardown-dev.ps1 # Cleanup
 ```
+
+**Test Users**: 21 seed users with password `password123`. See [`docs/seed-data.md`](docs/seed-data.md) for full login info, user IDs, and workspace assignments.
 
 ## Secrets Required
 
