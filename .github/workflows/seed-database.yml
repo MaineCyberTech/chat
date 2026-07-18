@@ -63,27 +63,18 @@ jobs:
           mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
 
           echo ""
-          echo "=== Deleting broken seed users from auth (wrong instance_id from SQL insert) ==="
-          mgmt_query "
-            DELETE FROM auth.refresh_tokens WHERE session_id IN (
-              SELECT id FROM auth.sessions WHERE user_id IN (
-                SELECT id FROM auth.users WHERE email LIKE '%@seed.test'
-              )
-            );
-            DELETE FROM auth.sessions WHERE user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test');
-            DELETE FROM auth.refresh_tokens WHERE session_id IN (
-              SELECT id FROM auth.sessions WHERE user_id IN (
-                SELECT id FROM auth.users WHERE email LIKE '%@seed.test'
-              )
-            );
-            DELETE FROM auth.mfa_factors WHERE id IN (
-              SELECT id FROM auth.mfa_factors WHERE user_id IN (
-                SELECT id FROM auth.users WHERE email LIKE '%@seed.test'
-              )
-            );
-            DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test');
-            DELETE FROM auth.users WHERE email LIKE '%@seed.test';
-          " || true
+          echo "=== Deleting broken seed users from auth via Admin API ==="
+          # First get all seed user IDs from auth
+          USER_IDS=$(mgmt_query "SELECT id::text FROM auth.users WHERE email LIKE '%@seed.test'" | jq -r '.[].id' 2>/dev/null || true)
+          DELETED=0
+          for UID in $USER_IDS; do
+            if curl -sf -X DELETE "${AUTH_URL}/${UID}" \
+              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" 2>/dev/null; then
+              DELETED=$((DELETED + 1))
+            fi
+          done
+          echo "Deleted $DELETED broken auth users"
 
           echo "Auth users after cleanup:"
           mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
