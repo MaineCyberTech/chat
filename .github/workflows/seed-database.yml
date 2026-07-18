@@ -26,48 +26,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install psql
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
-
-      - name: Connect and seed
+      - name: Seed via Supabase Management API
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -e
 
-          DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
+          PROJECT_REF="${{ env.SUPABASE_PROJECT_REF }}"
+          API_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
 
-          # Test connectivity — try direct first, then pooler on port 5432 (session mode, user=postgres)
-          if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
-            echo "Direct connection failed. Trying pooler session mode (port 5432)..."
-            DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
-            if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
-              echo "Pooler session mode failed. Trying pooler transaction mode (port 6543)..."
-              DB_URL="postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
-              psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1
-            fi
-          fi
-          echo "Database connection verified."
-
+          echo "=== Testing connectivity via Management API ==="
+          RESULT=$(curl -sf -X POST "$API_URL" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "SELECT count(*) as user_count FROM auth.users"}' 2>&1) || {
+              echo "ERROR: Management API connection failed"
+              echo "$RESULT"
+              exit 1
+            }
+          echo "Current auth.users: $RESULT"
           echo ""
-          echo "=== Current auth.users count ==="
-          psql "$DB_URL" -c "SELECT count(*) as user_count FROM auth.users;" || true
 
-          echo ""
           echo "=== Running seed files ==="
           for f in supabase/seeds/*.sql; do
             echo ""
             echo "-------------------------------------------"
             echo "Seeding $f..."
             echo "-------------------------------------------"
-            if psql "$DB_URL" -f "$f" --set ON_ERROR_STOP=1 2>&1; then
-              echo "OK: $f"
-            else
-              echo "WARN: $f had errors (may be idempotent, continuing...)"
-            fi
+
+            # Read SQL and escape for JSON
+            SQL=$(cat "$f")
+
+            # Post SQL via Management API
+            RESPONSE=$(curl -sf -X POST "$API_URL" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data-raw "$(jq -n --arg sql "$SQL" '{"query": $sql}')" 2>&1) || {
+                echo "WARN: $f had errors (may be idempotent, continuing...)"
+                echo "$RESPONSE"
+                continue
+              }
+            echo "OK: $f"
+            echo "$RESPONSE" | head -5
           done
 
           echo ""
           echo "=== Final auth.users count ==="
-          psql "$DB_URL" -c "SELECT count(*) as user_count FROM auth.users;" || true
+          curl -sf -X POST "$API_URL" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "SELECT count(*) as user_count FROM auth.users"}' || true
 
           echo ""
           echo "=== Seeding complete ==="
