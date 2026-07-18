@@ -60,9 +60,7 @@ jobs:
               email_change_token_current = COALESCE(email_change_token_current, ''),
               email_change = COALESCE(email_change, ''),
               phone_change = COALESCE(phone_change, ''),
-              phone_change_token = COALESCE(phone_change_token, ''),
-              confirmation_token_new = COALESCE(confirmation_token_new, ''),
-              recovery_sent_at = recovery_sent_at
+              phone_change_token = COALESCE(phone_change_token, '')
             WHERE confirmation_token IS NULL
                OR recovery_token IS NULL
                OR email_change_token_new IS NULL
