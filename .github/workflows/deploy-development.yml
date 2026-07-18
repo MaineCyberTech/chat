@@ -266,11 +266,15 @@ jobs:
 
           DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
 
-          # Test connectivity
+          # Test connectivity — try direct first, then pooler on port 5432 (session mode, user=postgres)
           if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
-            echo "Direct connection failed. Trying pooler..."
-            DB_URL="postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
-            psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1
+            echo "Direct connection failed. Trying pooler session mode (port 5432)..."
+            DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+            if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
+              echo "Pooler session mode failed. Trying pooler transaction mode (port 6543)..."
+              DB_URL="postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+              psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1
+            fi
           fi
           echo "Database connection verified."
 
