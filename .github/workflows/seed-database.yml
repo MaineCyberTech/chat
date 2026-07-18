@@ -33,17 +33,15 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: |
           set -e
-
           PROJECT_REF="${{ env.SUPABASE_PROJECT_REF }}"
           MGMT_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
           AUTH_URL="${SUPABASE_URL}/auth/v1/admin/users"
 
           mgmt_query() {
-            local sql="$1"
             curl -sf -X POST "$MGMT_URL" \
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
               -H "Content-Type: application/json" \
-              --data-raw "$(jq -n --arg sql "$sql" '{"query": $sql}')" 2>&1
+              --data-raw "$(jq -n --arg sql "$1" '{"query": $sql}')" 2>&1
           }
 
           echo "=== Current auth.users count ==="
@@ -62,12 +60,8 @@ jobs:
           done
           echo "Deleted $DELETED broken auth users"
 
-          echo "Auth users after cleanup:"
-          mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
-
           echo ""
           echo "=== Creating auth users via Supabase Auth Admin API ==="
-
           declare -A USERS=(
             ["a0000001-0000-4000-8000-000000000001"]="marcus@seed.test|Marcus Chen"
             ["a0000002-0000-4000-8000-000000000002"]="sarah@seed.test|Sarah Patel"
@@ -91,7 +85,6 @@ jobs:
             ["a0000020-0000-4000-8000-000000000020"]="sofia@seed.test|Sofia Rodriguez"
             ["a0000021-0000-4000-8000-000000000021"]="ethan@seed.test|Ethan Kowalski"
           )
-
           CREATED=0
           SKIPPED=0
           for ID in $(echo "${!USERS[@]}" | tr ' ' '\n' | sort); do
@@ -100,10 +93,7 @@ jobs:
               -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Content-Type: application/json" \
-              --data-raw "$(jq -n \
-                --arg id "$ID" \
-                --arg email "$EMAIL" \
-                --arg name "$NAME" \
+              --data-raw "$(jq -n --arg id "$ID" --arg email "$EMAIL" --arg name "$NAME" \
                 '{id: $id, email: $email, password: "password123", email_confirm: true, user_metadata: {display_name: $name}}')" 2>&1 || true)
             if echo "$RESULT" | jq -e '.id' >/dev/null 2>&1; then
               echo "  Created: $EMAIL ($NAME)"
@@ -126,95 +116,99 @@ jobs:
           echo "=== Verifying a user is login-ready ==="
           mgmt_query "SELECT email, instance_id IS NOT NULL as has_instance, encrypted_password != '' as has_password FROM auth.users WHERE email = 'marcus@seed.test'" || true
 
+      - name: Write chunk splitter script
+        run: |
+          cat > /tmp/split_seed.py << 'PYEOF'
+          import sys, os
+          filepath = sys.argv[1]
+          target_kb = int(sys.argv[2]) if len(sys.argv) > 2 else 20
+          target_bytes = target_kb * 1024
+
+          with open(filepath) as f:
+              content = f.read()
+
+          lines = content.split("\n")
+          chunks = []
+          current = []
+          current_size = 0
+
+          for line in lines:
+              current.append(line)
+              current_size += len(line) + 1
+              if line.strip().endswith(";") and current_size >= target_bytes:
+                  chunks.append("\n".join(current))
+                  current = []
+                  current_size = 0
+
+          if current:
+              chunks.append("\n".join(current))
+
+          for i, chunk in enumerate(chunks):
+              outpath = f"/tmp/seed_chunk_{i:03d}.sql"
+              with open(outpath, "w") as out:
+                  out.write(chunk)
+
+          print(len(chunks))
+          PYEOF
+          echo "Script written."
+
       - name: Seed data tables via Management API
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -e
-
           PROJECT_REF="${{ env.SUPABASE_PROJECT_REF }}"
           MGMT_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
 
-          # Send a SQL string to the Management API, return HTTP status + body
           mgmt_send() {
-            local sql="$1"
             curl -s -w "\n%{http_code}" -X POST "$MGMT_URL" \
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
               -H "Content-Type: application/json" \
-              --data-raw "$(jq -n --arg sql "$sql" '{"query": $sql}')" 2>&1
+              --data-raw "$(jq -n --arg sql "$1" '{"query": $sql}')" 2>&1
           }
 
-          echo "=== Running seed files 01-05 (data tables) ==="
+          echo "=== Running seed files 01-05 ==="
           for f in supabase/seeds/0{1,2,3,4,5}*.sql; do
             [ -f "$f" ] || continue
             echo ""
-            echo "-------------------------------------------"
             echo "Seeding $f..."
-            echo "-------------------------------------------"
-
             SQL_SIZE=$(wc -c < "$f")
-            echo "File size: $SQL_SIZE bytes"
+            echo "File size: ${SQL_SIZE} bytes"
 
-            # Use chunking for any file over 20KB
             if [ "$SQL_SIZE" -gt 20000 ]; then
-              echo "Splitting into chunks (20KB target)..."
+              echo "Splitting into chunks..."
               rm -f /tmp/seed_chunk_*.sql
-
-              # Use Python to split at statement boundaries, ~20KB per chunk
-              NUM_CHUNKS=$(python3 -c "
-with open('$f') as fh:
-    content = fh.read()
-lines = content.split('\n')
-chunks = []
-current_lines = []
-current_size = 0
-for line in lines:
-    current_lines.append(line)
-    current_size += len(line) + 1
-    # Split at statement boundary (line ending with ;) when we hit target size
-    if line.strip().endswith(';') and current_size >= 20000:
-        chunks.append('\n'.join(current_lines))
-        current_lines = []
-        current_size = 0
-if current_lines:
-    chunks.append('\n'.join(current_lines))
-for i, chunk in enumerate(chunks):
-    with open(f'/tmp/seed_chunk_{i:03d}.sql', 'w') as out:
-        out.write(chunk)
-print(len(chunks))
-")
+              NUM_CHUNKS=$(python3 /tmp/split_seed.py "$f" 20)
               echo "Split into $NUM_CHUNKS chunks"
 
               SENT=0
               FAILED=0
               for chunk_file in /tmp/seed_chunk_*.sql; do
                 [ -f "$chunk_file" ] || continue
-                CHUNK_SIZE=$(wc -c < "$chunk_file")
                 CHUNK_SQL=$(cat "$chunk_file")
+                CHUNK_SIZE=${#CHUNK_SQL}
                 RESP=$(mgmt_send "$CHUNK_SQL")
                 HTTP_CODE=$(echo "$RESP" | tail -1)
                 BODY=$(echo "$RESP" | head -n -1)
                 if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-                  echo "  Chunk $(basename $chunk_file): ${CHUNK_SIZE}B - OK ($HTTP_CODE)"
+                  echo "  $(basename $chunk_file): ${CHUNK_SIZE}B - OK"
                   SENT=$((SENT + 1))
                 else
-                  echo "  Chunk $(basename $chunk_file): ${CHUNK_SIZE}B - FAIL ($HTTP_CODE)"
-                  echo "  Error: $(echo "$BODY" | head -1)"
+                  echo "  $(basename $chunk_file): ${CHUNK_SIZE}B - FAIL ($HTTP_CODE)"
+                  echo "  $(echo "$BODY" | head -1)"
                   FAILED=$((FAILED + 1))
                 fi
               done
               rm -f /tmp/seed_chunk_*.sql
-              echo "$f: $SENT OK, $FAILED failed"
-
+              echo "Result: $SENT OK, $FAILED failed"
             else
               RESP=$(mgmt_send "$(cat "$f")")
               HTTP_CODE=$(echo "$RESP" | tail -1)
               BODY=$(echo "$RESP" | head -n -1)
               if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-                echo "OK: $f ($HTTP_CODE)"
+                echo "OK ($HTTP_CODE)"
               else
-                echo "WARN: $f failed ($HTTP_CODE)"
-                echo "Error: $(echo "$BODY" | head -3)"
+                echo "FAIL ($HTTP_CODE): $(echo "$BODY" | head -3)"
               fi
             fi
           done
@@ -223,6 +217,5 @@ print(len(chunks))
           echo "=== Final verification ==="
           RESP=$(mgmt_send "SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'workspaces', count(*) FROM workspaces UNION ALL SELECT 'channels', count(*) FROM channels UNION ALL SELECT 'messages', count(*) FROM messages UNION ALL SELECT 'thread_replies', count(*) FROM thread_replies UNION ALL SELECT 'reactions', count(*) FROM reactions")
           echo "$RESP" | head -n -1
-
           echo ""
           echo "=== Seeding complete ==="
