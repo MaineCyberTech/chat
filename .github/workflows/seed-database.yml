@@ -116,6 +116,19 @@ jobs:
           echo "=== Verifying a user is login-ready ==="
           mgmt_query "SELECT email, instance_id IS NOT NULL as has_instance, encrypted_password != '' as has_password FROM auth.users WHERE email = 'marcus@seed.test'" || true
 
+          echo ""
+          echo "=== Checking auth.identities for seed users ==="
+          mgmt_query "SELECT count(*) as seed_identities FROM auth.identities WHERE provider = 'email' AND email IN (SELECT email FROM auth.users WHERE email LIKE '%.seed.test')" || true
+          mgmt_query "SELECT i.id, i.provider, i.email FROM auth.identities i WHERE i.email IN (SELECT email FROM auth.users WHERE email LIKE '%.seed.test') LIMIT 5" || true
+
+          echo ""
+          echo "=== Checking julian.butler identity (working account) ==="
+          mgmt_query "SELECT i.id, i.provider, i.email FROM auth.identities i WHERE i.email = 'julian.butler@mainecybertech.us'" || true
+
+          echo ""
+          echo "=== All identity providers ==="
+          mgmt_query "SELECT provider, count(*) as cnt FROM auth.identities GROUP BY provider" || true
+
       - name: Write chunk splitter script
         run: |
           cat > /tmp/split_seed.py << 'PYEOF'
