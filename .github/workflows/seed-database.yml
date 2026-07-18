@@ -118,16 +118,33 @@ jobs:
 
           echo ""
           echo "=== Checking auth.identities for seed users ==="
-          mgmt_query "SELECT count(*) as seed_identities FROM auth.identities WHERE provider = 'email' AND email IN (SELECT email FROM auth.users WHERE email LIKE '%.seed.test')" || true
-          mgmt_query "SELECT i.id, i.provider, i.email FROM auth.identities i WHERE i.email IN (SELECT email FROM auth.users WHERE email LIKE '%.seed.test') LIMIT 5" || true
+          SEED_ID_COUNT=$(mgmt_query "SELECT count(*) as cnt FROM auth.identities WHERE provider = 'email' AND email IN (SELECT email FROM auth.users WHERE email LIKE '%.seed.test')" | jq -r '.[0].cnt' 2>/dev/null || echo "0")
+          echo "Seed identities found: $SEED_ID_COUNT"
 
-          echo ""
-          echo "=== Checking julian.butler identity (working account) ==="
-          mgmt_query "SELECT i.id, i.provider, i.email FROM auth.identities i WHERE i.email = 'julian.butler@mainecybertech.us'" || true
+          if [ "$SEED_ID_COUNT" = "0" ] || [ -z "$SEED_ID_COUNT" ]; then
+            echo ""
+            echo "=== FIXING: Inserting missing auth.identities for seed users ==="
+            mgmt_query "
+              INSERT INTO auth.identities (id, user_id, identity_data, provider, created_at, updated_at)
+              SELECT
+                u.id::text,
+                u.id,
+                jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true, 'phone_verified', false),
+                'email',
+                u.created_at,
+                u.created_at
+              FROM auth.users u
+              WHERE u.email LIKE '%.seed.test'
+                AND NOT EXISTS (
+                  SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email'
+                )
+              ON CONFLICT (provider, id) DO NOTHING;
+            " || true
 
-          echo ""
-          echo "=== All identity providers ==="
-          mgmt_query "SELECT provider, count(*) as cnt FROM auth.identities GROUP BY provider" || true
+            echo ""
+            echo "=== Verifying identities after fix ==="
+            mgmt_query "SELECT count(*) as seed_identities FROM auth.identities WHERE provider = 'email' AND email IN (SELECT email FROM auth.users WHERE email LIKE '%.seed.test')" || true
+          fi
 
       - name: Write chunk splitter script
         run: |
