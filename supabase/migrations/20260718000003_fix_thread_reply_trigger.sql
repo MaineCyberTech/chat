@@ -1,4 +1,5 @@
 -- Fix handle_thread_reply() trigger: column reference "thread_id" is ambiguous
+-- Re-applied after DB reset
 -- The deployed function uses "thread_id" as PL/pgSQL variable name, conflicting with column name.
 -- Fix: rename variable to v_thread_id (matching the original migration definition).
 
