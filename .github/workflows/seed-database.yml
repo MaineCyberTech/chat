@@ -135,9 +135,10 @@ jobs:
           PROJECT_REF="${{ env.SUPABASE_PROJECT_REF }}"
           MGMT_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
 
-          mgmt_query() {
+          # Send a SQL string to the Management API, return HTTP status + body
+          mgmt_send() {
             local sql="$1"
-            curl -sf -X POST "$MGMT_URL" \
+            curl -s -w "\n%{http_code}" -X POST "$MGMT_URL" \
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
               -H "Content-Type: application/json" \
               --data-raw "$(jq -n --arg sql "$sql" '{"query": $sql}')" 2>&1
@@ -151,59 +152,77 @@ jobs:
             echo "Seeding $f..."
             echo "-------------------------------------------"
 
-            SQL=$(cat "$f")
-            SQL_SIZE=${#SQL}
-            echo "SQL size: $SQL_SIZE bytes"
+            SQL_SIZE=$(wc -c < "$f")
+            echo "File size: $SQL_SIZE bytes"
 
-            # Split large files into chunks at statement boundaries (every 500 statements)
-            if [ "$SQL_SIZE" -gt 80000 ]; then
-              echo "Large file detected, splitting into chunks..."
-              TMPDIR=$(mktemp -d)
-              # Split by blank lines (statement separators in our seed files)
-              csplit -z -f "$TMPDIR/chunk_" -b "%03d.sql" <(echo "$SQL") '/^$/;{0,499}' 2>/dev/null || true
+            # Use chunking for any file over 20KB
+            if [ "$SQL_SIZE" -gt 20000 ]; then
+              echo "Splitting into chunks (20KB target)..."
+              rm -f /tmp/seed_chunk_*.sql
 
-              CHUNK=0
-              for chunk_file in "$TMPDIR"/chunk_*.sql; do
+              # Use Python to split at statement boundaries, ~20KB per chunk
+              NUM_CHUNKS=$(python3 -c "
+with open('$f') as fh:
+    content = fh.read()
+lines = content.split('\n')
+chunks = []
+current_lines = []
+current_size = 0
+for line in lines:
+    current_lines.append(line)
+    current_size += len(line) + 1
+    # Split at statement boundary (line ending with ;) when we hit target size
+    if line.strip().endswith(';') and current_size >= 20000:
+        chunks.append('\n'.join(current_lines))
+        current_lines = []
+        current_size = 0
+if current_lines:
+    chunks.append('\n'.join(current_lines))
+for i, chunk in enumerate(chunks):
+    with open(f'/tmp/seed_chunk_{i:03d}.sql', 'w') as out:
+        out.write(chunk)
+print(len(chunks))
+")
+              echo "Split into $NUM_CHUNKS chunks"
+
+              SENT=0
+              FAILED=0
+              for chunk_file in /tmp/seed_chunk_*.sql; do
                 [ -f "$chunk_file" ] || continue
                 CHUNK_SIZE=$(wc -c < "$chunk_file")
-                if [ "$CHUNK_SIZE" -gt 10 ]; then
-                  CHUNK_SQL=$(cat "$chunk_file")
-                  RESPONSE=$(curl -sf -X POST "$MGMT_URL" \
-                    -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-                    -H "Content-Type: application/json" \
-                    --data-raw "$(jq -n --arg sql "$CHUNK_SQL" '{"query": $sql}')" 2>&1) || {
-                      echo "  WARN: chunk $CHUNK of $f had errors"
-                      echo "$RESPONSE" | head -3
-                    }
-                  echo "  Chunk $CHUNK: $CHUNK_SIZE bytes - OK"
-                  CHUNK=$((CHUNK + 1))
+                CHUNK_SQL=$(cat "$chunk_file")
+                RESP=$(mgmt_send "$CHUNK_SQL")
+                HTTP_CODE=$(echo "$RESP" | tail -1)
+                BODY=$(echo "$RESP" | head -n -1)
+                if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+                  echo "  Chunk $(basename $chunk_file): ${CHUNK_SIZE}B - OK ($HTTP_CODE)"
+                  SENT=$((SENT + 1))
+                else
+                  echo "  Chunk $(basename $chunk_file): ${CHUNK_SIZE}B - FAIL ($HTTP_CODE)"
+                  echo "  Error: $(echo "$BODY" | head -1)"
+                  FAILED=$((FAILED + 1))
                 fi
               done
-              rm -rf "$TMPDIR"
-              echo "$f: $CHUNK chunks sent"
+              rm -f /tmp/seed_chunk_*.sql
+              echo "$f: $SENT OK, $FAILED failed"
+
             else
-              RESPONSE=$(curl -sf -X POST "$MGMT_URL" \
-                -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-                -H "Content-Type: application/json" \
-                --data-raw "$(jq -n --arg sql "$SQL" '{"query": $sql}')" 2>&1) || {
-                  echo "WARN: $f had errors"
-                  echo "$RESPONSE" | head -5
-                  continue
-                }
-              echo "OK: $f"
+              RESP=$(mgmt_send "$(cat "$f")")
+              HTTP_CODE=$(echo "$RESP" | tail -1)
+              BODY=$(echo "$RESP" | head -n -1)
+              if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+                echo "OK: $f ($HTTP_CODE)"
+              else
+                echo "WARN: $f failed ($HTTP_CODE)"
+                echo "Error: $(echo "$BODY" | head -3)"
+              fi
             fi
           done
 
           echo ""
           echo "=== Final verification ==="
-          mgmt_query "
-            SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test'
-            UNION ALL SELECT 'workspaces', count(*) FROM workspaces
-            UNION ALL SELECT 'channels', count(*) FROM channels
-            UNION ALL SELECT 'messages', count(*) FROM messages
-            UNION ALL SELECT 'thread_replies', count(*) FROM thread_replies
-            UNION ALL SELECT 'reactions', count(*) FROM reactions
-          " || true
+          RESP=$(mgmt_send "SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'workspaces', count(*) FROM workspaces UNION ALL SELECT 'channels', count(*) FROM channels UNION ALL SELECT 'messages', count(*) FROM messages UNION ALL SELECT 'thread_replies', count(*) FROM thread_replies UNION ALL SELECT 'reactions', count(*) FROM reactions")
+          echo "$RESP" | head -n -1
 
           echo ""
           echo "=== Seeding complete ==="
