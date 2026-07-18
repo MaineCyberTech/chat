@@ -326,7 +326,7 @@ jobs:
           mgmt_query "INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at) SELECT gen_random_uuid(), u.id, ('{\"email\":\"' || u.email || '\",\"sub\":\"' || u.id::text || '\",\"email_verified\":true}')::jsonb, 'email', ('email:' || u.id::text), now(), now(), now() FROM auth.users u WHERE u.email LIKE '%@seed.test' AND NOT EXISTS (SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email')"
 
           echo "=== Set passwords for seed users ==="
-          mgmt_query "UPDATE auth.users SET encrypted_password = '\$2a\$10\$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W' WHERE email LIKE '%@seed.test'"
+          mgmt_query "UPDATE auth.users SET encrypted_password = '\$2a\$10\$wsjrPx00aIP/IL6cbV.mM.VYl48iAag810ODhtAonKalkWBCxSf1C' WHERE email LIKE '%@seed.test'"
 
           echo "=== Verification ==="
           mgmt_query "SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'identities', count(*) FROM auth.identities WHERE provider = 'email' AND user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test')"
