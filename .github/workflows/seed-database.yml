@@ -63,6 +63,32 @@ jobs:
           mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
 
           echo ""
+          echo "=== Deleting broken seed users from auth (wrong instance_id from SQL insert) ==="
+          mgmt_query "
+            DELETE FROM auth.refresh_tokens WHERE session_id IN (
+              SELECT id FROM auth.sessions WHERE user_id IN (
+                SELECT id FROM auth.users WHERE email LIKE '%@seed.test'
+              )
+            );
+            DELETE FROM auth.sessions WHERE user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test');
+            DELETE FROM auth.refresh_tokens WHERE session_id IN (
+              SELECT id FROM auth.sessions WHERE user_id IN (
+                SELECT id FROM auth.users WHERE email LIKE '%@seed.test'
+              )
+            );
+            DELETE FROM auth.mfa_factors WHERE id IN (
+              SELECT id FROM auth.mfa_factors WHERE user_id IN (
+                SELECT id FROM auth.users WHERE email LIKE '%@seed.test'
+              )
+            );
+            DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test');
+            DELETE FROM auth.users WHERE email LIKE '%@seed.test';
+          " || true
+
+          echo "Auth users after cleanup:"
+          mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
+
+          echo ""
           echo "=== Creating auth users via Supabase Auth Admin API ==="
 
           # Create all 21 auth users via the Admin API (properly handles instance_id + password hashing)
