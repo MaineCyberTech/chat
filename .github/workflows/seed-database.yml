@@ -65,33 +65,11 @@ jobs:
           " || true
 
           echo ""
-          echo "=== Current auth.users count ==="
-          mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
-
-          echo ""
-          echo "=== Verify NULL tokens fixed ==="
-          mgmt_query "SELECT email, confirmation_token, recovery_token, email_change_token_new, email_change_token_current FROM auth.users WHERE email LIKE '%@seed.test' LIMIT 3" || true
-
-          echo ""
-          echo "=== Check ALL remaining NULL tokens ==="
-          mgmt_query "SELECT count(*) as null_tokens FROM auth.users WHERE confirmation_token IS NULL OR recovery_token IS NULL" || true
-
-          echo ""
-          echo "=== Step 1: Insert missing identities for seed users ==="
-          echo "Auth.identities missing. Insert with provider_id (required column)."
-          mgmt_query "SELECT count(*) as users_found FROM auth.users WHERE email LIKE '%@seed.test'" || true
+          echo "=== Step 1: Insert missing identities + set passwords ==="
+          echo "Auth.identities are missing — GoTrue can't authenticate without them."
           mgmt_query "INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at) SELECT gen_random_uuid(), u.id, ('{\"email\":\"' || u.email || '\",\"sub\":\"' || u.id::text || '\",\"email_verified\":true}')::jsonb, 'email', ('email:' || u.id::text), now(), now(), now() FROM auth.users u WHERE u.email LIKE '%@seed.test' AND NOT EXISTS (SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email')" || true
-          mgmt_query "SELECT count(*) as identity_count FROM auth.identities WHERE provider = 'email' AND user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test')" || true
-          mgmt_query "SELECT count(*) as identity_count FROM auth.identities WHERE provider = 'email' AND email IN (SELECT email FROM auth.users WHERE email LIKE '%@seed.test')" || true
-
-          echo ""
-          echo "=== Set passwords for seed users ==="
-          mgmt_query "UPDATE auth.users SET encrypted_password = '\$2a\$10\$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W' WHERE email LIKE '%@seed.test' AND (encrypted_password IS NULL OR encrypted_password = '')" || true
-
-          echo ""
-          echo "=== Verify login-ready users ==="
-          mgmt_query "SELECT u.email, u.encrypted_password != '' as has_password, i.provider FROM auth.users u JOIN auth.identities i ON i.user_id = u.id AND i.provider = 'email' WHERE u.email LIKE '%@seed.test' LIMIT 5" || true
-          mgmt_query "SELECT count(*) as missing FROM auth.users u WHERE u.email LIKE '%@seed.test' AND NOT EXISTS (SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email')" || true
+          mgmt_query "UPDATE auth.users SET encrypted_password = '\$2a\$10\$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W' WHERE email LIKE '%@seed.test'" || true
+          mgmt_query "SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'identities', count(*) FROM auth.identities WHERE provider = 'email' AND user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test')" || true
 
       - name: Write chunk splitter script
         run: |
