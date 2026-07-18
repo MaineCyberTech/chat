@@ -204,7 +204,7 @@ export default function TestAccountsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--center-channel-bg)]">
+    <main className="min-h-screen overflow-y-auto bg-[var(--center-channel-bg)]">
       <div className="mx-auto max-w-4xl px-4 py-12">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight text-[var(--center-channel-color)]">
