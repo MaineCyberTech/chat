@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Seed auth users via Admin API
+      - name: Fix auth.users NULL tokens + seed via Admin API
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -36,7 +36,6 @@ jobs:
           PROJECT_REF="${{ env.SUPABASE_PROJECT_REF }}"
           MGMT_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
           AUTH_URL="${SUPABASE_URL}/auth/v1/admin/users"
-          AUTH_TOKEN_URL="${SUPABASE_URL}/auth/v1/admin/users"
 
           mgmt_query() {
             RESP=$(curl -s -w "\n%{http_code}" -X POST "$MGMT_URL" \
@@ -51,8 +50,36 @@ jobs:
             fi
           }
 
+          echo "=== Step 0: Fix NULL string columns in auth.users ==="
+          echo "GoTrue crashes on NULL confirmation_token. Fix all string columns."
+          mgmt_query "
+            UPDATE auth.users SET
+              confirmation_token = COALESCE(confirmation_token, ''),
+              recovery_token = COALESCE(recovery_token, ''),
+              email_change_token_new = COALESCE(email_change_token_new, ''),
+              email_change_token_current = COALESCE(email_change_token_current, ''),
+              email_change = COALESCE(email_change, ''),
+              phone_change = COALESCE(phone_change, ''),
+              phone_change_token = COALESCE(phone_change_token, ''),
+              confirmation_token_new = COALESCE(confirmation_token_new, ''),
+              recovery_sent_at = recovery_sent_at
+            WHERE confirmation_token IS NULL
+               OR recovery_token IS NULL
+               OR email_change_token_new IS NULL
+               OR email_change_token_current IS NULL;
+          " || true
+
+          echo ""
           echo "=== Current auth.users count ==="
           mgmt_query "SELECT count(*) as user_count FROM auth.users" || true
+
+          echo ""
+          echo "=== Verify NULL tokens fixed ==="
+          mgmt_query "SELECT email, confirmation_token, recovery_token, email_change_token_new, email_change_token_current FROM auth.users WHERE email LIKE '%@seed.test' LIMIT 3" || true
+
+          echo ""
+          echo "=== Check ALL remaining NULL tokens ==="
+          mgmt_query "SELECT count(*) as null_tokens FROM auth.users WHERE confirmation_token IS NULL OR recovery_token IS NULL" || true
 
           echo ""
           echo "=== Step 1: Get seed user IDs from auth.users ==="
