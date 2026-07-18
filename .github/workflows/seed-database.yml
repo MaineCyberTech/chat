@@ -1,0 +1,69 @@
+name: Seed Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "development"
+        type: choice
+        options:
+          - development
+          - production
+
+permissions:
+  contents: read
+
+env:
+  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+jobs:
+  seed:
+    name: Seed ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install psql
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+
+      - name: Connect and seed
+        run: |
+          set -e
+
+          DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
+
+          echo "Testing database connectivity..."
+          if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
+            echo "Direct connection failed. Trying pooler endpoint..."
+            DB_URL="postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+            psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1
+          fi
+          echo "Database connection verified."
+
+          echo ""
+          echo "=== Current auth.users count ==="
+          psql "$DB_URL" -c "SELECT count(*) as user_count FROM auth.users;" || true
+
+          echo ""
+          echo "=== Running seed files ==="
+          for f in supabase/seeds/*.sql; do
+            echo ""
+            echo "-------------------------------------------"
+            echo "Seeding $f..."
+            echo "-------------------------------------------"
+            if psql "$DB_URL" -f "$f" --set ON_ERROR_STOP=1 2>&1; then
+              echo "OK: $f"
+            else
+              echo "WARN: $f had errors (may be idempotent, continuing...)"
+            fi
+          done
+
+          echo ""
+          echo "=== Final auth.users count ==="
+          psql "$DB_URL" -c "SELECT count(*) as user_count FROM auth.users;" || true
+
+          echo ""
+          echo "=== Seeding complete ==="

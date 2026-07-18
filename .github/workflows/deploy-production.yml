@@ -304,38 +304,25 @@ jobs:
             flock -u 200
 
       - name: Seed database
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ needs.provision.outputs.droplet_ip }}
-          username: root
-          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            cd ${{ env.REPO_DIR }}
+        run: |
+          set -e
+          apt-get update -qq && apt-get install -y -qq postgresql-client >/dev/null 2>&1
 
-            # Force IPv4 preference — Supabase DB resolves to IPv6-only on some droplets
-            if [ ! -f /etc/gai.conf ] || ! grep -q "precedence ::ffff:0:0/96" /etc/gai.conf 2>/dev/null; then
-              echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
-            fi
+          DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
 
-            DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
-            if ! command -v psql &>/dev/null; then
-              apt-get update -qq && apt-get install -y -qq postgresql-client >/dev/null 2>&1
-            fi
+          # Test connectivity
+          if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
+            echo "Direct connection failed. Trying pooler..."
+            DB_URL="postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+            psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1
+          fi
+          echo "Database connection verified."
 
-            # Test connectivity first
-            if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
-              echo "ERROR: Cannot connect to database. Trying pooler endpoint..."
-              DB_URL="postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
-              psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1
-            fi
-            echo "Database connection verified."
-
-            for f in supabase/seeds/*.sql; do
-              echo "Seeding $f..."
-              psql "$DB_URL" -f "$f" --set ON_ERROR_STOP=1 || { echo "WARN: $f had errors (may be idempotent)"; }
-            done
-            echo "Seeding complete"
+          for f in supabase/seeds/*.sql; do
+            echo "Seeding $f..."
+            psql "$DB_URL" -f "$f" --set ON_ERROR_STOP=1 || { echo "WARN: $f had errors (may be idempotent)"; }
+          done
+          echo "Seeding complete"
 
       - name: Health check
         run: |
