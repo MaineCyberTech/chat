@@ -124,26 +124,38 @@ jobs:
           if [ "$SEED_ID_COUNT" = "0" ] || [ -z "$SEED_ID_COUNT" ]; then
             echo ""
             echo "=== FIXING: Inserting missing auth.identities for seed users ==="
-            mgmt_query "
-              INSERT INTO auth.identities (id, user_id, identity_data, provider, created_at, updated_at)
-              SELECT
-                u.id::text,
-                u.id,
-                jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true, 'phone_verified', false),
-                'email',
-                u.created_at,
-                u.created_at
-              FROM auth.users u
-              WHERE u.email LIKE '%.seed.test'
-                AND NOT EXISTS (
-                  SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email'
-                )
-              ON CONFLICT (provider, id) DO NOTHING;
-            " || true
 
-            echo ""
-            echo "=== Verifying identities after fix ==="
-            mgmt_query "SELECT count(*) as seed_identities FROM auth.identities WHERE provider = 'email' AND email IN (SELECT email FROM auth.users WHERE email LIKE '%.seed.test')" || true
+            INSERT_RESULT=$(curl -s -w "\n%{http_code}" -X POST "$MGMT_URL" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data-raw "$(jq -n --arg sql "
+                INSERT INTO auth.identities (id, user_id, identity_data, provider, created_at, updated_at)
+                SELECT
+                  u.id,
+                  u.id,
+                  jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true, 'phone_verified', false),
+                  'email',
+                  u.created_at,
+                  u.created_at
+                FROM auth.users u
+                WHERE u.email LIKE '%.seed.test'
+                  AND NOT EXISTS (
+                    SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email'
+                  )
+                ON CONFLICT (provider, id) DO NOTHING;
+              " '{"query": $sql}')" 2>&1)
+            HTTP_CODE=$(echo "$INSERT_RESULT" | tail -1)
+            INSERT_BODY=$(echo "$INSERT_RESULT" | head -n -1)
+            echo "INSERT HTTP status: $HTTP_CODE"
+            echo "INSERT response: $INSERT_BODY"
+
+          echo ""
+          echo "=== Verifying identities after fix ==="
+          mgmt_query "SELECT count(*) as seed_identities FROM auth.identities WHERE provider = 'email' AND email IN (SELECT email FROM auth.users WHERE email LIKE '%.seed.test')" || true
+
+          echo ""
+          echo "=== Auth identities table schema ==="
+          mgmt_query "SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_schema = 'auth' AND table_name = 'identities' ORDER BY ordinal_position" || true
           fi
 
       - name: Write chunk splitter script
