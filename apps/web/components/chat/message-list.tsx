@@ -476,6 +476,7 @@ export function MessageList({
         requestAnimationFrame(tick);
       } else {
         virtualizer.scrollToIndex(lastIdx, { align: "end" });
+        atBottomRef.current = true;
       }
     };
 
@@ -483,14 +484,23 @@ export function MessageList({
   }, [messagesWithMeta.length, channelChanged]);
 
   // Watch for async content loads (reactions, profiles) that increase
-  // message heights after the initial scroll. If user is at bottom, keep them there.
+  // message heights after the initial scroll. If user scrolled to bottom, keep them there.
+  const atBottomRef = useRef(true);
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     const onResize = () => {
-      const { scrollTop, scrollHeight, clientHeight } = el;
-      const atBottom = scrollHeight - scrollTop - clientHeight < 50;
-      if (atBottom) {
+      if (atBottomRef.current) {
         virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
       }
     };
