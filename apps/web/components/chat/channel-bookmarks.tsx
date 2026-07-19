@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useRef } from "react";
 import { api } from "@/lib/api";
 import { useToast } from "@chat/ui";
-import { X, Link, ExternalLink, Plus, GripVertical, ChevronDown, ChevronRight } from "lucide-react";
+import { X, Link, ExternalLink, Plus, GripVertical } from "lucide-react";
 
 interface ChannelBookmark {
   id: string;
@@ -20,10 +20,9 @@ interface ChannelBookmark {
 
 interface Props {
   channelId: string;
-  variant?: "inline" | "full";
 }
 
-export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
+export function ChannelBookmarks({ channelId }: Props) {
   const [bookmarks, setBookmarks] = useState<ChannelBookmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -33,12 +32,9 @@ export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [reorderMode, setReorderMode] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const { addToast } = useToast();
-  const addToastRef = useRef(addToast);
-  addToastRef.current = addToast;
 
   useEffect(() => {
     setLoading(true);
@@ -46,14 +42,10 @@ export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
       .get<{ bookmarks: ChannelBookmark[] }>(`/channels/${channelId}/bookmarks`)
       .then((res) => setBookmarks(res.bookmarks))
       .catch(() =>
-        addToastRef.current({
-          title: "Error",
-          description: "Failed to load bookmarks",
-          variant: "error",
-        }),
+        addToast({ title: "Error", description: "Failed to load bookmarks", variant: "error" }),
       )
       .finally(() => setLoading(false));
-  }, [channelId]);
+  }, [channelId, addToast]);
 
   async function handleCreate() {
     if (!newTitle.trim() || saving) return;
@@ -121,9 +113,9 @@ export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
   return (
     <>
       {/* Inline bookmark bar */}
-      {!collapsed && bookmarks.length > 0 && (
+      {bookmarks.length > 0 && (
         <div
-          className="flex shrink-0 flex-wrap items-center gap-1 border-b px-3 py-1.5"
+          className="flex flex-wrap items-center gap-1 border-b px-3 py-1.5"
           style={{
             borderColor: "rgba(var(--center-channel-color-rgb), 0.08)",
             background: "rgba(var(--center-channel-color-rgb), 0.02)",
@@ -146,36 +138,10 @@ export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
           <button
             onClick={() => setShowForm(true)}
             className="ml-1 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs transition-colors"
-            style={{ color: "var(--text-tertiary)" }}
+            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
             aria-label="Add bookmark"
           >
             <Plus size={12} />
-          </button>
-          <button
-            onClick={() => setCollapsed(true)}
-            className="ml-auto inline-flex items-center rounded-md p-0.5 text-xs transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.06)]"
-            style={{ color: "var(--text-tertiary)" }}
-            aria-label="Collapse bookmarks"
-          >
-            <ChevronDown size={14} />
-          </button>
-        </div>
-      )}
-      {collapsed && bookmarks.length > 0 && (
-        <div
-          className="flex shrink-0 items-center border-b px-3 py-0.5"
-          style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.08)" }}
-        >
-          <button
-            onClick={() => setCollapsed(false)}
-            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.06)]"
-            style={{ color: "var(--text-tertiary)" }}
-            aria-label="Expand bookmarks"
-          >
-            <ChevronRight size={14} />
-            <span>
-              {bookmarks.length} bookmark{bookmarks.length !== 1 ? "s" : ""}
-            </span>
           </button>
         </div>
       )}
@@ -247,7 +213,7 @@ export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
                 setNewEmoji("");
               }}
               className="rounded px-2 py-1 text-xs"
-              style={{ color: "var(--text-tertiary)" }}
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
             >
               Cancel
             </button>
@@ -257,23 +223,30 @@ export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
 
       {/* Delete confirmation */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div
+          className="flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)", position: "fixed", inset: 0, zIndex: 50 }}
+        >
           <div
-            className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
+            className="max-w-sm rounded-lg p-6"
+            style={{ background: "var(--center-channel-bg)", boxShadow: "var(--elevation-5)" }}
             role="alertdialog"
             aria-label="Delete bookmark"
           >
             <h3 className="text-sm font-semibold" style={{ color: "var(--center-channel-color)" }}>
               Delete bookmark?
             </h3>
-            <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>
+            <p
+              className="mt-1 text-xs"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
+            >
               This cannot be undone.
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setDeleteConfirm(null)}
                 className="rounded-md px-3 py-1.5 text-xs font-medium"
-                style={{ color: "var(--text-secondary)" }}
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.72)" }}
               >
                 Cancel
               </button>
@@ -289,131 +262,137 @@ export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
         </div>
       )}
 
-      {variant === "full" &&
-        (loading ? (
-          <div className="animate-pulse space-y-2 p-2">
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-8 rounded"
-                style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
-              />
-            ))}
-          </div>
-        ) : (
-          <div>
-            {(bookmarks.length > 0 || reorderMode) && (
-              <div className="flex items-center justify-between px-3 py-1.5">
-                <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  {bookmarks.length} bookmark{bookmarks.length !== 1 ? "s" : ""}
-                </span>
-                <button
-                  onClick={() => setReorderMode(!reorderMode)}
-                  className="text-xs font-medium"
-                  style={{ color: "var(--button-bg)" }}
+      {/* RHS Bookmark list tab content */}
+      {loading ? (
+        <div className="animate-pulse space-y-2 p-2">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-8 rounded"
+              style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
+            />
+          ))}
+        </div>
+      ) : (
+        <div>
+          {(bookmarks.length > 0 || reorderMode) && (
+            <div className="flex items-center justify-between px-3 py-1.5">
+              <span
+                className="text-xs"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
+                {bookmarks.length} bookmark{bookmarks.length !== 1 ? "s" : ""}
+              </span>
+              <button
+                onClick={() => setReorderMode(!reorderMode)}
+                className="text-xs font-medium"
+                style={{ color: "var(--button-bg)" }}
+              >
+                {reorderMode ? "Done" : "Reorder"}
+              </button>
+            </div>
+          )}
+          {bookmarks.length > 0 ? (
+            <div className="space-y-0.5 px-2">
+              {(reorderMode ? [...bookmarks] : bookmarks).map((bm, idx) => (
+                <div
+                  key={bm.id}
+                  draggable={reorderMode}
+                  onDragStart={() => {
+                    dragItem.current = idx;
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    dragOverItem.current = idx;
+                  }}
+                  onDrop={handleDrop}
+                  onDragEnd={() => {
+                    if (!reorderMode) {
+                      dragItem.current = null;
+                      dragOverItem.current = null;
+                    }
+                  }}
+                  className={`group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${reorderMode ? "cursor-grab border border-dashed active:cursor-grabbing" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"}`}
+                  style={{
+                    borderColor: reorderMode ? "rgba(var(--button-bg-rgb),0.3)" : "transparent",
+                  }}
                 >
-                  {reorderMode ? "Done" : "Reorder"}
-                </button>
-              </div>
-            )}
-            {bookmarks.length > 0 ? (
-              <div className="space-y-0.5 px-2">
-                {(reorderMode ? [...bookmarks] : bookmarks).map((bm, idx) => (
+                  {reorderMode && (
+                    <GripVertical
+                      size={14}
+                      className="shrink-0"
+                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
+                    />
+                  )}
                   <div
-                    key={bm.id}
-                    draggable={reorderMode}
-                    onDragStart={() => {
-                      dragItem.current = idx;
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      dragOverItem.current = idx;
-                    }}
-                    onDrop={handleDrop}
-                    onDragEnd={() => {
-                      if (!reorderMode) {
-                        dragItem.current = null;
-                        dragOverItem.current = null;
-                      }
-                    }}
-                    className={`group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${reorderMode ? "cursor-grab border border-dashed active:cursor-grabbing" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"}`}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded"
                     style={{
-                      borderColor: reorderMode ? "rgba(var(--button-bg-rgb),0.3)" : "transparent",
+                      background: "rgba(var(--button-bg-rgb),0.08)",
+                      color: "var(--button-bg)",
                     }}
                   >
-                    {reorderMode && (
-                      <GripVertical
-                        size={14}
-                        className="shrink-0"
-                        style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
-                      />
-                    )}
-                    <div
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded"
-                      style={{
-                        background: "rgba(var(--button-bg-rgb),0.08)",
-                        color: "var(--button-bg)",
-                      }}
+                    {bm.emoji ? <span className="text-sm">{bm.emoji}</span> : <Link size={14} />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="truncate text-xs font-medium"
+                      style={{ color: "var(--center-channel-color)" }}
                     >
-                      {bm.emoji ? <span className="text-sm">{bm.emoji}</span> : <Link size={14} />}
-                    </div>
-                    <div className="min-w-0 flex-1">
+                      {bm.title}
+                    </p>
+                    {bm.url && (
                       <p
-                        className="truncate text-xs font-medium"
-                        style={{ color: "var(--center-channel-color)" }}
+                        className="truncate text-[10px]"
+                        style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
                       >
-                        {bm.title}
+                        {bm.url}
                       </p>
-                      {bm.url && (
-                        <p
-                          className="truncate text-[10px]"
-                          style={{ color: "var(--text-tertiary)" }}
-                        >
-                          {bm.url}
-                        </p>
-                      )}
-                    </div>
-                    {!reorderMode && (
-                      <button
-                        onClick={() => setDeleteConfirm(bm.id)}
-                        className="shrink-0 rounded p-1 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(var(--dnd-indicator-rgb),0.08)]"
-                        aria-label="Delete bookmark"
-                      >
-                        <X size={12} style={{ color: "var(--dnd-indicator)" }} />
-                      </button>
                     )}
                   </div>
-                ))}
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  <Plus size={14} /> Add bookmark
-                </button>
-              </div>
-            ) : (
-              <div className="p-4 text-center">
-                <div
-                  className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full"
-                  style={{ background: "rgba(var(--button-bg-rgb), 0.08)" }}
-                >
-                  <Link size={18} style={{ color: "var(--button-bg)" }} />
+                  {!reorderMode && (
+                    <button
+                      onClick={() => setDeleteConfirm(bm.id)}
+                      className="shrink-0 rounded p-1 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(var(--dnd-indicator-rgb),0.08)]"
+                      aria-label="Delete bookmark"
+                    >
+                      <X size={12} style={{ color: "var(--dnd-indicator)" }} />
+                    </button>
+                  )}
                 </div>
-                <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  No bookmarks yet
-                </p>
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="mt-2 text-xs font-medium"
-                  style={{ color: "var(--button-bg)" }}
-                >
-                  Add your first bookmark
-                </button>
+              ))}
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
+                <Plus size={14} /> Add bookmark
+              </button>
+            </div>
+          ) : (
+            <div className="p-4 text-center">
+              <div
+                className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full"
+                style={{ background: "rgba(var(--button-bg-rgb), 0.08)" }}
+              >
+                <Link size={18} style={{ color: "var(--button-bg)" }} />
               </div>
-            )}
-          </div>
-        ))}
+              <p
+                className="text-xs"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              >
+                No bookmarks yet
+              </p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="mt-2 text-xs font-medium"
+                style={{ color: "var(--button-bg)" }}
+              >
+                Add your first bookmark
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 }

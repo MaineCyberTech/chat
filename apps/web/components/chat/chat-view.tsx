@@ -730,12 +730,12 @@ export function ChatView({
         </div>
       )}
       <div
-        className="flex min-h-0 min-w-0 flex-1 flex-col"
+        className="flex min-w-0 flex-1 flex-col"
         style={{ background: "var(--center-channel-bg)" }}
       >
         {/* Mattermost-style channel header */}
         <div className="mm-channel-header">
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <div className="flex items-center gap-1" style={{ height: 24 }}>
               <h1 className="mm-font-heading max-w-[300px] truncate"># {channelName}</h1>
               <button
@@ -916,7 +916,7 @@ export function ChatView({
           </div>
         </div>
 
-        <ChannelBookmarks channelId={channelId} variant="inline" />
+        <ChannelBookmarks channelId={channelId} />
         <ConnectionBanner />
 
         {/* Reply-to indicator */}
