@@ -2,7 +2,7 @@
 
 ## Current State (July 18, 2026)
 
-- **Seed workflow fixed**: GoTrue auth crash from NULL `confirmation_token` resolved via Management SQL UPDATE. Identities missing after DB reset fixed via `auth.identities` INSERT with `provider_id` column. Wrong bcrypt hash for `password123` corrected to `$2a$10$wsjrPx00aIP/IL6cbV.mM.VYl48iAag810ODhtAonKalkWBCxSf1C`. Missing `public.users` profiles (needed by `users!inner` JOIN for member queries) fixed via INSERT...ON CONFLICT. psql data seeding replaced with Management API chunked approach in all 3 workflow files (psql is unreliable from GitHub Actions — IPv6, pooler auth errors). Bookmarks collapsible added. See [Seed Workflow](#seed-workflow-auth--data-seeding) section below.
+- **Seed workflow fixed**: GoTrue auth crash from NULL `confirmation_token` resolved via Management SQL UPDATE. Identities missing after DB reset fixed via `auth.identities` INSERT with `provider_id` column. Wrong bcrypt hash for `password123` corrected to `$2a$10$wsjrPx00aIP/IL6cbV.mM.VYl48iAag810ODhtAonKalkWBCxSf1C`. Missing `public.users` profiles (needed by `users!inner` JOIN for member queries) fixed via INSERT...ON CONFLICT. psql data seeding replaced with Management API chunked approach in all 3 workflow files (psql is unreliable from GitHub Actions — IPv6, pooler auth errors). Bookmarks collapsible added. Scroll-to-bottom on page load fixed: ResizeObserver + 300ms poller with `atBottomRef` prevents async content (reactions/profiles) from pushing viewport up. See [Seed Workflow](#seed-workflow-auth--data-seeding) section below.
 
 - **New UI/UX Deep Audit (July 16, 2026)**: Full principal-level re-audit executed — 8 P1, 24 P2, 14 P3 findings identified (0 P0). See `docs/audits/ux-audit/20260716/` for full 14-file report pack. Overall verdict: **Production Ready With Minor Issues** (7.1/10). Not yet Enterprise Ready — blocked by mobile admin navigation, i18n coverage crater (7/8 surfaces), no automated a11y regression, and 33% component test coverage. 56 findings across 24 audit categories. 17 quick wins identified (~3 dev-days).
 - **All P0/P1 findings resolved** — 0 P0, 0 P1 across all audit/hardening pipelines
@@ -506,17 +506,49 @@ const tick = () => {
 requestAnimationFrame(tick);
 ```
 
-**Phase 3 — Async catch-up**: A ResizeObserver on the scroll container catches late height changes from async content loads (reactions, profile avatars, image embeds). When the content grows and the user is near the bottom (< 100px), it re-scrolls to keep the view anchored:
+**Phase 3 — Async catch-up**: A ResizeObserver + 300ms polling interval keeps the view anchored at the bottom when async content loads (reactions, profile avatars, image embeds). A `scroll` listener tracks whether the user is at the bottom via a ref (`atBottomRef`). Both the observer and the poller check this ref before re-scrolling, so user-initiated scrolls away from the bottom are never overridden:
 
 ```typescript
-const observer = new ResizeObserver(() => {
-  const { scrollTop, scrollHeight, clientHeight } = el;
-  if (scrollHeight - scrollTop - clientHeight < 100) {
-    virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
-  }
-});
-observer.observe(el);
+// Track whether user is at the bottom via scroll events
+const atBottomRef = useRef(true);
+useEffect(() => {
+  const el = listRef.current;
+  if (!el) return;
+  const onScroll = () => {
+    atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
+  };
+  el.addEventListener("scroll", onScroll, { passive: true });
+  return () => el.removeEventListener("scroll", onScroll);
+}, []);
+
+// ResizeObserver + 300ms poller as backup
+useEffect(() => {
+  const el = listRef.current;
+  if (!el) return;
+  const onResize = () => {
+    if (atBottomRef.current) {
+      virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+    }
+  };
+  const observer = new ResizeObserver(onResize);
+  observer.observe(el);
+  const poller = setInterval(() => {
+    if (atBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, 300);
+  return () => {
+    observer.disconnect();
+    clearInterval(poller);
+  };
+}, [virtualizer, messagesWithMeta.length]);
 ```
+
+Also set `atBottomRef.current = true` immediately after the initial precision snap:
+
+````typescript
+virtualizer.scrollToIndex(lastIdx, { align: "end" });
+atBottomRef.current = true;  // <-- critical: ensures Phase 3 re-scrolls on content load
 
 #### Scroll Restore Strategy (for prepend / pagination)
 
@@ -527,7 +559,7 @@ scrollRestoreRef.current = {
 };
 // After prepend, restore relative position:
 el.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
-```
+````
 
 #### Key Files
 
