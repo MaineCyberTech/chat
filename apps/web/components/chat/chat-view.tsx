@@ -916,7 +916,7 @@ export function ChatView({
           </div>
         </div>
 
-        <ChannelBookmarks channelId={channelId} />
+        <ChannelBookmarks channelId={channelId} variant="inline" />
         <ConnectionBanner />
 
         {/* Reply-to indicator */}

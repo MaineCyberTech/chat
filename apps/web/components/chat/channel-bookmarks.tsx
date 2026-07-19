@@ -20,9 +20,10 @@ interface ChannelBookmark {
 
 interface Props {
   channelId: string;
+  variant?: "inline" | "full";
 }
 
-export function ChannelBookmarks({ channelId }: Props) {
+export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
   const [bookmarks, setBookmarks] = useState<ChannelBookmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -282,128 +283,131 @@ export function ChannelBookmarks({ channelId }: Props) {
         </div>
       )}
 
-      {/* RHS Bookmark list tab content */}
-      {loading ? (
-        <div className="animate-pulse space-y-2 p-2">
-          {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-8 rounded"
-              style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
-            />
-          ))}
-        </div>
-      ) : (
-        <div>
-          {(bookmarks.length > 0 || reorderMode) && (
-            <div className="flex items-center justify-between px-3 py-1.5">
-              <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                {bookmarks.length} bookmark{bookmarks.length !== 1 ? "s" : ""}
-              </span>
-              <button
-                onClick={() => setReorderMode(!reorderMode)}
-                className="text-xs font-medium"
-                style={{ color: "var(--button-bg)" }}
-              >
-                {reorderMode ? "Done" : "Reorder"}
-              </button>
-            </div>
-          )}
-          {bookmarks.length > 0 ? (
-            <div className="space-y-0.5 px-2">
-              {(reorderMode ? [...bookmarks] : bookmarks).map((bm, idx) => (
-                <div
-                  key={bm.id}
-                  draggable={reorderMode}
-                  onDragStart={() => {
-                    dragItem.current = idx;
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    dragOverItem.current = idx;
-                  }}
-                  onDrop={handleDrop}
-                  onDragEnd={() => {
-                    if (!reorderMode) {
-                      dragItem.current = null;
-                      dragOverItem.current = null;
-                    }
-                  }}
-                  className={`group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${reorderMode ? "cursor-grab border border-dashed active:cursor-grabbing" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"}`}
-                  style={{
-                    borderColor: reorderMode ? "rgba(var(--button-bg-rgb),0.3)" : "transparent",
-                  }}
+      {variant === "full" &&
+        (loading ? (
+          <div className="animate-pulse space-y-2 p-2">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-8 rounded"
+                style={{ background: "rgba(var(--center-channel-color-rgb), 0.06)" }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div>
+            {(bookmarks.length > 0 || reorderMode) && (
+              <div className="flex items-center justify-between px-3 py-1.5">
+                <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                  {bookmarks.length} bookmark{bookmarks.length !== 1 ? "s" : ""}
+                </span>
+                <button
+                  onClick={() => setReorderMode(!reorderMode)}
+                  className="text-xs font-medium"
+                  style={{ color: "var(--button-bg)" }}
                 >
-                  {reorderMode && (
-                    <GripVertical
-                      size={14}
-                      className="shrink-0"
-                      style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
-                    />
-                  )}
+                  {reorderMode ? "Done" : "Reorder"}
+                </button>
+              </div>
+            )}
+            {bookmarks.length > 0 ? (
+              <div className="space-y-0.5 px-2">
+                {(reorderMode ? [...bookmarks] : bookmarks).map((bm, idx) => (
                   <div
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded"
+                    key={bm.id}
+                    draggable={reorderMode}
+                    onDragStart={() => {
+                      dragItem.current = idx;
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      dragOverItem.current = idx;
+                    }}
+                    onDrop={handleDrop}
+                    onDragEnd={() => {
+                      if (!reorderMode) {
+                        dragItem.current = null;
+                        dragOverItem.current = null;
+                      }
+                    }}
+                    className={`group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${reorderMode ? "cursor-grab border border-dashed active:cursor-grabbing" : "hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"}`}
                     style={{
-                      background: "rgba(var(--button-bg-rgb),0.08)",
-                      color: "var(--button-bg)",
+                      borderColor: reorderMode ? "rgba(var(--button-bg-rgb),0.3)" : "transparent",
                     }}
                   >
-                    {bm.emoji ? <span className="text-sm">{bm.emoji}</span> : <Link size={14} />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="truncate text-xs font-medium"
-                      style={{ color: "var(--center-channel-color)" }}
+                    {reorderMode && (
+                      <GripVertical
+                        size={14}
+                        className="shrink-0"
+                        style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
+                      />
+                    )}
+                    <div
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded"
+                      style={{
+                        background: "rgba(var(--button-bg-rgb),0.08)",
+                        color: "var(--button-bg)",
+                      }}
                     >
-                      {bm.title}
-                    </p>
-                    {bm.url && (
-                      <p className="truncate text-[10px]" style={{ color: "var(--text-tertiary)" }}>
-                        {bm.url}
+                      {bm.emoji ? <span className="text-sm">{bm.emoji}</span> : <Link size={14} />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className="truncate text-xs font-medium"
+                        style={{ color: "var(--center-channel-color)" }}
+                      >
+                        {bm.title}
                       </p>
+                      {bm.url && (
+                        <p
+                          className="truncate text-[10px]"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          {bm.url}
+                        </p>
+                      )}
+                    </div>
+                    {!reorderMode && (
+                      <button
+                        onClick={() => setDeleteConfirm(bm.id)}
+                        className="shrink-0 rounded p-1 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(var(--dnd-indicator-rgb),0.08)]"
+                        aria-label="Delete bookmark"
+                      >
+                        <X size={12} style={{ color: "var(--dnd-indicator)" }} />
+                      </button>
                     )}
                   </div>
-                  {!reorderMode && (
-                    <button
-                      onClick={() => setDeleteConfirm(bm.id)}
-                      className="shrink-0 rounded p-1 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[rgba(var(--dnd-indicator-rgb),0.08)]"
-                      aria-label="Delete bookmark"
-                    >
-                      <X size={12} style={{ color: "var(--dnd-indicator)" }} />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                onClick={() => setShowForm(true)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                <Plus size={14} /> Add bookmark
-              </button>
-            </div>
-          ) : (
-            <div className="p-4 text-center">
-              <div
-                className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full"
-                style={{ background: "rgba(var(--button-bg-rgb), 0.08)" }}
-              >
-                <Link size={18} style={{ color: "var(--button-bg)" }} />
+                ))}
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.04)]"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  <Plus size={14} /> Add bookmark
+                </button>
               </div>
-              <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                No bookmarks yet
-              </p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="mt-2 text-xs font-medium"
-                style={{ color: "var(--button-bg)" }}
-              >
-                Add your first bookmark
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+            ) : (
+              <div className="p-4 text-center">
+                <div
+                  className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full"
+                  style={{ background: "rgba(var(--button-bg-rgb), 0.08)" }}
+                >
+                  <Link size={18} style={{ color: "var(--button-bg)" }} />
+                </div>
+                <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                  No bookmarks yet
+                </p>
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="mt-2 text-xs font-medium"
+                  style={{ color: "var(--button-bg)" }}
+                >
+                  Add your first bookmark
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
     </>
   );
 }
