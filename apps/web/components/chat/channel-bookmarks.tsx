@@ -37,6 +37,8 @@ export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const { addToast } = useToast();
+  const addToastRef = useRef(addToast);
+  addToastRef.current = addToast;
 
   useEffect(() => {
     setLoading(true);
@@ -44,10 +46,14 @@ export function ChannelBookmarks({ channelId, variant = "full" }: Props) {
       .get<{ bookmarks: ChannelBookmark[] }>(`/channels/${channelId}/bookmarks`)
       .then((res) => setBookmarks(res.bookmarks))
       .catch(() =>
-        addToast({ title: "Error", description: "Failed to load bookmarks", variant: "error" }),
+        addToastRef.current({
+          title: "Error",
+          description: "Failed to load bookmarks",
+          variant: "error",
+        }),
       )
       .finally(() => setLoading(false));
-  }, [channelId, addToast]);
+  }, [channelId]);
 
   async function handleCreate() {
     if (!newTitle.trim() || saving) return;
