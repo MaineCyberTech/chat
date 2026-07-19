@@ -29,7 +29,6 @@ import {
 import { ChannelInfo } from "./channel-info";
 import { NotificationPreferencesModal } from "./notification-preferences-modal";
 import { playNotificationSound, showDesktopNotification } from "@/lib/notification-sound";
-import { ChannelBookmarks } from "./channel-bookmarks";
 import type { Message, UserProfile } from "@chat/db";
 import type { Socket } from "socket.io-client";
 
@@ -916,7 +915,7 @@ export function ChatView({
           </div>
         </div>
 
-        <ChannelBookmarks channelId={channelId} />
+        {/* <ChannelBookmarks channelId={channelId} /> */}
         <ConnectionBanner />
 
         {/* Reply-to indicator */}
