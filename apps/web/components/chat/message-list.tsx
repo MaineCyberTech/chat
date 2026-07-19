@@ -501,7 +501,7 @@ export function MessageList({
     if (!el) return;
     const onResize = () => {
       if (atBottomRef.current) {
-        virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
+        el.scrollTop = el.scrollHeight;
       }
     };
     const observer = new ResizeObserver(onResize);
