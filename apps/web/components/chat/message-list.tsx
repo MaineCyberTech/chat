@@ -501,14 +501,20 @@ export function MessageList({
     if (!el) return;
     const onResize = () => {
       if (atBottomRef.current) {
-        requestAnimationFrame(() => {
-          virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
-        });
+        virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
       }
     };
     const observer = new ResizeObserver(onResize);
     observer.observe(el);
-    return () => observer.disconnect();
+    const poller = setInterval(() => {
+      if (atBottomRef.current) {
+        el.scrollTop = el.scrollHeight;
+      }
+    }, 300);
+    return () => {
+      observer.disconnect();
+      clearInterval(poller);
+    };
   }, [virtualizer, messagesWithMeta.length]);
 
   if (messages.length === 0) {
