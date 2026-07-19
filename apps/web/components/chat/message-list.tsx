@@ -483,13 +483,14 @@ export function MessageList({
   }, [messagesWithMeta.length, channelChanged]);
 
   // Watch for async content loads (reactions, profiles) that increase
-  // message heights after the initial scroll. If near bottom, re-scroll.
+  // message heights after the initial scroll. If user is at bottom, keep them there.
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     const onResize = () => {
       const { scrollTop, scrollHeight, clientHeight } = el;
-      if (scrollHeight - scrollTop - clientHeight < 100) {
+      const atBottom = scrollHeight - scrollTop - clientHeight < 50;
+      if (atBottom) {
         virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
       }
     };
