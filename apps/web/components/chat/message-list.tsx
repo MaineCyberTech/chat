@@ -501,7 +501,9 @@ export function MessageList({
     if (!el) return;
     const onResize = () => {
       if (atBottomRef.current) {
-        el.scrollTop = el.scrollHeight;
+        requestAnimationFrame(() => {
+          el.scrollTop = el.scrollHeight;
+        });
       }
     };
     const observer = new ResizeObserver(onResize);
