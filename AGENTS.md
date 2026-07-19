@@ -1,6 +1,8 @@
 # AGENTS.md — Architecture & Implementation Status
 
-## Current State (July 16, 2026)
+## Current State (July 18, 2026)
+
+- **Seed workflow fixed**: GoTrue auth crash from NULL `confirmation_token` resolved via Management SQL UPDATE. Identities missing after DB reset fixed via `auth.identities` INSERT with `provider_id` column. Wrong bcrypt hash for `password123` corrected to `$2a$10$wsjrPx00aIP/IL6cbV.mM.VYl48iAag810ODhtAonKalkWBCxSf1C`. Missing `public.users` profiles (needed by `users!inner` JOIN for member queries) fixed via INSERT...ON CONFLICT. psql data seeding replaced with Management API chunked approach in all 3 workflow files (psql is unreliable from GitHub Actions — IPv6, pooler auth errors). Bookmarks collapsible added. See [Seed Workflow](#seed-workflow-auth--data-seeding) section below.
 
 - **New UI/UX Deep Audit (July 16, 2026)**: Full principal-level re-audit executed — 8 P1, 24 P2, 14 P3 findings identified (0 P0). See `docs/audits/ux-audit/20260716/` for full 14-file report pack. Overall verdict: **Production Ready With Minor Issues** (7.1/10). Not yet Enterprise Ready — blocked by mobile admin navigation, i18n coverage crater (7/8 surfaces), no automated a11y regression, and 33% component test coverage. 56 findings across 24 audit categories. 17 quick wins identified (~3 dev-days).
 - **All P0/P1 findings resolved** — 0 P0, 0 P1 across all audit/hardening pipelines
@@ -266,6 +268,159 @@ Full audit pipeline executed across 8 batches (58 prompts, 624 initial findings)
 
 - **Cloudflare 521**: Cloudflare can't reach the origin server. Terraform firewall rules applied but 521 persists. May need Cloudflare SSL/TLS set to Full (Strict) + origin certificate.
 - **`hardening/` data store**: Still disconnected from `engine/full_engine.ps1` which reads stale `docs/audits/latest/findings.json`.
+
+## Seed Workflow (Auth + Data Seeding)
+
+Two GitHub Actions to seed hosted Supabase with test data:
+
+| Workflow                 | Trigger             | Purpose                                    |
+| ------------------------ | ------------------- | ------------------------------------------ |
+| `seed-database.yml`      | `workflow_dispatch` | Full seed: auth users + data (files 01-05) |
+| `deploy-development.yml` | push develop        | Deploy + seed (includes auth step)         |
+| `deploy-production.yml`  | push main           | Deploy + seed (includes auth step)         |
+
+### Architecture — Why Not Admin API
+
+The Supabase Auth Admin API (`POST /auth/v1/admin/users`) is unreliable for seeding because:
+
+- GoTrue v2 crashes on NULL `confirmation_token` (caused by DB reset) — `sql: Scan error on column index 3, name "confirmation token": converting NULL to string is unsupported`
+- Admin API DELETE crashes due to `handle_user_deletion()` trigger bugs (wrong column references in `channel_bookmarks` and `sidebar_channel_assignments`)
+- Admin API does NOT create `auth.identities` when returning errors — users exist but can't log in
+- `psql` direct connection fails from GitHub Actions (IPv6, pooler auth errors)
+
+### Working Solution — Management SQL (Supabase API Gateway)
+
+**Key file**: `.github/workflows/seed-database.yml` (the SSOT; deploy workflows mirror the same approach)
+
+#### Step 0: Fix NULL tokens
+
+```sql
+UPDATE auth.users SET
+  confirmation_token = COALESCE(confirmation_token, ''),
+  recovery_token = COALESCE(recovery_token, ''),
+  email_change_token_new = COALESCE(email_change_token_new, ''),
+  email_change_token_current = COALESCE(email_change_token_current, ''),
+  email_change = COALESCE(email_change, ''),
+  phone_change = COALESCE(phone_change, ''),
+  phone_change_token = COALESCE(phone_change_token, '')
+WHERE confirmation_token IS NULL
+   OR recovery_token IS NULL
+   OR email_change_token_new IS NULL
+   OR email_change_token_current IS NULL;
+```
+
+Management SQL UPDATE on `auth.users` **does persist** (verified).
+
+#### Step 1: Insert missing identities + set passwords
+
+```sql
+INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+SELECT gen_random_uuid(), u.id,
+  ('{"email":"' || u.email || '","sub":"' || u.id::text || '","email_verified":true}')::jsonb,
+  'email',
+  ('email:' || u.id::text),
+  now(), now(), now()
+FROM auth.users u
+WHERE u.email LIKE '%@seed.test'
+  AND NOT EXISTS (SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email');
+
+UPDATE auth.users SET encrypted_password = '$2a$10$wsjrPx00aIP/IL6cbV.mM.VYl48iAag810ODhtAonKalkWBCxSf1C'
+WHERE email LIKE '%@seed.test';
+
+INSERT INTO public.users (id, email, display_name)
+SELECT u.id, u.email,
+  COALESCE(u.raw_user_meta_data->>'display_name', split_part(u.email, '@', 1))
+FROM auth.users u
+WHERE u.email LIKE '%@seed.test'
+  AND NOT EXISTS (SELECT 1 FROM public.users p WHERE p.id = u.id);
+```
+
+**Critical details**:
+
+- `auth.identities` on this GoTrue v2 version requires `provider_id` column (NOT NULL) — set to `'email:' || u.id::text`
+- `auth.identities.email` is a **generated column** — do NOT include it in INSERT column list
+- `auth.identities.user_id` is `uuid` type, `auth.refresh_tokens.user_id` is `varchar` — use `id::text` or `id` cast appropriately
+- Correct bcrypt hash for `password123`: `$2a$10$wsjrPx00aIP/IL6cbV.mM.VYl48iAag810ODhtAonKalkWBCxSf1C`
+- The OLD hash `$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W` **does NOT match** `password123` — do not reuse
+- `public.users` rows are needed by `users!inner` JOIN in workspace/channel member queries — insert if missing
+
+#### Step 2: Seed data tables (files 01-05)
+
+Management API has ~36KB payload limit. Large files are Python-chunked at statement boundaries (~20KB/chunk):
+
+```bash
+python3 /tmp/split_seed.py "$f" 20      # split at 20KB boundaries
+```
+
+Files must NOT contain `begin;`/`commit;` wrappers (chunking splits across transaction boundaries).
+DO `$$ ... END $$;` blocks are NOT supported by Management API — rewrite as plain INSERT...SELECT.
+
+#### Step 2b: Drop-in replacement for psql (unreliable)
+
+The Management API endpoint `POST /v1/projects/{ref}/database/query` with `Authorization: Bearer $SUPABASE_ACCESS_TOKEN` works from GitHub Actions when psql connections fail. psql has been fully replaced with this Management API approach in all 3 workflow files (`seed-database.yml`, `deploy-development.yml`, `deploy-production.yml`) after repeated failures:
+
+- `apt-get install postgresql-client` fails with lock/permission errors on shared runners
+- Direct connection fails (IPv6)
+- Session pooler (port 5432) fails (auth error)
+- Transaction pooler (port 6543) fails (tenant/user not found)
+
+### Data Tables Seeding Order
+
+| File                              | Content                              | Size  | Chunks |
+| --------------------------------- | ------------------------------------ | ----- | ------ |
+| `01_comprehensive_workspaces.sql` | Workspaces + members + roles         | ~15KB | 1      |
+| `02_comprehensive_channels.sql`   | Channels + DMs + members             | ~23KB | 2      |
+| `03_comprehensive_messages.sql`   | Messages + replies + reactions       | ~94KB | 4      |
+| `04_comprehensive_features.sql`   | Pins, flags, bookmarks, preferences  | ~37KB | 2      |
+| `05_comprehensive_expansion.sql`  | User groups, scheduling, ai-rewrites | ~52KB | 3      |
+
+User-group IDs in file 05 use `a0f00006`–`a0f0000a` to avoid PK collision with file 01's `a0f00001`–`a0f00004`.
+
+### Migration Fixes Required for Seed (applied on hosted)
+
+| Migration        | Fix                                                                                                            |
+| ---------------- | -------------------------------------------------------------------------------------------------------------- |
+| `20260718000001` | `handle_new_channel()` trigger — add `last_viewed_at = now()`                                                  |
+| `20260718000002` | Conditionally add missing `notify_everyone` column                                                             |
+| `20260718000003` | `handle_thread_reply()` — rename ambiguous `thread_id` variable                                                |
+| `20260718000004` | `handle_user_deletion()` — fix `channel_bookmarks.user_id → created_by` and `sidebar_channel_assignments` JOIN |
+
+### Verification
+
+After running seed workflow, verify via Management API:
+
+```sql
+SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test'
+UNION ALL SELECT 'identities', count(*) FROM auth.identities WHERE provider = 'email' AND user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test')
+UNION ALL SELECT 'workspaces', count(*) FROM workspaces
+UNION ALL SELECT 'channels', count(*) FROM channels
+UNION ALL SELECT 'messages', count(*) FROM messages
+UNION ALL SELECT 'thread_replies', count(*) FROM messages WHERE parent_id IS NOT NULL
+UNION ALL SELECT 'reactions', count(*) FROM reactions;
+```
+
+Expected counts: auth_users=21, identities=21, workspaces=15, channels=32, messages=341, thread_replies=49, reactions=153.
+
+Test login via password grant:
+
+```
+POST https://{ref}.supabase.co/auth/v1/token?grant_type=password
+{"email":"marcus@seed.test","password":"password123"}
+```
+
+### Token Columns That Can Be NULL After DB Reset
+
+The following columns in `auth.users` can become NULL after a Supabase project DB reset, causing GoTrue to crash with `sql: Scan error on column index 3, name "confirmation token": converting NULL to string is unsupported`:
+
+- `confirmation_token`
+- `recovery_token`
+- `email_change_token_new`
+- `email_change_token_current`
+- `email_change`
+- `phone_change`
+- `phone_change_token`
+
+Note: `confirmation_token_new` does NOT exist on this GoTrue version (do not include in UPDATE).
 
 ### Message List Scroll Architecture (July 9, 2026)
 
