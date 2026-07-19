@@ -490,7 +490,7 @@ export function MessageList({
     const el = listRef.current;
     if (!el) return;
     const onScroll = () => {
-      atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+      atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
@@ -502,7 +502,7 @@ export function MessageList({
     const onResize = () => {
       if (atBottomRef.current) {
         requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight;
+          virtualizer.scrollToIndex(messagesWithMeta.length - 1, { align: "end" });
         });
       }
     };
