@@ -290,30 +290,101 @@ jobs:
           echo "=== Verification ==="
           mgmt_query "SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'public_users', count(*) FROM public.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'identities', count(*) FROM auth.identities WHERE provider = 'email' AND user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test')"
 
-      - name: Seed data tables via psql
+      - name: Seed data tables via Management API
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -e
-          apt-get update -qq && apt-get install -y -qq postgresql-client >/dev/null 2>&1
+          PROJECT_REF="${{ secrets.SUPABASE_PROJECT_REF }}"
+          MGMT_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
 
-          DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
+          # Write splitter script
+          cat > /tmp/split_seed.py << 'PYEOF'
+          import sys, os
+          filepath = sys.argv[1]
+          target_kb = int(sys.argv[2]) if len(sys.argv) > 2 else 20
+          target_bytes = target_kb * 1024
+          with open(filepath) as f:
+              content = f.read()
+          lines = content.split("\n")
+          chunks = []
+          current = []
+          current_size = 0
+          for line in lines:
+              current.append(line)
+              current_size += len(line) + 1
+              if line.strip().endswith(";") and current_size >= target_bytes:
+                  chunks.append("\n".join(current))
+                  current = []
+                  current_size = 0
+          if current:
+              chunks.append("\n".join(current))
+          for i, chunk in enumerate(chunks):
+              outpath = f"/tmp/seed_chunk_{i:03d}.sql"
+              with open(outpath, "w") as out:
+                  out.write(chunk)
+          print(len(chunks))
+          PYEOF
 
-          if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
-            echo "Direct connection failed. Trying pooler session mode (port 5432)..."
-            DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
-            if ! psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1 2>/dev/null; then
-              echo "Pooler session mode failed. Trying pooler transaction mode (port 6543)..."
-              DB_URL="postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
-              psql "$DB_URL" -c "SELECT 1" --set ON_ERROR_STOP=1
-            fi
-          fi
-          echo "Database connection verified."
+          mgmt_send() {
+            curl -s -w "\n%{http_code}" -X POST "$MGMT_URL" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data-raw "$(jq -n --arg sql "$1" '{"query": $sql}')" 2>&1
+          }
 
+          echo "=== Running seed files 01-05 ==="
           for f in supabase/seeds/0{1,2,3,4,5}*.sql; do
             [ -f "$f" ] || continue
+            echo ""
             echo "Seeding $f..."
-            psql "$DB_URL" -f "$f" --set ON_ERROR_STOP=1 || { echo "WARN: $f had errors (may be idempotent)"; }
+            SQL_SIZE=$(wc -c < "$f")
+            echo "File size: ${SQL_SIZE} bytes"
+
+            if [ "$SQL_SIZE" -gt 20000 ]; then
+              echo "Splitting into chunks..."
+              rm -f /tmp/seed_chunk_*.sql
+              NUM_CHUNKS=$(python3 /tmp/split_seed.py "$f" 20)
+              echo "Split into $NUM_CHUNKS chunks"
+
+              SENT=0
+              FAILED=0
+              for chunk_file in /tmp/seed_chunk_*.sql; do
+                [ -f "$chunk_file" ] || continue
+                CHUNK_SQL=$(cat "$chunk_file")
+                CHUNK_SIZE=${#CHUNK_SQL}
+                RESP=$(mgmt_send "$CHUNK_SQL")
+                HTTP_CODE=$(echo "$RESP" | tail -1)
+                BODY=$(echo "$RESP" | head -n -1)
+                if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+                  echo "  $(basename $chunk_file): ${CHUNK_SIZE}B - OK"
+                  SENT=$((SENT + 1))
+                else
+                  echo "  $(basename $chunk_file): ${CHUNK_SIZE}B - FAIL ($HTTP_CODE)"
+                  echo "  $(echo "$BODY" | head -1)"
+                  FAILED=$((FAILED + 1))
+                fi
+              done
+              rm -f /tmp/seed_chunk_*.sql
+              echo "Result: $SENT OK, $FAILED failed"
+            else
+              RESP=$(mgmt_send "$(cat "$f")")
+              HTTP_CODE=$(echo "$RESP" | tail -1)
+              BODY=$(echo "$RESP" | head -n -1)
+              if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+                echo "OK ($HTTP_CODE)"
+              else
+                echo "FAIL ($HTTP_CODE): $(echo "$BODY" | head -3)"
+              fi
+            fi
           done
-          echo "Seeding complete"
+
+          echo ""
+          echo "=== Final verification ==="
+          RESP=$(mgmt_send "SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'public_users', count(*) FROM public.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'workspaces', count(*) FROM workspaces UNION ALL SELECT 'workspace_members', count(*) FROM workspace_members UNION ALL SELECT 'channels', count(*) FROM channels UNION ALL SELECT 'channel_members', count(*) FROM channel_members UNION ALL SELECT 'messages', count(*) FROM messages UNION ALL SELECT 'thread_replies', count(*) FROM messages WHERE parent_id IS NOT NULL UNION ALL SELECT 'reactions', count(*) FROM reactions")
+          echo "$RESP" | head -n -1
+          echo ""
+          echo "=== Seeding complete ==="
 
       - name: Health check
         run: |
