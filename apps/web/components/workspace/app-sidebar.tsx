@@ -572,7 +572,7 @@ export function AppSidebar({
                                   : "var(--text-tertiary)",
                             }}
                           >
-                            {w.name.charAt(0).toUpperCase()}
+                            {(w.name ?? "").charAt(0).toUpperCase()}
                           </div>
                           <span className="truncate">{w.name}</span>
                           {w.slug === workspaceSlug && (

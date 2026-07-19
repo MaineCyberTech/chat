@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
@@ -135,7 +135,7 @@ export function ProfilePopover({ userId, onClose, anchorEl }: Props) {
       </button>
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-avatar-bg)] text-sm font-medium text-[var(--color-avatar-fg)]">
-          {(profile.display_name ?? profile.id).charAt(0).toUpperCase()}
+          {(profile.display_name ?? profile.id ?? "").charAt(0).toUpperCase()}
         </div>
         <div>
           <p className="text-sm font-medium text-[var(--center-channel-color)]">

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { Button, useToast } from "@chat/ui";
@@ -742,7 +742,7 @@ export function MessageInput({
                         color: "var(--button-bg)",
                       }}
                     >
-                      {(member.display_name ?? member.email).charAt(0).toUpperCase()}
+                      {(member.display_name ?? member.email ?? "").charAt(0).toUpperCase()}
                     </span>
                     <span className="font-medium">
                       {member.display_name ?? member.email.split("@")[0]}

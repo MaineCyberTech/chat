@@ -46,7 +46,11 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
         setError(err.message || t("errors.generic"));
         setPinnedMessages([]);
         setMembers([]);
-        addToast({ title: t("common.error", "Error"), description: err.message || t("errors.generic"), variant: "error" });
+        addToast({
+          title: t("common.error", "Error"),
+          description: err.message || t("errors.generic"),
+          variant: "error",
+        });
       })
       .finally(() => setLoading(false));
   }, [channelId, retryCount]);
@@ -126,7 +130,9 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
       >
         {error ? (
           <div className="flex flex-col items-center justify-center gap-3 p-4 text-center">
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{error}</p>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+              {error}
+            </p>
             <Button variant="secondary" size="sm" onClick={() => setRetryCount((c) => c + 1)}>
               {t("common.retry")}
             </Button>
@@ -176,9 +182,9 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
                     className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium text-white"
                     style={{ background: "var(--button-bg)" }}
                   >
-                    {(m.display_name ?? m.user_id).charAt(0).toUpperCase()}
+                    {(m.display_name ?? m.user_id ?? "").charAt(0).toUpperCase()}
                   </div>
-                  <span className="truncate">{m.display_name ?? m.user_id.slice(0, 8)}</span>
+                  <span className="truncate">{m.display_name ?? m.user_id?.slice(0, 8) ?? ""}</span>
                 </div>
               ))
             )}
@@ -217,7 +223,9 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
                     {msg.content}
                   </p>
                   <p className="mt-0.5 text-[10px]" style={{ color: "var(--text-tertiary)" }}>
-                    <time dateTime={new Date(msg.created_at).toISOString()}>{new Date(msg.created_at).toLocaleDateString()}</time>
+                    <time dateTime={new Date(msg.created_at).toISOString()}>
+                      {new Date(msg.created_at).toLocaleDateString()}
+                    </time>
                   </p>
                 </div>
               ))
@@ -226,10 +234,7 @@ export function ChannelInfo({ channelId, workspaceId, onClose, initialTab = "mem
         )}
       </div>
       {showInviteModal && workspaceId && (
-        <InviteMembersModal
-          workspaceId={workspaceId}
-          onClose={() => setShowInviteModal(false)}
-        />
+        <InviteMembersModal workspaceId={workspaceId} onClose={() => setShowInviteModal(false)} />
       )}
     </div>
   );

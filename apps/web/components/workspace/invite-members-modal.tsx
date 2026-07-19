@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
@@ -164,7 +164,7 @@ export function InviteMembersModal({ workspaceId, onClose }: Props) {
                   {isSelected ? (
                     <UserCheck size={14} />
                   ) : (
-                    (m.display_name ?? m.email).charAt(0).toUpperCase()
+                    (m.display_name ?? m.email ?? "").charAt(0).toUpperCase()
                   )}
                 </div>
                 <div className="min-w-0 flex-1">

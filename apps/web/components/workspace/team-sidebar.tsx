@@ -45,7 +45,7 @@ export function TeamSidebar() {
             title={ws.name}
           >
             <span className="text-sm font-bold text-white select-none">
-              {ws.name.charAt(0).toUpperCase()}
+              {(ws.name ?? "").charAt(0).toUpperCase()}
             </span>
           </Link>
         );

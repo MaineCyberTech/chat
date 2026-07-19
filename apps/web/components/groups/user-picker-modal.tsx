@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import { EmptyState } from "@chat/ui";
@@ -153,7 +153,7 @@ export function UserPickerModal({
                   {isSelected ? (
                     <Check size={14} />
                   ) : (
-                    (u.display_name ?? u.id).charAt(0).toUpperCase()
+                    (u.display_name ?? u.id ?? "").charAt(0).toUpperCase()
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
