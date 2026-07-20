@@ -35,7 +35,7 @@
   "devDependencies": {
     "@eslint/js": "^9.22.0",
     "@next/eslint-plugin-next": "^15.2.0",
-    "@playwright/test": "^1.51.0",
+    "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^22.13.0",
@@ -43,12 +43,12 @@
     "eslint": "^9.22.0",
     "husky": "^9.1.7",
     "jsdom": "^26.0.0",
-    "lint-staged": "^17.0.7",
-    "prettier": "^3.5.0",
-    "prettier-plugin-tailwindcss": "^0.6.11",
-    "turbo": "^2.4.0",
+    "lint-staged": "^17.0.8",
+    "prettier": "^3.9.4",
+    "prettier-plugin-tailwindcss": "^0.8.0",
+    "turbo": "^2.10.3",
     "typescript": "^5.8.0",
-    "typescript-eslint": "^8.26.0",
+    "typescript-eslint": "^8.62.1",
     "vitest": "^3.0.0"
   },
   "lint-staged": {
