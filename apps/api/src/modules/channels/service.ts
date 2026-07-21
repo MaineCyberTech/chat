@@ -214,15 +214,22 @@ export class ChannelService {
     return success;
   }
 
-  async getMembers(channelId: string, limit = 50, offset = 0): Promise<{ user_id: string }[]> {
+  async getMembers(
+    channelId: string,
+    limit = 50,
+    offset = 0,
+  ): Promise<{ user_id: string; display_name: string | null }[]> {
     const supabase = getSupabaseAdmin();
     const { data } = await supabase
       .from("channel_members")
-      .select("user_id")
+      .select("user_id, users(display_name)")
       .eq("channel_id", channelId)
       .range(offset, offset + limit - 1);
 
-    return (data ?? []) as { user_id: string }[];
+    return (data ?? []).map((row: Record<string, unknown>) => ({
+      user_id: row.user_id as string,
+      display_name: (row.users as { display_name: string | null } | null)?.display_name ?? null,
+    }));
   }
 
   async createDmChannel(
