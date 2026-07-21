@@ -577,7 +577,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   t("search.operatorIn"),
                   t("search.operatorOn").replace("YYYY-MM-DD", `${new Date().getFullYear()}-01-15`),
                   t("search.operatorHas"),
-                ].map((full, i) => {
+                ].map((full) => {
                   const sep = full.indexOf(" — ");
                   const op = sep >= 0 ? full.slice(0, sep) : full;
                   const desc = sep >= 0 ? full.slice(sep + 3) : "";

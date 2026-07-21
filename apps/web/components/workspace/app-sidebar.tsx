@@ -181,53 +181,45 @@ export function AppSidebar({
       .catch(() => setCategories([]));
   }, [workspace]);
 
-  async function startDm(targetUserId: string) {
-    if (!workspace) return;
-    try {
-      const res = await api.post<{ channel: Channel }>(`/workspaces/${workspace.id}/dm`, {
-        targetUserId,
-      });
-      setDmChannels((prev) => {
-        if (prev.find((c) => c.id === res.channel.id)) return prev;
-        return [res.channel, ...prev];
-      });
-      setShowUserPicker(false);
-      router.push(`/${workspaceSlug}/${res.channel.slug}`);
-    } catch {
-      console.warn("Failed to create DM channel");
-    }
-  }
-
   async function createGroupChat() {
     if (!workspace || selectedUserIds.size === 0) return;
     const targetUserIds = Array.from(selectedUserIds);
     try {
-      const res = await api.post<{ channel: Channel }>(`/workspaces/${workspace.id}/gm`, {
-        targetUserIds,
-      });
-      setDmChannels((prev) => {
-        if (prev.find((c) => c.id === res.channel.id)) return prev;
-        return [res.channel, ...prev];
-      });
-      setShowUserPicker(false);
-      setSelectedUserIds(new Set());
-      router.push(`/${workspaceSlug}/${res.channel.slug}`);
+      if (targetUserIds.length === 1) {
+        const res = await api.post<{ channel: Channel }>(`/workspaces/${workspace.id}/dm`, {
+          targetUserId: targetUserIds[0],
+        });
+        setDmChannels((prev) => {
+          if (prev.find((c) => c.id === res.channel.id)) return prev;
+          return [res.channel, ...prev];
+        });
+        setShowUserPicker(false);
+        setSelectedUserIds(new Set());
+        router.push(`/${workspaceSlug}/${res.channel.slug}`);
+      } else {
+        const res = await api.post<{ channel: Channel }>(`/workspaces/${workspace.id}/gm`, {
+          targetUserIds,
+        });
+        setDmChannels((prev) => {
+          if (prev.find((c) => c.id === res.channel.id)) return prev;
+          return [res.channel, ...prev];
+        });
+        setShowUserPicker(false);
+        setSelectedUserIds(new Set());
+        router.push(`/${workspaceSlug}/${res.channel.slug}`);
+      }
     } catch {
       console.warn("Failed to create group chat");
     }
   }
 
   function toggleUserSelection(userId: string) {
-    if (selectedUserIds.size === 0) {
-      startDm(userId);
-    } else {
-      setSelectedUserIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(userId)) next.delete(userId);
-        else next.add(userId);
-        return next;
-      });
-    }
+    setSelectedUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
   }
 
   // Fetch user status
@@ -1053,12 +1045,14 @@ export function AppSidebar({
               onSubmit={createGroupChat}
               submitLabel={
                 selectedUserIds.size === 0
-                  ? "Select users to start a group chat"
-                  : `Start group chat (${selectedUserIds.size})`
+                  ? "Select users to start a conversation"
+                  : selectedUserIds.size === 1
+                    ? "Start DM"
+                    : `Start group chat (${selectedUserIds.size})`
               }
-              submitDisabled={selectedUserIds.size < 2}
+              submitDisabled={selectedUserIds.size === 0}
               title="Start a conversation"
-              description="Click a name for a DM, or select multiple for a group chat."
+              description="Select users for a DM or group chat."
             />
           )}
 

@@ -36,9 +36,9 @@ export function NotificationPreferencesModal({
   const [sound, setSound] = useState(currentSound);
   const [notifyEveryone, setNotifyEveryone] = useState<boolean>(currentNotifyEveryone ?? true);
   const [saving, setSaving] = useState(false);
-  const [initialNotify, setInitialNotify] = useState(currentNotify);
-  const [initialSound, setInitialSound] = useState(currentSound);
-  const [initialNotifyEveryone, setInitialNotifyEveryone] = useState(currentNotifyEveryone ?? true);
+  const [initialNotify] = useState(currentNotify);
+  const [initialSound] = useState(currentSound);
+  const [initialNotifyEveryone] = useState(currentNotifyEveryone ?? true);
   const dialogRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
 
