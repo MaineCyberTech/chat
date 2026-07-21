@@ -174,7 +174,14 @@ export class WorkspaceService {
   async getMembers(
     workspaceId: string,
     supabase?: SupabaseClient,
-  ): Promise<{ user_id: string; display_name: string | null; avatar_url: string | null; email: string | null }[]> {
+  ): Promise<
+    {
+      user_id: string;
+      display_name: string | null;
+      avatar_url: string | null;
+      email: string | null;
+    }[]
+  > {
     const client = this.getClient(supabase);
     const { data } = await client
       .from("workspace_members")
@@ -186,14 +193,15 @@ export class WorkspaceService {
       data as Array<{
         user_id: string;
         role: string;
-        users: { display_name: string | null; avatar_url: string | null; email: string | null }[];
+        users: { display_name: string | null; avatar_url: string | null; email: string | null };
       }>
     ).map((row) => {
-      const user = row.users[0] ?? { display_name: null, avatar_url: null, email: null };
+      const user = row.users ?? { display_name: null, avatar_url: null, email: null };
       return {
         user_id: row.user_id,
         role: row.role,
-        display_name: user.display_name ?? (user.email ? user.email.split("@")[0] : row.user_id.slice(0, 8)),
+        display_name:
+          user.display_name ?? (user.email ? user.email.split("@")[0] : row.user_id.slice(0, 8)),
         avatar_url: user.avatar_url,
         email: user.email,
       };
