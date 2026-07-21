@@ -70,9 +70,9 @@ jobs:
           mgmt_query "INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at) SELECT gen_random_uuid(), u.id, ('{\"email\":\"' || u.email || '\",\"sub\":\"' || u.id::text || '\",\"email_verified\":true}')::jsonb, 'email', ('email:' || u.id::text), now(), now(), now() FROM auth.users u WHERE u.email LIKE '%@seed.test' AND NOT EXISTS (SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email')" || true
           mgmt_query "UPDATE auth.users SET encrypted_password = '\$2a\$10\$wsjrPx00aIP/IL6cbV.mM.VYl48iAag810ODhtAonKalkWBCxSf1C' WHERE email LIKE '%@seed.test'" || true
           echo ""
-          echo "=== Step 2: Ensure public.users entries exist ==="
-          echo "The handle_new_user() trigger on auth.users INSERT may not have fired. Insert missing entries."
-          mgmt_query "INSERT INTO public.users (id, email, display_name) SELECT u.id, u.email, COALESCE(u.raw_user_meta_data->>'display_name', split_part(u.email, '@', 1)) FROM auth.users u WHERE u.email LIKE '%@seed.test' AND NOT EXISTS (SELECT 1 FROM public.users p WHERE p.id = u.id)" || true
+          echo "=== Step 2: Upsert public.users profiles with display names ==="
+          echo "Upserts with ON CONFLICT to ensure display_name is always set (fixes NULL names from old trigger)."
+          mgmt_query "INSERT INTO public.users (id, email, display_name) SELECT u.id, u.email, COALESCE(u.raw_user_meta_data->>'display_name', split_part(u.email, '@', 1)) FROM auth.users u WHERE u.email LIKE '%@seed.test' ON CONFLICT (id) DO UPDATE SET display_name = EXCLUDED.display_name" || true
           echo ""
           echo "=== Step 3: Fix RLS policies ==="
           echo "Setting workspace_members and users RLS for member visibility."

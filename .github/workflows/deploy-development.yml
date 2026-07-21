@@ -284,8 +284,8 @@ jobs:
           echo "=== Set passwords for seed users ==="
           mgmt_query "UPDATE auth.users SET encrypted_password = '\$2a\$10\$wsjrPx00aIP/IL6cbV.mM.VYl48iAag810ODhtAonKalkWBCxSf1C' WHERE email LIKE '%@seed.test'"
 
-          echo "=== Ensure public.users entries exist ==="
-          mgmt_query "INSERT INTO public.users (id, email, display_name) SELECT u.id, u.email, COALESCE(u.raw_user_meta_data->>'display_name', split_part(u.email, '@', 1)) FROM auth.users u WHERE u.email LIKE '%@seed.test' AND NOT EXISTS (SELECT 1 FROM public.users p WHERE p.id = u.id)"
+          echo "=== Upsert public.users profiles with display names ==="
+          mgmt_query "INSERT INTO public.users (id, email, display_name) SELECT u.id, u.email, COALESCE(u.raw_user_meta_data->>'display_name', split_part(u.email, '@', 1)) FROM auth.users u WHERE u.email LIKE '%@seed.test' ON CONFLICT (id) DO UPDATE SET display_name = EXCLUDED.display_name"
 
           echo "=== Fix workspace_members RLS policy ==="
           mgmt_query "CREATE OR REPLACE FUNCTION public.get_user_workspace_ids() RETURNS SETOF uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS 'SELECT workspace_id FROM public.workspace_members WHERE user_id = auth.uid();'"
