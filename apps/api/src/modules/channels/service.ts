@@ -1,4 +1,4 @@
-import { getSupabase } from "../../lib/supabase.js";
+import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import { webhookService } from "../webhooks/service.js";
 import { logger } from "../../lib/logger.js";
 import { getIO, removeAllFromRoom } from "../../lib/socket.js";
@@ -215,7 +215,7 @@ export class ChannelService {
   }
 
   async getMembers(channelId: string, limit = 50, offset = 0): Promise<{ user_id: string }[]> {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { data } = await supabase
       .from("channel_members")
       .select("user_id")
