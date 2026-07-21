@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { api } from "@/lib/api";
 import { useToast } from "@chat/ui";
-import { X, Link, ExternalLink, Plus, GripVertical } from "lucide-react";
+import { X, Link, ExternalLink, Plus, GripVertical, ChevronDown, ChevronRight } from "lucide-react";
 
 interface ChannelBookmark {
   id: string;
@@ -32,6 +32,7 @@ export function ChannelBookmarks({ channelId }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [reorderMode, setReorderMode] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const { addToast } = useToast();
@@ -115,34 +116,57 @@ export function ChannelBookmarks({ channelId }: Props) {
       {/* Inline bookmark bar */}
       {bookmarks.length > 0 && (
         <div
-          className="flex flex-wrap items-center gap-1 border-b px-3 py-1.5"
+          className="border-b"
           style={{
             borderColor: "rgba(var(--center-channel-color-rgb), 0.08)",
             background: "rgba(var(--center-channel-color-rgb), 0.02)",
           }}
         >
-          {bookmarks.map((bm) => (
-            <a
-              key={bm.id}
-              href={bm.url ?? "#"}
-              target={bm.url ? "_blank" : undefined}
-              rel={bm.url ? "noopener noreferrer" : undefined}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors hover:bg-[rgba(var(--button-bg-rgb),0.08)]"
-              style={{ color: "var(--button-bg)", background: "rgba(var(--button-bg-rgb),0.06)" }}
+          <div className="flex items-center gap-1 px-3 py-1.5">
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="flex shrink-0 items-center gap-0.5 rounded px-1 py-0.5 text-xs transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.06)]"
+              style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+              aria-label={collapsed ? "Expand bookmarks" : "Collapse bookmarks"}
+              aria-expanded={!collapsed}
             >
-              {bm.emoji && <span className="text-sm">{bm.emoji}</span>}
-              {bm.title}
-              {bm.url && <ExternalLink size={10} className="shrink-0" />}
-            </a>
-          ))}
-          <button
-            onClick={() => setShowForm(true)}
-            className="ml-1 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs transition-colors"
-            style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
-            aria-label="Add bookmark"
-          >
-            <Plus size={12} />
-          </button>
+              {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+              <span className="font-medium">
+                {bookmarks.length} bookmark{bookmarks.length !== 1 ? "s" : ""}
+              </span>
+            </button>
+            {!collapsed && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="ml-auto inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs transition-colors"
+                style={{ color: "rgba(var(--center-channel-color-rgb), 0.56)" }}
+                aria-label="Add bookmark"
+              >
+                <Plus size={12} />
+              </button>
+            )}
+          </div>
+          {!collapsed && (
+            <div className="flex flex-wrap items-center gap-1 px-3 pb-1.5">
+              {bookmarks.map((bm) => (
+                <a
+                  key={bm.id}
+                  href={bm.url ?? "#"}
+                  target={bm.url ? "_blank" : undefined}
+                  rel={bm.url ? "noopener noreferrer" : undefined}
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors hover:bg-[rgba(var(--button-bg-rgb),0.08)]"
+                  style={{
+                    color: "var(--button-bg)",
+                    background: "rgba(var(--button-bg-rgb),0.06)",
+                  }}
+                >
+                  {bm.emoji && <span className="text-sm">{bm.emoji}</span>}
+                  {bm.title}
+                  {bm.url && <ExternalLink size={10} className="shrink-0" />}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

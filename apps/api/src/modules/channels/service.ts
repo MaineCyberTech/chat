@@ -307,7 +307,14 @@ export class ChannelService {
     return channel;
   }
 
-  async listDmChannels(userId: string, supabase?: SupabaseClient): Promise<Channel[]> {
+  async listDmChannels(
+    userId: string,
+    supabase?: SupabaseClient,
+  ): Promise<
+    (Channel & {
+      otherMembers: { user_id: string; display_name: string | null; avatar_url: string | null }[];
+    })[]
+  > {
     const client = this.getClient(supabase);
 
     const { data: dmRecords } = await client
@@ -328,7 +335,49 @@ export class ChannelService {
       .in("channel_type", ["dm", "group"])
       .order("created_at", { ascending: false });
 
-    return (channels ?? []) as unknown as Channel[];
+    if (!channels || channels.length === 0) return [];
+
+    const allChannelIds = channels.map((c: { id: string }) => c.id);
+    const { data: allMembers } = await client
+      .from("dm_members")
+      .select("channel_id, user_id")
+      .in("channel_id", allChannelIds);
+
+    const otherUserIds = new Set<string>();
+    const memberMap = new Map<string, string[]>();
+    for (const m of allMembers ?? []) {
+      const rec = m as { channel_id: string; user_id: string };
+      const members = memberMap.get(rec.channel_id) ?? [];
+      members.push(rec.user_id);
+      memberMap.set(rec.channel_id, members);
+      if (rec.user_id !== userId) {
+        otherUserIds.add(rec.user_id);
+      }
+    }
+
+    const userNames = new Map<string, { display_name: string | null; avatar_url: string | null }>();
+    if (otherUserIds.size > 0) {
+      const { data: users } = await client
+        .from("users")
+        .select("id, display_name, avatar_url")
+        .in("id", Array.from(otherUserIds));
+      for (const u of users ?? []) {
+        const rec = u as { id: string; display_name: string | null; avatar_url: string | null };
+        userNames.set(rec.id, { display_name: rec.display_name, avatar_url: rec.avatar_url });
+      }
+    }
+
+    return (channels as unknown as Channel[]).map((ch) => {
+      const members = memberMap.get(ch.id) ?? [];
+      const otherMembers = members
+        .filter((uid) => uid !== userId)
+        .map((uid) => ({
+          user_id: uid,
+          display_name: userNames.get(uid)?.display_name ?? null,
+          avatar_url: userNames.get(uid)?.avatar_url ?? null,
+        }));
+      return { ...ch, otherMembers };
+    });
   }
 
   async listWorkspaceChannelIds(workspaceId: string): Promise<string[]> {

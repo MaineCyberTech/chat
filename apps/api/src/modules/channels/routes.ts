@@ -244,7 +244,7 @@ router.post(
   }),
 );
 
-// Get DM channels for current user
+// Get DM channels for current user (includes otherMembers with display names)
 router.get(
   "/dm-channels",
   responseCache(30),

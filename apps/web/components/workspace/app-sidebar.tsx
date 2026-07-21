@@ -63,7 +63,11 @@ export function AppSidebar({
   const collapsedRef = useRef(true);
   const userToggledRef = useRef(false);
 
-  const [dmChannels, setDmChannels] = useState<Channel[]>([]);
+  const [dmChannels, setDmChannels] = useState<
+    (Channel & {
+      otherMembers: { user_id: string; display_name: string | null; avatar_url: string | null }[];
+    })[]
+  >([]);
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [chatUsers, setChatUsers] = useState<{ id: string; display_name: string }[]>([]);
@@ -99,11 +103,6 @@ export function AppSidebar({
   );
   const unreadChannelIds = useMemo(() => new Set(unreads.keys()), [unreads]);
   const { getStatus } = usePresence();
-  const dmNameMap = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const u of chatUsers) m.set(u.id, u.display_name);
-    return m;
-  }, [chatUsers]);
 
   // Collapse state is controlled by parent layout when sidebarCollapsed is provided.
   // Keep internal ref in sync for local-only usage (mobile overlay).
@@ -145,7 +144,15 @@ export function AppSidebar({
   React.useEffect(() => {
     if (!user) return;
     api
-      .get<{ channels: Channel[] }>("/dm-channels")
+      .get<{
+        channels: (Channel & {
+          otherMembers: {
+            user_id: string;
+            display_name: string | null;
+            avatar_url: string | null;
+          }[];
+        })[];
+      }>("/dm-channels")
       .then((res) => setDmChannels(res.channels))
       .catch(() => setDmChannels([]));
   }, [workspaceSlug, user]);
@@ -186,12 +193,26 @@ export function AppSidebar({
     const targetUserIds = Array.from(selectedUserIds);
     try {
       if (targetUserIds.length === 1) {
+        const targetId = targetUserIds[0]!;
         const res = await api.post<{ channel: Channel }>(`/workspaces/${workspace.id}/dm`, {
-          targetUserId: targetUserIds[0],
+          targetUserId: targetId,
         });
+        const targetUser = chatUsers.find((u) => u.id === targetId);
         setDmChannels((prev) => {
           if (prev.find((c) => c.id === res.channel.id)) return prev;
-          return [res.channel, ...prev];
+          return [
+            {
+              ...res.channel,
+              otherMembers: [
+                {
+                  user_id: targetId,
+                  display_name: targetUser?.display_name ?? null,
+                  avatar_url: null,
+                },
+              ],
+            },
+            ...prev,
+          ];
         });
         setShowUserPicker(false);
         setSelectedUserIds(new Set());
@@ -200,9 +221,13 @@ export function AppSidebar({
         const res = await api.post<{ channel: Channel }>(`/workspaces/${workspace.id}/gm`, {
           targetUserIds,
         });
+        const otherMembers = targetUserIds.map((uid) => {
+          const u = chatUsers.find((cu) => cu.id === uid);
+          return { user_id: uid, display_name: u?.display_name ?? null, avatar_url: null };
+        });
         setDmChannels((prev) => {
           if (prev.find((c) => c.id === res.channel.id)) return prev;
-          return [res.channel, ...prev];
+          return [{ ...res.channel, otherMembers }, ...prev];
         });
         setShowUserPicker(false);
         setSelectedUserIds(new Set());
@@ -975,45 +1000,45 @@ export function AppSidebar({
                 <>
                   {dmChannels.length > 0 ? (
                     <ul role="listbox" aria-label="Direct messages">
-                      {dmChannels.map((ch) => (
-                        <li key={ch.id} role="option" aria-selected={channelId === ch.id}>
-                          <Link
-                            href={`/${workspaceSlug}/${ch.slug}`}
-                            className="mm-sidebar-channel rounded-md px-5 text-sm transition-colors"
-                            style={{
-                              color:
-                                channelId === ch.id
-                                  ? "var(--sidebar-text-active-color)"
-                                  : "var(--sidebar-text)",
-                              background:
-                                channelId === ch.id ? "rgba(255,255,255,0.12)" : "transparent",
-                              fontWeight: channelId === ch.id ? 600 : 400,
-                            }}
-                          >
-                            <span className="mr-2 inline-flex items-center gap-1">
-                              {ch.name.startsWith("dm-")
-                                ? (() => {
-                                    const otherId = ch.name.replace(/^dm-/, "");
-                                    const status = getStatus(otherId);
-                                    const displayName =
-                                      dmNameMap.get(otherId) ?? otherId.slice(0, 8);
-                                    return (
-                                      <>
-                                        <span
-                                          className={`status-pill ${statusClass(status)}`}
-                                          style={{ background: presenceColor(status) }}
-                                          aria-label={`Status: ${status}`}
-                                          role="status"
-                                        />
-                                        {displayName}
-                                      </>
-                                    );
-                                  })()
-                                : ch.name.replace(/^gm-/, "").slice(0, 20)}
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
+                      {dmChannels.map((ch) => {
+                        const isGroup = ch.channel_type === "group";
+                        const displayName = isGroup
+                          ? ch.name.replace(/^(gm-)?/, "")
+                          : (ch.otherMembers?.[0]?.display_name ??
+                            ch.otherMembers?.[0]?.user_id?.slice(0, 8) ??
+                            ch.name);
+                        const otherUserId = ch.otherMembers?.[0]?.user_id;
+                        const status = otherUserId ? getStatus(otherUserId) : "offline";
+                        return (
+                          <li key={ch.id} role="option" aria-selected={channelId === ch.id}>
+                            <Link
+                              href={`/${workspaceSlug}/${ch.slug}`}
+                              className="mm-sidebar-channel rounded-md px-5 text-sm transition-colors"
+                              style={{
+                                color:
+                                  channelId === ch.id
+                                    ? "var(--sidebar-text-active-color)"
+                                    : "var(--sidebar-text)",
+                                background:
+                                  channelId === ch.id ? "rgba(255,255,255,0.12)" : "transparent",
+                                fontWeight: channelId === ch.id ? 600 : 400,
+                              }}
+                            >
+                              <span className="mr-2 inline-flex items-center gap-1">
+                                {!isGroup && otherUserId && (
+                                  <span
+                                    className={`status-pill ${statusClass(status)}`}
+                                    style={{ background: presenceColor(status) }}
+                                    aria-label={`Status: ${status}`}
+                                    role="status"
+                                  />
+                                )}
+                                {displayName}
+                              </span>
+                            </Link>
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
                     <p className="px-5 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
