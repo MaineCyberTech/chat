@@ -20,9 +20,10 @@ interface ChannelBookmark {
 
 interface Props {
   channelId: string;
+  mode?: "inline" | "panel";
 }
 
-export function ChannelBookmarks({ channelId }: Props) {
+export function ChannelBookmarks({ channelId, mode = "panel" }: Props) {
   const [bookmarks, setBookmarks] = useState<ChannelBookmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -36,17 +37,21 @@ export function ChannelBookmarks({ channelId }: Props) {
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const { addToast } = useToast();
+  const addToastRef = useRef(addToast);
+  addToastRef.current = addToast;
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     api
       .get<{ bookmarks: ChannelBookmark[] }>(`/channels/${channelId}/bookmarks`)
-      .then((res) => setBookmarks(res.bookmarks))
-      .catch(() =>
-        addToast({ title: "Error", description: "Failed to load bookmarks", variant: "error" }),
-      )
-      .finally(() => setLoading(false));
-  }, [channelId, addToast]);
+      .then((res) => { if (!cancelled) setBookmarks(res.bookmarks); })
+      .catch(() => {
+        if (!cancelled) addToastRef.current({ title: "Error", description: "Failed to load bookmarks", variant: "error" });
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [channelId]);
 
   async function handleCreate() {
     if (!newTitle.trim() || saving) return;
@@ -113,8 +118,8 @@ export function ChannelBookmarks({ channelId }: Props) {
 
   return (
     <>
-      {/* Inline bookmark bar */}
-      {bookmarks.length > 0 && (
+      {/* Inline bookmark bar (shown in chat view) */}
+      {mode === "inline" && bookmarks.length > 0 && (
         <div
           className="border-b"
           style={{
@@ -286,8 +291,8 @@ export function ChannelBookmarks({ channelId }: Props) {
         </div>
       )}
 
-      {/* RHS Bookmark list tab content */}
-      {loading ? (
+      {/* RHS Bookmark list tab content (panel mode only) */}
+      {mode === "panel" && (loading ? (
         <div className="animate-pulse space-y-2 p-2">
           {[1, 2].map((i) => (
             <div
@@ -416,7 +421,7 @@ export function ChannelBookmarks({ channelId }: Props) {
             </div>
           )}
         </div>
-      )}
+      ))}
     </>
   );
 }
