@@ -4,10 +4,10 @@ import { logger } from "@chat/config/logger.js";
 import { createSupabaseClient } from "../lib/supabase.js";
 
 export interface ComplianceExportJobData {
-  type: "messages" | "audit_logs" | "channels" | "users";
-  dateFrom: string;
-  dateTo: string;
-  exportId: string;
+  type: "messages" | "audit_logs" | "channels" | "users" | "_scheduler";
+  dateFrom?: string;
+  dateTo?: string;
+  exportId?: string;
 }
 
 function escapeCsv(v: unknown): string {
@@ -168,7 +168,7 @@ export function registerComplianceExportProcessor() {
     "compliance-export",
     async (job: Job<ComplianceExportJobData>) => {
       const signal = AbortSignal.timeout(60000);
-      const { type, dateFrom, dateTo, exportId } = job.data;
+      const { type, dateFrom = "", dateTo = "", exportId = "" } = job.data;
 
       logger.info({ type, dateFrom, dateTo, exportId }, "Processing compliance export");
 
@@ -176,6 +176,59 @@ export function registerComplianceExportProcessor() {
         let result: { csv: string; count: number };
 
         try {
+          if (type === "_scheduler") {
+            const endDate = new Date();
+            const startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+            let totalCount = 0;
+
+            for (const exportType of ["messages", "audit_logs"] as const) {
+              const { data: record, error: insError } = await supabase
+                .from("compliance_exports")
+                .insert({
+                  type: exportType,
+                  date_from: startDate.toISOString(),
+                  date_to: endDate.toISOString(),
+                  status: "pending",
+                  row_count: 0,
+                })
+                .select("id")
+                .single();
+
+              if (insError || !record) {
+                logger.error({ type: exportType, error: insError }, "Failed to create export record");
+                continue;
+              }
+
+              try {
+                switch (exportType) {
+                  case "messages":
+                    result = await exportMessages(supabase, startDate.toISOString(), endDate.toISOString());
+                    break;
+                  case "audit_logs":
+                    result = await exportAuditLogs(supabase, startDate.toISOString(), endDate.toISOString());
+                    break;
+                  default:
+                    continue;
+                }
+
+                await supabase
+                  .from("compliance_exports")
+                  .update({ status: "completed", row_count: result.count, csv_content: result.csv })
+                  .eq("id", record.id);
+
+                totalCount += result.count;
+                logger.info({ type: exportType, count: result.count }, "Scheduled compliance export completed");
+              } catch (innerErr) {
+                await supabase
+                  .from("compliance_exports")
+                  .update({ status: "failed", error_msg: String(innerErr) })
+                  .eq("id", record.id);
+              }
+            }
+
+            return { status: "completed", type: "_scheduler", count: totalCount };
+          }
+
           switch (type) {
             case "messages":
               result = await exportMessages(supabase, dateFrom, dateTo);

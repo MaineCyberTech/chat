@@ -41,7 +41,7 @@ const messageColumns: CsvColumn[] = [
 router.get(
   "/admin/export/workspaces",
   authenticate,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (_req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
     const { data } = await admin
@@ -55,7 +55,7 @@ router.get(
 router.get(
   "/admin/export/users",
   authenticate,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (_req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
     const { data } = await admin
@@ -69,7 +69,7 @@ router.get(
 router.get(
   "/admin/export/channels",
   authenticate,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (_req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
     const { data } = await admin
@@ -83,7 +83,7 @@ router.get(
 router.get(
   "/admin/export/messages",
   authenticate,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (_req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
     const { data } = await admin

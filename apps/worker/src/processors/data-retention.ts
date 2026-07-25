@@ -172,6 +172,7 @@ async function retainNotifications(
   const { data: notifs, error: selectError } = await supabase
     .from("notifications")
     .select("id")
+    .eq("read", true)
     .lt("created_at", cutoff.toISOString())
     .limit(1000);
 

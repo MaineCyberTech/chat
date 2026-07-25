@@ -59,7 +59,7 @@ router.get(
 
 router.post(
   "/feature-flags",
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req, res) => {
     const parsed = createFlagSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -78,7 +78,7 @@ router.post(
 
 router.patch(
   "/feature-flags/:key",
-  requireAdmin,
+  requireAdmin(),
   validateStringKeyParam("key"),
   asyncHandler(async (req, res) => {
     const parsed = updateFlagSchema.safeParse(req.body);
@@ -95,7 +95,7 @@ router.patch(
 
 router.delete(
   "/feature-flags/:key",
-  requireAdmin,
+  requireAdmin(),
   validateStringKeyParam("key"),
   asyncHandler(async (req, res) => {
     const deleted = await featureFlagService.deleteFlag(req.params.key as string);

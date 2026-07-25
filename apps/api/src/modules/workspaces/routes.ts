@@ -26,6 +26,7 @@ import {
   NotFoundError,
   InternalServerError,
   ConflictError,
+  ForbiddenError,
 } from "../../lib/app-error.js";
 import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
 import { parsePaginationParams } from "../../lib/pagination.js";
@@ -165,7 +166,7 @@ router.get(
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const role = (req as unknown as { workspaceRole?: string }).workspaceRole;
   if (role !== "owner" && role !== "admin") {
-    res.status(403).json({ error: { code: "FORBIDDEN", message: "Admin role required" } });
+    next(new ForbiddenError("Admin role required"));
     return;
   }
   next();

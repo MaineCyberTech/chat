@@ -11,6 +11,7 @@ import {
   NotFoundError,
   ConflictError,
   InternalServerError,
+  ForbiddenError,
 } from "../../lib/app-error.js";
 import {
   createMessageSchema,
@@ -369,7 +370,45 @@ router.post(
       throw new BadRequestError("targetChannelId required");
     }
 
-    const original = await messageService.getById(req.params.id as string, req.supabase!);
+    if (!req.supabase) {
+      throw new InternalServerError("Auth context missing");
+    }
+
+    const { data: targetChannel, error: targetErr } = await req.supabase
+      .from("channels")
+      .select("workspace_id, is_private")
+      .eq("id", targetChannelId)
+      .single();
+
+    if (targetErr || !targetChannel) {
+      throw new NotFoundError("Target channel not found");
+    }
+
+    const { data: targetMember, error: targetMemberErr } = await req.supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("workspace_id", targetChannel.workspace_id)
+      .eq("user_id", req.userId)
+      .single();
+
+    if (targetMemberErr || !targetMember) {
+      throw new ForbiddenError("Not a member of the target workspace");
+    }
+
+    if (targetChannel.is_private) {
+      const { data: targetChannelMember } = await req.supabase
+        .from("channel_members")
+        .select("user_id")
+        .eq("channel_id", targetChannelId)
+        .eq("user_id", req.userId)
+        .maybeSingle();
+
+      if (!targetChannelMember) {
+        throw new ForbiddenError("Not a member of the target private channel");
+      }
+    }
+
+    const original = await messageService.getById(req.params.id as string, req.supabase);
     if (!original) {
       throw new NotFoundError("Message not found");
     }

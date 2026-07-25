@@ -16,7 +16,7 @@ type DataRetentionJobData = {
 };
 
 type CleanupJobData = {
-  type: "old_deliveries" | "dead_letters" | "consent_logs" | "stale_sessions" | "expired_uploads" | "message_edit_history";
+  type: "old_deliveries" | "dead_letters" | "consent_logs" | "stale_sessions" | "expired_uploads" | "message_edit_history" | "stale_uploads" | "expired_tokens";
   olderThanDays?: number;
 };
 
@@ -36,6 +36,8 @@ const CLEANUP_SCHEDULE: { type: CleanupJobData["type"]; olderThanDays: number }[
   { type: "stale_sessions", olderThanDays: 90 },
   { type: "expired_uploads", olderThanDays: 7 },
   { type: "message_edit_history", olderThanDays: 365 },
+  { type: "stale_uploads", olderThanDays: 1 },
+  { type: "expired_tokens", olderThanDays: 30 },
 ];
 
 async function runDataRetention() {
@@ -115,39 +117,52 @@ async function runComplianceExport() {
   }
 }
 
+async function registerRepeatableSchedules() {
+  const retentionMs = 24 * 60 * 60 * 1000;
+  const cleanupMs = 6 * 60 * 60 * 1000;
+  const complianceMs = 24 * 60 * 60 * 1000;
+
+  for (const item of RETENTION_SCHEDULE) {
+    await dataRetentionQueue.add(`scheduler:retention:${item.type}`, item, {
+      repeat: { every: retentionMs },
+      jobId: `scheduler:retention:${item.type}`,
+      removeOnComplete: { age: 3600 },
+      removeOnFail: { age: 86400 },
+    });
+  }
+
+  for (const item of CLEANUP_SCHEDULE) {
+    await cleanupQueue.add(`scheduler:cleanup:${item.type}`, item, {
+      repeat: { every: cleanupMs },
+      jobId: `scheduler:cleanup:${item.type}`,
+      removeOnComplete: { age: 3600 },
+      removeOnFail: { age: 86400 },
+    });
+  }
+
+  await complianceExportQueue.add("scheduler:compliance", { type: "_scheduler" }, {
+    repeat: { every: complianceMs },
+    jobId: "scheduler:compliance",
+    removeOnComplete: { age: 3600 },
+    removeOnFail: { age: 86400 },
+  });
+
+  logger.info(
+    "Repeatable maintenance schedules registered (retention: 24h, cleanup: 6h, compliance export: 24h)",
+  );
+}
+
 export function startScheduler() {
   runDataRetention().catch((err) =>
     logger.error({ error: String(err) }, "Initial data retention run failed"),
   );
   runCleanup().catch((err) => logger.error({ error: String(err) }, "Initial cleanup run failed"));
-
-  setInterval(
-    () => {
-      runDataRetention().catch((err) =>
-        logger.error({ error: String(err) }, "Data retention run failed"),
-      );
-    },
-    24 * 60 * 60 * 1000,
-  );
-
-  setInterval(
-    () => {
-      runCleanup().catch((err) => logger.error({ error: String(err) }, "Cleanup run failed"));
-    },
-    6 * 60 * 60 * 1000,
-  );
-
   runComplianceExport().catch((err) =>
     logger.error({ error: String(err) }, "Initial compliance export run failed"),
   );
 
-  setInterval(
-    () => {
-      runComplianceExport().catch((err) =>
-        logger.error({ error: String(err) }, "Compliance export run failed"),
-      );
-    },
-    24 * 60 * 60 * 1000,
+  registerRepeatableSchedules().catch((err) =>
+    logger.error({ error: String(err) }, "Failed to register repeatable schedules"),
   );
 
   logger.info(

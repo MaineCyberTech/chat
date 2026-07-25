@@ -17,7 +17,7 @@ function getCsvBody(req: Request): string {
 router.post(
   "/admin/import/workspaces",
   authenticate,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: Request, res: Response) => {
     const csv = getCsvBody(req);
     const { data: rows, errors } = parseCsv<{ name: string; slug: string }>(csv);
@@ -49,7 +49,7 @@ router.post(
 router.post(
   "/admin/import/users",
   authenticate,
-  requireAdmin,
+  requireAdmin(),
   asyncHandler(async (req: Request, res: Response) => {
     const csv = getCsvBody(req);
     const { data: rows, errors } = parseCsv<{ email: string; display_name: string }>(csv);

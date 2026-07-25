@@ -11,3 +11,10 @@ create policy "users_update_own"
   to authenticated
   using (auth.uid() = id)
   with check (auth.uid() = id);
+
+-- RLS: Only the owning user or a trusted trigger/backend can insert.
+-- This prevents users from inserting rows for other users.
+create policy "users_insert_own"
+  on public.users for insert
+  to authenticated
+  with check (auth.uid() = id);

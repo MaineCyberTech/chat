@@ -21,6 +21,7 @@ export default defineConfig({
       "apps/*/components/**/*.test.tsx",
       "packages/*/src/**/*.test.ts",
       "packages/*/src/**/*.test.tsx",
+      "packages/*/__tests__/**/*.test.ts",
     ],
     exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**"],
     coverage: {
@@ -28,10 +29,10 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       include: ["apps/*/src/**", "packages/*/src/**"],
       thresholds: {
-        lines: 30,
-        functions: 25,
-        branches: 25,
-        statements: 30,
+        lines: 50,
+        functions: 40,
+        branches: 40,
+        statements: 50,
       },
     },
   },

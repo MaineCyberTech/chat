@@ -57,3 +57,6 @@
 20260709000003_add_compliance_exports.sql
 20260709000004_add_announcements.sql
 20260710000001_add_preference_columns.sql
+20260724000001_fix_sidebar_assignments_trigger.sql
+20260724000002_fix_compliance_export_rls.sql
+20260724000003_create_gdpr_delete_function.sql

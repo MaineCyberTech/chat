@@ -99,6 +99,33 @@ async function deliverPush(
   return sentCount > 0;
 }
 
+async function withPerChannelRetry(
+  channel: string,
+  fn: () => Promise<boolean>,
+  maxRetries = 2,
+): Promise<boolean> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const ok = await fn();
+      if (ok) return true;
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 500;
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    } catch (err) {
+      logger.warn(
+        { channel, attempt, error: String(err) },
+        "Channel delivery attempt failed",
+      );
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 500;
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+  }
+  return false;
+}
+
 async function deliverEmail(
   supabase: ReturnType<typeof createSupabaseClient>,
   data: NotificationJobData,
@@ -229,13 +256,19 @@ export function registerNotificationProcessor() {
       const results: Record<string, boolean> = {};
 
       if (channels.includes("in_app")) {
-        results.in_app = await deliverInApp(supabase, job.data);
+        results.in_app = await withPerChannelRetry("in_app", () =>
+          deliverInApp(supabase, job.data),
+        );
       }
       if (channels.includes("push")) {
-        results.push = await deliverPush(supabase, job.data);
+        results.push = await withPerChannelRetry("push", () =>
+          deliverPush(supabase, job.data),
+        );
       }
       if (channels.includes("email")) {
-        results.email = await deliverEmail(supabase, job.data);
+        results.email = await withPerChannelRetry("email", () =>
+          deliverEmail(supabase, job.data),
+        );
       }
 
       const allOk = Object.values(results).every((r) => r);

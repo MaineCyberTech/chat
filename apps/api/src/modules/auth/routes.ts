@@ -305,27 +305,27 @@ router.delete(
     const supabase = getSupabaseAdmin();
     const userId = req.userId!;
 
-    // Delete user data in order (respecting FK constraints)
-    const { data: userCategories } = await supabase.from("sidebar_categories").select("id").eq("user_id", userId);
-    const categoryIds = (userCategories ?? []).map((c: { id: string }) => c.id);
-    if (categoryIds.length > 0) {
-      await supabase.from("sidebar_channel_assignments").delete().in("category_id", categoryIds);
-    }
-    await supabase.from("sidebar_categories").delete().eq("user_id", userId);
-    await supabase.from("consent_logs").delete().eq("user_id", userId);
-    await supabase.from("channel_bookmarks").delete().eq("created_by", userId);
-    await supabase.from("message_reminders").delete().eq("user_id", userId);
-    await supabase.from("notifications").delete().eq("user_id", userId);
-    await supabase.from("push_subscriptions").delete().eq("user_id", userId);
-    await supabase.from("messages").delete().eq("user_id", userId);
-    await supabase.from("reactions").delete().eq("user_id", userId);
-    await supabase.from("channel_members").delete().eq("user_id", userId);
-    await supabase.from("workspace_members").delete().eq("user_id", userId);
-    await supabase.from("user_preferences").delete().eq("user_id", userId);
-    await supabase.from("users").delete().eq("id", userId);
+    const { data: rpcResult, error: rpcError } = await supabase.rpc("gdpr_delete_user", {
+      target_user_id: userId,
+    });
 
-    // Delete auth user (requires service role)
-    await supabase.auth.admin.deleteUser(userId);
+    if (rpcError) {
+      logger.error("GDPR RPC delete failed", { userId, error: String(rpcError) });
+      throw new InternalServerError("Failed to delete user data");
+    }
+
+    const result = rpcResult as { success: boolean; user_id: string; error?: string };
+    if (!result?.success) {
+      logger.error("GDPR RPC delete returned failure", { userId, result });
+      throw new InternalServerError(result?.error ?? "Failed to delete user data");
+    }
+
+    try {
+      await supabase.auth.admin.deleteUser(userId);
+    } catch (err) {
+      logger.error("Failed to delete auth user during GDPR deletion", { userId, error: String(err) });
+      throw new InternalServerError("Failed to complete account deletion. Auth user could not be removed.");
+    }
 
     res.status(204).send();
   }),

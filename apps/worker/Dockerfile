@@ -32,4 +32,7 @@ USER appuser
 
 EXPOSE 4001
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -q --spider http://localhost:4100/healthz || exit 1
+
 CMD ["node", "apps/worker/dist/main.js"]

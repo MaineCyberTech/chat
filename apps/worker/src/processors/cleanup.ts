@@ -10,7 +10,9 @@ export interface CleanupJobData {
     | "consent_logs"
     | "stale_sessions"
     | "expired_uploads"
-    | "message_edit_history";
+    | "message_edit_history"
+    | "stale_uploads"
+    | "expired_tokens";
   olderThanDays?: number;
 }
 
@@ -151,6 +153,66 @@ async function cleanupMessageEditHistory(
   return ids.length;
 }
 
+async function cleanupStaleUploads(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  olderThanDays: number,
+) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - olderThanDays);
+
+  const { data: objects, error: listError } = await supabase
+    .schema("storage")
+    .from("objects")
+    .select("name")
+    .eq("bucket_id", "chat-uploads")
+    .lt("created_at", cutoff.toISOString())
+    .limit(200)
+    .abortSignal(AbortSignal.timeout(15000));
+
+  if (listError) {
+    logger.error({ error: listError }, "Failed to list stale uploads from storage");
+    return 0;
+  }
+
+  if (!objects || objects.length === 0) return 0;
+
+  const names: string[] = (objects as { name: string }[]).map((o) => o.name);
+  const { error: delError } = await supabase.storage
+    .from("chat-uploads")
+    .remove(names);
+
+  if (delError) {
+    logger.error({ error: delError }, "Failed to delete stale uploads from storage");
+    return 0;
+  }
+
+  logger.info({ count: names.length, olderThanDays }, "Cleaned up stale uploads");
+  return names.length;
+}
+
+async function cleanupExpiredTokens(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  olderThanDays: number,
+) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - olderThanDays);
+
+  const { error: delError } = await supabase
+    .schema("auth")
+    .from("refresh_tokens")
+    .delete({ count: "exact" })
+    .lt("updated_at", cutoff.toISOString())
+    .abortSignal(AbortSignal.timeout(15000));
+
+  if (delError) {
+    logger.error({ error: delError }, "Failed to clean up expired tokens");
+    return 0;
+  }
+
+  logger.info({ olderThanDays }, "Cleaned up expired auth tokens");
+  return 1;
+}
+
 export function registerCleanupProcessor() {
   const env = loadEnv();
   if (!env.REDIS_URL) throw new Error("Redis URL not configured");
@@ -186,7 +248,13 @@ export function registerCleanupProcessor() {
             logger.info({ type }, "Stale session cleanup handled by Supabase auth hooks");
             break;
           case "expired_uploads":
-            logger.info({ type }, "Expired upload cleanup not yet implemented");
+            logger.info({ type }, "Expired upload cleanup not implemented via DB (use stale_uploads)");
+            break;
+          case "stale_uploads":
+            cleaned = await cleanupStaleUploads(supabase, olderThanDays);
+            break;
+          case "expired_tokens":
+            cleaned = await cleanupExpiredTokens(supabase, olderThanDays);
             break;
           default:
             logger.warn({ type }, "Unknown cleanup job type");

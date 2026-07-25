@@ -56,8 +56,8 @@ COPY --from=base /app/apps/web/.next/standalone ./
 COPY --from=base /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=base /app/apps/web/public ./apps/web/public
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -qO- http://localhost:3000 || exit 1
 
 EXPOSE 3000
 
