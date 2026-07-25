@@ -11,7 +11,6 @@ export interface CleanupJobData {
     | "stale_sessions"
     | "expired_uploads"
     | "message_edit_history"
-    | "stale_uploads"
     | "expired_tokens";
   olderThanDays?: number;
 }
@@ -248,9 +247,6 @@ export function registerCleanupProcessor() {
             logger.info({ type }, "Stale session cleanup handled by Supabase auth hooks");
             break;
           case "expired_uploads":
-            cleaned = await cleanupStaleUploads(supabase, olderThanDays);
-            break;
-          case "stale_uploads":
             cleaned = await cleanupStaleUploads(supabase, olderThanDays);
             break;
           case "expired_tokens":

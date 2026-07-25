@@ -8,6 +8,7 @@ import { registerSearchIndexer, searchQueue } from "./processors/search-indexer.
 import { registerCleanupProcessor, cleanupQueue } from "./processors/cleanup.js";
 import { registerDataRetentionProcessor, dataRetentionQueue } from "./processors/data-retention.js";
 import { registerComplianceExportProcessor, complianceExportQueue } from "./processors/compliance-export.js";
+import { registerReminderProcessor, reminderQueue } from "./processors/reminder.js";
 import { startScheduler } from "./scheduler.js";
 
 loadEnv();
@@ -22,6 +23,7 @@ async function gatherMetrics() {
     { name: "cleanup", queue: cleanupQueue },
     { name: "data-retention", queue: dataRetentionQueue },
     { name: "compliance-export", queue: complianceExportQueue },
+    { name: "reminder", queue: reminderQueue },
   ];
 
   const metrics: Record<string, unknown> = {};
@@ -98,32 +100,37 @@ async function main() {
   registerCleanupProcessor();
   registerDataRetentionProcessor();
   registerComplianceExportProcessor();
+  registerReminderProcessor();
 
-  // Start maintenance scheduler (data retention, cleanup, compliance exports)
+  const queues = [webhookQueue, notificationQueue, searchQueue, cleanupQueue, dataRetentionQueue, complianceExportQueue, reminderQueue];
+
   startScheduler();
 
-  // Poll for due reminders every 30 seconds
-  const { processReminders } = await import("./processors/reminder.js");
-  setInterval(() => {
-    processReminders().catch((err: unknown) =>
-      logger.error({ error: String(err) }, "Reminder poll failed"),
-    );
-  }, 30_000);
-  processReminders().catch((err: unknown) =>
-    logger.error({ error: String(err) }, "Initial reminder poll failed"),
-  );
-
-  // Graceful shutdown
   const forceExit = setTimeout(() => {
     logger.error("Worker forced shutdown after timeout");
     process.exit(1);
-  }, 10_000).unref();
+  }, 30_000).unref();
 
   const shutdown = async (signal: string) => {
     clearTimeout(forceExit);
     logger.info({ signal }, "Shutting down worker");
     await new Promise<void>((resolve) => healthServer.close(() => resolve()));
-    await redis.quit();
+
+    for (const q of queues) {
+      try {
+        await q.pause();
+        await q.close();
+      } catch (err) {
+        logger.error({ queue: q.name, error: String(err) }, "Failed to close queue");
+      }
+    }
+
+    try {
+      await redis.quit();
+    } catch (err) {
+      logger.error({ error: String(err) }, "Failed to quit Redis");
+    }
+
     logger.info("Worker shut down complete");
     process.exit(0);
   };

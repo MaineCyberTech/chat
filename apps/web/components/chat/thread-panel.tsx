@@ -72,6 +72,7 @@ export function ThreadPanel({
   const [participants, setParticipants] = useState<ParticipantInfo[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   const [reactions, setReactions] = useState<Map<string, Reaction[]>>(new Map());
+  const fetchedReactionIds = useRef<Set<string>>(new Set());
   const [pickerMessageId, setPickerMessageId] = useState<string | null>(null);
   const { addToast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -101,10 +102,11 @@ export function ThreadPanel({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [replies.length]);
 
-  // Fetch reactions for all replies
+  // Fetch reactions for new replies only
   useEffect(() => {
-    const ids = replies.map((r) => r.id).filter((id) => !id.startsWith("temp_"));
+    const ids = replies.map((r) => r.id).filter((id) => !id.startsWith("temp_") && !fetchedReactionIds.current.has(id));
     if (ids.length === 0) return;
+    ids.forEach((id) => fetchedReactionIds.current.add(id));
     const CHUNK_SIZE = 20;
     const chunks: string[][] = [];
     for (let i = 0; i < ids.length; i += CHUNK_SIZE) chunks.push(ids.slice(i, i + CHUNK_SIZE));

@@ -117,6 +117,7 @@ jobs:
           host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          strict_host_key_checking: true
           script: |
             set -e
             cloud-init status --wait 2>/dev/null || true
@@ -195,6 +196,7 @@ jobs:
           host: ${{ steps.ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          strict_host_key_checking: true
           script: |
             set -e
             cd ${{ env.REPO_DIR }}
@@ -238,7 +240,7 @@ jobs:
               fi
             done
 
-            docker compose -f infra/docker/docker-compose.devremote.yml up -d --force-recreate --remove-orphans || true
+            docker compose -f infra/docker/docker-compose.devremote.yml up -d --force-recreate --remove-orphans
             docker image prune -af
 
             # Show container logs from the start for debugging

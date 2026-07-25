@@ -234,7 +234,7 @@ export function AppSidebar({
         router.push(`/${workspaceSlug}/${res.channel.slug}`);
       }
     } catch {
-      console.warn("Failed to create group chat");
+      addToast({ title: "Error", description: "Failed to create group chat", variant: "error" });
     }
   }
 
@@ -264,7 +264,7 @@ export function AppSidebar({
       const s = await getSocket();
       s.emit("presence:set", status);
     } catch {
-      console.warn("Failed to set status");
+      addToast({ title: "Error", description: "Failed to set status", variant: "error" });
     }
   }
 
@@ -282,7 +282,7 @@ export function AppSidebar({
       setNewCategoryName("");
       setCreatingCategory(false);
     } catch {
-      console.warn("Failed to create category");
+      addToast({ title: "Error", description: "Failed to create category", variant: "error" });
     }
   }
 
@@ -293,7 +293,7 @@ export function AppSidebar({
       setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name: name.trim() } : c)));
       setRenamingCategory(null);
     } catch {
-      console.warn("Failed to rename category");
+      addToast({ title: "Error", description: "Failed to rename category", variant: "error" });
     }
   }
 
@@ -301,7 +301,7 @@ export function AppSidebar({
     try {
       await api.patch("/sidebar-categories/reorder", { categoryIds: ids });
     } catch {
-      console.warn("Failed to reorder categories");
+      addToast({ title: "Error", description: "Failed to reorder categories", variant: "error" });
     }
   }
 
@@ -332,7 +332,7 @@ export function AppSidebar({
       await api.delete(`/sidebar-categories/${id}`);
       setCategories((prev) => prev.filter((c) => c.id !== id));
     } catch {
-      console.warn("Failed to delete category");
+      addToast({ title: "Error", description: "Failed to delete category", variant: "error" });
     }
   }
 
@@ -373,7 +373,7 @@ export function AppSidebar({
     setDragCatOverId(null);
     const catIds = reordered.map((c) => c.id);
     api.patch("/sidebar-categories/reorder", { categoryIds: catIds }).catch(() => {
-      console.warn("Failed to reorder categories");
+      addToast({ title: "Error", description: "Failed to reorder categories", variant: "error" });
     });
   }
 

@@ -1,6 +1,8 @@
 # API Documentation
 
-- [OpenAPI Specification](./openapi.json) — Full API schema in OpenAPI 3.0 format.
+The [OpenAPI Specification](./openapi.json) is the **authoritative** API reference. This README provides summary documentation for common endpoints; if there is any discrepancy, the OpenAPI spec takes precedence.
+
+- [OpenAPI Specification](./openapi.json) — Full API schema in OpenAPI 3.0 format (authoritative).
 - [API Versioning](./versioning.md) — Versioning policy and migration guidelines.
 - [API Changelog](./changelog.json) — Versioned changelog of all API changes.
 - [Rate Limits](./rate-limits.md) — Rate limit tiers and configuration.

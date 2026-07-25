@@ -18,6 +18,10 @@ interface ChannelBookmark {
   updated_at: string;
 }
 
+const bookmarksCache = new Map<string, { bookmarks: ChannelBookmark[]; ts: number }>();
+const pendingRequests = new Map<string, Promise<ChannelBookmark[]>>();
+const CACHE_TTL = 5000;
+
 interface Props {
   channelId: string;
   mode?: "inline" | "panel";
@@ -42,14 +46,33 @@ export function ChannelBookmarks({ channelId, mode = "panel" }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    const cached = bookmarksCache.get(channelId);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      setBookmarks(cached.bookmarks);
+      setLoading(false);
+      return;
+    }
+    const existing = pendingRequests.get(channelId);
+    if (existing) {
+      existing.then((data) => { if (!cancelled) { setBookmarks(data); setLoading(false); } });
+      return;
+    }
     setLoading(true);
-    api
+    const promise = api
       .get<{ bookmarks: ChannelBookmark[] }>(`/channels/${channelId}/bookmarks`)
-      .then((res) => { if (!cancelled) setBookmarks(res.bookmarks); })
+      .then((res) => {
+        bookmarksCache.set(channelId, { bookmarks: res.bookmarks, ts: Date.now() });
+        return res.bookmarks;
+      })
       .catch(() => {
         if (!cancelled) addToastRef.current({ title: "Error", description: "Failed to load bookmarks", variant: "error" });
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
+        return [] as ChannelBookmark[];
+      });
+    pendingRequests.set(channelId, promise);
+    promise.then((data) => {
+      if (!cancelled) { setBookmarks(data); setLoading(false); }
+      pendingRequests.delete(channelId);
+    });
     return () => { cancelled = true; };
   }, [channelId]);
 

@@ -1,5 +1,7 @@
 # Alerting
 
+**This is the authoritative alerting reference.** The previous duplicate at `docs/operations/alerting.md` has been consolidated here. Severity definitions and thresholds in this document take precedence.
+
 ## What to Alert On
 
 | Alert                         | Threshold                                    | Severity | Response                                      |

@@ -84,26 +84,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added .husky/pre-commit hook for lint-staged
 - Infra Docker README updated from Traefik to Caddy
 
-## [1.0.0] - 2026-06-22
-
-### Added
-
-- Initial release of Chat Platform
-- Magic link authentication with Supabase
-- Workspace and channel CRUD with RLS policies
-- Real-time messaging with Socket.io (rooms, typing, presence)
-- Threaded replies, message edit/delete
-- File uploads via Supabase Storage signed URLs
-- Full-text search with PostgreSQL tsvector
-- 8 UI components (Avatar, Badge, Button, Dialog, Input, SidebarGroup, Skeleton, ThemeToggle)
-- 7 SQL migrations with RLS policies
-- Docker multi-stage builds with HEALTHCHECK
-- CI/CD pipelines (validate, build, deploy)
-- Terraform infrastructure for DigitalOcean
-- Local development with Supabase CLI
-
----
-
-## Release History
-
 See [GitHub Releases](https://github.com/mainecybertech/chat/releases) for detailed release notes and artifacts.

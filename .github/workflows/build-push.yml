@@ -16,6 +16,10 @@ on:
     branches: [develop, main]
     paths: *build-paths
 
+permissions:
+  contents: read
+  packages: write
+
 concurrency:
   group: build-push-${{ github.ref }}
   cancel-in-progress: true

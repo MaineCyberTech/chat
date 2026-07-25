@@ -3,6 +3,7 @@ import { createSupabaseClient } from "./lib/supabase.js";
 import { dataRetentionQueue } from "./processors/data-retention.js";
 import { cleanupQueue } from "./processors/cleanup.js";
 import { complianceExportQueue } from "./processors/compliance-export.js";
+import { reminderQueue } from "./processors/reminder.js";
 
 type DataRetentionJobData = {
   type:
@@ -16,7 +17,7 @@ type DataRetentionJobData = {
 };
 
 type CleanupJobData = {
-  type: "old_deliveries" | "dead_letters" | "consent_logs" | "stale_sessions" | "expired_uploads" | "message_edit_history" | "stale_uploads" | "expired_tokens";
+  type: "old_deliveries" | "dead_letters" | "consent_logs" | "stale_sessions" | "expired_uploads" | "message_edit_history" | "expired_tokens";
   olderThanDays?: number;
 };
 
@@ -36,7 +37,6 @@ const CLEANUP_SCHEDULE: { type: CleanupJobData["type"]; olderThanDays: number }[
   { type: "stale_sessions", olderThanDays: 90 },
   { type: "expired_uploads", olderThanDays: 7 },
   { type: "message_edit_history", olderThanDays: 365 },
-  { type: "stale_uploads", olderThanDays: 1 },
   { type: "expired_tokens", olderThanDays: 30 },
 ];
 
@@ -147,8 +147,15 @@ async function registerRepeatableSchedules() {
     removeOnFail: { age: 86400 },
   });
 
+  await reminderQueue.add("scheduler:reminder", { _scheduler: true }, {
+    repeat: { every: 30_000 },
+    jobId: "scheduler:reminder",
+    removeOnComplete: { age: 3600 },
+    removeOnFail: { age: 86400 },
+  });
+
   logger.info(
-    "Repeatable maintenance schedules registered (retention: 24h, cleanup: 6h, compliance export: 24h)",
+    "Repeatable maintenance schedules registered (retention: 24h, cleanup: 6h, compliance: 24h, reminder: 30s)",
   );
 }
 
@@ -166,6 +173,6 @@ export function startScheduler() {
   );
 
   logger.info(
-    "Maintenance scheduler started (retention: 24h, cleanup: 6h, compliance export: 24h)",
+    "Maintenance scheduler started (retention: 24h, cleanup: 6h, compliance: 24h, reminder: 30s)",
   );
 }

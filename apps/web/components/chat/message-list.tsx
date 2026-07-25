@@ -96,7 +96,7 @@ export function MessageList({
         setFlaggedMsgs((prev) => new Set(prev).add(messageId));
       }
     } catch {
-      console.warn("Failed to toggle flag");
+      addToast({ title: "Error", description: "Failed to toggle flag", variant: "error" });
     }
   }
   const deleteDialogRef = useRef<HTMLDivElement>(null);

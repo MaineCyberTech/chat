@@ -141,6 +141,8 @@ async function withPerChannelRetry(
   return false;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 async function deliverEmail(
   supabase: ReturnType<typeof createSupabaseClient>,
   data: NotificationJobData,
@@ -158,6 +160,11 @@ async function deliverEmail(
     .single();
 
   if (!user?.email) return false;
+
+  if (!EMAIL_REGEX.test(user.email)) {
+    logger.warn({ userId: data.userId, email: user.email }, "Invalid email address, skipping email notification");
+    return false;
+  }
 
   /*
    * Daily digest email template:

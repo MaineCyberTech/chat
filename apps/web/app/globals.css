@@ -348,8 +348,8 @@ html.dark body {
   --border-default: solid 1px rgba(var(--center-channel-color-rgb), 0.16);
   --border-light: solid 1px rgba(var(--center-channel-color-rgb), 0.12);
   --border-dark: solid 1px rgba(var(--center-channel-color-rgb), 0.24);
-  --text-secondary: rgba(255, 255, 255, var(--text-secondary-alpha, 0.72));
-  --text-tertiary: rgba(255, 255, 255, var(--text-tertiary-alpha, 0.56));
+  --text-secondary: rgba(var(--center-channel-color-rgb), var(--text-secondary-alpha));
+  --text-tertiary: rgba(var(--center-channel-color-rgb), var(--text-tertiary-alpha));
   --elevation-1: 0 2px 3px 0 rgba(0, 0, 0, 0.24);
   --elevation-2: 0 4px 6px 0 rgba(0, 0, 0, 0.28);
   --elevation-3: 0 6px 14px 0 rgba(0, 0, 0, 0.28);

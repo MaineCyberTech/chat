@@ -22,7 +22,5 @@ Browser → Cloudflare DNS → Caddy (TLS) → web:3000 (Next.js)
 ## Non-Goals (Current Phase)
 
 - Kubernetes or multi-node orchestration
-- Redis or distributed caching
-- Object storage (S3-compatible)
 - TURN/STUN infrastructure
 - Horizontal autoscaling

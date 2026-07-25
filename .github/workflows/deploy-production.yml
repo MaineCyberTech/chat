@@ -219,6 +219,7 @@ jobs:
           host: ${{ needs.provision.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          strict_host_key_checking: true
           script: |
             if [ ! -d "${{ env.REPO_DIR }}" ]; then
               git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }}
@@ -263,6 +264,7 @@ jobs:
           username: root
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
+          strict_host_key_checking: true
           script: |
             cd ${{ env.REPO_DIR }}
 
@@ -476,6 +478,7 @@ jobs:
           username: root
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
+          strict_host_key_checking: true
           script: |
             cd ${{ env.REPO_DIR }}
             set +x

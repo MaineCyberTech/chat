@@ -27,6 +27,8 @@ COPY --from=base /app/packages/config ./packages/config
 
 RUN pnpm install --frozen-lockfile --filter ./apps/worker --prod --ignore-scripts
 
+RUN apk add --no-cache wget
+
 RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 appuser
 USER appuser
 
