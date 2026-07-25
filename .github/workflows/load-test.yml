@@ -1,6 +1,7 @@
 name: Load Test
 
 on:
+  workflow_call:
   workflow_dispatch:
   schedule:
     - cron: "0 6 * * 1" # Every Monday at 6am UTC

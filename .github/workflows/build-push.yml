@@ -19,6 +19,7 @@ on:
 permissions:
   contents: read
   packages: write
+  security-events: write
 
 concurrency:
   group: build-push-${{ github.ref }}
