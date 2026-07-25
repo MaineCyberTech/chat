@@ -118,7 +118,6 @@ jobs:
           TF_VAR_ci_public_key: ${{ secrets.CI_SSH_PUBLIC_KEY }}
           TF_VAR_ci_ssh_key_fingerprint: ${{ secrets.CI_SSH_FINGERPRINT || '' }}
           TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL || '' }}
-          TF_VAR_ssh_allowed_ips: ${{ secrets.SSH_ALLOWED_IPS }}
           DO_PUBKEY: ${{ secrets.CI_SSH_PUBLIC_KEY }}
           DO_TOKEN: ${{ secrets.DO_API_TOKEN }}
         run: |
