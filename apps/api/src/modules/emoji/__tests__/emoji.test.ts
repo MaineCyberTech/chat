@@ -253,12 +253,23 @@ describe("emoji routes", () => {
 
   describe("DELETE /emoji/:id", () => {
     it("deletes an emoji", async () => {
-      const chain = createChain({ data: null, error: null });
+      let customEmojiCalls = 0;
+      const from = vi.fn((table: string) => {
+        if (table === "workspace_members")
+          return createChain({ data: { role: "member" }, error: null });
+        if (table === "custom_emoji") {
+          customEmojiCalls++;
+          if (customEmojiCalls === 1)
+            return createChain({ data: { workspace_id: "ws-1" }, error: null });
+          return createChain({ data: null, error: null });
+        }
+        return createChain({ data: [], error: null });
+      });
 
       const handler = findHandler("delete", "/emoji/:id");
       const req = mockReq({
         params: { id: "e-1" },
-        supabase: { from: vi.fn(() => chain) },
+        supabase: { from },
       });
       const res = mockRes();
 
@@ -269,12 +280,23 @@ describe("emoji routes", () => {
     });
 
     it("returns 500 when delete fails", async () => {
-      const chain = createChain({ data: null, error: new Error("Not found") });
+      let customEmojiCalls = 0;
+      const from = vi.fn((table: string) => {
+        if (table === "workspace_members")
+          return createChain({ data: { role: "member" }, error: null });
+        if (table === "custom_emoji") {
+          customEmojiCalls++;
+          if (customEmojiCalls === 1)
+            return createChain({ data: { workspace_id: "ws-1" }, error: null });
+          return createChain({ data: null, error: new Error("DB error") });
+        }
+        return createChain({ data: [], error: null });
+      });
 
       const handler = findHandler("delete", "/emoji/:id");
       const req = mockReq({
         params: { id: "e-1" },
-        supabase: { from: vi.fn(() => chain) },
+        supabase: { from },
       });
       const res = mockRes();
 

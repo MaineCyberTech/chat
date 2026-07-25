@@ -1,7 +1,7 @@
 import { Router, type Router as RouterType } from "express";
 import { z } from "zod";
 import { authenticate } from "../../middleware/authenticate.js";
-import { authLimiter, searchLimiter, magicLinkLimiter } from "../../middleware/rate-limit.js";
+import { authLimiter, searchLimiter, magicLinkLimiter, gdprExportLimiter } from "../../middleware/rate-limit.js";
 import { authService } from "./service.js";
 import { getOnlineUsers } from "../../lib/socket.js";
 import { getSupabaseAdmin } from "../../lib/supabase.js";
@@ -218,6 +218,7 @@ router.patch(
 router.get(
   "/export",
   authenticate,
+  gdprExportLimiter,
   asyncHandler(async (req, res) => {
     const supabase = getSupabaseAdmin();
     const userId = req.userId!;
@@ -263,7 +264,7 @@ router.get(
       supabase.from("trigger_words").select("*").eq("user_id", userId),
       supabase.from("auto_responders").select("*").eq("user_id", userId),
       supabase.from("sidebar_categories").select("*").eq("user_id", userId),
-      supabase.from("sidebar_channel_assignments").select("*, sidebar_categories!inner(name)").eq("user_id", userId),
+      supabase.from("sidebar_channel_assignments").select("*, sidebar_categories!inner(user_id, name)").eq("sidebar_categories.user_id", userId),
     ]);
 
     const exportData = {
@@ -305,10 +306,14 @@ router.delete(
     const userId = req.userId!;
 
     // Delete user data in order (respecting FK constraints)
-    await supabase.from("consent_logs").delete().eq("user_id", userId);
-    await supabase.from("sidebar_channel_assignments").delete().eq("user_id", userId);
+    const { data: userCategories } = await supabase.from("sidebar_categories").select("id").eq("user_id", userId);
+    const categoryIds = (userCategories ?? []).map((c: { id: string }) => c.id);
+    if (categoryIds.length > 0) {
+      await supabase.from("sidebar_channel_assignments").delete().in("category_id", categoryIds);
+    }
     await supabase.from("sidebar_categories").delete().eq("user_id", userId);
-    await supabase.from("channel_bookmarks").delete().eq("user_id", userId);
+    await supabase.from("consent_logs").delete().eq("user_id", userId);
+    await supabase.from("channel_bookmarks").delete().eq("created_by", userId);
     await supabase.from("message_reminders").delete().eq("user_id", userId);
     await supabase.from("notifications").delete().eq("user_id", userId);
     await supabase.from("push_subscriptions").delete().eq("user_id", userId);

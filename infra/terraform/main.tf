@@ -37,7 +37,7 @@ resource "digitalocean_firewall" "chat" {
   inbound_rule {
     protocol         = "tcp"
     port_range       = "22"
-    source_addresses = var.ssh_allowed_ips != "" ? split(",", var.ssh_allowed_ips) : ["0.0.0.0/0"]
+    source_addresses = split(",", var.ssh_allowed_ips)
   }
 
   inbound_rule {

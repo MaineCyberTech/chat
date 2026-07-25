@@ -1,10 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
-import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
+import { createSupabaseClient } from "../lib/supabase.js";
 
-const env = loadEnv();
-
-const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createSupabaseClient();
 
 export async function processReminders() {
   const controller = new AbortController();

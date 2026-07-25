@@ -4,6 +4,12 @@ import { afterEach } from "vitest";
 
 process.env.NODE_ENV = "test";
 
+global.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as any;
+
 afterEach(() => {
   cleanup();
 });

@@ -2,17 +2,50 @@ import { createServer } from "node:http";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 import { createRedisClient } from "./lib/redis.js";
-import { registerWebhookProcessor } from "./processors/webhook-delivery.js";
-import { registerNotificationProcessor } from "./processors/notification.js";
-import { registerSearchIndexer } from "./processors/search-indexer.js";
-import { registerCleanupProcessor } from "./processors/cleanup.js";
-import { registerDataRetentionProcessor } from "./processors/data-retention.js";
-import { registerComplianceExportProcessor } from "./processors/compliance-export.js";
+import { registerWebhookProcessor, webhookQueue } from "./processors/webhook-delivery.js";
+import { registerNotificationProcessor, notificationQueue } from "./processors/notification.js";
+import { registerSearchIndexer, searchQueue } from "./processors/search-indexer.js";
+import { registerCleanupProcessor, cleanupQueue } from "./processors/cleanup.js";
+import { registerDataRetentionProcessor, dataRetentionQueue } from "./processors/data-retention.js";
+import { registerComplianceExportProcessor, complianceExportQueue } from "./processors/compliance-export.js";
 import { startScheduler } from "./scheduler.js";
 
 loadEnv();
 
 const HEALTH_PORT = parseInt(process.env.HEALTH_PORT ?? "4100", 10);
+
+async function gatherMetrics() {
+  const queues = [
+    { name: "webhook-delivery", queue: webhookQueue },
+    { name: "notification", queue: notificationQueue },
+    { name: "search-indexing", queue: searchQueue },
+    { name: "cleanup", queue: cleanupQueue },
+    { name: "data-retention", queue: dataRetentionQueue },
+    { name: "compliance-export", queue: complianceExportQueue },
+  ];
+
+  const metrics: Record<string, unknown> = {};
+  for (const { name, queue } of queues) {
+    try {
+      const counts = await queue.getJobCounts(
+        "waiting", "active", "completed", "failed", "delayed", "paused",
+      );
+      const failed = await queue.getFailedCount();
+      metrics[name] = {
+        ...counts,
+        failed_total: failed,
+      };
+    } catch {
+      metrics[name] = { error: "unavailable" };
+    }
+  }
+
+  return {
+    timestamp: new Date().toISOString(),
+    service: "worker",
+    queues: metrics,
+  };
+}
 
 function startHealthServer(redis: ReturnType<typeof createRedisClient>) {
   const server = createServer(async (req, res) => {
@@ -27,6 +60,15 @@ function startHealthServer(redis: ReturnType<typeof createRedisClient>) {
       });
       res.writeHead(redisOk ? 200 : 503, { "Content-Type": "application/json" });
       res.end(body);
+    } else if (req.url === "/metrics") {
+      try {
+        const body = JSON.stringify(await gatherMetrics());
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(body);
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "metrics unavailable" }));
+      }
     } else {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ status: "running", service: "worker" }));

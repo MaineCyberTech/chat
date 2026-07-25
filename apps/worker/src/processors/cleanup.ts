@@ -182,6 +182,9 @@ export function registerCleanupProcessor() {
           case "message_edit_history":
             cleaned = await cleanupMessageEditHistory(supabase, olderThanDays);
             break;
+          case "stale_sessions":
+            logger.info({ type }, "Stale session cleanup handled by Supabase auth hooks");
+            break;
           case "expired_uploads":
             logger.info({ type }, "Expired upload cleanup not yet implemented");
             break;

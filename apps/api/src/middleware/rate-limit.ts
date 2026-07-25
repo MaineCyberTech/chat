@@ -59,3 +59,17 @@ export const magicLinkLimiter = rateLimit({
   },
   keyGenerator: (req) => req.ip ?? "unknown",
 });
+
+export const gdprExportLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: {
+      code: "RATE_LIMITED",
+      message: "Too many export requests. Please wait before requesting another.",
+    },
+  },
+  keyGenerator: (req) => req.userId ?? req.ip ?? "unknown",
+});

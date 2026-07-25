@@ -1,7 +1,7 @@
 import { Worker, Job, Queue } from "bullmq";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
-import { createSupabaseClient, supabaseQuery } from "../lib/supabase.js";
+import { createSupabaseClient } from "../lib/supabase.js";
 import { randomUUID } from "node:crypto";
 
 export interface WebhookDeliveryJobData {

@@ -43,7 +43,47 @@ vi.mock("../../../lib/supabase.js", () => ({
       })),
     })),
   })),
-  getSupabaseAdmin: vi.fn(),
+  getSupabaseAdmin: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: vi.fn(() => ({
+            data: {
+              id: "user-1",
+              email: "test@example.com",
+              display_name: "Tester",
+              avatar_url: null,
+              created_at: "2024-01-01",
+              updated_at: "2024-01-01",
+            },
+            error: null,
+          })),
+        })),
+        or: vi.fn(() => ({
+          limit: vi.fn(() => ({
+            data: [
+              { id: "user-1", email: "test@example.com", display_name: "Tester", avatar_url: null },
+            ],
+          })),
+        })),
+      })),
+      update: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          select: vi.fn(() => ({
+            single: vi.fn(() => ({
+              data: {
+                id: "user-1",
+                email: "test@example.com",
+                display_name: "Updated",
+                avatar_url: null,
+              },
+              error: null,
+            })),
+          })),
+        })),
+      })),
+    })),
+  })),
 }));
 
 describe("AuthService", () => {

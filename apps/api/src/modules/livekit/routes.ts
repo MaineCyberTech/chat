@@ -1,16 +1,33 @@
 import { Router, type Request, type Response } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { liveKitService } from "./service.js";
+import { getSupabaseForUser } from "../../lib/supabase.js";
 
 const router = Router();
 
-// Get LiveKit connection details and token for a room
-router.get("/livekit/token", authenticate, (req: Request, res: Response) => {
+router.get("/livekit/token", authenticate, async (req: Request, res: Response) => {
   if (!liveKitService.isConfigured()) {
     res
       .status(501)
       .json({ error: { code: "NOT_CONFIGURED", message: "LiveKit is not configured" } });
     return;
+  }
+
+  const workspaceId = req.query.workspaceId as string;
+  if (workspaceId) {
+    const supabase = getSupabaseForUser(req.userId!);
+    const { data, error } = await supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", req.userId)
+      .single();
+    if (error || !data) {
+      res
+        .status(403)
+        .json({ error: { code: "FORBIDDEN", message: "Not a member of this workspace" } });
+      return;
+    }
   }
 
   const roomName = (req.query.room as string) || `room_${req.userId}`;

@@ -244,6 +244,7 @@ jobs:
             VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
             VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}
             EOF
+            chmod 600 infra/docker/.env
             CERT_DIR=/opt/chat/infra/docker/certs
             mkdir -p "$CERT_DIR"
             echo "${{ secrets.CF_ORIGIN_CERT }}" > "$CERT_DIR/fullchain.pem"
@@ -275,7 +276,7 @@ jobs:
             docker system df -v
 
             # Stop and remove all containers first
-            docker compose -f infra/docker/docker-compose.prod.yml down -v --remove-orphans 2>/dev/null || true
+            docker compose -f infra/docker/docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
 
             # Remove all unused images, build cache, volumes, networks
             docker system prune -af --volumes
@@ -483,7 +484,7 @@ jobs:
             df -h /
             docker system df -v
 
-            docker compose -f infra/docker/docker-compose.prod.yml down -v --remove-orphans 2>/dev/null || true
+            docker compose -f infra/docker/docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
 
             docker system prune -af --volumes
             docker builder prune -af

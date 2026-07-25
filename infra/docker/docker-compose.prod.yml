@@ -116,6 +116,7 @@ services:
     environment:
       <<: *common-env
       PORT: 4000
+      REDIS_URL: redis://redis:6379
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       LIVEKIT_HOST: http://livekit:7880

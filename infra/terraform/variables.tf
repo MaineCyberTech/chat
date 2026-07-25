@@ -61,7 +61,6 @@ variable "ci_ssh_key_fingerprint" {
 }
 
 variable "ssh_allowed_ips" {
-  description = "Comma-separated list of CIDR blocks allowed to access SSH (port 22). Empty = allow all (not recommended for production)."
+  description = "Comma-separated list of CIDR blocks allowed to access SSH (port 22). Required."
   type        = string
-  default     = ""
 }

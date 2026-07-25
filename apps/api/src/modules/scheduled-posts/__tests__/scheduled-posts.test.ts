@@ -78,6 +78,22 @@ async function callHandler(handler: any, req: any, res: any) {
   }
 }
 
+function makeFrom(mapping: Record<string, (() => any) | any[]>) {
+  const callCounts: Record<string, number> = {};
+  return vi.fn((table: string) => {
+    const entry = mapping[table];
+    if (Array.isArray(entry)) {
+      const idx = callCounts[table] ?? 0;
+      callCounts[table] = idx + 1;
+      return entry[idx % entry.length]();
+    }
+    if (typeof entry === "function") {
+      return (entry as () => any)();
+    }
+    return createChain({ data: [], error: null });
+  });
+}
+
 describe("scheduled-posts routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -86,17 +102,28 @@ describe("scheduled-posts routes", () => {
   describe("GET /", () => {
     it("lists unsent, uncancelled scheduled posts", async () => {
       const futureDate = new Date(Date.now() + 86400000).toISOString();
-      const chain = createChain({
+      const postsChain = createChain({
         data: [
           { id: "p-1", channel_id: "ch-1", content: "Hello world", scheduled_at: futureDate },
           { id: "p-2", channel_id: "ch-2", content: "Reminder", scheduled_at: futureDate },
         ],
         error: null,
       });
-      const from = vi.fn(() => chain);
+
+      const from = makeFrom({
+        workspace_members: () =>
+          createChain({
+            data: { role: "member" },
+            error: null,
+          }),
+        scheduled_posts: () => postsChain,
+      });
 
       const handler = findHandler("get", "/");
-      const req = mockReq({ supabase: { from } });
+      const req = mockReq({
+        supabase: { from },
+        query: { workspace_id: "ws-1" },
+      });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -150,39 +177,30 @@ describe("scheduled-posts routes", () => {
       expect(res.status).toHaveBeenCalledWith(400);
     });
 
-    it("returns 400 when scheduled_at is in the past", async () => {
-      const handler = findHandler("post", "/");
-      const req = mockReq({
-        body: {
-          channel_id: "ch-1",
-          content: "Hello",
-          scheduled_at: new Date("2020-01-01").toISOString(),
-        },
-      });
-      const res = mockRes();
-
-      await callHandler(handler, req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.objectContaining({ code: "BAD_REQUEST" }),
-        }),
-      );
-    });
-
     it("creates a scheduled post", async () => {
       const futureDate = new Date(Date.now() + 86400000);
-      const insertChain = createChain({
-        data: {
-          id: "p-1",
-          channel_id: "ch-1",
-          content: "Hello",
-          scheduled_at: futureDate.toISOString(),
-        },
-        error: null,
+      const from = makeFrom({
+        channels: () =>
+          createChain({
+            data: { workspace_id: "ws-1" },
+            error: null,
+          }),
+        workspace_members: () =>
+          createChain({
+            data: { role: "member" },
+            error: null,
+          }),
+        scheduled_posts: () =>
+          createChain({
+            data: {
+              id: "p-1",
+              channel_id: "ch-1",
+              content: "Hello",
+              scheduled_at: futureDate.toISOString(),
+            },
+            error: null,
+          }),
       });
-      const from = vi.fn(() => insertChain);
 
       const handler = findHandler("post", "/");
       const req = mockReq({
@@ -200,11 +218,69 @@ describe("scheduled-posts routes", () => {
         }),
       );
     });
+
+    it("returns 400 when scheduled_at is in the past", async () => {
+      const from = makeFrom({
+        channels: () =>
+          createChain({
+            data: { workspace_id: "ws-1" },
+            error: null,
+          }),
+        workspace_members: () =>
+          createChain({
+            data: { role: "member" },
+            error: null,
+          }),
+      });
+
+      const handler = findHandler("post", "/");
+      const req = mockReq({
+        body: {
+          channel_id: "ch-1",
+          content: "Hello",
+          scheduled_at: new Date("2020-01-01").toISOString(),
+        },
+        supabase: { from },
+      });
+      const res = mockRes();
+
+      await callHandler(handler, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "BAD_REQUEST" }),
+        }),
+      );
+    });
   });
 
   describe("DELETE /:id", () => {
     it("cancels a scheduled post", async () => {
-      const from = vi.fn(() => createChain({ error: null }));
+      const from = makeFrom({
+        scheduled_posts: [
+          () =>
+            createChain({
+              data: { channel_id: "ch-1", user_id: "user-1" },
+              error: null,
+            }),
+          () =>
+            createChain({
+              data: null,
+              error: null,
+            }),
+        ],
+        channels: () =>
+          createChain({
+            data: { workspace_id: "ws-1" },
+            error: null,
+          }),
+        workspace_members: () =>
+          createChain({
+            data: { role: "member" },
+            error: null,
+          }),
+      });
 
       const handler = findHandler("delete", "/:id");
       const req = mockReq({ params: { id: "p-1" }, supabase: { from } });

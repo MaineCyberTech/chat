@@ -50,7 +50,7 @@ const mockClient = () => ({
               {
                 user_id: "u1",
                 role: "owner",
-                users: [{ display_name: "Owner", email: "owner@test.com", avatar_url: null }],
+                users: { display_name: "Owner", email: "owner@test.com", avatar_url: null },
               },
             ],
             error: null,
@@ -60,7 +60,7 @@ const mockClient = () => ({
             {
               user_id: "u1",
               role: "owner",
-              users: [{ display_name: "Owner", email: "owner@test.com", avatar_url: null }],
+              users: { display_name: "Owner", email: "owner@test.com", avatar_url: null },
             },
           ],
           error: null,

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
+import { requireWorkspaceMembership } from "../../middleware/require-membership.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, InternalServerError } from "../../lib/app-error.js";
 
@@ -8,6 +9,7 @@ router.use(authenticate);
 
 router.get(
   "/workspaces/:workspaceId/emoji",
+  requireWorkspaceMembership("workspaceId"),
   asyncHandler(async (req, res) => {
     const { data } = await req
       .supabase!.from("custom_emoji")
@@ -20,6 +22,7 @@ router.get(
 
 router.post(
   "/workspaces/:workspaceId/emoji",
+  requireWorkspaceMembership("workspaceId"),
   asyncHandler(async (req, res) => {
     const { name, imageUrl } = req.body;
     if (!name || !imageUrl) {
@@ -45,6 +48,25 @@ router.post(
 router.delete(
   "/emoji/:id",
   asyncHandler(async (req, res) => {
+    const { data: emoji, error: fetchError } = await req
+      .supabase!.from("custom_emoji")
+      .select("workspace_id")
+      .eq("id", req.params.id as string)
+      .single();
+    if (fetchError || !emoji) {
+      throw new BadRequestError("Emoji not found");
+    }
+
+    const { data: membership, error: memError } = await req
+      .supabase!.from("workspace_members")
+      .select("role")
+      .eq("workspace_id", emoji.workspace_id)
+      .eq("user_id", req.userId)
+      .single();
+    if (memError || !membership) {
+      throw new BadRequestError("Not a member of this workspace");
+    }
+
     const { error } = await req
       .supabase!.from("custom_emoji")
       .delete()

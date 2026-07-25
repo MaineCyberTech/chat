@@ -62,18 +62,21 @@ export function createApp(frontendUrl: string): Express {
     res.status(statusCode).json(result);
   });
 
-  app.use(
+  app.use((req, res, next) => {
     cors({
       origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
+        if (!origin) {
+          if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return callback(null, true);
+          return callback(new Error("Origin header required for this method"));
+        }
         if (origin === frontendUrl) return callback(null, true);
         callback(new Error("Not allowed by CORS"));
       },
       credentials: true,
       methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
-    }),
-  );
+    })(req, res, next);
+  });
   app.use(helmet({ crossOriginResourcePolicy: false }));
   app.use(securityHeaders);
   app.use(express.json({ limit: "1mb" }));

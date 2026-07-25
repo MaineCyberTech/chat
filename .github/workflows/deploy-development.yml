@@ -160,6 +160,7 @@ jobs:
             # Also create .env in infra/docker for docker-compose
             mkdir -p ${{ env.REPO_DIR }}/infra/docker
             cp ${{ env.REPO_DIR }}/.env ${{ env.REPO_DIR }}/infra/docker/.env
+            chmod 600 ${{ env.REPO_DIR }}/.env ${{ env.REPO_DIR }}/infra/docker/.env
 
             # Verify compose file exists
             if [ ! -f "infra/docker/docker-compose.devremote.yml" ]; then
@@ -186,7 +187,7 @@ jobs:
             docker system df -v
 
             # Stop and remove all containers first
-            docker compose -f infra/docker/docker-compose.devremote.yml down -v --remove-orphans 2>/dev/null || true
+            docker compose -f infra/docker/docker-compose.devremote.yml down --remove-orphans 2>/dev/null || true
 
             # Remove all unused images, build cache, volumes, networks
             docker system prune -af --volumes

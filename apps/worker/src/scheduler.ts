@@ -1,6 +1,5 @@
 import { logger } from "@chat/config/logger.js";
-import { createClient } from "@supabase/supabase-js";
-import { loadEnv } from "@chat/config/env-schema.js";
+import { createSupabaseClient } from "./lib/supabase.js";
 import { dataRetentionQueue } from "./processors/data-retention.js";
 import { cleanupQueue } from "./processors/cleanup.js";
 import { complianceExportQueue } from "./processors/compliance-export.js";
@@ -17,7 +16,7 @@ type DataRetentionJobData = {
 };
 
 type CleanupJobData = {
-  type: "old_deliveries" | "dead_letters" | "consent_logs" | "stale_sessions" | "expired_uploads";
+  type: "old_deliveries" | "dead_letters" | "consent_logs" | "stale_sessions" | "expired_uploads" | "message_edit_history";
   olderThanDays?: number;
 };
 
@@ -27,6 +26,7 @@ const RETENTION_SCHEDULE: { type: DataRetentionJobData["type"]; olderThanDays: n
   { type: "consent_logs", olderThanDays: 730 },
   { type: "soft_deleted_channels", olderThanDays: 30 },
   { type: "soft_deleted_workspaces", olderThanDays: 30 },
+  { type: "notifications", olderThanDays: 30 },
 ];
 
 const CLEANUP_SCHEDULE: { type: CleanupJobData["type"]; olderThanDays: number }[] = [
@@ -35,6 +35,7 @@ const CLEANUP_SCHEDULE: { type: CleanupJobData["type"]; olderThanDays: number }[
   { type: "consent_logs", olderThanDays: 730 },
   { type: "stale_sessions", olderThanDays: 90 },
   { type: "expired_uploads", olderThanDays: 7 },
+  { type: "message_edit_history", olderThanDays: 365 },
 ];
 
 async function runDataRetention() {
@@ -69,10 +70,7 @@ async function runCleanup() {
 
 async function runComplianceExport() {
   logger.info("Running scheduled compliance export");
-  const env = loadEnv();
-  const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-  });
+  const supabase = createSupabaseClient();
 
   const endDate = new Date();
   const startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);

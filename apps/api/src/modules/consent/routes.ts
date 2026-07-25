@@ -6,6 +6,17 @@ import { BadRequestError, InternalServerError } from "../../lib/app-error.js";
 
 const router = Router();
 
+function maskIp(ip: string | undefined): string {
+  if (!ip) return "unknown";
+  if (ip === "::1" || ip === "::ffff:127.0.0.1") return "127.0.0.0";
+  const v4 = ip.replace(/^::ffff:/, "");
+  const v4Match = v4.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}$/);
+  if (v4Match) return v4Match[1] + ".0";
+  const v6Match = ip.match(/^([0-9a-f:]+):[0-9a-f]+$/i);
+  if (v6Match) return v6Match[1] + ":0";
+  return "masked";
+}
+
 router.get(
   "/consent",
   authenticate,
@@ -43,7 +54,7 @@ router.post(
         user_id: req.userId!,
         consent_type,
         granted,
-        ip_address: req.ip,
+        ip_address: maskIp(req.ip),
         user_agent: req.headers["user-agent"],
       })
       .select()
