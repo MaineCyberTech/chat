@@ -29,13 +29,10 @@ export function middleware(request: NextRequest) {
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   response.headers.set("X-DNS-Prefetch-Control", "off");
-  response.headers.set("Cross-Origin-Embedder-Policy", "credentialless");
-  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
 
   return response;
 }
 
 export const config = {
-  matcher: "/((?!api|_next/static|_next/image|favicon.ico|icons/|manifest.webmanifest|sw.js|workbox-).*)",
+  matcher: "/((?!api|_next/static|_next/image|favicon.ico|icons/|manifest.webmanifest|sw.js|workbox-|auth/).*)",
 };

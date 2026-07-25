@@ -201,11 +201,14 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     };
   }, [params.workspaceSlug, params.channelId, channels, router]);
 
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
+
   useEffect(() => {
     if (!user && !authLoading) {
-      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      router.replace(`/login?redirect=${encodeURIComponent(pathnameRef.current)}`);
     }
-  }, [user, authLoading, router, pathname]);
+  }, [user, authLoading, router]);
 
   if (authLoading) {
     return (

@@ -1,5 +1,5 @@
 chat.mainecybertech.us {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+    tls internal
     handle /health* {
         reverse_proxy api:4000
     }
@@ -36,7 +36,7 @@ chat.mainecybertech.us {
 }
 
 chat-api.mainecybertech.us {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+    tls internal
     reverse_proxy api:4000
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
