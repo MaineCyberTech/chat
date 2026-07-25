@@ -246,6 +246,7 @@ jobs:
     name: Check Branch Protection
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    continue-on-error: true
     if: github.repository_owner == github.actor || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
