@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
+import { t } from "@/lib/i18n";
 import { EmptyState } from "@chat/ui";
 import { Bell } from "lucide-react";
 
@@ -150,6 +151,7 @@ export function NotificationBell() {
         <Bell size={18} />
         {unread > 0 && (
           <span
+            aria-live="polite"
             className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
             style={{
               backgroundColor: "rgba(var(--dnd-indicator-rgb),0.12)",
@@ -173,7 +175,7 @@ export function NotificationBell() {
             style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)" }}
           >
             <p className="text-sm font-semibold text-[var(--center-channel-color)]">
-              Notifications
+              {t("notifications.title")}
             </p>
             {unread > 0 && (
               <button
@@ -182,13 +184,13 @@ export function NotificationBell() {
                 className="text-xs font-medium transition-opacity hover:opacity-80 disabled:opacity-50"
                 style={{ color: "var(--button-bg)" }}
               >
-                {markingAllRead ? "Marking..." : "Mark all read"}
+                {markingAllRead ? t("notifications.marking") : t("notifications.markAllRead")}
               </button>
             )}
           </div>
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <EmptyState description="No notifications" className="!py-0" />
+              <EmptyState description={t("notifications.noNotifications")} className="!py-0" />
             ) : (
               notifications.map((n) => (
                 <div

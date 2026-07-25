@@ -81,7 +81,7 @@ export function NotificationPreferencesModal({
     } catch {
       addToast({
         title: t("common.error"),
-        description: "Failed to save notification preferences",
+        description: t("notificationModal.saveError"),
         variant: "error",
       });
       setSaving(false);

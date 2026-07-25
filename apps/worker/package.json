@@ -9,7 +9,8 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@chat/config": "workspace:*",
@@ -30,6 +31,7 @@
     "eslint": "^9.22.0",
     "rimraf": "^6.0.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "vitest": "^3.0.0"
   }
 }

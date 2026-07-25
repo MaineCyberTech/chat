@@ -37,7 +37,7 @@ test.describe("Auth Flow", () => {
   test("completes full sign-in with credentials", async ({ page }) => {
     test.skip(
       !HAS_CREDENTIALS,
-      "Skipping: copy test-signin.example.json to test-signin.json with valid credentials",
+      "Skipping: copy test-signin.example.json to test-signin.json with valid credentials at repo root",
     );
     const raw = fs.readFileSync(CREDENTIALS_PATH, "utf-8");
     const creds = JSON.parse(raw) as { email: string; password: string };

@@ -30,7 +30,15 @@ import {
 import type { Channel, Workspace } from "@chat/db";
 import { UserPickerModal } from "@/components/groups/user-picker-modal";
 import { api } from "@/lib/api";
+import { t } from "@/lib/i18n";
 import { usePresence, statusColor as presenceColor, statusClass } from "@/lib/use-presence";
+
+const statusI18nKeys: Record<string, string> = {
+  online: "status.online",
+  away: "status.away",
+  dnd: "status.doNotDisturb",
+  offline: "status.offline",
+};
 
 interface Props {
   workspaceSlug?: string;
@@ -525,7 +533,7 @@ export function AppSidebar({
               }}
               className="mx-auto flex h-9 w-9 items-center justify-center rounded"
               style={{ color: "var(--sidebar-header-text-color)" }}
-              aria-label="Expand sidebar"
+              aria-label={t("sidebar.expand")}
             >
               <PanelLeft size={18} />
             </button>
@@ -540,7 +548,7 @@ export function AppSidebar({
                     background: statusColor,
                     borderColor: "var(--sidebar-header-bg)",
                   }}
-                  aria-label={`Status: ${userStatus.status}`}
+                   aria-label={t(statusI18nKeys[userStatus.status] ?? "status.offline")}
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -554,14 +562,14 @@ export function AppSidebar({
                       color: "var(--sidebar-header-text-color)",
                     }}
                   >
-                    <span className="truncate">{workspace?.name ?? workspaceSlug ?? "Chat"}</span>
+                    <span className="truncate">{workspace?.name ?? workspaceSlug ?? t("sidebar.appName")}</span>
                     <ChevronDown size={10} className="shrink-0" />
                   </button>
                   <div
                     className="truncate text-xs"
                     style={{ color: "rgba(var(--sidebar-header-text-color-rgb), 0.8)" }}
                   >
-                    {userStatus.custom_status || `${userStatus.status}`}
+                    {userStatus.custom_status || t(statusI18nKeys[userStatus.status] ?? "status.offline")}
                   </div>
                   {showTeamMenu && (
                     <div
@@ -611,7 +619,7 @@ export function AppSidebar({
                         style={{ color: "var(--center-channel-color)" }}
                       >
                         <Plus size={14} />
-                        Create workspace
+                        {t("workspace.createWorkspace")}
                       </button>
                       <button
                         onClick={() => {
@@ -622,7 +630,7 @@ export function AppSidebar({
                         style={{ color: "var(--center-channel-color)" }}
                       >
                         <UserPlus size={14} />
-                        Invite members
+                        {t("workspace.inviteMembers")}
                       </button>
                     </div>
                   )}
@@ -636,7 +644,7 @@ export function AppSidebar({
                 }}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded"
                 style={{ color: "var(--sidebar-header-text-color)" }}
-                aria-label="Collapse sidebar"
+                aria-label={t("sidebar.collapse")}
               >
                 <PanelLeftClose size={14} />
               </button>
@@ -657,10 +665,10 @@ export function AppSidebar({
                 const event = new CustomEvent("chat:search-open");
                 document.dispatchEvent(event);
               }}
-              aria-label="Jump to channel or user"
+              aria-label={t("sidebar.jumpToChannelOrUser")}
             >
               <Search size={14} />
-              <span style={{ fontSize: 13 }}>Jump to...</span>
+              <span style={{ fontSize: 13 }}>{t("sidebar.jumpTo")}</span>
             </button>
             <button
               onClick={() => {
@@ -670,10 +678,10 @@ export function AppSidebar({
               style={{
                 color: "rgba(255,255,255,0.72)",
               }}
-              aria-label="Invite members"
+              aria-label={t("sidebar.inviteMembers")}
             >
               <UserPlus size={14} />
-              <span style={{ fontSize: 13 }}>Invite people</span>
+              <span style={{ fontSize: 13 }}>{t("sidebar.invitePeople")}</span>
             </button>
           </div>
         )}
@@ -695,7 +703,7 @@ export function AppSidebar({
                     transition: "transform 200ms",
                   }}
                 />
-                Workspaces
+                {t("workspace.title")}
               </button>
               {wsExpanded && (
                 <>
@@ -788,8 +796,7 @@ export function AppSidebar({
                           <button
                             onClick={() => moveCategoryUp(cat.id)}
                             className="mr-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
-                            aria-label={`Move ${cat.name} up`}
-                            title="Move up"
+                              aria-label={t("sidebar.moveUp", { name: cat.name })}
                             disabled={index === 0}
                           >
                             <ChevronUp size={8} style={{ color: "rgba(255,255,255,0.5)" }} />
@@ -797,7 +804,7 @@ export function AppSidebar({
                           <button
                             onClick={() => moveCategoryDown(cat.id)}
                             className="mr-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
-                            aria-label={`Move ${cat.name} down`}
+                             aria-label={t("sidebar.moveDown", { name: cat.name })}
                             title="Move down"
                             disabled={index === categories.length - 1}
                           >
@@ -809,7 +816,7 @@ export function AppSidebar({
                               setRenameValue(cat.name);
                             }}
                             className="mr-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] focus-visible:opacity-100"
-                            aria-label={`Rename ${cat.name}`}
+                            aria-label={t("sidebar.rename", { name: cat.name })}
                             title="Rename"
                           >
                             <Pencil size={8} style={{ color: "rgba(255,255,255,0.5)" }} />
@@ -817,7 +824,7 @@ export function AppSidebar({
                           <button
                             onClick={() => deleteCategory(cat.id)}
                             className="mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] focus-visible:opacity-100"
-                            aria-label={`Delete ${cat.name}`}
+                            aria-label={t("sidebar.deleteCategory", { name: cat.name })}
                           >
                             <X size={10} style={{ color: "rgba(255,255,255,0.5)" }} />
                           </button>
@@ -840,11 +847,9 @@ export function AppSidebar({
                                     ? "rgba(255,255,255,0.15)"
                                     : "transparent",
                                 }}
-                                aria-label={
-                                  showUnreads ? "Show all channels" : "Show unread channels only"
-                                }
+                aria-label={showUnreads ? t("sidebar.showAllChannels") : t("sidebar.showUnreadOnly")}
                               >
-                                {showUnreads ? "All" : "Unreads"}
+                                {showUnreads ? t("common.all") : t("sidebar.unreads")}
                               </button>
                             </div>
                             {wsLoading || !workspace ? (
@@ -903,7 +908,7 @@ export function AppSidebar({
                       setCreatingCategory(false);
                       setNewCategoryName("");
                     }}
-                    placeholder="Category name"
+                    placeholder={t("sidebar.categoryName")}
                     className="flex-1 rounded px-2 py-1 text-xs"
                     style={{
                       background: "rgba(255,255,255,0.1)",
@@ -911,7 +916,7 @@ export function AppSidebar({
                       border: "none",
                       outline: "none",
                     }}
-                    aria-label="New category name"
+                    aria-label={t("sidebar.newCategoryName")}
                   />
                 </form>
               ) : (
@@ -922,7 +927,7 @@ export function AppSidebar({
                   aria-label="Add category"
                 >
                   <Plus size={12} />
-                  Add category
+                  {t("sidebar.addCategory")}
                 </button>
               )}
             </div>
@@ -931,7 +936,7 @@ export function AppSidebar({
           {/* Saved Messages + Scheduled */}
           {workspaceSlug && !collapsed && (
             <div className="mb-2">
-              <div className="mm-sidebar-group-header">Saved</div>
+              <div className="mm-sidebar-group-header">{t("sidebar.saved")}</div>
               <Link
                 href={`/${workspaceSlug}/saved`}
                 className="flex items-center gap-2 rounded-md px-5 py-1.5 text-sm transition-colors"
@@ -941,7 +946,7 @@ export function AppSidebar({
                 }}
               >
                 <Bookmark size={14} />
-                <span>Saved Messages</span>
+                <span>{t("sidebar.savedMessages")}</span>
               </Link>
               <Link
                 href={`/${workspaceSlug}/scheduled`}
@@ -952,7 +957,7 @@ export function AppSidebar({
                 }}
               >
                 <Clock size={14} />
-                <span>Scheduled</span>
+                <span>{t("sidebar.scheduledMessages")}</span>
               </Link>
               <Link
                 href={`/${workspaceSlug}/groups`}
@@ -963,7 +968,7 @@ export function AppSidebar({
                 }}
               >
                 <Users size={14} />
-                <span>User Groups</span>
+                <span>{t("sidebar.userGroups")}</span>
               </Link>
               <Link
                 href={`/${workspaceSlug}/threads`}
@@ -974,7 +979,7 @@ export function AppSidebar({
                 }}
               >
                 <MessageSquare size={14} />
-                <span>Threads</span>
+                <span>{t("sidebar.threads")}</span>
               </Link>
             </div>
           )}
@@ -994,7 +999,7 @@ export function AppSidebar({
                     transition: "transform 200ms",
                   }}
                 />
-                Direct Messages
+                {t("sidebar.directMessages")}
               </button>
               {dmExpanded && (
                 <>
@@ -1042,7 +1047,7 @@ export function AppSidebar({
                     </ul>
                   ) : (
                     <p className="px-5 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
-                      No direct messages yet
+                      {t("sidebar.noDMs")}
                     </p>
                   )}
                   <button
@@ -1051,7 +1056,7 @@ export function AppSidebar({
                     style={{ color: "rgba(255,255,255,0.72)" }}
                   >
                     <Plus size={14} />
-                    <span>New DM</span>
+                    <span>{t("sidebar.newDM")}</span>
                   </button>
                 </>
               )}
@@ -1070,14 +1075,14 @@ export function AppSidebar({
               onSubmit={createGroupChat}
               submitLabel={
                 selectedUserIds.size === 0
-                  ? "Select users to start a conversation"
+                  ? t("sidebar.selectUsersToStart")
                   : selectedUserIds.size === 1
-                    ? "Start DM"
-                    : `Start group chat (${selectedUserIds.size})`
+                    ? t("sidebar.startDM")
+                    : t("sidebar.startGroupChat", { count: selectedUserIds.size })
               }
               submitDisabled={selectedUserIds.size === 0}
-              title="Start a conversation"
-              description="Select users for a DM or group chat."
+              title={t("sidebar.startConversation")}
+              description={t("sidebar.selectUsersDesc")}
             />
           )}
 
@@ -1101,9 +1106,9 @@ export function AppSidebar({
             }}
           >
             {[
-              { key: "online", label: "Online", color: "#06d6a0" },
-              { key: "away", label: "Away", color: "#ffbc42" },
-              { key: "dnd", label: "Do Not Disturb", color: "#d24b4e" },
+              { key: "online", label: t("status.online"), color: "#06d6a0" },
+              { key: "away", label: t("status.away"), color: "#ffbc42" },
+              { key: "dnd", label: t("status.doNotDisturb"), color: "#d24b4e" },
             ].map((s) => (
               <button
                 key={s.key}
@@ -1132,7 +1137,7 @@ export function AppSidebar({
               style={{ color: "rgba(255,255,255,0.6)" }}
             >
               <Link href="/" className="hover:opacity-80">
-                MaineCyberTech Chat
+                {t("sidebar.appName")}
               </Link>
               <span className="ml-auto flex gap-1">
                 <button
@@ -1140,7 +1145,7 @@ export function AppSidebar({
                   className="hover:opacity-80"
                   style={{ color: "rgba(255,255,255,0.6)" }}
                 >
-                  Logout
+                  {t("auth.logout")}
                 </button>
                 <button
                   onClick={() => {

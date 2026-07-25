@@ -40,7 +40,7 @@ test.describe("WebSocket Connection", () => {
   test.beforeEach(function () {
     test.skip(
       !creds,
-      "Skipping: copy test-signin.example.json to test-signin.json with valid credentials",
+      "Skipping: copy test-signin.example.json to test-signin.json with valid credentials at repo root",
     );
   });
 
