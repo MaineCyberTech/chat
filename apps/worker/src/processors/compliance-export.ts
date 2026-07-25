@@ -195,17 +195,28 @@ export function registerComplianceExportProcessor() {
                 .single();
 
               if (insError || !record) {
-                logger.error({ type: exportType, error: insError }, "Failed to create export record");
+                logger.error(
+                  { type: exportType, error: insError },
+                  "Failed to create export record",
+                );
                 continue;
               }
 
               try {
                 switch (exportType) {
                   case "messages":
-                    result = await exportMessages(supabase, startDate.toISOString(), endDate.toISOString());
+                    result = await exportMessages(
+                      supabase,
+                      startDate.toISOString(),
+                      endDate.toISOString(),
+                    );
                     break;
                   case "audit_logs":
-                    result = await exportAuditLogs(supabase, startDate.toISOString(), endDate.toISOString());
+                    result = await exportAuditLogs(
+                      supabase,
+                      startDate.toISOString(),
+                      endDate.toISOString(),
+                    );
                     break;
                   default:
                     continue;
@@ -217,7 +228,10 @@ export function registerComplianceExportProcessor() {
                   .eq("id", record.id);
 
                 totalCount += result.count;
-                logger.info({ type: exportType, count: result.count }, "Scheduled compliance export completed");
+                logger.info(
+                  { type: exportType, count: result.count },
+                  "Scheduled compliance export completed",
+                );
               } catch (innerErr) {
                 await supabase
                   .from("compliance_exports")

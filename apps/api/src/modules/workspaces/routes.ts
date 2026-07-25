@@ -7,7 +7,10 @@ import {
 } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
-import { requireWorkspaceMembership, requireWorkspaceRole } from "../../middleware/require-membership.js";
+import {
+  requireWorkspaceMembership,
+  requireWorkspaceRole,
+} from "../../middleware/require-membership.js";
 import { workspaceService } from "./service.js";
 import { channelService } from "../channels/service.js";
 import { logAuditEvent } from "../../services/audit.js";

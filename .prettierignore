@@ -9,4 +9,8 @@ pnpm-lock.yaml
 .terraform/
 *.tfstate
 *.tfstate.*
+tmp_prompt_outputs/
+docs/audits/
+docs/prompts/
+hardening/
 FINAL_RECONCILIATION_REPO_AUDIT_PROMPT.md

@@ -53,17 +53,17 @@ Push to `develop` â†’ [GitHub Actions](https://github.com/MaineCyberTech/ch
 
 ## Tech Stack
 
-| Layer      | Technology                                                                  |
-| ---------- | --------------------------------------------------------------------------- |
-| Frontend   | Next.js 15, React 19, TypeScript, Tailwind CSS                              |
-| Backend    | Express, Socket.io, BullMQ (Redis workers)                                  |
-| Database   | Supabase (PostgreSQL), pgvector, pg_cron                                    |
-| Realtime   | Socket.io with Redis adapter, LiveKit WebRTC                                |
-| Workers    | 4 BullMQ processors (webhooks, notifications, search, cleanup)              |
+| Layer      | Technology                                                                   |
+| ---------- | ---------------------------------------------------------------------------- |
+| Frontend   | Next.js 15, React 19, TypeScript, Tailwind CSS                               |
+| Backend    | Express, Socket.io, BullMQ (Redis workers)                                   |
+| Database   | Supabase (PostgreSQL), pgvector, pg_cron                                     |
+| Realtime   | Socket.io with Redis adapter, LiveKit WebRTC                                 |
+| Workers    | 4 BullMQ processors (webhooks, notifications, search, cleanup)               |
 | Auth       | Supabase Auth (magic link), JWT middleware, RBAC (18 permissions Ã— 3 roles) |
-| Infra      | Docker Compose, Caddy (TLS), DigitalOcean, Terraform                        |
-| CI/CD      | GitHub Actions (19 workflows), Playwright E2E                               |
-| Monitoring | Sentry, k6 load testing, Playwright visual snapshots                        |
+| Infra      | Docker Compose, Caddy (TLS), DigitalOcean, Terraform                         |
+| CI/CD      | GitHub Actions (19 workflows), Playwright E2E                                |
+| Monitoring | Sentry, k6 load testing, Playwright visual snapshots                         |
 
 ## Scripts
 

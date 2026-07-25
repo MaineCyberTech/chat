@@ -9,23 +9,23 @@
 
 ## Executive Summary
 
-| Dimension              | Score     |
-| ---------------------- | --------- |
-| **API Contract**       | 4.2 / 5   |
-| **API Hardening**      | 4.0 / 5   |
-| **Worker Reliability** | 3.8 / 5   |
-| **Integration Sec**    | 4.5 / 5   |
-| **Overall**            | 4.1 / 5   |
+| Dimension              | Score   |
+| ---------------------- | ------- |
+| **API Contract**       | 4.2 / 5 |
+| **API Hardening**      | 4.0 / 5 |
+| **Worker Reliability** | 3.8 / 5 |
+| **Integration Sec**    | 4.5 / 5 |
+| **Overall**            | 4.1 / 5 |
 
 ### Totals
 
-| Severity | Original | Resolved | New  | Current |
-| -------- | -------- | -------- | ---- | ------- |
-| **P0**   | 0        | 0        | 0    | 0       |
-| **P1**   | 3        | 3        | 0    | 0       |
-| **P2**   | 12       | 1        | 2    | 13      |
-| **P3**   | 8        | 0        | 5    | 13      |
-| **Total**| 23       | 4        | 7    | 26      |
+| Severity  | Original | Resolved | New | Current |
+| --------- | -------- | -------- | --- | ------- |
+| **P0**    | 0        | 0        | 0   | 0       |
+| **P1**    | 3        | 3        | 0   | 0       |
+| **P2**    | 12       | 1        | 2   | 13      |
+| **P3**    | 8        | 0        | 5   | 13      |
+| **Total** | 23       | 4        | 7   | 26      |
 
 ### Decision: **GO WITH RISKS** (unchanged)
 
@@ -42,6 +42,7 @@ All 3 P1 findings from the original audit resolved. No new P0/P1 findings. 2 new
 **Fix Applied**: All three routes now use a pattern of loading the webhook record first, then calling standalone `requireWorkspaceAccess(webhook.workspace_id, req)`.
 
 **Source**: `apps/api/src/modules/webhooks/routes.ts`
+
 - Line 148-153: `GET /webhooks/:id` — loads webhook, then `requireWorkspaceAccess(webhook.workspace_id, req)` (line 153)
 - Line 207-212: `PATCH /webhooks/:id` — loads existing, then `requireWorkspaceAccess(existing.workspace_id, req)` (line 212)
 - Line 241-249: `DELETE /webhooks/:id` — loads webhook, then `requireWorkspaceAccess(webhook.workspace_id, req)` (line 249)
@@ -56,6 +57,7 @@ All 3 P1 findings from the original audit resolved. No new P0/P1 findings. 2 new
 **Fix Applied**: `requireAdmin` middleware added to all mutation endpoints.
 
 **Source**: `apps/api/src/modules/feature-flags/routes.ts`
+
 - Line 62: `POST /feature-flags` — `requireAdmin` present
 - Line 81: `PATCH /feature-flags/:key` — `requireAdmin` present
 - Line 98: `DELETE /feature-flags/:key` — `requireAdmin` present
@@ -69,6 +71,7 @@ All 3 P1 findings from the original audit resolved. No new P0/P1 findings. 2 new
 **Fix Applied**: The duplicate `/consent/log` route has been removed.
 
 **Source**: `apps/api/src/modules/consent/routes.ts`
+
 - Only two routes exist: `GET /consent` (line 10) and `POST /consent` (line 28)
 - No `/consent/log` route present
 
@@ -81,18 +84,19 @@ All 3 P1 findings from the original audit resolved. No new P0/P1 findings. 2 new
 **Fix Applied**: Error logging now uses a fixed string instead of the error object.
 
 **Source**: `apps/api/src/modules/webhooks/service.ts`
+
 - Line 191: `logger.error("webhook create failed", { error: "invalid secret" })` — generic message only
 
 **Verdict**: **RESOLVED**. No secret information is logged on webhook creation failure.
 
 ### Additional Claimed Fixes — All Verified
 
-| Item | Source | Verdict |
-| ---- | ------ | ------- |
-| **Shared circuit breaker for worker Supabase** | `apps/worker/src/lib/circuit-breaker.ts` — `executeWithCircuitBreaker()` with label-based sliding window (30s, 5 failures) | CONFIRMED |
-| **Shared supabase client (singleton)** | `apps/worker/src/lib/supabase.ts` — `createSupabaseClient()` returns cached instance, `supabaseQuery()` wraps with CB | CONFIRMED |
-| **Scheduled posts cross-tenant** | `apps/api/src/modules/scheduled-posts/routes.ts:65-66` — `getChannelWorkspaceId()` + `requireWorkspaceMember()` on POST/DELETE | CONFIRMED |
-| **API versioning documented** | `docs/api/versioning.md` — URL prefix + Accept-Version header, 6-month sunset policy, deprecation middleware | CONFIRMED |
+| Item                                           | Source                                                                                                                         | Verdict   |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------- |
+| **Shared circuit breaker for worker Supabase** | `apps/worker/src/lib/circuit-breaker.ts` — `executeWithCircuitBreaker()` with label-based sliding window (30s, 5 failures)     | CONFIRMED |
+| **Shared supabase client (singleton)**         | `apps/worker/src/lib/supabase.ts` — `createSupabaseClient()` returns cached instance, `supabaseQuery()` wraps with CB          | CONFIRMED |
+| **Scheduled posts cross-tenant**               | `apps/api/src/modules/scheduled-posts/routes.ts:65-66` — `getChannelWorkspaceId()` + `requireWorkspaceMember()` on POST/DELETE | CONFIRMED |
+| **API versioning documented**                  | `docs/api/versioning.md` — URL prefix + Accept-Version header, 6-month sunset policy, deprecation middleware                   | CONFIRMED |
 
 ---
 
@@ -102,18 +106,18 @@ All 3 P1 findings from the original audit resolved. No new P0/P1 findings. 2 new
 
 13+ routes still lack structured Zod validation. Manual inline checks remain:
 
-| Route | Issue | Lines |
-| ----- | ----- | ----- |
-| `POST /ai/rewrite` | Manual `text`/`action` check | `ai/routes.ts:12-16` |
-| `POST /scheduled-posts` | Manual inline field check | `scheduled-posts/routes.ts:62-63` |
-| `POST /consent` | Manual `consent_type`/`granted` check | `consent/routes.ts:32-36` |
-| `PATCH /announcements/:id/dismiss` | No body validation at all | `announcements/routes.ts:67-96` |
-| All read-receipt routes | No Zod on params/body | `read-receipts/routes.ts:16-59` |
-| `GET /admin/users` | `search` query param not validated | `admin/routes.ts:60` |
-| `POST /emoji/:workspaceId` | Manual `name`/`imageUrl` check | `emoji/routes.ts:25-26` |
-| `PATCH /groups/:id` (user-groups) | Manual `name`/`description` check | `user-groups/routes.ts:91-94` |
-| `POST /groups` (user-groups) | Manual `workspace_id`/`name` check | `user-groups/routes.ts:47-48` |
-| `POST /groups/:id/members` (user-groups) | Manual `Array.isArray` check | `user-groups/routes.ts:165` |
+| Route                                    | Issue                                 | Lines                             |
+| ---------------------------------------- | ------------------------------------- | --------------------------------- |
+| `POST /ai/rewrite`                       | Manual `text`/`action` check          | `ai/routes.ts:12-16`              |
+| `POST /scheduled-posts`                  | Manual inline field check             | `scheduled-posts/routes.ts:62-63` |
+| `POST /consent`                          | Manual `consent_type`/`granted` check | `consent/routes.ts:32-36`         |
+| `PATCH /announcements/:id/dismiss`       | No body validation at all             | `announcements/routes.ts:67-96`   |
+| All read-receipt routes                  | No Zod on params/body                 | `read-receipts/routes.ts:16-59`   |
+| `GET /admin/users`                       | `search` query param not validated    | `admin/routes.ts:60`              |
+| `POST /emoji/:workspaceId`               | Manual `name`/`imageUrl` check        | `emoji/routes.ts:25-26`           |
+| `PATCH /groups/:id` (user-groups)        | Manual `name`/`description` check     | `user-groups/routes.ts:91-94`     |
+| `POST /groups` (user-groups)             | Manual `workspace_id`/`name` check    | `user-groups/routes.ts:47-48`     |
+| `POST /groups/:id/members` (user-groups) | Manual `Array.isArray` check          | `user-groups/routes.ts:165`       |
 
 **Verdict**: No change since original audit. Recommendation unchanged.
 
@@ -121,14 +125,15 @@ All 3 P1 findings from the original audit resolved. No new P0/P1 findings. 2 new
 
 Some routes still lack workspace/channel membership verification:
 
-| Route | Issue | Severity |
-| ----- | ----- | -------- |
-| `GET /audit/logs` | No workspace filter enforcement — any authenticated user can query all audit logs | NEW F22 |
-| `GET /livekit/token` | No workspace membership verification on room access | NEW F23 |
-| `GET/POST/DELETE /emoji/*` | No workspace membership check | P3 sub-finding |
-| `GET /metrics` | Exposed to all authenticated users, no admin gate | NEW F25 |
+| Route                      | Issue                                                                             | Severity       |
+| -------------------------- | --------------------------------------------------------------------------------- | -------------- |
+| `GET /audit/logs`          | No workspace filter enforcement — any authenticated user can query all audit logs | NEW F22        |
+| `GET /livekit/token`       | No workspace membership verification on room access                               | NEW F23        |
+| `GET/POST/DELETE /emoji/*` | No workspace membership check                                                     | P3 sub-finding |
+| `GET /metrics`             | Exposed to all authenticated users, no admin gate                                 | NEW F25        |
 
 Additional items from original F2 still present but previously documented:
+
 - `GET /dm-channels` — no workspace context
 - `GET /messages/flagged` — no workspace/channel check
 - Reminders — no channel membership verification on the reminder's message
@@ -137,11 +142,11 @@ Additional items from original F2 still present but previously documented:
 
 Routes still using inline `res.status(x).json(...)` instead of throwing `AppError` subclasses:
 
-| Route | Pattern | Lines |
-| ----- | ------- | ----- |
-| `POST /ai/rewrite` | `res.status(400).json(...)` | `ai/routes.ts:14-16` |
-| `POST /messages/:id/read` | `res.status(400).json(...)` | `read-receipts/routes.ts:36` |
-| `GET /groups` (user-groups) | `res.status(403).json(...)` | `user-groups/routes.ts:24-26` |
+| Route                        | Pattern                     | Lines                         |
+| ---------------------------- | --------------------------- | ----------------------------- |
+| `POST /ai/rewrite`           | `res.status(400).json(...)` | `ai/routes.ts:14-16`          |
+| `POST /messages/:id/read`    | `res.status(400).json(...)` | `read-receipts/routes.ts:36`  |
+| `GET /groups` (user-groups)  | `res.status(403).json(...)` | `user-groups/routes.ts:24-26` |
 | `POST /groups` (user-groups) | `res.status(403).json(...)` | `user-groups/routes.ts:57-59` |
 
 **Verdict**: No change since original audit. Recommendation unchanged.
@@ -159,6 +164,7 @@ Routes still using inline `res.status(x).json(...)` instead of throwing `AppErro
 Admin routes use `getSupabaseAdmin()` (service role key) on multiple endpoints, bypassing RLS:
 
 **Source**: `apps/api/src/modules/admin/routes.ts`
+
 - `GET /stats` (line 42): service role on all 4 count queries
 - `GET /users` (line 59): service role on user listing
 - `GET /channels` (line 80): service role on channel listing
@@ -172,6 +178,7 @@ The `requireAdmin` middleware is present (line 40 for stats, line 57 for users, 
 ### Finding F7 (P3) — Route Registry Descriptions Incomplete — STILL PRESENT
 
 Only 3 of 27 route modules have endpoint metadata (the `endpoints` array):
+
 - Health (`path: "/"`)
 - Auth (`path: "/v1/auth"`)
 - Workspaces (`path: "/v1/workspaces"`)
@@ -189,10 +196,11 @@ The remaining 24 entries have only `path`, `router`, and `description` — no en
 ### Finding F8 (P2) — Webhook Worker Duplicates Service Logic — STILL PRESENT
 
 Both `webhooks/service.ts` (lines 258-429) and `processors/webhook-delivery.ts` contain near-identical delivery logic:
+
 - HMAC signing with sha256
 - SSRF validation via `validateWebhookUrl`
 - Circuit breaker via `executeWithCircuitBreaker`
-- Exponential backoff (60s * 2^n + jitter)
+- Exponential backoff (60s \* 2^n + jitter)
 - Dead letter queue
 - Response size limit (1MB)
 - Idempotency header
@@ -214,9 +222,11 @@ The job returns `{ status: allOk ? "sent" : "partial", channels, results }` — 
 ### Finding F10 (P2) — Cleanup Processor Has Unimplemented Types — PARTIALLY IMPROVED
 
 Improvements noted since original audit:
+
 - `message_edit_history` type added (lines 13, 122-152) — fully implemented cleanup function
 
 Still present:
+
 - `expired_uploads` still logs "not yet implemented" (line 186) — no actual cleanup
 - `stale_sessions` type is defined in the union (line 12) but has NO case in the switch statement — falls through to `default: logger.warn({ type }, "Unknown cleanup job type")` at line 189
 
@@ -231,6 +241,7 @@ Still present:
 The reminder processor still uses direct Supabase polling:
 
 **Source**: `apps/worker/src/processors/reminder.ts:9-59`
+
 - No BullMQ worker or queue
 - Direct `supabase.from("message_reminders").select()` (line 14)
 - Manual for-loop over results (line 27)
@@ -243,6 +254,7 @@ The reminder processor still uses direct Supabase polling:
 The scheduler still uses `setInterval()` for periodic jobs:
 
 **Source**: `apps/worker/src/scheduler.ts`
+
 - Line 126-133: `setInterval(() => { runDataRetention() }, 24h)`
 - Line 135-139: `setInterval(() => { runCleanup() }, 6h)`
 - Line 146-153: `setInterval(() => { runComplianceExport() }, 24h)`
@@ -262,6 +274,7 @@ The in-memory `Map` fallback is still present:
 The fallback path still passes a Supabase client method as a value:
 
 **Source**: `apps/worker/src/processors/search-indexer.ts:43-46`
+
 ```typescript
 search_vector: supabase.rpc("to_tsvector", {
   english: contentToIndex,
@@ -277,6 +290,7 @@ This is invalid — it passes the RPC call promise/object as a column value.
 The notification worker still makes direct HTTP calls without circuit breakers:
 
 **Source**: `apps/worker/src/processors/notification.ts`
+
 - Line 77: `fetch(sub.endpoint, ...)` — raw fetch to push endpoint, no CB
 - Line 134: `nodemailer.createTransport(...)` — SMTP connection, no CB
 
@@ -291,9 +305,10 @@ The notification worker still makes direct HTTP calls without circuit breakers:
 Rate limiters exist for: global (100/min), auth (10/min), search (30/min), magic link (3/min/IP).
 
 No targeted rate limits on:
+
 - Notification endpoints (/notifications, /notifications/preferences)
 - Webhook mutation endpoints (/webhooks POST/PATCH/DELETE)
-- Admin endpoints (/admin/*)
+- Admin endpoints (/admin/\*)
 - Export/import endpoints
 - AI/rewrite
 
@@ -315,6 +330,7 @@ No event-level rate limiting on `typing:start`, `channel:join`, `presence:set`, 
 Push delivery still uses raw `fetch()` with manual VAPID headers:
 
 **Source**: `apps/worker/src/processors/notification.ts:77-86`
+
 ```typescript
 const response = await fetch(sub.endpoint, {
   method: "POST",
@@ -361,6 +377,7 @@ The `GET /livekit/token` route requires only `authenticate`. Any authenticated u
 **Source**: `apps/api/src/modules/emoji/routes.ts:9-57`
 
 All three custom emoji routes use `:workspaceId` param but have no workspace membership middleware:
+
 - `GET /workspaces/:workspaceId/emoji` (line 10) — no membership check
 - `POST /workspaces/:workspaceId/emoji` (line 22) — no membership check
 - `DELETE /emoji/:id` (line 46) — no workspace context at all
@@ -385,12 +402,12 @@ The `/metrics` endpoint requires `authenticate` but not `requireAdmin`. Any auth
 
 Two different route files implement overlapping user group functionality with different patterns:
 
-| Feature | `groups/routes.ts` | `user-groups/routes.ts` |
-| ------- | ------------------ | ----------------------- |
-| Mount path | `/v1/workspaces/:workspaceId/groups` | `/v1/groups` |
-| Membership check | `requireWorkspaceMembership("workspaceId")` | Manual inline queries |
-| Error pattern | AppError (consistent) | Inline `res.status(403).json(...)` (inconsistent) |
-| Route registry | **NOT REGISTERED** (missing from route-registry.ts) | Registered |
+| Feature          | `groups/routes.ts`                                  | `user-groups/routes.ts`                           |
+| ---------------- | --------------------------------------------------- | ------------------------------------------------- |
+| Mount path       | `/v1/workspaces/:workspaceId/groups`                | `/v1/groups`                                      |
+| Membership check | `requireWorkspaceMembership("workspaceId")`         | Manual inline queries                             |
+| Error pattern    | AppError (consistent)                               | Inline `res.status(403).json(...)` (inconsistent) |
+| Route registry   | **NOT REGISTERED** (missing from route-registry.ts) | Registered                                        |
 
 The `groups/routes.ts` file is NOT in the route registry (`route-registry.ts`), meaning its routes are unreachable. Meanwhile, `user-groups/routes.ts` IS registered but uses manual validation and inline error responses.
 
@@ -431,35 +448,35 @@ This means every 6 hours, a cleanup job runs that logs a warning for being an "U
 
 ## Consolidated Findings Table
 
-| ID      | Severity | Category      | Status    | Title |
-| ------- | -------- | ------------- | --------- | ----- |
-| **F16** | **P1**   | AuthZ         | RESOLVED  | Webhook routes use wrong middleware param |
-| **F17** | **P1**   | AuthZ         | RESOLVED  | Feature flag mutation lacks admin authorization |
-| **F18** | **P1**   | Code Quality  | RESOLVED  | Duplicate consent logging endpoints |
-| **F19** | **P2**   | Security      | RESOLVED  | Webhook secret exposed in error logs |
-| F1     | P2       | Validation    | REMAINING | Incomplete Zod validation on 13+ routes |
-| F2     | P2       | AuthZ         | REMAINING | Missing tenant isolation on 5+ routes |
-| F3     | P2       | Consistency   | REMAINING | Mixed error response patterns |
-| F5     | P2       | Docs          | REMAINING | OpenAPI spec is static, not auto-generated |
-| F6     | P2       | Security      | REMAINING | Admin endpoints bypass RLS |
-| F8     | P2       | Architecture  | REMAINING | Webhook worker duplicates service logic |
-| F9     | P2       | Reliability   | REMAINING | Notification processor lacks per-channel retry |
-| F10    | P2       | Completeness  | PARTIAL   | Cleanup has 2 unimplemented types (1 fixed, 1 new gap) |
-| F11    | P2       | Architecture  | REMAINING | Reminder processor not using BullMQ |
-| F12    | P2       | Reliability   | REMAINING | Scheduler uses setInterval instead of repeatable jobs |
-| F13    | P2       | Reliability   | REMAINING | Idempotency in-memory fallback is per-process |
-| **F22** | **P2**   | AuthZ         | **NEW**   | Audit log routes lack workspace membership check |
-| **F23** | **P2**   | AuthZ         | **NEW**   | LiveKit token lacks workspace membership verification |
-| F4     | P3       | Hardening     | REMAINING | Rate limiting gaps on notification/admin/export routes |
-| F7     | P3       | Docs          | REMAINING | Route registry has incomplete endpoint metadata |
-| F14    | P3       | Correctness   | REMAINING | Search indexer fallback uses invalid SQL pattern |
-| F15    | P3       | Hardening     | REMAINING | Notification worker lacks circuit breakers |
-| F20    | P3       | Hardening     | REMAINING | No event-level Socket.io rate limiting |
-| F21    | P3       | Hardening     | REMAINING | Push notification uses raw fetch (non-standard VAPID) |
-| F24    | P3       | AuthZ         | NEW       | Emoji routes lack workspace membership check |
-| F25    | P3       | Hardening     | NEW       | /metrics exposed to all authenticated users |
-| F26    | P3       | Code Quality  | NEW       | Duplicate group routes (groups/ vs user-groups/) |
-| F27    | P3       | Correctness   | NEW       | Scheduler enqueues stale_sessions with no cleanup handler |
+| ID      | Severity | Category     | Status    | Title                                                     |
+| ------- | -------- | ------------ | --------- | --------------------------------------------------------- |
+| **F16** | **P1**   | AuthZ        | RESOLVED  | Webhook routes use wrong middleware param                 |
+| **F17** | **P1**   | AuthZ        | RESOLVED  | Feature flag mutation lacks admin authorization           |
+| **F18** | **P1**   | Code Quality | RESOLVED  | Duplicate consent logging endpoints                       |
+| **F19** | **P2**   | Security     | RESOLVED  | Webhook secret exposed in error logs                      |
+| F1      | P2       | Validation   | REMAINING | Incomplete Zod validation on 13+ routes                   |
+| F2      | P2       | AuthZ        | REMAINING | Missing tenant isolation on 5+ routes                     |
+| F3      | P2       | Consistency  | REMAINING | Mixed error response patterns                             |
+| F5      | P2       | Docs         | REMAINING | OpenAPI spec is static, not auto-generated                |
+| F6      | P2       | Security     | REMAINING | Admin endpoints bypass RLS                                |
+| F8      | P2       | Architecture | REMAINING | Webhook worker duplicates service logic                   |
+| F9      | P2       | Reliability  | REMAINING | Notification processor lacks per-channel retry            |
+| F10     | P2       | Completeness | PARTIAL   | Cleanup has 2 unimplemented types (1 fixed, 1 new gap)    |
+| F11     | P2       | Architecture | REMAINING | Reminder processor not using BullMQ                       |
+| F12     | P2       | Reliability  | REMAINING | Scheduler uses setInterval instead of repeatable jobs     |
+| F13     | P2       | Reliability  | REMAINING | Idempotency in-memory fallback is per-process             |
+| **F22** | **P2**   | AuthZ        | **NEW**   | Audit log routes lack workspace membership check          |
+| **F23** | **P2**   | AuthZ        | **NEW**   | LiveKit token lacks workspace membership verification     |
+| F4      | P3       | Hardening    | REMAINING | Rate limiting gaps on notification/admin/export routes    |
+| F7      | P3       | Docs         | REMAINING | Route registry has incomplete endpoint metadata           |
+| F14     | P3       | Correctness  | REMAINING | Search indexer fallback uses invalid SQL pattern          |
+| F15     | P3       | Hardening    | REMAINING | Notification worker lacks circuit breakers                |
+| F20     | P3       | Hardening    | REMAINING | No event-level Socket.io rate limiting                    |
+| F21     | P3       | Hardening    | REMAINING | Push notification uses raw fetch (non-standard VAPID)     |
+| F24     | P3       | AuthZ        | NEW       | Emoji routes lack workspace membership check              |
+| F25     | P3       | Hardening    | NEW       | /metrics exposed to all authenticated users               |
+| F26     | P3       | Code Quality | NEW       | Duplicate group routes (groups/ vs user-groups/)          |
+| F27     | P3       | Correctness  | NEW       | Scheduler enqueues stale_sessions with no cleanup handler |
 
 ---
 
@@ -480,18 +497,18 @@ This means every 6 hours, a cleanup job runs that logs a warning for being an "U
 
 ## Metrics Summary
 
-| Metric | Original | Current |
-| ------ | -------- | ------- |
-| Route files reviewed | 27 | 27 |
-| Total endpoints | ~120+ | ~120+ |
-| Routes with Zod validation | ~60% | ~60% (unchanged) |
-| Routes with tenant isolation | ~70% | ~72% (webhooks, scheduled posts improved) |
-| Worker processors | 7 (6 BullMQ + 1 direct) | 7 (unchanged) |
-| Worker reliability coverage (retry + timeout + DLQ) | 1/7 | 2/7 (webhook + compliance export) |
-| Webhook security controls | 10/10 | 10/10 |
-| P1 findings | 3 | **0** (all resolved) |
-| P2 findings | 12 | **13** (1 resolved, 2 new) |
-| P3 findings | 8 | **13** (0 resolved, 5 new) |
+| Metric                                              | Original                | Current                                   |
+| --------------------------------------------------- | ----------------------- | ----------------------------------------- |
+| Route files reviewed                                | 27                      | 27                                        |
+| Total endpoints                                     | ~120+                   | ~120+                                     |
+| Routes with Zod validation                          | ~60%                    | ~60% (unchanged)                          |
+| Routes with tenant isolation                        | ~70%                    | ~72% (webhooks, scheduled posts improved) |
+| Worker processors                                   | 7 (6 BullMQ + 1 direct) | 7 (unchanged)                             |
+| Worker reliability coverage (retry + timeout + DLQ) | 1/7                     | 2/7 (webhook + compliance export)         |
+| Webhook security controls                           | 10/10                   | 10/10                                     |
+| P1 findings                                         | 3                       | **0** (all resolved)                      |
+| P2 findings                                         | 12                      | **13** (1 resolved, 2 new)                |
+| P3 findings                                         | 8                       | **13** (0 resolved, 5 new)                |
 
 ---
 

@@ -45,14 +45,12 @@ async function getAdminWorkspaceIds(req: Request): Promise<string[]> {
         .select("workspace_id")
         .eq("user_id", req.userId)
         .in("role", ["owner", "admin"])
-    ).data?.map((m: { workspace_id: string }) => m.workspace_id) ?? []
+    ).data?.map((m: { workspace_id: string }) => m.workspace_id) ??
+    []
   );
 }
 
-async function verifyWorkspaceMembership(
-  req: Request,
-  workspaceId: string,
-): Promise<void> {
+async function verifyWorkspaceMembership(req: Request, workspaceId: string): Promise<void> {
   const supabase = req.supabase;
   if (!supabase) throw new ForbiddenError("Auth context missing");
   const { data } = await supabase
@@ -76,7 +74,10 @@ router.get(
       await Promise.all([
         admin.from("users").select("*", { count: "exact", head: true }),
         admin.from("workspaces").select("*", { count: "exact", head: true }).in("id", workspaceIds),
-        admin.from("channels").select("*", { count: "exact", head: true }).in("workspace_id", workspaceIds),
+        admin
+          .from("channels")
+          .select("*", { count: "exact", head: true })
+          .in("workspace_id", workspaceIds),
         admin.from("messages").select("*", { count: "exact", head: true }),
       ]);
     res.json({ stats: { users, workspaces, channels, messages } });
@@ -305,12 +306,10 @@ router.get(
     const limit = 20;
     const webhookId = req.query.webhook_id as string | undefined;
 
-    const endpointIds = (
-      await admin
-        .from("webhook_endpoints")
-        .select("id")
-        .in("workspace_id", workspaceIds)
-    ).data?.map((e: { id: string }) => e.id) ?? [];
+    const endpointIds =
+      (
+        await admin.from("webhook_endpoints").select("id").in("workspace_id", workspaceIds)
+      ).data?.map((e: { id: string }) => e.id) ?? [];
 
     let query = admin
       .from("webhook_deliveries")
@@ -333,12 +332,10 @@ router.get(
     const admin = getSupabaseAdmin();
     const workspaceIds = await getAdminWorkspaceIds(req);
 
-    const endpointIds = (
-      await admin
-        .from("webhook_endpoints")
-        .select("id")
-        .in("workspace_id", workspaceIds)
-    ).data?.map((e: { id: string }) => e.id) ?? [];
+    const endpointIds =
+      (
+        await admin.from("webhook_endpoints").select("id").in("workspace_id", workspaceIds)
+      ).data?.map((e: { id: string }) => e.id) ?? [];
 
     const { data, error } = await admin
       .from("webhook_dead_letters")
@@ -488,7 +485,9 @@ router.get(
     const workspaceId = req.query.workspace_id as string | undefined;
 
     if (!workspaceId) {
-      res.status(400).json({ error: { code: "BAD_REQUEST", message: "workspace_id query param is required" } });
+      res
+        .status(400)
+        .json({ error: { code: "BAD_REQUEST", message: "workspace_id query param is required" } });
       return;
     }
 
@@ -515,12 +514,24 @@ router.get(
       {
         key: "workspaces",
         fn: () =>
-          fetchAll(admin.from("workspaces").select("*").eq("id", workspaceId).order("created_at", { ascending: true })),
+          fetchAll(
+            admin
+              .from("workspaces")
+              .select("*")
+              .eq("id", workspaceId)
+              .order("created_at", { ascending: true }),
+          ),
       },
       {
         key: "channels",
         fn: () =>
-          fetchAll(admin.from("channels").select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: true })),
+          fetchAll(
+            admin
+              .from("channels")
+              .select("*")
+              .eq("workspace_id", workspaceId)
+              .order("created_at", { ascending: true }),
+          ),
       },
       {
         key: "messages",
@@ -545,7 +556,13 @@ router.get(
       {
         key: "audit_logs",
         fn: () =>
-          fetchAll(admin.from("audit_logs").select("*").eq("organization_id", workspaceId).order("created_at", { ascending: true })),
+          fetchAll(
+            admin
+              .from("audit_logs")
+              .select("*")
+              .eq("organization_id", workspaceId)
+              .order("created_at", { ascending: true }),
+          ),
       },
     );
 

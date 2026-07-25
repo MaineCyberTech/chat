@@ -149,7 +149,9 @@ export function MessageContextMenu({
         </button>
         {onForward && (
           <button
-            ref={(el) => { menuItemsRef.current[6] = el; }}
+            ref={(el) => {
+              menuItemsRef.current[6] = el;
+            }}
             onClick={() => {
               onForward(contextMenu.message);
               onClose();
@@ -163,7 +165,9 @@ export function MessageContextMenu({
         )}
         {onPin && (
           <button
-            ref={(el) => { menuItemsRef.current[7] = el; }}
+            ref={(el) => {
+              menuItemsRef.current[7] = el;
+            }}
             onClick={() => {
               onPin(contextMenu.message);
               onClose();
@@ -177,7 +181,9 @@ export function MessageContextMenu({
         )}
         {contextMenu.message.user_id === currentUserId && onEdit && (
           <button
-            ref={(el) => { menuItemsRef.current[8] = el; }}
+            ref={(el) => {
+              menuItemsRef.current[8] = el;
+            }}
             onClick={() => {
               onStartEdit(contextMenu.message);
               onClose();
@@ -191,7 +197,9 @@ export function MessageContextMenu({
         )}
         {contextMenu.message.user_id === currentUserId && onDelete && (
           <button
-            ref={(el) => { menuItemsRef.current[9] = el; }}
+            ref={(el) => {
+              menuItemsRef.current[9] = el;
+            }}
             onClick={() => {
               onSetDeleteConfirmId(contextMenu.message.id);
               onClose();
@@ -210,14 +218,10 @@ export function MessageContextMenu({
   if (isTouchDevice) {
     return (
       <>
-        <div
-          className="fixed inset-0 z-40 bg-black/50"
-          onClick={onClose}
-          aria-hidden="true"
-        />
+        <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} aria-hidden="true" />
         <div
           ref={menuRef}
-          className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl border px-2 pb-6 pt-2"
+          className="fixed right-0 bottom-0 left-0 z-50 rounded-t-xl border px-2 pt-2 pb-6"
           style={{
             background: "var(--center-channel-bg)",
             borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",

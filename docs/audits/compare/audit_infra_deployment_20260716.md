@@ -8,23 +8,23 @@
 
 ## Summary
 
-| Dimension | Score | Findings |
-|-----------|-------|----------|
-| Environment Model (Phase 1) | 7/10 | 1 P2, 1 P3 |
-| IaC Review (Phase 2) | 6/10 | 1 P1, 2 P2, 1 P3 |
-| Delivery Pipeline (Phase 3) | 7/10 | 2 P1, 2 P2, 1 P3 |
-| Resilience & Observability (Phase 4) | 7/10 | 1 P2, 1 P3 |
-| Recovery & Failover (Phase 5) | 6/10 | 2 P1, 3 P2, 1 P3 |
-| **Total** | **6.8/10** | **5 P1, 9 P2, 4 P3** |
+| Dimension                            | Score      | Findings             |
+| ------------------------------------ | ---------- | -------------------- |
+| Environment Model (Phase 1)          | 7/10       | 1 P2, 1 P3           |
+| IaC Review (Phase 2)                 | 6/10       | 1 P1, 2 P2, 1 P3     |
+| Delivery Pipeline (Phase 3)          | 7/10       | 2 P1, 2 P2, 1 P3     |
+| Resilience & Observability (Phase 4) | 7/10       | 1 P2, 1 P3           |
+| Recovery & Failover (Phase 5)        | 6/10       | 2 P1, 3 P2, 1 P3     |
+| **Total**                            | **6.8/10** | **5 P1, 9 P2, 4 P3** |
 
 ### Severity Distribution
 
-| Severity | Count |
-|----------|-------|
-| P0 | 0 |
-| P1 | 5 |
-| P2 | 9 |
-| P3 | 4 |
+| Severity  | Count  |
+| --------- | ------ |
+| P0        | 0      |
+| P1        | 5      |
+| P2        | 9      |
+| P3        | 4      |
 | **Total** | **18** |
 
 ### Decision: **GO WITH RISKS**
@@ -37,11 +37,11 @@ All 5 P1 findings must be addressed before Enterprise readiness. No P0 findings 
 
 ### Inventory
 
-| Environment | Compose File | Caddyfile | Domain |
-|-------------|-------------|-----------|--------|
-| Local Dev | `docker-compose.dev.yml` + `override.yml` | `Caddyfile.dev` | localhost:80 |
-| Dev Remote | `docker-compose.devremote.yml` | `Caddyfile` | chat.mainecybertech.us |
-| Production | `docker-compose.prod.yml` | `Caddyfile.prod` | chat.mainecybertech.com |
+| Environment | Compose File                              | Caddyfile        | Domain                  |
+| ----------- | ----------------------------------------- | ---------------- | ----------------------- |
+| Local Dev   | `docker-compose.dev.yml` + `override.yml` | `Caddyfile.dev`  | localhost:80            |
+| Dev Remote  | `docker-compose.devremote.yml`            | `Caddyfile`      | chat.mainecybertech.us  |
+| Production  | `docker-compose.prod.yml`                 | `Caddyfile.prod` | chat.mainecybertech.com |
 
 ### Finding IDR-001 — Caddyfile.prod nested global options block may be invalid
 
@@ -49,6 +49,7 @@ All 5 P1 findings must be addressed before Enterprise readiness. No P0 findings 
 **Location**: `infra/docker/Caddyfile.prod:2-7`
 **Description**: The production Caddyfile wraps a nested `{ }` block inside the global options block. The correct syntax is to place `admin off`, `http_port`, and `https_port` directly in the outer `{ }` block, not nested inside a second `{ }`. This may cause Caddy to fail to parse the configuration, preventing startup.
 **Evidence**:
+
 ```
 {
     # Production Caddyfile    ← outer global options block
@@ -58,6 +59,7 @@ All 5 P1 findings must be addressed before Enterprise readiness. No P0 findings 
         https_port 443
     }
 ```
+
 Compare with `Caddyfile.dev` which correctly places options directly inside the global block without nesting.
 **Recommendation**: Remove the inner `{ }` braces so options are direct children of the global options block.
 
@@ -85,6 +87,7 @@ Compare with `Caddyfile.dev` which correctly places options directly inside the 
 **Location**: `.github/workflows/deploy-production.yml:67`
 **Description**: The production deploy workflow runs `terraform init -input=false` without backend config overrides. The `versions.tf` backend block defaults to AWS S3 (`region = "us-east-1"`), but the actual backend target is DigitalOcean Spaces (S3-compatible). The dev workflow (`infra-development.yml`) correctly passes `-backend-config="endpoint=https://sfo3.digitaloceanspaces.com"`. Production Terraform init will try to reach `s3.us-east-1.amazonaws.com` which will fail.
 **Evidence**:
+
 ```yaml
 # infra-development.yml (correct)
 run: terraform init -input=false -backend-config="bucket=chat-terraform-state" -backend-config="endpoint=https://sfo3.digitaloceanspaces.com"
@@ -92,6 +95,7 @@ run: terraform init -input=false -backend-config="bucket=chat-terraform-state" -
 # deploy-production.yml (incorrect — missing backend config)
 run: terraform init -input=false
 ```
+
 **Recommendation**: Add the same `-backend-config` overrides to the production deploy workflow's Terraform init step. Also add `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` env vars to that step.
 
 ### Finding IDR-005 — Terraform state locking not enforced
@@ -132,6 +136,7 @@ run: terraform init -input=false
 **Location**: `.github/workflows/deploy-production.yml:281-290`
 **Description**: The production deploy script pulls only `:latest` tags for API/Worker/Web images. If a concurrent build partially completes (only some images pushed), the deploy could get inconsistent versions. The dev deploy correctly prioritizes SHA tags and falls back to `:dev`.
 **Evidence**:
+
 ```bash
 # Production (no SHA priority):
 for img in api worker web; do
@@ -147,6 +152,7 @@ for img in api worker web; do
     fi
 done
 ```
+
 **Recommendation**: Change production deploy to use SHA-priority pulling (same pattern as dev deploy). Only fall back to `:latest` if SHA pull fails.
 
 ### Finding IDR-010 — Secrets written to disk as .env file during deployment
@@ -205,6 +211,7 @@ done
 **Location**: `docs/runbooks/backup-strategy.md`
 **Description**: The backup strategy document recommends monthly restoration testing but there is no CI job or scheduled workflow that automates this. Manual monthly verification is likely to be skipped or forgotten.
 **Recommendation**: Add a scheduled weekly GitHub Actions workflow that:
+
 1. Dumps the Supabase database via `supabase db dump`
 2. Restores to a staging project
 3. Runs smoke tests (health check, message send/read)
@@ -230,31 +237,31 @@ done
 
 ### Compose File Differences
 
-| Service | Local Dev (`dev.yml`) | Dev Remote (`devremote.yml`) | Production (`prod.yml`) |
-|---------|----------------------|-----------------------------|------------------------|
-| **caddy** | Uses `Caddyfile.dev`, ports 80:80 + 443:443 | Uses `Caddyfile`, ports 80:80 + 443:443, certs volume | Uses `Caddyfile.prod`, certs volume, no depends_on |
-| **web** | Builds from source, volume mounts, dev command | Pulls `${WEB_IMAGE:-:dev}`, healthcheck | Pulls `${WEB_IMAGE:-:latest}`, healthcheck, depends_on api |
-| **api** | Builds from source, volume mounts, dev command, debug port 9229 | Pulls `${API_IMAGE:-:dev}`, healthcheck on `/health` | Pulls `${API_IMAGE:-:latest}`, healthcheck on `/healthz`, NO depends_on |
-| **worker** | Builds from source, volume mounts, dev command, depends_on redis | Pulls `${WORKER_IMAGE:-:dev}`, healthcheck (process-based), depends_on redis | Pulls `${WORKER_IMAGE:-:latest}`, healthcheck on `/healthz`, depends_on redis |
-| **redis** | AOF enabled, port 6379 exposed, healthcheck | No port exposed, healthcheck | No port exposed, healthcheck |
-| **livekit** | TURN disabled, debug log level, keys with defaults | TURN enabled (localhost), UDP port range | TURN enabled (production domain), TLS port 5349, UDP port 3478 |
+| Service     | Local Dev (`dev.yml`)                                            | Dev Remote (`devremote.yml`)                                                 | Production (`prod.yml`)                                                       |
+| ----------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **caddy**   | Uses `Caddyfile.dev`, ports 80:80 + 443:443                      | Uses `Caddyfile`, ports 80:80 + 443:443, certs volume                        | Uses `Caddyfile.prod`, certs volume, no depends_on                            |
+| **web**     | Builds from source, volume mounts, dev command                   | Pulls `${WEB_IMAGE:-:dev}`, healthcheck                                      | Pulls `${WEB_IMAGE:-:latest}`, healthcheck, depends_on api                    |
+| **api**     | Builds from source, volume mounts, dev command, debug port 9229  | Pulls `${API_IMAGE:-:dev}`, healthcheck on `/health`                         | Pulls `${API_IMAGE:-:latest}`, healthcheck on `/healthz`, NO depends_on       |
+| **worker**  | Builds from source, volume mounts, dev command, depends_on redis | Pulls `${WORKER_IMAGE:-:dev}`, healthcheck (process-based), depends_on redis | Pulls `${WORKER_IMAGE:-:latest}`, healthcheck on `/healthz`, depends_on redis |
+| **redis**   | AOF enabled, port 6379 exposed, healthcheck                      | No port exposed, healthcheck                                                 | No port exposed, healthcheck                                                  |
+| **livekit** | TURN disabled, debug log level, keys with defaults               | TURN enabled (localhost), UDP port range                                     | TURN enabled (production domain), TLS port 5349, UDP port 3478                |
 
 ### Image Tagging Strategy
 
-| Image | Dev Remote | Production |
-|-------|-----------|------------|
-| `api` | `:dev`, `:$sha` | `:latest`, `:$sha` |
+| Image    | Dev Remote      | Production         |
+| -------- | --------------- | ------------------ |
+| `api`    | `:dev`, `:$sha` | `:latest`, `:$sha` |
 | `worker` | `:dev`, `:$sha` | `:latest`, `:$sha` |
-| `web` | `:dev`, `:$sha` | `:latest`, `:$sha` |
+| `web`    | `:dev`, `:$sha` | `:latest`, `:$sha` |
 
 ### Health Check Configuration
 
-| Service | Dev Remote | Production |
-|---------|-----------|------------|
-| **api** | `wget localhost:4000/health`, interval 15s, timeout 10s, retries 10, start 60s | `wget localhost:4000/healthz`, interval 10s, timeout 5s, retries 5, start 20s |
-| **web** | `wget localhost:3000`, interval 15s, timeout 10s, retries 10, start 60s | `wget localhost:3000`, interval 30s, timeout 10s, retries 3, start 40s |
-| **worker** | `kill -0 1` (process check), interval 30s, timeout 10s, retries 3, start 30s | `wget localhost:4100/healthz`, interval 10s, timeout 5s, retries 5, start 15s |
-| **redis** | `redis-cli ping`, interval 5s, timeout 3s, retries 5 | `redis-cli ping`, interval 5s, timeout 3s, retries 5 |
+| Service    | Dev Remote                                                                     | Production                                                                    |
+| ---------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| **api**    | `wget localhost:4000/health`, interval 15s, timeout 10s, retries 10, start 60s | `wget localhost:4000/healthz`, interval 10s, timeout 5s, retries 5, start 20s |
+| **web**    | `wget localhost:3000`, interval 15s, timeout 10s, retries 10, start 60s        | `wget localhost:3000`, interval 30s, timeout 10s, retries 3, start 40s        |
+| **worker** | `kill -0 1` (process check), interval 30s, timeout 10s, retries 3, start 30s   | `wget localhost:4100/healthz`, interval 10s, timeout 5s, retries 5, start 15s |
+| **redis**  | `redis-cli ping`, interval 5s, timeout 3s, retries 5                           | `redis-cli ping`, interval 5s, timeout 3s, retries 5                          |
 
 ---
 
@@ -262,67 +269,70 @@ done
 
 All 20 workflow files in `.github/workflows/`:
 
-| Workflow | Trigger | Purpose | Audit Notes |
-|----------|---------|---------|-------------|
-| `ci.yml` | push main/develop, PR, schedule, manual | Calls validate.yml | Good concurrency group |
-| `validate.yml` | workflow_call | Lint, typecheck, test, build, E2E | OpenAPI validation, security audit, migration test |
-| `build-push.yml` | push develop, PR | Build + push 3 images to GHCR | SHA + dev tags, SBOM, Trivy |
-| `deploy-development.yml` | push develop | Deploy to dev droplet | SHA-priority pull, 6min health check |
-| `deploy-production.yml` | push main, manual (w/ rollback) | Validate → Terraform → Build → Deploy | SHA tags, rollback job, environment gates |
-| `infra-development.yml` | push infra/**, manual | Terraform provision dev droplet | Resource import, cleanup, SSH health check |
-| `supabase-migrations.yml` | push migrations, workflow_call | Link + db push | No dry-run, no rollback |
-| `load-test.yml` | schedule (weekly), manual | k6 smoke test | 10 VUs, 30s duration |
-| `platform.yml` | manual | Full automation pipeline | V6 orchestration |
-| `stale.yml` | schedule (weekly) | Close stale issues/PRs | 60d stale, 7d close |
-| `governance.yml` | manual | Superseded by platform.yml | Retained for back-compat |
-| `hardening-automation-runner.yml` | manual | Harden analysis pipeline | Parameterized run_id |
-| `audit-ci.yml` | PR, push, manual | Audit dashboard generation | |
-| `audit-ci-autocommit.yml` | push audit runs | Auto-commit dashboard | `[skip ci]` commit |
-| `audit-badges-autocommit.yml` | push hardening | Auto-commit badges | |
-| `audit-pr-gate.yml` | PR | Audit-based PR gating | Policies in `docs/hardening_super_bundle/` |
-| `audit-release-certification.yml` | manual | Release certification | Generates stakeholder pack |
-| `environment-promotion-audit.yml` | manual | Promotion gate eval | |
-| `executive-stakeholder-pack.yml` | manual | Executive report generation | |
-| `feature-rollout-checkpoint.yml` | manual | Wave-based rollout guidance | |
+| Workflow                          | Trigger                                 | Purpose                               | Audit Notes                                        |
+| --------------------------------- | --------------------------------------- | ------------------------------------- | -------------------------------------------------- |
+| `ci.yml`                          | push main/develop, PR, schedule, manual | Calls validate.yml                    | Good concurrency group                             |
+| `validate.yml`                    | workflow_call                           | Lint, typecheck, test, build, E2E     | OpenAPI validation, security audit, migration test |
+| `build-push.yml`                  | push develop, PR                        | Build + push 3 images to GHCR         | SHA + dev tags, SBOM, Trivy                        |
+| `deploy-development.yml`          | push develop                            | Deploy to dev droplet                 | SHA-priority pull, 6min health check               |
+| `deploy-production.yml`           | push main, manual (w/ rollback)         | Validate → Terraform → Build → Deploy | SHA tags, rollback job, environment gates          |
+| `infra-development.yml`           | push infra/\*\*, manual                 | Terraform provision dev droplet       | Resource import, cleanup, SSH health check         |
+| `supabase-migrations.yml`         | push migrations, workflow_call          | Link + db push                        | No dry-run, no rollback                            |
+| `load-test.yml`                   | schedule (weekly), manual               | k6 smoke test                         | 10 VUs, 30s duration                               |
+| `platform.yml`                    | manual                                  | Full automation pipeline              | V6 orchestration                                   |
+| `stale.yml`                       | schedule (weekly)                       | Close stale issues/PRs                | 60d stale, 7d close                                |
+| `governance.yml`                  | manual                                  | Superseded by platform.yml            | Retained for back-compat                           |
+| `hardening-automation-runner.yml` | manual                                  | Harden analysis pipeline              | Parameterized run_id                               |
+| `audit-ci.yml`                    | PR, push, manual                        | Audit dashboard generation            |                                                    |
+| `audit-ci-autocommit.yml`         | push audit runs                         | Auto-commit dashboard                 | `[skip ci]` commit                                 |
+| `audit-badges-autocommit.yml`     | push hardening                          | Auto-commit badges                    |                                                    |
+| `audit-pr-gate.yml`               | PR                                      | Audit-based PR gating                 | Policies in `docs/hardening_super_bundle/`         |
+| `audit-release-certification.yml` | manual                                  | Release certification                 | Generates stakeholder pack                         |
+| `environment-promotion-audit.yml` | manual                                  | Promotion gate eval                   |                                                    |
+| `executive-stakeholder-pack.yml`  | manual                                  | Executive report generation           |                                                    |
+| `feature-rollout-checkpoint.yml`  | manual                                  | Wave-based rollout guidance           |                                                    |
 
 ---
 
 ## Appendix C: Resilience Capabilities
 
-| Capability | Status | Details |
-|------------|--------|---------|
-| Graceful shutdown | ✅ | Connection draining, in-flight request wait, 10s force timeout, Socket.io + cache cleanup |
-| Circuit breaker | ✅ | opossum-based, used by webhooks, HTTP client, Supabase client; Prometheus metrics |
-| Retry logic | ✅ | Exponential backoff per queue (webhook 5x, notification 3x, search 3x); DLQ for webhooks |
-| Health endpoint | ✅ | `/health` (light) and `/healthz` (deep with DB check) |
-| Docker healthchecks | ✅ | All 4 services have HEALTHCHECK in both compose and Dockerfile |
-| Chaos testing | ⚠️ Partial | 2 of 4 scenarios automated; no CI integration |
-| Backup automation | ⚠️ Manual | Supabase daily backup; no CI verification |
-| Deployment rollback | ✅ | Production has `rollback` job on workflow_dispatch with SHA |
-| State locking | ❌ | No Terraform state locking mechanism |
-| Connection pooling | ⚠️ Partial | Supabase-level only, no app-level pool config |
-| Resource limits | ✅ | Memory limits set on all containers |
-| Restart policy | ✅ | `unless-stopped` on all services |
-| Monitoring alerts | ✅ | CPU >80%, Memory >80%, Disk >90% via DO monitoring |
-| Secret management | ⚠️ Incomplete | Secrets written to .env file on disk |
+| Capability          | Status        | Details                                                                                   |
+| ------------------- | ------------- | ----------------------------------------------------------------------------------------- |
+| Graceful shutdown   | ✅            | Connection draining, in-flight request wait, 10s force timeout, Socket.io + cache cleanup |
+| Circuit breaker     | ✅            | opossum-based, used by webhooks, HTTP client, Supabase client; Prometheus metrics         |
+| Retry logic         | ✅            | Exponential backoff per queue (webhook 5x, notification 3x, search 3x); DLQ for webhooks  |
+| Health endpoint     | ✅            | `/health` (light) and `/healthz` (deep with DB check)                                     |
+| Docker healthchecks | ✅            | All 4 services have HEALTHCHECK in both compose and Dockerfile                            |
+| Chaos testing       | ⚠️ Partial    | 2 of 4 scenarios automated; no CI integration                                             |
+| Backup automation   | ⚠️ Manual     | Supabase daily backup; no CI verification                                                 |
+| Deployment rollback | ✅            | Production has `rollback` job on workflow_dispatch with SHA                               |
+| State locking       | ❌            | No Terraform state locking mechanism                                                      |
+| Connection pooling  | ⚠️ Partial    | Supabase-level only, no app-level pool config                                             |
+| Resource limits     | ✅            | Memory limits set on all containers                                                       |
+| Restart policy      | ✅            | `unless-stopped` on all services                                                          |
+| Monitoring alerts   | ✅            | CPU >80%, Memory >80%, Disk >90% via DO monitoring                                        |
+| Secret management   | ⚠️ Incomplete | Secrets written to .env file on disk                                                      |
 
 ---
 
 ## Appendix D: Proposed Remediation Plan
 
 ### Immediate (1-2 days)
+
 1. **IDR-001**: Fix Caddyfile.prod nested block syntax
 2. **IDR-008**: Add deployment lock to production deploy
 3. **IDR-009**: Change production deploy to SHA-priority image pulling
 4. **IDR-004**: Fix production Terraform init backend config
 
 ### Short-term (1 week)
+
 5. **IDR-010**: Migrate to Docker secrets or vault-based secret delivery
 6. **IDR-013**: Add Redis + BullMQ checks to health endpoint
 7. **IDR-005**: Implement Terraform state locking workaround
 8. **IDR-011**: Add dry-run step to supabase-migrations.yml
 
 ### Medium-term (2-4 weeks)
+
 9. **IDR-006**: Add Slack/PagerDuty alert routing
 10. **IDR-014**: Script remaining 2 chaos scenarios + CI integration
 11. **IDR-016**: Add automated backup verification workflow
@@ -330,6 +340,7 @@ All 20 workflow files in `.github/workflows/`:
 13. **IDR-002**: Pin LiveKit to specific version tag
 
 ### Long-term (1-2 months)
+
 14. **IDR-018**: Implement cross-region storage replication
 15. **IDR-007**: Update default droplet size in variables.tf
 16. **IDR-012**: Add web frontend health check to production deploy

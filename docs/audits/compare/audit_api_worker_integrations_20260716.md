@@ -9,23 +9,23 @@
 
 ## Executive Summary
 
-| Dimension              | Score     |
-| ---------------------- | --------- |
-| **API Contract**       | 4.2 / 5   |
-| **API Hardening**      | 4.0 / 5   |
-| **Worker Reliability** | 3.8 / 5   |
-| **Integration Sec**    | 4.5 / 5   |
-| **Overall**            | 4.1 / 5   |
+| Dimension              | Score   |
+| ---------------------- | ------- |
+| **API Contract**       | 4.2 / 5 |
+| **API Hardening**      | 4.0 / 5 |
+| **Worker Reliability** | 3.8 / 5 |
+| **Integration Sec**    | 4.5 / 5 |
+| **Overall**            | 4.1 / 5 |
 
 ### Totals
 
-| Severity | Count |
-| -------- | ----- |
-| **P0**   | 0     |
-| **P1**   | 3     |
-| **P2**   | 12    |
-| **P3**   | 8     |
-| **Total**| 23    |
+| Severity  | Count |
+| --------- | ----- |
+| **P0**    | 0     |
+| **P1**    | 3     |
+| **P2**    | 12    |
+| **P3**    | 8     |
+| **Total** | 23    |
 
 ### Decision: **GO WITH RISKS**
 
@@ -37,48 +37,48 @@ The API/worker/integrations surface is generally well-architected with proper au
 
 ### Route Inventory (27 route files, ~120+ endpoints)
 
-| Module              | File                                              | Endpoints | Auth Required | Zod Validation | Tenant Isolation |
-| ------------------- | ------------------------------------------------- | --------- | ------------- | -------------- | ---------------- |
-| Health              | `modules/health/routes.ts`                       | 2         | No            | N/A (static)   | N/A              |
-| Auth                | `modules/auth/routes.ts`                         | 12        | Yes (most)    | Partial        | User-scoped      |
-| Messages            | `modules/messages/routes.ts`                     | 18        | Yes           | Yes (most)     | Channel/message  |
-| Channels            | `modules/channels/routes.ts`                     | 16        | Yes           | Partial        | Workspace/channel|
-| Workspaces          | `modules/workspaces/routes.ts`                   | 10        | Yes           | Yes (most)     | Workspace        |
-| Webhooks            | `modules/webhooks/routes.ts`                     | 6         | Yes           | Yes            | Workspace (broken)|
-| Notifications       | `modules/notifications/routes.ts`                 | 9         | Yes           | None           | User-scoped      |
-| Reactions           | `modules/reactions/routes.ts`                    | 4         | Yes           | None           | Channel/message  |
-| Threads             | `modules/threads/routes.ts`                      | 6         | Yes           | None           | Channel + manual |
-| Status              | `modules/status/routes.ts`                       | 7         | Yes           | None           | User-scoped      |
-| Admin               | `modules/admin/routes.ts`                        | 15        | Yes           | None           | Admin-only       |
-| Audit               | `modules/audit/routes.ts`                        | 2         | Yes           | None           | User-scoped (no workspace check) |
-| AI                  | `modules/ai/routes.ts`                           | 1         | Yes           | None (manual)  | None             |
-| Preferences         | `modules/preferences/routes.ts`                  | 2         | Yes           | Yes            | User-scoped      |
-| Sidebar             | `modules/sidebar/routes.ts`                      | 8         | Yes           | Yes            | User-scoped      |
-| User Groups         | `modules/user-groups/routes.ts`                  | 6         | Yes           | None           | Workspace (mixed)|
-| Feature Flags       | `modules/feature-flags/routes.ts`                | 6         | Yes           | Yes            | None (global)    |
-| Consent             | `modules/consent/routes.ts`                      | 3         | Yes           | None (manual)  | User-scoped      |
-| LiveKit             | `modules/livekit/routes.ts`                      | 2         | Yes           | None           | None             |
-| Emoji (custom)      | `modules/emoji/routes.ts`                        | 3         | Yes           | None (manual)  | Workspace (partial)|
-| Scheduled Posts     | `modules/scheduled-posts/routes.ts`              | 3         | Yes           | None (manual)  | None             |
-| Read Receipts       | `modules/read-receipts/routes.ts`                | 5         | Yes           | None           | None             |
-| Announcements       | `modules/announcements/routes.ts`                | 3         | Yes           | None (manual)  | Workspace        |
-| Export (admin)      | `modules/export/routes.ts`                       | 4         | Yes           | None           | Admin-only       |
-| Import (admin)      | `modules/import/routes.ts`                       | 2         | Yes           | None           | Admin-only       |
-| OpenAPI             | `modules/openapi/routes.ts`                      | 2         | No            | N/A            | N/A              |
+| Module          | File                                | Endpoints | Auth Required | Zod Validation | Tenant Isolation                 |
+| --------------- | ----------------------------------- | --------- | ------------- | -------------- | -------------------------------- |
+| Health          | `modules/health/routes.ts`          | 2         | No            | N/A (static)   | N/A                              |
+| Auth            | `modules/auth/routes.ts`            | 12        | Yes (most)    | Partial        | User-scoped                      |
+| Messages        | `modules/messages/routes.ts`        | 18        | Yes           | Yes (most)     | Channel/message                  |
+| Channels        | `modules/channels/routes.ts`        | 16        | Yes           | Partial        | Workspace/channel                |
+| Workspaces      | `modules/workspaces/routes.ts`      | 10        | Yes           | Yes (most)     | Workspace                        |
+| Webhooks        | `modules/webhooks/routes.ts`        | 6         | Yes           | Yes            | Workspace (broken)               |
+| Notifications   | `modules/notifications/routes.ts`   | 9         | Yes           | None           | User-scoped                      |
+| Reactions       | `modules/reactions/routes.ts`       | 4         | Yes           | None           | Channel/message                  |
+| Threads         | `modules/threads/routes.ts`         | 6         | Yes           | None           | Channel + manual                 |
+| Status          | `modules/status/routes.ts`          | 7         | Yes           | None           | User-scoped                      |
+| Admin           | `modules/admin/routes.ts`           | 15        | Yes           | None           | Admin-only                       |
+| Audit           | `modules/audit/routes.ts`           | 2         | Yes           | None           | User-scoped (no workspace check) |
+| AI              | `modules/ai/routes.ts`              | 1         | Yes           | None (manual)  | None                             |
+| Preferences     | `modules/preferences/routes.ts`     | 2         | Yes           | Yes            | User-scoped                      |
+| Sidebar         | `modules/sidebar/routes.ts`         | 8         | Yes           | Yes            | User-scoped                      |
+| User Groups     | `modules/user-groups/routes.ts`     | 6         | Yes           | None           | Workspace (mixed)                |
+| Feature Flags   | `modules/feature-flags/routes.ts`   | 6         | Yes           | Yes            | None (global)                    |
+| Consent         | `modules/consent/routes.ts`         | 3         | Yes           | None (manual)  | User-scoped                      |
+| LiveKit         | `modules/livekit/routes.ts`         | 2         | Yes           | None           | None                             |
+| Emoji (custom)  | `modules/emoji/routes.ts`           | 3         | Yes           | None (manual)  | Workspace (partial)              |
+| Scheduled Posts | `modules/scheduled-posts/routes.ts` | 3         | Yes           | None (manual)  | None                             |
+| Read Receipts   | `modules/read-receipts/routes.ts`   | 5         | Yes           | None           | None                             |
+| Announcements   | `modules/announcements/routes.ts`   | 3         | Yes           | None (manual)  | Workspace                        |
+| Export (admin)  | `modules/export/routes.ts`          | 4         | Yes           | None           | Admin-only                       |
+| Import (admin)  | `modules/import/routes.ts`          | 2         | Yes           | None           | Admin-only                       |
+| OpenAPI         | `modules/openapi/routes.ts`         | 2         | No            | N/A            | N/A                              |
 
 ### Route Prefixes
 
-| Prefix               | Registered Modules                                              |
-| -------------------- | --------------------------------------------------------------- |
-| `/`                  | Health                                                          |
-| `/v1/auth`           | Auth                                                            |
-| `/v1/workspaces`     | Workspaces                                                      |
-| `/v1`                | Channels, Messages, Webhooks, Notifications, Preferences, Reactions, Feature Flags, Consent, Threads, LiveKit, Audit, Status, Emoji, OpenAPI, Admin, Export, Import, Read Receipts, Announcements |
-| `/v1/groups`         | User Groups                                                     |
-| `/v1/ai`             | AI                                                              |
-| `/v1/sidebar-categories` | Sidebar Categories                                          |
-| `/v1/scheduled-posts` | Scheduled Posts                                                |
-| `/v1/admin`          | Admin sub-routes                                                |
+| Prefix                   | Registered Modules                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                      | Health                                                                                                                                                                                            |
+| `/v1/auth`               | Auth                                                                                                                                                                                              |
+| `/v1/workspaces`         | Workspaces                                                                                                                                                                                        |
+| `/v1`                    | Channels, Messages, Webhooks, Notifications, Preferences, Reactions, Feature Flags, Consent, Threads, LiveKit, Audit, Status, Emoji, OpenAPI, Admin, Export, Import, Read Receipts, Announcements |
+| `/v1/groups`             | User Groups                                                                                                                                                                                       |
+| `/v1/ai`                 | AI                                                                                                                                                                                                |
+| `/v1/sidebar-categories` | Sidebar Categories                                                                                                                                                                                |
+| `/v1/scheduled-posts`    | Scheduled Posts                                                                                                                                                                                   |
+| `/v1/admin`              | Admin sub-routes                                                                                                                                                                                  |
 
 ---
 
@@ -104,21 +104,21 @@ The API/worker/integrations surface is generally well-architected with proper au
 
 Several routes lack structured input validation and fall back to inline string checks:
 
-| Route | Issue |
-| ----- | ----- |
-| `PATCH /auth/status` | Manual enum check on status field |
-| `POST /auth/avatar/:userId` | No param validation |
-| `POST /messages/:id/forward` | Manual `targetChannelId` check only |
-| `POST /channels/:workspaceId/dm` | Manual `targetUserId` check only |
-| `POST /channels/:workspaceId/gm` | Manual Array.isArray check |
-| `PATCH /workspaces/:workspaceId/channels/reorder` | Manual Array.isArray check |
-| `POST /channels/:id/bookmarks` | Manual `title` check only |
-| `POST /ai/rewrite` | Manual `text`/`action` check |
-| `GET /admin/users` | `search` query param not validated |
-| `POST /announcements/:id/dismiss` | No body validation |
-| `POST /scheduled-posts` | Manual date comparison check |
-| `POST /consent/log` and `POST /consent` | Manual enum check on consent_type |
-| All read-receipt routes | No validation on params/body |
+| Route                                             | Issue                               |
+| ------------------------------------------------- | ----------------------------------- |
+| `PATCH /auth/status`                              | Manual enum check on status field   |
+| `POST /auth/avatar/:userId`                       | No param validation                 |
+| `POST /messages/:id/forward`                      | Manual `targetChannelId` check only |
+| `POST /channels/:workspaceId/dm`                  | Manual `targetUserId` check only    |
+| `POST /channels/:workspaceId/gm`                  | Manual Array.isArray check          |
+| `PATCH /workspaces/:workspaceId/channels/reorder` | Manual Array.isArray check          |
+| `POST /channels/:id/bookmarks`                    | Manual `title` check only           |
+| `POST /ai/rewrite`                                | Manual `text`/`action` check        |
+| `GET /admin/users`                                | `search` query param not validated  |
+| `POST /announcements/:id/dismiss`                 | No body validation                  |
+| `POST /scheduled-posts`                           | Manual date comparison check        |
+| `POST /consent/log` and `POST /consent`           | Manual enum check on consent_type   |
+| All read-receipt routes                           | No validation on params/body        |
 
 **Recommendation**: Create Zod schemas for all remaining inline-validated endpoints. Target 100% Zod coverage.
 
@@ -126,15 +126,15 @@ Several routes lack structured input validation and fall back to inline string c
 
 Some routes lack workspace/channel membership verification:
 
-| Route | Issue |
-| ----- | ----- |
-| `GET /dm-channels` | Lists user's DM channels without any workspace context or membership check |
-| `GET /messages/flagged` | No workspace/channel check (user-scoped only — acceptable but defensively weak) |
-| `GET /reminders` / `POST /reminders` / `DELETE /reminders/:id` | No channel membership verification on the reminder's message/channel |
-| Metrics endpoint (`/metrics`) | Auth-protected but no admin gate — exposes operational data to any authenticated user |
-| All LiveKit endpoints | No workspace membership verification on room access |
-| All feature-flag mutation endpoints | No admin role check — any authenticated user can create/update/delete feature flags |
-| All consent endpoints | User-scoped only (acceptable — consent is inherently user-scoped) |
+| Route                                                          | Issue                                                                                 |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `GET /dm-channels`                                             | Lists user's DM channels without any workspace context or membership check            |
+| `GET /messages/flagged`                                        | No workspace/channel check (user-scoped only — acceptable but defensively weak)       |
+| `GET /reminders` / `POST /reminders` / `DELETE /reminders/:id` | No channel membership verification on the reminder's message/channel                  |
+| Metrics endpoint (`/metrics`)                                  | Auth-protected but no admin gate — exposes operational data to any authenticated user |
+| All LiveKit endpoints                                          | No workspace membership verification on room access                                   |
+| All feature-flag mutation endpoints                            | No admin role check — any authenticated user can create/update/delete feature flags   |
+| All consent endpoints                                          | User-scoped only (acceptable — consent is inherently user-scoped)                     |
 
 ### Finding F3 (P2) — Mixed Error Response Patterns
 
@@ -188,15 +188,15 @@ The `route-registry.ts` has `endpoints` metadata for only 3 of 27 route modules.
 
 ### Worker Inventory
 
-| Processor           | File                                 | Queue             | Retries | Backoff        | Timeout | Concurrency | DLQ    |
-| ------------------- | ------------------------------------ | ----------------- | ------- | -------------- | ------- | ----------- | ------ |
-| Webhook Delivery    | `processors/webhook-delivery.ts`     | webhook-delivery  | 5+1     | Exp (60s base) | 10s     | 10          | Table  |
-| Notification        | `processors/notification.ts`         | notification      | 3       | Exp (5s base)  | None    | 20          | None   |
-| Data Retention      | `processors/data-retention.ts`       | data-retention    | 0       | None           | 30s     | 1           | None   |
-| Cleanup             | `processors/cleanup.ts`              | cleanup           | 0       | None           | 30s     | 1           | None   |
-| Search Indexer      | `processors/search-indexer.ts`       | search-indexing   | 3       | Exp (2s base)  | 30s     | 5           | None   |
-| Compliance Export   | `processors/compliance-export.ts`    | compliance-export | 0       | None           | 60s     | 1           | None   |
-| Reminder            | `processors/reminder.ts`             | None (direct)     | 0       | N/A            | 30s     | N/A         | None   |
+| Processor         | File                              | Queue             | Retries | Backoff        | Timeout | Concurrency | DLQ   |
+| ----------------- | --------------------------------- | ----------------- | ------- | -------------- | ------- | ----------- | ----- |
+| Webhook Delivery  | `processors/webhook-delivery.ts`  | webhook-delivery  | 5+1     | Exp (60s base) | 10s     | 10          | Table |
+| Notification      | `processors/notification.ts`      | notification      | 3       | Exp (5s base)  | None    | 20          | None  |
+| Data Retention    | `processors/data-retention.ts`    | data-retention    | 0       | None           | 30s     | 1           | None  |
+| Cleanup           | `processors/cleanup.ts`           | cleanup           | 0       | None           | 30s     | 1           | None  |
+| Search Indexer    | `processors/search-indexer.ts`    | search-indexing   | 3       | Exp (2s base)  | 30s     | 5           | None  |
+| Compliance Export | `processors/compliance-export.ts` | compliance-export | 0       | None           | 60s     | 1           | None  |
+| Reminder          | `processors/reminder.ts`          | None (direct)     | 0       | N/A            | 30s     | N/A         | None  |
 
 ### Strengths
 
@@ -227,6 +227,7 @@ The cleanup processor registers `stale_sessions` and `expired_uploads` job types
 ### Finding F11 (P2) — Reminder Processor Not Using BullMQ
 
 The reminder processor (`reminder.ts`) performs direct Supabase polling in a standalone function, not as a BullMQ worker. This means:
+
 - No job tracking or observability
 - No retry mechanism
 - No deduplication
@@ -237,6 +238,7 @@ The reminder processor (`reminder.ts`) performs direct Supabase polling in a sta
 ### Finding F12 (P2) — Scheduler Uses `setInterval` Instead of Repeatable Jobs
 
 The scheduler (`scheduler.ts`) uses `setInterval` for cron-like scheduling (retention: 24h, cleanup: 6h, compliance: 24h). This means:
+
 - Schedules are not persisted across restarts
 - Schedules drift if the process is suspended
 - No leader-election for multi-instance deployments
@@ -252,11 +254,13 @@ The idempotency module uses an in-memory `Map` fallback when Redis is unavailabl
 ### Finding F14 (P3) — Search Indexer Fallback Uses Invalid SQL Pattern
 
 The fallback path in `search-indexer.ts` attempts:
+
 ```typescript
 supabase.from("messages").update({
   search_vector: supabase.rpc("to_tsvector", { english: contentToIndex }),
-})
+});
 ```
+
 This passes a Supabase client method as a value, which would not execute as SQL. The fallback is effectively broken.
 
 **Recommendation**: Fix the fallback to use `supabase.rpc()` directly with the message ID, or remove the broken fallback.
@@ -273,19 +277,19 @@ The notification worker makes HTTP calls to push endpoints and SMTP connections 
 
 ### Webhook System
 
-| Control                   | Status     | Details                                  |
-| ------------------------- | ---------- | ---------------------------------------- |
+| Control                   | Status     | Details                                    |
+| ------------------------- | ---------- | ------------------------------------------ |
 | HMAC verification         | ✅ Present | SHA-256 HMAC, `X-Webhook-Signature` header |
-| Secret encryption at rest | ✅ Present | AES-256-GCM with derived key             |
-| Secret minimum length     | ✅ Present | 16 chars minimum                         |
-| HTTPS enforcement         | ✅ Present | URL must start with `https://`           |
-| SSRF protection           | ✅ Present | Private IP check + DNS resolution        |
-| Circuit breaker           | ✅ Present | opossum (50% threshold, 30s reset)       |
-| Dead letter queue         | ✅ Present | `webhook_dead_letters` table             |
-| Exponential backoff       | ✅ Present | 60s * 2^n + jitter                       |
-| Response size limit       | ✅ Present | 1MB max response body                    |
-| Idempotency header        | ✅ Present | `X-Idempotency-Key` sent with delivery   |
-| Response masking          | ✅ Present | Secret masked in API responses           |
+| Secret encryption at rest | ✅ Present | AES-256-GCM with derived key               |
+| Secret minimum length     | ✅ Present | 16 chars minimum                           |
+| HTTPS enforcement         | ✅ Present | URL must start with `https://`             |
+| SSRF protection           | ✅ Present | Private IP check + DNS resolution          |
+| Circuit breaker           | ✅ Present | opossum (50% threshold, 30s reset)         |
+| Dead letter queue         | ✅ Present | `webhook_dead_letters` table               |
+| Exponential backoff       | ✅ Present | 60s \* 2^n + jitter                        |
+| Response size limit       | ✅ Present | 1MB max response body                      |
+| Idempotency header        | ✅ Present | `X-Idempotency-Key` sent with delivery     |
+| Response masking          | ✅ Present | Secret masked in API responses             |
 
 ### Socket.io
 
@@ -309,6 +313,7 @@ The webhook routes for GET/PATCH/DELETE `/webhooks/:id` use `requireWorkspaceMem
 Similarly, `POST /webhooks` uses `requireWorkspaceMembership("workspace_id")`, but `workspace_id` is in `req.body`, not `req.params`. Since the route path is `/webhooks` (no `:workspace_id` param), this also fails with 400 "Missing workspace_id".
 
 **Recommendation**: Replace `requireWorkspaceMembership("id")` with a middleware that:
+
 1. Fetches the webhook by ID from the DB
 2. Checks workspace membership using the webhook's `workspace_id`
 3. For `POST /webhooks`, extract workspace_id from `req.body` (after Zod validation)
@@ -330,9 +335,11 @@ The consent routes define two identical POST endpoints: `/consent/log` and `/con
 ### Finding F19 (P2) — Webhook Secret Exposed in Logs on Create Error
 
 In `webhooks/service.ts`, the `create()` method logs:
+
 ```typescript
 logger.error("webhook create failed — invalid secret", { error: validation.error });
 ```
+
 The `validation.error` message would not contain the secret itself, but the error context is logged without masking if validation logic changes. The `update()` method in the same service calls `encryptSecret(updateData.secret)` directly — any error during encryption would expose the plaintext secret in the exception stack.
 
 **Recommendation**: Validate and encrypt secrets in a try/catch that explicitly excludes the secret from log output.
@@ -355,29 +362,29 @@ The notification processor constructs VAPID headers manually using `fetch` with 
 
 ### Consolidated Findings
 
-| ID      | Severity | Category | Title | File(s) | Fix Estimate |
-| ------- | -------- | -------- | ----- | ------- | ------------ |
-| **F16** | **P1**   | **AuthZ** | **Webhook routes use wrong middleware param — membership check always fails** | `modules/webhooks/routes.ts:131,147,183,219` | 2h |
-| **F17** | **P1**   | **AuthZ** | **Feature flag mutation lacks admin authorization** | `modules/feature-flags/routes.ts:60,78,94` | 1h |
-| **F18** | **P1**   | **Code Quality** | **Duplicate consent logging endpoints (/consent + /consent/log)** | `modules/consent/routes.ts:27,59` | 0.5h |
-| F1     | P2       | Validation | Incomplete Zod validation on 13+ endpoints | Multiple route files | 4h |
-| F2     | P2       | AuthZ     | Missing tenant isolation on 5+ endpoints | Multiple route files | 3h |
-| F3     | P2       | Consistency| Mixed error response patterns (inline vs AppError) | 5 route files | 2h |
-| F5     | P2       | Docs      | OpenAPI spec is static, not auto-generated | `modules/openapi/routes.ts` | 4h |
-| F6     | P2       | Security  | Admin endpoints bypass RLS | `modules/admin/routes.ts` | 2h |
-| F8     | P2       | Architecture| Webhook worker duplicates service logic | `processors/webhook-delivery.ts`, `modules/webhooks/service.ts` | 3h |
-| F9     | P2       | Reliability| Notification processor lacks per-channel retry | `processors/notification.ts` | 2h |
-| F10    | P2       | Completeness| Cleanup processor has 2 unimplemented job types | `processors/cleanup.ts` | 2h |
-| F11    | P2       | Architecture| Reminder processor not using BullMQ | `processors/reminder.ts` | 2h |
-| F12    | P2       | Reliability| Scheduler uses setInterval instead of repeatable jobs | `worker/scheduler.ts` | 2h |
-| F13    | P2       | Reliability| Idempotency in-memory fallback is per-process | `lib/idempotency.ts` | 1h |
-| F19    | P2       | Security  | Webhook secret could be exposed in error logs | `modules/webhooks/service.ts` | 1h |
-| F4     | P3       | Hardening  | Rate limiting gaps on notification/admin/export endpoints | Multiple files | 2h |
-| F7     | P3       | Docs      | Route registry has incomplete endpoint metadata | `route-registry.ts` | 2h |
-| F14    | P3       | Correctness| Search indexer fallback uses invalid SQL pattern | `processors/search-indexer.ts` | 0.5h |
-| F15    | P3       | Hardening  | Notification worker lacks circuit breakers | `processors/notification.ts` | 1h |
-| F20    | P3       | Hardening  | No event-level Socket.io rate limiting | `lib/socket.ts` | 1h |
-| F21    | P3       | Hardening  | Push notification uses raw fetch instead of web-push library | `processors/notification.ts` | 1h |
+| ID      | Severity | Category         | Title                                                                         | File(s)                                                         | Fix Estimate |
+| ------- | -------- | ---------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------ |
+| **F16** | **P1**   | **AuthZ**        | **Webhook routes use wrong middleware param — membership check always fails** | `modules/webhooks/routes.ts:131,147,183,219`                    | 2h           |
+| **F17** | **P1**   | **AuthZ**        | **Feature flag mutation lacks admin authorization**                           | `modules/feature-flags/routes.ts:60,78,94`                      | 1h           |
+| **F18** | **P1**   | **Code Quality** | **Duplicate consent logging endpoints (/consent + /consent/log)**             | `modules/consent/routes.ts:27,59`                               | 0.5h         |
+| F1      | P2       | Validation       | Incomplete Zod validation on 13+ endpoints                                    | Multiple route files                                            | 4h           |
+| F2      | P2       | AuthZ            | Missing tenant isolation on 5+ endpoints                                      | Multiple route files                                            | 3h           |
+| F3      | P2       | Consistency      | Mixed error response patterns (inline vs AppError)                            | 5 route files                                                   | 2h           |
+| F5      | P2       | Docs             | OpenAPI spec is static, not auto-generated                                    | `modules/openapi/routes.ts`                                     | 4h           |
+| F6      | P2       | Security         | Admin endpoints bypass RLS                                                    | `modules/admin/routes.ts`                                       | 2h           |
+| F8      | P2       | Architecture     | Webhook worker duplicates service logic                                       | `processors/webhook-delivery.ts`, `modules/webhooks/service.ts` | 3h           |
+| F9      | P2       | Reliability      | Notification processor lacks per-channel retry                                | `processors/notification.ts`                                    | 2h           |
+| F10     | P2       | Completeness     | Cleanup processor has 2 unimplemented job types                               | `processors/cleanup.ts`                                         | 2h           |
+| F11     | P2       | Architecture     | Reminder processor not using BullMQ                                           | `processors/reminder.ts`                                        | 2h           |
+| F12     | P2       | Reliability      | Scheduler uses setInterval instead of repeatable jobs                         | `worker/scheduler.ts`                                           | 2h           |
+| F13     | P2       | Reliability      | Idempotency in-memory fallback is per-process                                 | `lib/idempotency.ts`                                            | 1h           |
+| F19     | P2       | Security         | Webhook secret could be exposed in error logs                                 | `modules/webhooks/service.ts`                                   | 1h           |
+| F4      | P3       | Hardening        | Rate limiting gaps on notification/admin/export endpoints                     | Multiple files                                                  | 2h           |
+| F7      | P3       | Docs             | Route registry has incomplete endpoint metadata                               | `route-registry.ts`                                             | 2h           |
+| F14     | P3       | Correctness      | Search indexer fallback uses invalid SQL pattern                              | `processors/search-indexer.ts`                                  | 0.5h         |
+| F15     | P3       | Hardening        | Notification worker lacks circuit breakers                                    | `processors/notification.ts`                                    | 1h           |
+| F20     | P3       | Hardening        | No event-level Socket.io rate limiting                                        | `lib/socket.ts`                                                 | 1h           |
+| F21     | P3       | Hardening        | Push notification uses raw fetch instead of web-push library                  | `processors/notification.ts`                                    | 1h           |
 
 ### Commendations
 
@@ -391,16 +398,16 @@ The notification processor constructs VAPID headers manually using `fetch` with 
 
 ### Metrics Summary
 
-| Metric | Value |
-| ------ | ----- |
-| Route files reviewed | 27 |
-| Total endpoints | ~120+ |
-| Routes with Zod validation | ~60% |
-| Routes with tenant isolation | ~70% |
-| Worker processors | 7 (6 BullMQ + 1 direct) |
-| Worker reliability coverage (retry + timeout + DLQ) | 1/7 (webhook only) |
-| Webhook security controls | 10/10 |
-| Findings (P1/P2/P3) | 3 / 12 / 8 |
+| Metric                                              | Value                   |
+| --------------------------------------------------- | ----------------------- |
+| Route files reviewed                                | 27                      |
+| Total endpoints                                     | ~120+                   |
+| Routes with Zod validation                          | ~60%                    |
+| Routes with tenant isolation                        | ~70%                    |
+| Worker processors                                   | 7 (6 BullMQ + 1 direct) |
+| Worker reliability coverage (retry + timeout + DLQ) | 1/7 (webhook only)      |
+| Webhook security controls                           | 10/10                   |
+| Findings (P1/P2/P3)                                 | 3 / 12 / 8              |
 
 ### Decision
 

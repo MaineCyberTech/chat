@@ -27,10 +27,10 @@ Deep health check including database connectivity. No authentication required. R
 }
 ```
 
-| Check      | What It Verifies                                          |
-| ---------- | --------------------------------------------------------- |
-| `server`   | Process is running and responding                         |
-| `database` | Supabase PostgreSQL connectivity via `workspaces` query   |
+| Check      | What It Verifies                                        |
+| ---------- | ------------------------------------------------------- |
+| `server`   | Process is running and responding                       |
+| `database` | Supabase PostgreSQL connectivity via `workspaces` query |
 
 Status values per check: `healthy`, `unhealthy`, `degraded`. The top-level `status` is `down` if any check is `unhealthy`, or `degraded` if any check is `degraded`.
 

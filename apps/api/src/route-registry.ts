@@ -48,9 +48,7 @@ export const routeRegistry: RouteEntry[] = [
     path: "/",
     router: healthRoutes,
     description: "Health check + root endpoint",
-    endpoints: [
-      { method: "GET", path: "/health", middleware: [], description: "Readiness check" },
-    ],
+    endpoints: [{ method: "GET", path: "/health", middleware: [], description: "Readiness check" }],
   },
   {
     path: "/v1/auth",

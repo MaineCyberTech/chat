@@ -185,19 +185,29 @@ export function FormattingBar({ editorRef }: Props) {
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-    const buttons = toolbarRef.current?.querySelectorAll<HTMLButtonElement>("button:not([type=submit]):not([type=button])");
+    const buttons = toolbarRef.current?.querySelectorAll<HTMLButtonElement>(
+      "button:not([type=submit]):not([type=button])",
+    );
     if (!buttons || buttons.length === 0) return;
     const currentIndex = Array.from(buttons).findIndex((btn) => btn === document.activeElement);
     if (currentIndex === -1) return;
     e.preventDefault();
-    const nextIndex = e.key === "ArrowRight"
-      ? (currentIndex + 1) % buttons.length
-      : (currentIndex - 1 + buttons.length) % buttons.length;
+    const nextIndex =
+      e.key === "ArrowRight"
+        ? (currentIndex + 1) % buttons.length
+        : (currentIndex - 1 + buttons.length) % buttons.length;
     buttons[nextIndex]?.focus();
   }, []);
 
   return (
-    <div ref={toolbarRef} className="mb-1 flex flex-wrap gap-0.5" role="toolbar" aria-orientation="horizontal" aria-label="Text formatting" onKeyDown={handleKeyDown}>
+    <div
+      ref={toolbarRef}
+      className="mb-1 flex flex-wrap gap-0.5"
+      role="toolbar"
+      aria-orientation="horizontal"
+      aria-label="Text formatting"
+      onKeyDown={handleKeyDown}
+    >
       {urlInput && (
         <form
           onSubmit={handleUrlSubmit}
@@ -253,7 +263,7 @@ export function FormattingBar({ editorRef }: Props) {
                 applyFormat(editorRef.current, mode);
               }
             }}
-            className="flex h-11 w-11 md:h-7 md:w-7 items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:ring-[var(--button-bg)]"
+            className="flex h-11 w-11 items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:ring-[var(--button-bg)] md:h-7 md:w-7"
             style={{
               color:
                 hoveredIndex === index

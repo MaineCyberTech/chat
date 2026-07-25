@@ -49,6 +49,7 @@ docker compose -f infra/docker/docker-compose.prod.yml up -d redis
 ```
 
 Data is ephemeral and will repopulate naturally:
+
 - Rate-limit counters reset (users may get a few extra requests)
 - Socket.io reconnects on next client handshake
 - BullMQ jobs resume from stalled

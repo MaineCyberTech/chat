@@ -6,12 +6,7 @@ import {
   type DarkSemanticColors,
 } from "./semantic-colors";
 import { typographyTokens, typeScale, type TypographyTokens, type TypeScale } from "./typography";
-import {
-  spacingTokens,
-  getSpacing,
-  getComponentSpacing,
-  type SpacingTokens,
-} from "./spacing";
+import { spacingTokens, getSpacing, getComponentSpacing, type SpacingTokens } from "./spacing";
 import {
   motionTokens,
   componentTransitions,

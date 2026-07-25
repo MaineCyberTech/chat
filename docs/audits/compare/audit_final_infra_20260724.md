@@ -3,6 +3,7 @@
 **Audit Scope**: All infra files, 22 CI/CD workflows, Dockerfiles, Compose files, Terraform, Caddy, secrets handling, environments, caching, code quality gates, monitoring.
 
 **Files Audited**:
+
 - `.github/workflows/*.yml` (22 files)
 - `infra/docker/*.yml` (4 compose files + 3 override files)
 - `infra/docker/Caddyfile*` (3 files)
@@ -751,16 +752,17 @@
 
 ## Summary
 
-| Severity | Count | Key Areas |
-|----------|-------|-----------|
-| **P0**   | 0     | — |
-| **P1**   | 12    | Worker HEALTHCHECK (wget missing/syntax), Chaos tests destructive, GITHUB_TOKEN to remote SSH, `|| true` error swallowing, build-push permissions, devremote healthcheck dummy, disk cleanup deletes volumes, prod composes error handling, deploy lacks infra dependency, rollback .env mismatch, typecheck build chain, LiveKit admin port exposed |
+| Severity | Count | Key Areas                                                                                                                                                                                                                                                      |
+| -------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0**   | 0     | —                                                                                                                                                                                                                                                              |
+| **P1**   | 12    | Worker HEALTHCHECK (wget missing/syntax), Chaos tests destructive, GITHUB_TOKEN to remote SSH, `                                                                                                                                                               |     | true` error swallowing, build-push permissions, devremote healthcheck dummy, disk cleanup deletes volumes, prod composes error handling, deploy lacks infra dependency, rollback .env mismatch, typecheck build chain, LiveKit admin port exposed |
 | **P2**   | 46    | Permissions blocks, port mismatches, healthcheck paths, CSP missing, audit scope, E2E continue-on-error, migration double-run, seed logic duplication, concurrency gaps, cloud-init ignore, monitoring gaps, caching, documentation, rollback/info consistency |
-| **P3**   | 24    | Unused env vars, cosmetic inconsistencies, documentation, missing healthchecks, thresholds, code duplication, future improvements |
+| **P3**   | 24    | Unused env vars, cosmetic inconsistencies, documentation, missing healthchecks, thresholds, code duplication, future improvements                                                                                                                              |
 
 **Overall Rating**: 7.2/10 — Production-adequate with actionable hardening.
 
 **Top 5 Actions**:
+
 1. **P1-001**: Fix Worker Dockerfile HEALTHCHECK (add `wget`, fix flags)
 2. **P1-006**: Fix devremote worker healthcheck to use HTTP instead of `kill -0 1`
 3. **P1-005**: Add explicit permissions to `build-push.yml`

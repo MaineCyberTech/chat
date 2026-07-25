@@ -11,16 +11,27 @@ const mockUsers = [
 ];
 
 const mockChannels = [
-  { id: "ch-1", name: "General", slug: "general", workspace_id: "ws-1", channel_type: "public", created_at: "2024-01-01" },
+  {
+    id: "ch-1",
+    name: "General",
+    slug: "general",
+    workspace_id: "ws-1",
+    channel_type: "public",
+    created_at: "2024-01-01",
+  },
 ];
 
 const mockMessages = [
-  { id: "m-1", channel_id: "ch-1", user_id: "u-1", content: "Hello world", created_at: "2024-01-01" },
+  {
+    id: "m-1",
+    channel_id: "ch-1",
+    user_id: "u-1",
+    content: "Hello world",
+    created_at: "2024-01-01",
+  },
 ];
 
-const mockMembers = [
-  { user_id: "u-1" },
-];
+const mockMembers = [{ user_id: "u-1" }];
 
 const tableData: Record<string, unknown[]> = {
   workspaces: mockWorkspaces,

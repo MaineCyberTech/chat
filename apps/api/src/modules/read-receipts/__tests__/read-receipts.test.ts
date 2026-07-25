@@ -104,7 +104,11 @@ describe("Read Receipts Routes", () => {
     const channelChain = createChain({ data: { workspace_id: "ws-1" }, error: null });
     const memberChain = createChain({ data: { role: "member" }, error: null });
     const from = vi.fn().mockReturnValueOnce(channelChain).mockReturnValueOnce(memberChain);
-    const req = mockReq({ params: { id: "msg-1" }, body: { channelId: "channel-1" }, supabase: { from } });
+    const req = mockReq({
+      params: { id: "msg-1" },
+      body: { channelId: "channel-1" },
+      supabase: { from },
+    });
     const res = mockRes();
     await handler(req, res);
     expect(res.json).toHaveBeenCalledWith({ ok: true });
@@ -124,7 +128,8 @@ describe("Read Receipts Routes", () => {
     const msgChain = createChain({ data: { channel_id: "ch-1" }, error: null });
     const channelChain = createChain({ data: { workspace_id: "ws-1" }, error: null });
     const memberChain = createChain({ data: { role: "member" }, error: null });
-    const from = vi.fn()
+    const from = vi
+      .fn()
       .mockReturnValueOnce(msgChain)
       .mockReturnValueOnce(channelChain)
       .mockReturnValueOnce(memberChain);

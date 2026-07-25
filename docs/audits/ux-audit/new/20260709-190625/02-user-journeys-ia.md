@@ -6,29 +6,30 @@
 
 ## 1. Major User Journeys
 
-| Journey | Chat Path | Verdict |
-|---------|-----------|---------|
-| Login | `/login` → magic link or OAuth → workspace redirect | ✓ Clean |
-| View channel | Select from sidebar → message list loads | ✓ Standard |
-| Send message | TipTap editor → Enter → optimistic update | ✓ Instant feedback |
-| Reply in thread | Click reply → RHS panel → type → send | ✓ With typing indicator |
-| Search | `/search` full page with operator hints + type toggle | ✓ Dedicated space |
-| Manage notifications | Settings page + per-channel modal | ✓ In-page |
-| Admin | `/admin` single page with tabs | ✓ Simplified |
-| Manage groups | `/groups` single page | ✓ Straightforward |
-| Edit channel topic | Click topic in header → inline input → Enter to save | ✓ Added Phase 4 |
-| Upload file via drag | Drag file over message area → drop zone overlay → auto-upload | ✓ Added Phase 4 |
-| Undo message delete | Toast with Undo button → 5s window | ✓ Added Phase 4 |
+| Journey              | Chat Path                                                     | Verdict                 |
+| -------------------- | ------------------------------------------------------------- | ----------------------- |
+| Login                | `/login` → magic link or OAuth → workspace redirect           | ✓ Clean                 |
+| View channel         | Select from sidebar → message list loads                      | ✓ Standard              |
+| Send message         | TipTap editor → Enter → optimistic update                     | ✓ Instant feedback      |
+| Reply in thread      | Click reply → RHS panel → type → send                         | ✓ With typing indicator |
+| Search               | `/search` full page with operator hints + type toggle         | ✓ Dedicated space       |
+| Manage notifications | Settings page + per-channel modal                             | ✓ In-page               |
+| Admin                | `/admin` single page with tabs                                | ✓ Simplified            |
+| Manage groups        | `/groups` single page                                         | ✓ Straightforward       |
+| Edit channel topic   | Click topic in header → inline input → Enter to save          | ✓ Added Phase 4         |
+| Upload file via drag | Drag file over message area → drop zone overlay → auto-upload | ✓ Added Phase 4         |
+| Undo message delete  | Toast with Undo button → 5s window                            | ✓ Added Phase 4         |
 
 ### Keyboard Shortcuts
-| Shortcut | Action |
-|----------|--------|
-| Ctrl+K | Quick switcher (channels + users) |
-| Ctrl+/ | Keyboard shortcuts modal |
-| Arrow keys | Context menu navigation, sidebar navigation |
-| Tab / Shift+Tab | Focus trap cycling in all modals |
-| Enter (in topic input) | Save channel topic |
-| Escape | Close all modals, cancel topic editing |
+
+| Shortcut               | Action                                      |
+| ---------------------- | ------------------------------------------- |
+| Ctrl+K                 | Quick switcher (channels + users)           |
+| Ctrl+/                 | Keyboard shortcuts modal                    |
+| Arrow keys             | Context menu navigation, sidebar navigation |
+| Tab / Shift+Tab        | Focus trap cycling in all modals            |
+| Enter (in topic input) | Save channel topic                          |
+| Escape                 | Close all modals, cancel topic editing      |
 
 ---
 
@@ -36,18 +37,19 @@
 
 ### Navigation Depth
 
-| Page/Action | Chat (clicks from channel) | Mattermost |
-|------------|---------------------------|------------|
-| Settings | 2 (sidebar → settings) | 2 (profile → settings) |
-| Admin | 2 (sidebar → admin) | 3 (profile → admin console) |
-| Search | 1 (search button in header) | 1 (search box in global header) |
-| Saved messages | 2 (sidebar → saved) | Via flag icon |
-| Scheduled | 2 (sidebar → scheduled) | Via drafts drawer |
-| Create channel | 1 (+ button in sidebar) | 1 (+ button in sidebar) |
-| Start DM | 2 (New DM → pick user) | 2 (+ → pick user) |
-| Edit channel topic | 1 (click topic → edit) | Via channel header modal |
+| Page/Action        | Chat (clicks from channel)  | Mattermost                      |
+| ------------------ | --------------------------- | ------------------------------- |
+| Settings           | 2 (sidebar → settings)      | 2 (profile → settings)          |
+| Admin              | 2 (sidebar → admin)         | 3 (profile → admin console)     |
+| Search             | 1 (search button in header) | 1 (search box in global header) |
+| Saved messages     | 2 (sidebar → saved)         | Via flag icon                   |
+| Scheduled          | 2 (sidebar → scheduled)     | Via drafts drawer               |
+| Create channel     | 1 (+ button in sidebar)     | 1 (+ button in sidebar)         |
+| Start DM           | 2 (New DM → pick user)      | 2 (+ → pick user)               |
+| Edit channel topic | 1 (click topic → edit)      | Via channel header modal        |
 
 ### Chat Advantage
+
 - Flat page hierarchy — all features accessible from sidebar
 - Search has dedicated full page
 - Settings and admin are in-page tabs, not modals
@@ -77,14 +79,14 @@
 
 ## 5. Workflow Efficiency Findings
 
-| Workflow | Chat | Verdict |
-|----------|------|---------|
-| Sending message | TipTap rich text + formatting toolbar + slash commands + AI rewrite + scheduling + priority | Feature-rich |
-| Searching | Full page with type toggle, operator hints, file extension suggestions, user/channel autocomplete | Comprehensive |
-| Managing threads | RHS panel with reactions, typing indicator, display names | Feature-complete |
-| Channel switching | Quick switcher (Ctrl+K) + sidebar + keyboard arrows | Efficient |
-| File upload | Paperclip button, paste clipboard, drag-and-drop overlay | 3 methods |
-| Topic editing | Inline input, Enter saves, Escape cancels | Fast |
+| Workflow          | Chat                                                                                              | Verdict          |
+| ----------------- | ------------------------------------------------------------------------------------------------- | ---------------- |
+| Sending message   | TipTap rich text + formatting toolbar + slash commands + AI rewrite + scheduling + priority       | Feature-rich     |
+| Searching         | Full page with type toggle, operator hints, file extension suggestions, user/channel autocomplete | Comprehensive    |
+| Managing threads  | RHS panel with reactions, typing indicator, display names                                         | Feature-complete |
+| Channel switching | Quick switcher (Ctrl+K) + sidebar + keyboard arrows                                               | Efficient        |
+| File upload       | Paperclip button, paste clipboard, drag-and-drop overlay                                          | 3 methods        |
+| Topic editing     | Inline input, Enter saves, Escape cancels                                                         | Fast             |
 
 ---
 

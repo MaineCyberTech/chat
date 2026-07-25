@@ -122,7 +122,7 @@ test.describe("Thread Operations", () => {
     if (await replyBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       await replyBtn.click();
       const threadInput = page.locator(
-        '#thread-panel textarea, [data-testid=thread-panel] textarea',
+        "#thread-panel textarea, [data-testid=thread-panel] textarea",
       );
       if (await threadInput.isVisible({ timeout: 5000 }).catch(() => false)) {
         await threadInput.fill("A thread reply");

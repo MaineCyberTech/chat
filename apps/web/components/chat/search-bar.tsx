@@ -138,22 +138,32 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
     setRecentSearches(updated);
     try {
       localStorage.setItem("recent-searches", JSON.stringify(updated));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   function clearRecentSearches() {
-    if (recentSearches.length > 0 && !window.confirm(t("search.clearConfirm", "Clear all recent searches?"))) return;
+    if (
+      recentSearches.length > 0 &&
+      !window.confirm(t("search.clearConfirm", "Clear all recent searches?"))
+    )
+      return;
     setRecentSearches([]);
     try {
       localStorage.removeItem("recent-searches");
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem("recent-searches");
       if (stored) setRecentSearches(JSON.parse(stored));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   function buildSearchUrl(q: string, offset = 0): string {
@@ -319,8 +329,12 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               onFocus={handleFocus}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
-              placeholder={t("search.placeholder", { type: searchType === "messages" ? t("search.messages") : t("search.files") })}
-              aria-label={t("search.placeholder", { type: searchType === "messages" ? t("search.messages") : t("search.files") })}
+              placeholder={t("search.placeholder", {
+                type: searchType === "messages" ? t("search.messages") : t("search.files"),
+              })}
+              aria-label={t("search.placeholder", {
+                type: searchType === "messages" ? t("search.messages") : t("search.files"),
+              })}
               aria-activedescendant={selectedIndex >= 0 ? `result-${selectedIndex}` : undefined}
               aria-autocomplete="list"
               aria-controls="search-results"
@@ -582,27 +596,28 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
                   const op = sep >= 0 ? full.slice(0, sep) : full;
                   const desc = sep >= 0 ? full.slice(sep + 3) : "";
                   return (
-                  <button
-                    key={op}
-                    onClick={() => {
-                      setQuery((prev) => prev + op);
-                      inputRef.current?.focus();
-                    }}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                    style={{ color: "var(--center-channel-color)" }}
-                  >
-                    <code
-                      className="rounded px-1 py-0.5 text-xs font-medium"
-                      style={{
-                        background: "rgba(var(--button-bg-rgb), 0.12)",
-                        color: "var(--button-bg)",
+                    <button
+                      key={op}
+                      onClick={() => {
+                        setQuery((prev) => prev + op);
+                        inputRef.current?.focus();
                       }}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                      style={{ color: "var(--center-channel-color)" }}
                     >
-                      {op}
-                    </code>
-                    <span style={{ color: "var(--text-tertiary)" }}>{desc}</span>
-                  </button>
-                )})}
+                      <code
+                        className="rounded px-1 py-0.5 text-xs font-medium"
+                        style={{
+                          background: "rgba(var(--button-bg-rgb), 0.12)",
+                          color: "var(--button-bg)",
+                        }}
+                      >
+                        {op}
+                      </code>
+                      <span style={{ color: "var(--text-tertiary)" }}>{desc}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -615,7 +630,9 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               }}
             >
               <div className="flex items-center justify-between px-3 py-1.5">
-                <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>{t("search.recentSearches")}</span>
+                <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>
+                  {t("search.recentSearches")}
+                </span>
                 <button
                   onClick={clearRecentSearches}
                   className="text-xs hover:underline"
@@ -648,7 +665,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         <div className="mt-1 flex flex-wrap gap-2">
           <div className="min-w-[120px] flex-1">
             <label className="mb-0.5 block text-xs" style={{ color: "var(--text-tertiary)" }}>
-                {t("search.dateFrom")}
+              {t("search.dateFrom")}
             </label>
             <input
               type="date"
@@ -665,7 +682,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           </div>
           <div className="min-w-[120px] flex-1">
             <label className="mb-0.5 block text-xs" style={{ color: "var(--text-tertiary)" }}>
-                {t("search.dateTo")}
+              {t("search.dateTo")}
             </label>
             <input
               type="date"
@@ -682,7 +699,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
           </div>
           <div className="min-w-[120px] flex-1">
             <label className="mb-0.5 block text-xs" style={{ color: "var(--text-tertiary)" }}>
-                {t("search.author")}
+              {t("search.author")}
             </label>
             <input
               type="text"
@@ -701,10 +718,10 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         </div>
       )}
       {/* Autocomplete dropdown for users/channels */}
-        {showAutocomplete && query.length >= 2 && !open && (
-          <div
-            role="listbox"
-            className="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border p-2 shadow-[var(--elevation-4)]"
+      {showAutocomplete && query.length >= 2 && !open && (
+        <div
+          role="listbox"
+          className="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border p-2 shadow-[var(--elevation-4)]"
           style={{
             background: "var(--center-channel-bg)",
             borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
@@ -912,4 +929,3 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
     </div>
   );
 }
-

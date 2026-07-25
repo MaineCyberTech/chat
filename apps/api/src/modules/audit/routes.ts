@@ -3,7 +3,12 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { NotFoundError, InternalServerError, BadRequestError, ForbiddenError } from "../../lib/app-error.js";
+import {
+  NotFoundError,
+  InternalServerError,
+  BadRequestError,
+  ForbiddenError,
+} from "../../lib/app-error.js";
 
 const router = Router();
 router.use(authenticate);

@@ -87,7 +87,14 @@ describe("announcements routes", () => {
   describe("GET /workspaces/:workspaceId/announcements", () => {
     it("returns active announcements for workspace", async () => {
       const mockData = [
-        { id: "1", title: "Welcome", body: "Hello!", created_by: "user-1", created_at: "2026-01-01", updated_at: "2026-01-01" },
+        {
+          id: "1",
+          title: "Welcome",
+          body: "Hello!",
+          created_by: "user-1",
+          created_at: "2026-01-01",
+          updated_at: "2026-01-01",
+        },
       ];
       const chain = createChain({ data: mockData, error: null });
       const from = vi.fn(() => chain);
@@ -116,12 +123,21 @@ describe("announcements routes", () => {
   describe("POST /workspaces/:workspaceId/announcements", () => {
     it("creates an announcement and returns 201", async () => {
       const mockAnnouncement = {
-        id: "ann-1", title: "New Policy", body: "Please read", created_by: "user-1", created_at: "2026-01-01", updated_at: "2026-01-01",
+        id: "ann-1",
+        title: "New Policy",
+        body: "Please read",
+        created_by: "user-1",
+        created_at: "2026-01-01",
+        updated_at: "2026-01-01",
       };
       const insertChain = createChain({ data: mockAnnouncement, error: null });
       const from = vi.fn(() => insertChain);
       const handler = findHandler("post", "/workspaces/:workspaceId/announcements");
-      const req = mockReq({ params: { workspaceId: "ws-1" }, body: { title: "New Policy", body: "Please read" }, supabase: { from } });
+      const req = mockReq({
+        params: { workspaceId: "ws-1" },
+        body: { title: "New Policy", body: "Please read" },
+        supabase: { from },
+      });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -157,7 +173,11 @@ describe("announcements routes", () => {
       const insertChain = createChain({ data: null, error: new Error("Insert failed") });
       const from = vi.fn(() => insertChain);
       const handler = findHandler("post", "/workspaces/:workspaceId/announcements");
-      const req = mockReq({ params: { workspaceId: "ws-1" }, body: { title: "Title", body: "Body" }, supabase: { from } });
+      const req = mockReq({
+        params: { workspaceId: "ws-1" },
+        body: { title: "Title", body: "Body" },
+        supabase: { from },
+      });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -170,7 +190,15 @@ describe("announcements routes", () => {
     it("dismisses an announcement", async () => {
       const existingChain = createChain({ data: { id: "ann-1", active: true }, error: null });
       const updateChain = createChain({
-        data: { id: "ann-1", title: "Old", body: "Old", active: false, created_by: "user-1", created_at: "2026-01-01", updated_at: "2026-01-02" },
+        data: {
+          id: "ann-1",
+          title: "Old",
+          body: "Old",
+          active: false,
+          created_by: "user-1",
+          created_at: "2026-01-01",
+          updated_at: "2026-01-02",
+        },
         error: null,
       });
       let callCount = 0;

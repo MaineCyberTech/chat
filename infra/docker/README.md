@@ -2,18 +2,18 @@
 
 ## Files
 
-| File                           | Purpose                                        |
-| ------------------------------ | ---------------------------------------------- |
+| File                           | Purpose                                           |
+| ------------------------------ | ------------------------------------------------- |
 | `docker-compose.dev.yml`       | Local dev environment (hot reload, volume mounts) |
-| `docker-compose.devremote.yml` | Development remote environment (`.us` domains) |
-| `docker-compose.prod.yml`      | Production environment (`.com` domains)        |
-| `docker-compose.override.yml`  | Local overrides for development                |
-| `.env.dev.example`             | Dev env template                               |
-| `.env.devremote.example`       | Dev remote env template                        |
-| `.env.prod.example`            | Production env template                        |
-| `Caddyfile`                    | Caddy config for dev remote                    |
-| `Caddyfile.dev`                | Caddy config for local dev                     |
-| `Caddyfile.prod`               | Caddy config for production                    |
+| `docker-compose.devremote.yml` | Development remote environment (`.us` domains)    |
+| `docker-compose.prod.yml`      | Production environment (`.com` domains)           |
+| `docker-compose.override.yml`  | Local overrides for development                   |
+| `.env.dev.example`             | Dev env template                                  |
+| `.env.devremote.example`       | Dev remote env template                           |
+| `.env.prod.example`            | Production env template                           |
+| `Caddyfile`                    | Caddy config for dev remote                       |
+| `Caddyfile.dev`                | Caddy config for local dev                        |
+| `Caddyfile.prod`               | Caddy config for production                       |
 
 ## docker-compose.dev.yml — Local Development
 
@@ -65,6 +65,7 @@ Internet → Caddy (80/443) → web (Next.js, port 3000)
 ```
 
 Caddy handles TLS termination and reverse proxies path-based routes to the API:
+
 - `/auth*`, `/workspaces*`, `/channels*`, `/messages*`, `/socket.io*` → api:4000
 - everything else → web:3000
 
@@ -85,19 +86,19 @@ GitHub Actions workflows in `.github/workflows/` automatically:
 
 ## Health Checks
 
-| Service | Endpoint                          | Interval | Timeout |
-| ------- | --------------------------------- | -------- | ------- |
-| Caddy   | None (reverse proxy)              | —        | —       |
-| Web     | `wget http://localhost:3000`      | 15-30s   | 10s     |
-| API     | `wget http://localhost:4000/healthz` | 10s   | 5s      |
-| Worker  | `wget http://localhost:4100/healthz` | 10-30s | 5-10s   |
-| Redis   | `redis-cli ping`                  | 5s       | 3s      |
-| LiveKit | None                             | —        | —       |
+| Service | Endpoint                             | Interval | Timeout |
+| ------- | ------------------------------------ | -------- | ------- |
+| Caddy   | None (reverse proxy)                 | —        | —       |
+| Web     | `wget http://localhost:3000`         | 15-30s   | 10s     |
+| API     | `wget http://localhost:4000/healthz` | 10s      | 5s      |
+| Worker  | `wget http://localhost:4100/healthz` | 10-30s   | 5-10s   |
+| Redis   | `redis-cli ping`                     | 5s       | 3s      |
+| LiveKit | None                                 | —        | —       |
 
 ## Volumes
 
-| Volume         | Content                     | Persistence |
-| -------------- | --------------------------- | ----------- |
+| Volume         | Content                     | Persistence  |
+| -------------- | --------------------------- | ------------ |
 | `caddy-data`   | TLS certs, ACME account     | Named volume |
 | `caddy-config` | Caddy auto-generated config | Named volume |
 | `redis-data`   | AOF persistence file        | Named volume |

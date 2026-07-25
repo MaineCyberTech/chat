@@ -7,12 +7,12 @@
 
 ## Executive Summary
 
-| Severity | Count | Summary |
-|----------|-------|---------|
-| **P0**   | 4     | Search indexer Promise bug (silently corrupts tsvector), worker webhook dead letter never fires, Dockerfile exposes wrong port, compliance-export missing from centralized queue registry |
-| **P1**   | 7     | No idempotency on in-app notif insert, CB never records success, reminders use setInterval (lost on crash), data retention default mismatches schedule, cleanup NOOP jobs wasting CPU, `SUPABASE_ANON_KEY` required by env schema but never used by worker, `withPerChannelRetry` retries permanent failures |
+| Severity | Count | Summary                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| -------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **P0**   | 4     | Search indexer Promise bug (silently corrupts tsvector), worker webhook dead letter never fires, Dockerfile exposes wrong port, compliance-export missing from centralized queue registry                                                                                                                                                                                                                                            |
+| **P1**   | 7     | No idempotency on in-app notif insert, CB never records success, reminders use setInterval (lost on crash), data retention default mismatches schedule, cleanup NOOP jobs wasting CPU, `SUPABASE_ANON_KEY` required by env schema but never used by worker, `withPerChannelRetry` retries permanent failures                                                                                                                         |
 | **P2**   | 10    | Dead code `queues/index.ts`, dual webhook delivery systems diverge, CB in-memory only (no multi-worker sync), email recipient not validated before delivery attempt, `expose 4001 != 4100`, no shutdown drain for BullMQ workers, stale sessions/expired uploads are NOOP, notification concurrency=20 but no rate limit, compliance export stores full CSV in DB column, `stale_uploads`+`expired_uploads` both scheduled (overlap) |
-| **P3**   | 4     | `/metrics` returns JSON not Prometheus format, circuit breaker half-open missing, no structured error codes, `PORT` vs `HEALTH_PORT` naming confusion in .env.example |
+| **P3**   | 4     | `/metrics` returns JSON not Prometheus format, circuit breaker half-open missing, no structured error codes, `PORT` vs `HEALTH_PORT` naming confusion in .env.example                                                                                                                                                                                                                                                                |
 
 **Overall Verdict**: Worker is **operationally functional** with 4 critical bugs that need immediate attention. The search indexer Promise bug and webhook dead letter gap are the two highest-risk items.
 
@@ -29,6 +29,7 @@
 **Finding**: When the `update_message_search_index` RPC is unavailable, the fallback code calls `supabase.rpc("to_tsvector", ...)` and passes the return value directly as the `search_vector` column value. `supabase.rpc()` returns a `PostgrestFilterBuilder` (which is thenable/Promise-like). `JSON.stringify` on a Promise produces `{}`, or the column assignment is simply invalid. The result: `search_vector` is set to garbage or NULL — search indexing is silently broken for all messages when the RPC is not available.
 
 **Code** (`search-indexer.ts:40-47`):
+
 ```typescript
 if (contentToIndex) {
   const { error: updateError } = await supabase
@@ -42,6 +43,7 @@ if (contentToIndex) {
 ```
 
 **Required Fix**: `await` the RPC result before passing it into `.update()`:
+
 ```typescript
 const { data: tsvector } = await supabase.rpc("to_tsvector", {
   english: contentToIndex,
@@ -63,6 +65,7 @@ const { error: updateError } = await supabase
 **Finding**: The BullMQ webhook worker checks `retryCount >= MAX_RETRIES` (line 123) to decide whether to write to `webhook_dead_letters`. However, `retryCount` comes from `job.data.retryCount` with a default of `0` (line 151). BullMQ does NOT auto-increment `job.data.retryCount` on retries — it tracks `job.attemptsMade` separately. Since no code sets `retryCount` in the job data, it is always `0`, so `retryCount >= MAX_RETRIES` (5) is NEVER true. Failed webhook jobs will exhaust their 6 BullMQ attempts (5 retries + 1 initial), then BullMQ moves them to the failed queue and they're removed by `removeOnFail`. The dead letter insert at line 124-131 is dead code — no webhook will ever be recorded as a dead letter via the worker processor path.
 
 **Code** (`webhook-delivery.ts:123`):
+
 ```typescript
 if (deliveryStatus === "failed" && retryCount >= MAX_RETRIES) {
   await supabase.from("webhook_dead_letters").insert({...});
@@ -70,6 +73,7 @@ if (deliveryStatus === "failed" && retryCount >= MAX_RETRIES) {
 ```
 
 **Required Fix**: Use `job.attemptsMade` from BullMQ, not `job.data.retryCount`:
+
 ```typescript
 if (deliveryStatus === "failed" && job.attemptsMade >= MAX_RETRIES) {
   await supabase.from("webhook_dead_letters").insert({...});
@@ -99,6 +103,7 @@ if (deliveryStatus === "failed" && job.attemptsMade >= MAX_RETRIES) {
 **Status**: Open
 
 **Finding**: `QUEUE_NAMES` lists 5 queues but the worker actually has 6 (compliance-export is missing):
+
 ```
 WEBHOOK_DELIVERY
 NOTIFICATION
@@ -106,6 +111,7 @@ SEARCH_INDEXING
 CLEANUP
 DATA_RETENTION
 ```
+
 Missing: `COMPLIANCE_EXPORT: "compliance-export"`
 
 Additionally, `queues/index.ts` is NEVER imported by any file in the worker. The `main.ts` imports queue instances directly from each processor file. The entire `queues/index.ts` module is dead code — its `createWebhookQueue()`, `createNotificationQueue()`, etc. factory functions are unused.
@@ -125,12 +131,14 @@ Additionally, `queues/index.ts` is NEVER imported by any file in the worker. The
 **Finding**: `executeWithCircuitBreaker()` records failures but NEVER clears them on success. A sliding window of 30s keeps failure timestamps. If a service has 4 failures in 29 seconds, then 100 successes, then 1 more failure 1 second later — the circuit opens despite 99% success rate. The circuit can only close passively via time expiry (old failures aging out of the 30s window). There is no half-open state, no success-counting, and no active reset.
 
 **Required Fix**: On success, clear the failure list for that label (or decrement):
+
 ```typescript
 const result = await fn();
 // On success, clear recent failures for this label
 failureTracker.delete(label);
 return result;
 ```
+
 Alternatively, implement proper half-open state (allow probe request after cooldown, close on success).
 
 ---
@@ -142,6 +150,7 @@ Alternatively, implement proper half-open state (allow probe request after coold
 **Status**: Open
 
 **Finding**: Reminders are polled via `setInterval(processReminders, 30_000)` which:
+
 1. Has no durability — if the worker crashes between polls, any reminders due in that 30s window are lost until the next poll after restart
 2. Runs inside the worker process — if the worker is down, NO reminders fire
 3. Is not a BullMQ repeatable job — no retry, no DLQ, no monitoring in the metrics endpoint
@@ -159,14 +168,14 @@ Alternatively, implement proper half-open state (allow probe request after coold
 **Finding**: The scheduler enqueues retention jobs with specific `olderThanDays` per type. But the processor's fallback default at line 248 is `olderThanDays = 90`. If a job is manually enqueued without `olderThanDays`, it defaults to 90 days — which would delete notifications after 90 days instead of the scheduled 30, and messages after 90 days instead of 365.
 
 **Scheduler values** (correct):
-| Type                    | olderThanDays |
+| Type | olderThanDays |
 |-------------------------|---------------|
-| messages                | 365           |
-| audit_logs              | 90            |
-| consent_logs            | 730           |
-| soft_deleted_channels   | 30            |
-| soft_deleted_workspaces | 30            |
-| notifications           | 30            |
+| messages | 365 |
+| audit_logs | 90 |
+| consent_logs | 730 |
+| soft_deleted_channels | 30 |
+| soft_deleted_workspaces | 30 |
+| notifications | 30 |
 
 **Processor default**: 90 for ALL types.
 
@@ -183,6 +192,7 @@ Alternatively, implement proper half-open state (allow probe request after coold
 **Finding**: `deliverInApp()` does a blind INSERT into `notifications` without checking for duplicates. The `withPerChannelRetry()` wrapper (line 258-261) retries up to 2 additional times if `deliverInApp` returns `false`. But `deliverInApp` returns `false` on DB error — the INSERT may have already succeeded on the first attempt even though it reported an error (network blip). Retrying creates duplicate notifications. There's no unique constraint on `(user_id, type, title, body, created_at)` so duplicates are possible.
 
 **Required Fix**: Either:
+
 1. Add a unique constraint on `notifications(user_id, type, title, created_at)` with a time-based window, or
 2. Use the idempotency library (`lib/idempotency.ts`) by hashing `(userId, type, title, message)` before insert, or
 3. Add `ON CONFLICT DO NOTHING` via a unique partial index
@@ -198,6 +208,7 @@ Alternatively, implement proper half-open state (allow probe request after coold
 **Finding**: The shared `baseEnvSchema` requires `SUPABASE_ANON_KEY: z.string().min(1)`. The worker only ever uses `SUPABASE_SERVICE_ROLE_KEY` (admin/privileged access). Requiring `SUPABASE_ANON_KEY` forces operators to provide a key the worker never reads. If the worker-specific env doesn't have this set, `loadEnv()` crashes with a Zod validation error.
 
 **Required Fix**: Either:
+
 1. Move `SUPABASE_ANON_KEY` to a separate API-only schema and make it optional in the base schema, or
 2. Create a worker-specific `validateWorkerEnv()` that omits `SUPABASE_ANON_KEY`
 
@@ -210,6 +221,7 @@ Alternatively, implement proper half-open state (allow probe request after coold
 **Status**: Open
 
 **Finding**: `withPerChannelRetry` retries when the inner function returns `false`. But `deliverEmail` returns `false` when:
+
 - No SMTP config (permanent — will never succeed)
 - User has no email (permanent)
 
@@ -280,6 +292,7 @@ These two systems share no code, have different retry strategies, different circ
 **Status**: Open
 
 **Finding**: The scheduler enqueues `stale_sessions` and `expired_uploads` cleanup jobs every 6 hours. The processor handlers for these types are NOOPs:
+
 ```typescript
 case "stale_sessions":
   logger.info({ type }, "Stale session cleanup handled by Supabase auth hooks");
@@ -288,6 +301,7 @@ case "expired_uploads":
   logger.info({ type }, "Expired upload cleanup not implemented via DB (use stale_uploads)");
   break;
 ```
+
 These jobs consume queue slots, worker CPU, and log noise without performing any cleanup.
 
 **Required Fix**: Either implement the handlers or remove these from `CLEANUP_SCHEDULE` until implemented.
@@ -337,6 +351,7 @@ These jobs consume queue slots, worker CPU, and log noise without performing any
 **Status**: Open
 
 **Finding**: The graceful shutdown handler closes the health server and quits Redis, but does NOT call `.close()` on any of the 6 BullMQ Worker instances. BullMQ workers should be gracefully closed to:
+
 1. Stop accepting new jobs
 2. Wait for in-flight jobs to complete (or timeout)
 3. Release Redis connections cleanly
@@ -344,6 +359,7 @@ These jobs consume queue slots, worker CPU, and log noise without performing any
 Without this, in-flight jobs are abandoned mid-execution.
 
 **Required Fix**: Capture all worker instances from the register functions and close them in the shutdown handler:
+
 ```typescript
 const workers = [
   registerWebhookProcessor(),
@@ -351,10 +367,11 @@ const workers = [
   // ...
 ];
 const shutdown = async (signal: string) => {
-  await Promise.all(workers.map(w => w.close()));
+  await Promise.all(workers.map((w) => w.close()));
   // ...
 };
 ```
+
 The register functions DO return the worker instances (e.g., `cleanup.ts:300` returns `worker`), but `main.ts` discards the return values.
 
 ---
@@ -438,10 +455,12 @@ The register functions DO return the worker instances (e.g., `cleanup.ts:300` re
 ### 1. Dual Redis Connections (working-as-designed but notable)
 
 Two separate Redis connection pools exist:
+
 - `apps/worker/src/lib/redis.ts` — used by health server and idempotency (1 connection, `maxRetriesPerRequest: 3`)
 - Each BullMQ Worker/Queue creates its own `new Redis()` internally via BullMQ's `connection` option
 
 BullMQ's default Redis connection uses `maxRetriesPerRequest: null` (required by BullMQ). The health check Redis and idempotency Redis are separate instances. This means:
+
 - Health check Redis being down doesn't affect BullMQ queues
 - But it also means the health check doesn't reflect the BullMQ Redis connection state
 
@@ -450,6 +469,7 @@ This is acceptable but worth documenting.
 ### 2. Queue Configuration Discrepancy Between Factories and Actual Queues
 
 `queues/index.ts` factory functions specify different `defaultJobOptions` than what the actual processor files create:
+
 - Factory `createWebhookQueue`: `removeOnComplete: 100, removeOnFail: 50, attempts: 5`
 - Actual `webhook-delivery.ts`: `attempts: MAX_RETRIES + 1` (6), `removeOnComplete: { age: 86400 }, removeOnFail: { age: 86400 }`
 
@@ -463,38 +483,40 @@ Since the factories are never used, this is only a documentation concern. But it
 
 ## File-by-File Summary
 
-| File | Lines | Key Issues |
-|------|-------|------------|
-| `main.ts` | 140 | W-006 (setInterval reminders), W-019 (no BullMQ drain), W-022 (JSON metrics) |
-| `scheduler.ts` | 171 | W-015 (NOOP jobs), W-018 (double-export) |
-| `queues/index.ts` | 92 | W-004 (missing queue), W-014 (dead code) |
-| `lib/redis.ts` | 38 | (OK — singleton pattern, lazy connect) |
-| `lib/supabase.ts` | 44 | (OK — CB proxy works, coarse granularity noted) |
-| `lib/circuit-breaker.ts` | 41 | W-005 (only records failures), W-013 (in-memory), W-023 (no half-open) |
-| `lib/idempotency.ts` | 37 | (OK — SHA256 hash + Redis SET NX, 24h TTL, fail-open) |
-| `templates/email.ts` | 128 | (OK — clean HTML, no XSS vectors in template vars) |
-| `processors/cleanup.ts` | 301 | W-015 (NOOP jobs), W-016 (overlap) |
-| `processors/compliance-export.ts` | 305 | W-011 (CSV in DB), W-018 (double-export) |
-| `processors/data-retention.ts` | 317 | W-007 (default mismatch) |
-| `processors/notification.ts` | 298 | W-008 (no idempotency), W-010 (retries permanent), W-017 (high concurrency), W-020 (no email validation) |
-| `processors/reminder.ts` | 56 | W-006 (setInterval), W-021 (no queue) |
-| `processors/search-indexer.ts` | 137 | W-001 (Promise bug) |
-| `processors/webhook-delivery.ts` | 179 | W-002 (dead letter never fires), W-012 (dual system) |
-| `Dockerfile` | 38 | W-003 (wrong EXPOSE) |
-| `package.json` | 35 | W-009 (`SUPABASE_ANON_KEY` required transitively) |
-| `.env.example` | 30 | W-024 (`PORT` vs `HEALTH_PORT`) |
+| File                              | Lines | Key Issues                                                                                               |
+| --------------------------------- | ----- | -------------------------------------------------------------------------------------------------------- |
+| `main.ts`                         | 140   | W-006 (setInterval reminders), W-019 (no BullMQ drain), W-022 (JSON metrics)                             |
+| `scheduler.ts`                    | 171   | W-015 (NOOP jobs), W-018 (double-export)                                                                 |
+| `queues/index.ts`                 | 92    | W-004 (missing queue), W-014 (dead code)                                                                 |
+| `lib/redis.ts`                    | 38    | (OK — singleton pattern, lazy connect)                                                                   |
+| `lib/supabase.ts`                 | 44    | (OK — CB proxy works, coarse granularity noted)                                                          |
+| `lib/circuit-breaker.ts`          | 41    | W-005 (only records failures), W-013 (in-memory), W-023 (no half-open)                                   |
+| `lib/idempotency.ts`              | 37    | (OK — SHA256 hash + Redis SET NX, 24h TTL, fail-open)                                                    |
+| `templates/email.ts`              | 128   | (OK — clean HTML, no XSS vectors in template vars)                                                       |
+| `processors/cleanup.ts`           | 301   | W-015 (NOOP jobs), W-016 (overlap)                                                                       |
+| `processors/compliance-export.ts` | 305   | W-011 (CSV in DB), W-018 (double-export)                                                                 |
+| `processors/data-retention.ts`    | 317   | W-007 (default mismatch)                                                                                 |
+| `processors/notification.ts`      | 298   | W-008 (no idempotency), W-010 (retries permanent), W-017 (high concurrency), W-020 (no email validation) |
+| `processors/reminder.ts`          | 56    | W-006 (setInterval), W-021 (no queue)                                                                    |
+| `processors/search-indexer.ts`    | 137   | W-001 (Promise bug)                                                                                      |
+| `processors/webhook-delivery.ts`  | 179   | W-002 (dead letter never fires), W-012 (dual system)                                                     |
+| `Dockerfile`                      | 38    | W-003 (wrong EXPOSE)                                                                                     |
+| `package.json`                    | 35    | W-009 (`SUPABASE_ANON_KEY` required transitively)                                                        |
+| `.env.example`                    | 30    | W-024 (`PORT` vs `HEALTH_PORT`)                                                                          |
 
 ---
 
 ## Recommended Fix Priority
 
 ### Immediate (before next deploy)
+
 1. **W-001** — Fix search indexer Promise bug (silent data corruption)
 2. **W-002** — Fix webhook dead letter routing (use `job.attemptsMade`)
 3. **W-003** — Fix Dockerfile EXPOSE port
 4. **W-005** — Add success clearing to circuit breaker
 
 ### This Week
+
 5. **W-006 / W-021** — Move reminders to BullMQ repeatable job
 6. **W-007** — Fix data retention defaults per-type
 7. **W-008** — Add idempotency to in-app notification insert
@@ -503,6 +525,7 @@ Since the factories are never used, this is only a documentation concern. But it
 10. **W-019** — Drain BullMQ workers on shutdown
 
 ### Next Sprint
+
 11. **W-004 / W-014** — Delete dead `queues/index.ts`
 12. **W-011** — Move CSV exports to storage bucket
 13. **W-012** — Unify webhook delivery into worker-only
@@ -511,6 +534,7 @@ Since the factories are never used, this is only a documentation concern. But it
 16. **W-017** — Add rate limiter to notification worker
 
 ### Backlog
+
 17. **W-018** — Compliance export idempotency
 18. **W-020** — Email validation before SMTP
 19. **W-022** — Prometheus metrics format
@@ -535,4 +559,4 @@ Since the factories are never used, this is only a documentation concern. But it
 
 ---
 
-*Audit performed: July 24, 2026. All 15 source files read completely. 25 findings across P0-P3.*
+_Audit performed: July 24, 2026. All 15 source files read completely. 25 findings across P0-P3._

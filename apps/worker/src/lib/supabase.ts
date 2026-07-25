@@ -12,9 +12,7 @@ function createCircuitBreakerProxy<T extends object>(raw: T, label: string): T {
       if (typeof value === "function") {
         return new Proxy(value, {
           apply(fn, thisArg, args) {
-            return executeWithCircuitBreaker(label, () =>
-              Reflect.apply(fn, thisArg, args),
-            );
+            return executeWithCircuitBreaker(label, () => Reflect.apply(fn, thisArg, args));
           },
         });
       }
@@ -36,9 +34,6 @@ export function createSupabaseClient(): SupabaseClient {
 
 export { executeWithCircuitBreaker } from "./circuit-breaker.js";
 
-export async function supabaseQuery<T>(
-  label: string,
-  fn: () => Promise<T>,
-): Promise<T> {
+export async function supabaseQuery<T>(label: string, fn: () => Promise<T>): Promise<T> {
   return executeWithCircuitBreaker(`supabase:${label}`, fn);
 }

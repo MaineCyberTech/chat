@@ -4,13 +4,13 @@ Rate limiting uses `express-rate-limit` with composite keys (userId + IP, or IP-
 
 ## Tiers
 
-| Limiter              | Window   | Max Requests | Key                        | Used On                         |
-| -------------------- | -------- | ------------ | -------------------------- | ------------------------------- |
-| `apiLimiter`         | 1 minute | 100          | `userId:ip` or `ip`        | All `/v1/*` routes              |
-| `authLimiter`        | 1 minute | 10           | `userId:ip` or `ip`        | Auth endpoints (`/v1/auth/*`)   |
-| `searchLimiter`      | 1 minute | 30           | `userId:ip` or `ip`        | Search endpoints (`/v1/search`) |
-| `magicLinkLimiter`   | 1 minute | 3            | `ip` only                  | Magic link send endpoint        |
-| `gdprExportLimiter`  | 1 hour   | 5            | `userId` or `ip`           | GDPR export endpoint            |
+| Limiter             | Window   | Max Requests | Key                 | Used On                         |
+| ------------------- | -------- | ------------ | ------------------- | ------------------------------- |
+| `apiLimiter`        | 1 minute | 100          | `userId:ip` or `ip` | All `/v1/*` routes              |
+| `authLimiter`       | 1 minute | 10           | `userId:ip` or `ip` | Auth endpoints (`/v1/auth/*`)   |
+| `searchLimiter`     | 1 minute | 30           | `userId:ip` or `ip` | Search endpoints (`/v1/search`) |
+| `magicLinkLimiter`  | 1 minute | 3            | `ip` only           | Magic link send endpoint        |
+| `gdprExportLimiter` | 1 hour   | 5            | `userId` or `ip`    | GDPR export endpoint            |
 
 ## Response on Limit Hit
 

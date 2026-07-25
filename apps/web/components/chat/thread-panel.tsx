@@ -104,7 +104,9 @@ export function ThreadPanel({
 
   // Fetch reactions for new replies only
   useEffect(() => {
-    const ids = replies.map((r) => r.id).filter((id) => !id.startsWith("temp_") && !fetchedReactionIds.current.has(id));
+    const ids = replies
+      .map((r) => r.id)
+      .filter((id) => !id.startsWith("temp_") && !fetchedReactionIds.current.has(id));
     if (ids.length === 0) return;
     ids.forEach((id) => fetchedReactionIds.current.add(id));
     const CHUNK_SIZE = 20;

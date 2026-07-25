@@ -107,6 +107,7 @@ supabase db reset
 Verify on CI before merge — the `supabase-migrations` workflow runs `supabase db push` against the hosted project.
 
 Guidelines:
+
 - One logical change per migration
 - Use `IF NOT EXISTS` / `IF EXISTS` for idempotency
 - Include `-- up` / `-- down` comments at the top

@@ -25,18 +25,7 @@ interface Props {
   onStatusChange: (status: StatusData | null) => void;
 }
 
-const PRESET_EMOJIS = [
-  "ðŸ’¼",
-  "ðŸ–ï¸",
-  "ðŸš´",
-  "ðŸ•",
-  "ðŸ“ž",
-  "ðŸŽ§",
-  "✈️",
-  "ðŸ ",
-  "ðŸ’Š",
-  "ðŸŽ‰",
-];
+const PRESET_EMOJIS = ["ðŸ’¼", "ðŸ–ï¸", "ðŸš´", "ðŸ•", "ðŸ“ž", "ðŸŽ§", "✈️", "ðŸ ", "ðŸ’Š", "ðŸŽ‰"];
 
 export function StatusModal({ onClose, currentStatus, onStatusChange }: Props) {
   const [emoji, setEmoji] = useState(currentStatus?.emoji ?? "ðŸ’¬");

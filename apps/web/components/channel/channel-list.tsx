@@ -449,7 +449,7 @@ export function ChannelList({
                 className="ml-auto"
                 style={{ color: "rgba(var(--center-channel-color-rgb),0.4)" }}
               >
-                {'\u25B6'}
+                {"\u25B6"}
               </span>
             </button>
           )}
@@ -499,7 +499,7 @@ export function ChannelList({
             className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
             style={{ color: "var(--center-channel-color)" }}
           >
-            {'\u2190'} Back
+            {"\u2190"} Back
           </button>
           <div
             className="my-1"

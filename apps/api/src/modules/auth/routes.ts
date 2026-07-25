@@ -1,7 +1,12 @@
 import { Router, type Router as RouterType } from "express";
 import { z } from "zod";
 import { authenticate } from "../../middleware/authenticate.js";
-import { authLimiter, searchLimiter, magicLinkLimiter, gdprExportLimiter } from "../../middleware/rate-limit.js";
+import {
+  authLimiter,
+  searchLimiter,
+  magicLinkLimiter,
+  gdprExportLimiter,
+} from "../../middleware/rate-limit.js";
 import { authService } from "./service.js";
 import { getOnlineUsers } from "../../lib/socket.js";
 import { getSupabaseAdmin } from "../../lib/supabase.js";
@@ -253,7 +258,10 @@ router.get(
       supabase.from("push_subscriptions").select("*").eq("user_id", userId),
       supabase.from("reactions").select("*").eq("user_id", userId),
       supabase.from("consent_logs").select("*").eq("user_id", userId),
-      supabase.from("channel_members").select("*, channels!inner(name, workspace_id)").eq("user_id", userId),
+      supabase
+        .from("channel_members")
+        .select("*, channels!inner(name, workspace_id)")
+        .eq("user_id", userId),
       supabase.from("channel_bookmarks").select("*").eq("created_by", userId),
       supabase.from("message_flags").select("*").eq("user_id", userId),
       supabase.from("message_edit_history").select("*").eq("edited_by", userId),
@@ -264,7 +272,10 @@ router.get(
       supabase.from("trigger_words").select("*").eq("user_id", userId),
       supabase.from("auto_responders").select("*").eq("user_id", userId),
       supabase.from("sidebar_categories").select("*").eq("user_id", userId),
-      supabase.from("sidebar_channel_assignments").select("*, sidebar_categories!inner(user_id, name)").eq("sidebar_categories.user_id", userId),
+      supabase
+        .from("sidebar_channel_assignments")
+        .select("*, sidebar_categories!inner(user_id, name)")
+        .eq("sidebar_categories.user_id", userId),
     ]);
 
     const exportData = {
@@ -337,8 +348,13 @@ router.delete(
     try {
       await supabase.auth.admin.deleteUser(userId);
     } catch (err) {
-      logger.error("Failed to delete auth user during GDPR deletion", { userId, error: String(err) });
-      throw new InternalServerError("Failed to complete account deletion. Auth user could not be removed.");
+      logger.error("Failed to delete auth user during GDPR deletion", {
+        userId,
+        error: String(err),
+      });
+      throw new InternalServerError(
+        "Failed to complete account deletion. Auth user could not be removed.",
+      );
     }
 
     res.status(204).send();

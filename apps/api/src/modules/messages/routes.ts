@@ -578,8 +578,7 @@ router.get(
 
     const rows = messages.map((m: Record<string, unknown>) => ({
       id: m.id,
-      author:
-        (m.users as Record<string, unknown>).display_name ?? "Unknown User",
+      author: (m.users as Record<string, unknown>).display_name ?? "Unknown User",
       content: typeof m.content === "string" ? m.content.replace(/[\n\r]+/g, " ") : "",
       created_at: m.created_at,
       edited_at: m.edited_at ?? "",

@@ -2,7 +2,12 @@ import { Router, type Request, type Response } from "express";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { authenticate as requireAuth } from "../../middleware/authenticate.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError } from "../../lib/app-error.js";
+import {
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+  NotFoundError,
+} from "../../lib/app-error.js";
 
 const router = Router();
 

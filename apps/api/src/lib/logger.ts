@@ -1,4 +1,7 @@
-import { createLogger as createBaseLogger, getLogger as getBaseLogger } from "@chat/config/logger.js";
+import {
+  createLogger as createBaseLogger,
+  getLogger as getBaseLogger,
+} from "@chat/config/logger.js";
 
 function createLogger(bindings?: Record<string, unknown>) {
   const base = bindings ? createBaseLogger().child(bindings ?? {}) : getBaseLogger();
@@ -6,7 +9,10 @@ function createLogger(bindings?: Record<string, unknown>) {
   return {
     debug(message: string, meta?: Record<string, unknown>) {
       if (meta) {
-        (base as { debug: (obj: Record<string, unknown>, msg: string) => void }).debug(meta, message);
+        (base as { debug: (obj: Record<string, unknown>, msg: string) => void }).debug(
+          meta,
+          message,
+        );
       } else {
         base.debug(message);
       }
@@ -27,7 +33,10 @@ function createLogger(bindings?: Record<string, unknown>) {
     },
     error(message: string, meta?: Record<string, unknown>) {
       if (meta) {
-        (base as { error: (obj: Record<string, unknown>, msg: string) => void }).error(meta, message);
+        (base as { error: (obj: Record<string, unknown>, msg: string) => void }).error(
+          meta,
+          message,
+        );
       } else {
         base.error(message);
       }

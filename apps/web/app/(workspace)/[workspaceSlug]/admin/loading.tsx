@@ -1,6 +1,11 @@
 export default function AdminLoading() {
   return (
-    <div className="flex h-full animate-pulse" role="status" aria-busy="true" style={{ padding: "24px 32px" }}>
+    <div
+      className="flex h-full animate-pulse"
+      role="status"
+      aria-busy="true"
+      style={{ padding: "24px 32px" }}
+    >
       <div className="flex w-full gap-6">
         <div className="w-48 space-y-3">
           <div className="h-4 w-24 rounded bg-[var(--color-skeleton-bg)]" />

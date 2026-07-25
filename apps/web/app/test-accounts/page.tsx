@@ -172,9 +172,7 @@ export default function TestAccountsPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--center-channel-bg)]">
         <div className="text-center">
-          <h1 className="text-xl font-bold text-[var(--center-channel-color)]">
-            Not Available
-          </h1>
+          <h1 className="text-xl font-bold text-[var(--center-channel-color)]">Not Available</h1>
           <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>
             This page is only available in development.
           </p>

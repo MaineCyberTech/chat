@@ -53,7 +53,11 @@ export async function validateWebhookUrl(url: string): Promise<{ valid: boolean;
   }
 }
 
-export function computeHmacSignature(secret: string, payload: Record<string, unknown>, event: string): string {
+export function computeHmacSignature(
+  secret: string,
+  payload: Record<string, unknown>,
+  event: string,
+): string {
   const hmac = createHmac("sha256", secret);
   hmac.update(JSON.stringify({ event, ...payload }));
   return `sha256=${hmac.digest("hex")}`;

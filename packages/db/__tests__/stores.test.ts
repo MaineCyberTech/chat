@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { messageStore, SupabaseMessageStore, channelStore, SupabaseChannelStore } from "../src/stores/index.js";
+import {
+  messageStore,
+  SupabaseMessageStore,
+  channelStore,
+  SupabaseChannelStore,
+} from "../src/stores/index.js";
 
 describe("messageStore", () => {
   it("is an instance of SupabaseMessageStore", () => {

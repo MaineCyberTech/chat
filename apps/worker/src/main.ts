@@ -7,7 +7,10 @@ import { registerNotificationProcessor, notificationQueue } from "./processors/n
 import { registerSearchIndexer, searchQueue } from "./processors/search-indexer.js";
 import { registerCleanupProcessor, cleanupQueue } from "./processors/cleanup.js";
 import { registerDataRetentionProcessor, dataRetentionQueue } from "./processors/data-retention.js";
-import { registerComplianceExportProcessor, complianceExportQueue } from "./processors/compliance-export.js";
+import {
+  registerComplianceExportProcessor,
+  complianceExportQueue,
+} from "./processors/compliance-export.js";
 import { registerReminderProcessor, reminderQueue } from "./processors/reminder.js";
 import { startScheduler } from "./scheduler.js";
 
@@ -30,7 +33,12 @@ async function gatherMetrics() {
   for (const { name, queue } of queues) {
     try {
       const counts = await queue.getJobCounts(
-        "waiting", "active", "completed", "failed", "delayed", "paused",
+        "waiting",
+        "active",
+        "completed",
+        "failed",
+        "delayed",
+        "paused",
       );
       const failed = await queue.getFailedCount();
       metrics[name] = {
@@ -102,7 +110,15 @@ async function main() {
   registerComplianceExportProcessor();
   registerReminderProcessor();
 
-  const queues = [webhookQueue, notificationQueue, searchQueue, cleanupQueue, dataRetentionQueue, complianceExportQueue, reminderQueue];
+  const queues = [
+    webhookQueue,
+    notificationQueue,
+    searchQueue,
+    cleanupQueue,
+    dataRetentionQueue,
+    complianceExportQueue,
+    reminderQueue,
+  ];
 
   startScheduler();
 

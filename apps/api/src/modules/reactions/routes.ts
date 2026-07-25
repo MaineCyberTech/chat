@@ -4,7 +4,12 @@ import { requireMessageAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { reactionService } from "./service.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, ForbiddenError, InternalServerError } from "../../lib/app-error.js";
+import {
+  BadRequestError,
+  NotFoundError,
+  ForbiddenError,
+  InternalServerError,
+} from "../../lib/app-error.js";
 import { getIO } from "../../lib/socket.js";
 
 const router: RouterType = Router();

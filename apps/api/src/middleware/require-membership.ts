@@ -156,8 +156,8 @@ export function requireMessageAccess(messageParamName = "id") {
       return;
     }
 
-    const { data: message, error: messageError } = await req.supabase!
-      .from("messages")
+    const { data: message, error: messageError } = await req
+      .supabase!.from("messages")
       .select("channel_id")
       .eq("id", messageId)
       .single();

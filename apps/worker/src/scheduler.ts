@@ -17,7 +17,14 @@ type DataRetentionJobData = {
 };
 
 type CleanupJobData = {
-  type: "old_deliveries" | "dead_letters" | "consent_logs" | "stale_sessions" | "expired_uploads" | "message_edit_history" | "expired_tokens";
+  type:
+    | "old_deliveries"
+    | "dead_letters"
+    | "consent_logs"
+    | "stale_sessions"
+    | "expired_uploads"
+    | "message_edit_history"
+    | "expired_tokens";
   olderThanDays?: number;
 };
 
@@ -140,19 +147,27 @@ async function registerRepeatableSchedules() {
     });
   }
 
-  await complianceExportQueue.add("scheduler:compliance", { type: "_scheduler" }, {
-    repeat: { every: complianceMs },
-    jobId: "scheduler:compliance",
-    removeOnComplete: { age: 3600 },
-    removeOnFail: { age: 86400 },
-  });
+  await complianceExportQueue.add(
+    "scheduler:compliance",
+    { type: "_scheduler" },
+    {
+      repeat: { every: complianceMs },
+      jobId: "scheduler:compliance",
+      removeOnComplete: { age: 3600 },
+      removeOnFail: { age: 86400 },
+    },
+  );
 
-  await reminderQueue.add("scheduler:reminder", { _scheduler: true }, {
-    repeat: { every: 30_000 },
-    jobId: "scheduler:reminder",
-    removeOnComplete: { age: 3600 },
-    removeOnFail: { age: 86400 },
-  });
+  await reminderQueue.add(
+    "scheduler:reminder",
+    { _scheduler: true },
+    {
+      repeat: { every: 30_000 },
+      jobId: "scheduler:reminder",
+      removeOnComplete: { age: 3600 },
+      removeOnFail: { age: 86400 },
+    },
+  );
 
   logger.info(
     "Repeatable maintenance schedules registered (retention: 24h, cleanup: 6h, compliance: 24h, reminder: 30s)",

@@ -106,7 +106,13 @@ function findHandler(method: string, path: string) {
 }
 
 function mockReq(overrides: Record<string, unknown> = {}) {
-  return { userId: "user-1", supabase: { from: vi.fn(), storage: { from: vi.fn() } }, body: {}, query: {}, ...overrides } as any;
+  return {
+    userId: "user-1",
+    supabase: { from: vi.fn(), storage: { from: vi.fn() } },
+    body: {},
+    query: {},
+    ...overrides,
+  } as any;
 }
 
 function mockRes() {
@@ -175,9 +181,7 @@ describe("Auth Routes", () => {
     const req = mockReq({ body: { email: "test@example.com" } });
     const res = mockRes();
     await handler(req, res);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ success: true }),
-    );
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
 
   it("POST /magic-link rejects invalid email format", async () => {
@@ -206,9 +210,7 @@ describe("Auth Routes", () => {
     const req = mockReq({ query: { q: "test" } });
     const res = mockRes();
     await handler(req, res);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ profiles: expect.any(Array) }),
-    );
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ profiles: expect.any(Array) }));
   });
 
   it("PATCH /profile updates and returns profile", async () => {

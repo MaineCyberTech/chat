@@ -26,10 +26,10 @@ Security) for tenant isolation.**
 
 ## Alternatives Considered
 
-| Option | Rejected Because |
-|--------|-----------------|
-| **Custom JWT auth with Passport.js** | High maintenance burden; must implement password reset, email verification, OAuth flows, token refresh, session revocation, and brute-force protection from scratch. |
-| **Keycloak / Auth0 (external IdP)** | Adds operational complexity (self-hosted Keycloak) or vendor lock-in and cost (Auth0). Supabase Auth is bundled with our database and included in the Supabase pricing tier. |
+| Option                                    | Rejected Because                                                                                                                                                                |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Custom JWT auth with Passport.js**      | High maintenance burden; must implement password reset, email verification, OAuth flows, token refresh, session revocation, and brute-force protection from scratch.            |
+| **Keycloak / Auth0 (external IdP)**       | Adds operational complexity (self-hosted Keycloak) or vendor lock-in and cost (Auth0). Supabase Auth is bundled with our database and included in the Supabase pricing tier.    |
 | **Application-layer tenant filters only** | Vulnerable to bugs — a single missed `WHERE workspace_id = ?` leaks data across tenants. RLS guarantees isolation at the database level regardless of application code quality. |
 
 ## Consequences

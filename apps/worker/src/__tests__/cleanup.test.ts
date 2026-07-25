@@ -26,7 +26,9 @@ const { mockLogger, MockWorker, MockQueue, mockSupabaseClient } = vi.hoisted(() 
   const mockSupabaseClient = {
     from: vi.fn().mockReturnValue(chain),
     schema: vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue(chain) }),
-    storage: { from: vi.fn().mockReturnValue({ remove: vi.fn().mockResolvedValue({ error: null }) }) },
+    storage: {
+      from: vi.fn().mockReturnValue({ remove: vi.fn().mockResolvedValue({ error: null }) }),
+    },
     rpc: vi.fn().mockResolvedValue({}),
   };
 
@@ -81,8 +83,10 @@ describe("cleanup processor", () => {
   it("handles old_deliveries job type", async () => {
     const { registerCleanupProcessor } = await import("../processors/cleanup.js");
     registerCleanupProcessor();
-    const handler = (MockWorker.mock.calls[0] as unknown as [unknown, (job: unknown) => Promise<unknown>])?.[1];
-    const result = await (handler!)({
+    const handler = (
+      MockWorker.mock.calls[0] as unknown as [unknown, (job: unknown) => Promise<unknown>]
+    )?.[1];
+    const result = await handler!({
       data: { type: "old_deliveries", olderThanDays: 30 },
       id: "job-1",
     });

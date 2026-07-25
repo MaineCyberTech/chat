@@ -42,7 +42,7 @@ This is a surgical re-verification audit confirming that all 8 findings from the
 **Verified Fixed — YES** (`formatting-bar.tsx:256`)
 
 ```tsx
-className="flex h-11 w-11 md:h-7 md:w-7 items-center justify-center rounded..."
+className = "flex h-11 w-11 md:h-7 md:w-7 items-center justify-center rounded...";
 ```
 
 - Mobile (<768px): `h-11 w-11` = **44px** (meets WCAG 2.5.5)
@@ -111,14 +111,14 @@ aria-expanded={open && results.length > 0}
 
 **Verified Fixed — YES** (all 6 files + shared component):
 
-| File | `role="alert"` | `aria-live="assertive"` |
-|------|:---:|:---:|
-| `app/error.tsx` | ✅ line 17 | ✅ line 18 |
-| `app/(auth)/error.tsx` | ✅ line 6 | ✅ line 7 |
-| `app/(workspace)/error.tsx` | ✅ line 8 | ✅ line 9 |
-| `app/(workspace)/[workspaceSlug]/[channelId]/error.tsx` | ✅ line 17 | ✅ line 18 |
-| `components/shared/error-boundary.tsx` | ✅ line 39 | ✅ line 40 |
-| **Additional components with `role="alert"`** (23 total across codebase) | ✅ | ✅ |
+| File                                                                     | `role="alert"` | `aria-live="assertive"` |
+| ------------------------------------------------------------------------ | :------------: | :---------------------: |
+| `app/error.tsx`                                                          |   ✅ line 17   |       ✅ line 18        |
+| `app/(auth)/error.tsx`                                                   |   ✅ line 6    |        ✅ line 7        |
+| `app/(workspace)/error.tsx`                                              |   ✅ line 8    |        ✅ line 9        |
+| `app/(workspace)/[workspaceSlug]/[channelId]/error.tsx`                  |   ✅ line 17   |       ✅ line 18        |
+| `components/shared/error-boundary.tsx`                                   |   ✅ line 39   |       ✅ line 40        |
+| **Additional components with `role="alert"`** (23 total across codebase) |       ✅       |           ✅            |
 
 **Status**: **FIXED** — All 5 route-level error.tsx files + shared ErrorBoundary have `role="alert"` + `aria-live="assertive"`. 23 total `role="alert"` instances across all components.
 
@@ -130,13 +130,13 @@ aria-expanded={open && results.length > 0}
 
 **Verified Fixed — YES** (all 5 loading.tsx files):
 
-| File | `role="status"` | `aria-busy="true"` |
-|------|:---:|:---:|
-| `app/loading.tsx` | ✅ line 3 | ✅ line 3 |
-| `app/(auth)/loading.tsx` | ✅ line 3 | ✅ line 3 |
-| `app/(workspace)/loading.tsx` | ✅ line 3 | ✅ line 3 |
-| `app/(workspace)/[workspaceSlug]/loading.tsx` | ✅ line 5 | ✅ line 6 |
-| `app/(workspace)/[workspaceSlug]/admin/loading.tsx` | ✅ line 3 | ✅ line 3 |
+| File                                                | `role="status"` | `aria-busy="true"` |
+| --------------------------------------------------- | :-------------: | :----------------: |
+| `app/loading.tsx`                                   |    ✅ line 3    |     ✅ line 3      |
+| `app/(auth)/loading.tsx`                            |    ✅ line 3    |     ✅ line 3      |
+| `app/(workspace)/loading.tsx`                       |    ✅ line 3    |     ✅ line 3      |
+| `app/(workspace)/[workspaceSlug]/loading.tsx`       |    ✅ line 5    |     ✅ line 6      |
+| `app/(workspace)/[workspaceSlug]/admin/loading.tsx` |    ✅ line 3    |     ✅ line 3      |
 
 **Status**: **FIXED** — All 5 loading.tsx files use `role="status" aria-busy="true"`. 6 total `aria-busy` instances (including thread-panel.tsx).
 
@@ -148,15 +148,15 @@ aria-expanded={open && results.length > 0}
 
 **Verified Fixed — YES** (all 7 pages checked):
 
-| Page | `document.title` | Source |
-|------|:---|-------|
-| Admin | `t("admin.title") - ${slug}` | `admin/page.tsx:214` |
-| Search | `t("common.search") - Chat` | `search/page.tsx:45` |
-| Settings | `t("settings.title")` | `settings/page.tsx:27` |
-| Channel | `${channel.name} - Chat` | `[channelId]/page.tsx:45` |
-| Groups | `User Groups - Chat` | `groups/page.tsx:32` |
-| Saved | `Saved Messages - Chat` | `saved/page.tsx:15` |
-| Threads | `Threads - Chat` | `threads/page.tsx:33` |
+| Page     | `document.title`             | Source                    |
+| -------- | :--------------------------- | ------------------------- |
+| Admin    | `t("admin.title") - ${slug}` | `admin/page.tsx:214`      |
+| Search   | `t("common.search") - Chat`  | `search/page.tsx:45`      |
+| Settings | `t("settings.title")`        | `settings/page.tsx:27`    |
+| Channel  | `${channel.name} - Chat`     | `[channelId]/page.tsx:45` |
+| Groups   | `User Groups - Chat`         | `groups/page.tsx:32`      |
+| Saved    | `Saved Messages - Chat`      | `saved/page.tsx:15`       |
+| Threads  | `Threads - Chat`             | `threads/page.tsx:33`     |
 
 **Status**: **FIXED** — Admin title i18n'd. All pages set meaningful document titles.
 
@@ -180,56 +180,56 @@ aria-expanded={open && results.length > 0}
 
 These items were noted as unresolved in the original July 16 audit and are now confirmed fixed:
 
-| Item | Original Finding | Status | Evidence |
-|------|:---|:---:|------|
-| Onboarding tour `role="dialog"` | UX-218 (P2) | ✅ FIXED | `onboarding-tour.tsx:157-158` — `role="dialog" aria-modal="true"` |
-| Cookie banner `aria-modal` | UX-219 (P2) | ✅ FIXED | `cookie-banner.tsx:80-83` — `role="dialog" aria-modal="true" aria-live="polite"` |
-| Keyboard shortcuts macOS modifier | UX-212 (P2) | ✅ FIXED | `keyboard-shortcuts.tsx:45-51` — `isMac` check, `⌘`/`⌥` display via `replaceModKeys()` |
-| Search result count | UX-203 (P2) | ✅ FIXED | `search/page.tsx:326-328` — `{tn("search.resultsCount", results.length)}` |
-| Search results `aria-live` | UX-205 (P2) | ✅ FIXED | `search/page.tsx:290` — `aria-live="polite" aria-atomic="true"` |
-| Settings skeleton loading | UX-301 (P3) | ✅ FIXED | `settings/page.tsx:314-334` — Uses `Skeleton` component (not "Loading..." text) |
-| Login "Forgot password?" | UX-305 (P3) | ✅ FIXED | `login-form.tsx:198` — `t("auth.forgotPassword", ...)` |
-| CSV parser quote handling | UX-316 (P3) | ✅ FIXED | `admin/page.tsx:192-209` — `parseCSVLine()` with proper quote state machine |
-| Language reload toast | UX-202 (P2) | ✅ FIXED | `settings/page.tsx:456` — `addToast({ title: t("settings.languageChanged"), ... })` |
-| Settings debounce on save | UX-303 (P3) | ✅ FIXED | `settings/page.tsx:291-294` — 300ms debounce via `debounceRef` |
-| `document.title` i18n (admin) | UX-313 (P3) | ✅ FIXED | `admin/page.tsx:214` — `t("admin.title")` |
-| Formatting bar i18n | UX-209 (P2) | ✅ FIXED | `formatting-bar.tsx:105-121` — 15 `i18nKey` entries, all buttons use `t(i18nKey)` |
-| Formatting bar focus ring | UX-207 (P2) | ✅ FIXED | `formatting-bar.tsx:256` — `focus-visible:ring-2 focus-visible:ring-[var(--button-bg)]` |
-| Formatting bar link/image aria-pressed | UX-208 (P2) | ✅ FIXED | `formatting-bar.tsx:272` — `aria-pressed={mode === "link" \|\| mode === "image" ? undefined : active}` |
-| 18 `aria-live` instances | — | ✅ | 18 locations with `aria-live="polite"` or `aria-live="assertive"` |
-| 11 `aria-modal="true"` instances | — | ✅ | On dialogs, modals, overlays, cookie banner, onboarding tour, admin mobile nav |
-| 7 `document.title` setters | — | ✅ | All pages set descriptive titles; admin + search + settings i18n'd |
+| Item                                   | Original Finding |  Status  | Evidence                                                                                               |
+| -------------------------------------- | :--------------- | :------: | ------------------------------------------------------------------------------------------------------ |
+| Onboarding tour `role="dialog"`        | UX-218 (P2)      | ✅ FIXED | `onboarding-tour.tsx:157-158` — `role="dialog" aria-modal="true"`                                      |
+| Cookie banner `aria-modal`             | UX-219 (P2)      | ✅ FIXED | `cookie-banner.tsx:80-83` — `role="dialog" aria-modal="true" aria-live="polite"`                       |
+| Keyboard shortcuts macOS modifier      | UX-212 (P2)      | ✅ FIXED | `keyboard-shortcuts.tsx:45-51` — `isMac` check, `⌘`/`⌥` display via `replaceModKeys()`                 |
+| Search result count                    | UX-203 (P2)      | ✅ FIXED | `search/page.tsx:326-328` — `{tn("search.resultsCount", results.length)}`                              |
+| Search results `aria-live`             | UX-205 (P2)      | ✅ FIXED | `search/page.tsx:290` — `aria-live="polite" aria-atomic="true"`                                        |
+| Settings skeleton loading              | UX-301 (P3)      | ✅ FIXED | `settings/page.tsx:314-334` — Uses `Skeleton` component (not "Loading..." text)                        |
+| Login "Forgot password?"               | UX-305 (P3)      | ✅ FIXED | `login-form.tsx:198` — `t("auth.forgotPassword", ...)`                                                 |
+| CSV parser quote handling              | UX-316 (P3)      | ✅ FIXED | `admin/page.tsx:192-209` — `parseCSVLine()` with proper quote state machine                            |
+| Language reload toast                  | UX-202 (P2)      | ✅ FIXED | `settings/page.tsx:456` — `addToast({ title: t("settings.languageChanged"), ... })`                    |
+| Settings debounce on save              | UX-303 (P3)      | ✅ FIXED | `settings/page.tsx:291-294` — 300ms debounce via `debounceRef`                                         |
+| `document.title` i18n (admin)          | UX-313 (P3)      | ✅ FIXED | `admin/page.tsx:214` — `t("admin.title")`                                                              |
+| Formatting bar i18n                    | UX-209 (P2)      | ✅ FIXED | `formatting-bar.tsx:105-121` — 15 `i18nKey` entries, all buttons use `t(i18nKey)`                      |
+| Formatting bar focus ring              | UX-207 (P2)      | ✅ FIXED | `formatting-bar.tsx:256` — `focus-visible:ring-2 focus-visible:ring-[var(--button-bg)]`                |
+| Formatting bar link/image aria-pressed | UX-208 (P2)      | ✅ FIXED | `formatting-bar.tsx:272` — `aria-pressed={mode === "link" \|\| mode === "image" ? undefined : active}` |
+| 18 `aria-live` instances               | —                |    ✅    | 18 locations with `aria-live="polite"` or `aria-live="assertive"`                                      |
+| 11 `aria-modal="true"` instances       | —                |    ✅    | On dialogs, modals, overlays, cookie banner, onboarding tour, admin mobile nav                         |
+| 7 `document.title` setters             | —                |    ✅    | All pages set descriptive titles; admin + search + settings i18n'd                                     |
 
 ---
 
 ## Design Token & CSS Architecture (No Regressions)
 
-| Check | Status |
-|-------|:---:|
-| Two-tier CSS variable system intact | ✅ `globals.css` (Mattermost vars) + `packages/ui/src/styles.css` (design tokens) |
-| Dark mode `.dark` overrides present | ✅ `globals.css:311-364` |
-| High-contrast mode `@media (prefers-contrast: high)` | ✅ `globals.css:286-307` |
-| Reduced motion `@media (prefers-reduced-motion: reduce)` | ✅ `globals.css:275-284` |
-| Safe-area handling (top + bottom) | ✅ `layout.tsx` — `env(safe-area-inset-top)`, `env(safe-area-inset-bottom)` |
-| `--vh` dynamic viewport with VisualViewport API | ✅ `layout.tsx:34` |
-| Focus ring standardization | ✅ All interactive elements use `focus-visible:ring-2` |
+| Check                                                    |                                      Status                                       |
+| -------------------------------------------------------- | :-------------------------------------------------------------------------------: |
+| Two-tier CSS variable system intact                      | ✅ `globals.css` (Mattermost vars) + `packages/ui/src/styles.css` (design tokens) |
+| Dark mode `.dark` overrides present                      |                             ✅ `globals.css:311-364`                              |
+| High-contrast mode `@media (prefers-contrast: high)`     |                             ✅ `globals.css:286-307`                              |
+| Reduced motion `@media (prefers-reduced-motion: reduce)` |                             ✅ `globals.css:275-284`                              |
+| Safe-area handling (top + bottom)                        |    ✅ `layout.tsx` — `env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`    |
+| `--vh` dynamic viewport with VisualViewport API          |                                ✅ `layout.tsx:34`                                 |
+| Focus ring standardization                               |              ✅ All interactive elements use `focus-visible:ring-2`               |
 
 ---
 
 ## Component ARIA Compliance (23 `role="alert"` + 18 `aria-live` + 11 `aria-modal`)
 
-| ARIA Attribute | Count | Locations |
-|:---|---|------|
-| `role="alert"` | 23 | app/error.tsx ×5, error-boundary.tsx, toast.tsx ×2, chat-view.tsx, thread-panel.tsx ×2, message-item.tsx ×2, delete-dialog.tsx, message-input.tsx, notification-prompt.tsx, verify/page.tsx, login-form.tsx ×2, avatar-upload.tsx, settings/page.tsx, channel-list.tsx, search/page.tsx |
-| `aria-live` | 18 | error pages ×4, toast.tsx ×2, message-list.tsx, login-form.tsx ×2, thread-panel.tsx ×2, message-input.tsx, cookie-banner.tsx, update-notification.tsx, search/page.tsx, keyboard-shortcuts.tsx, error-boundary.tsx |
-| `aria-modal="true"` | 11 | dialog.tsx, settings/page.tsx ×2, onboarding-tour.tsx, cookie-banner.tsx, admin/page.tsx, chat-view.tsx ×2, notification-preferences-modal.tsx, keyboard-shortcuts.tsx |
-| `role="dialog"` | 6 | dialog.tsx, onboarding-tour.tsx, cookie-banner.tsx, admin/page.tsx, keyboard-shortcuts.tsx |
-| `role="alertdialog"` | 2 | settings/page.tsx (reset + delete confirmations) |
-| `aria-busy="true"` | 6 | loading.tsx ×5, thread-panel.tsx |
-| `role="tablist"` | 1 | channel-info.tsx (with `role="tab"` + `aria-selected` on 3 tabs) |
-| `aria-activedescendant` | 1 | search-bar.tsx (with `aria-autocomplete="list"`) |
-| `aria-pressed` | 4+ | formatting-bar.tsx, search-bar.tsx (operator hints + filters) |
-| `aria-expanded` | 4+ | search-bar.tsx, admin/page.tsx, channel-info.tsx |
+| ARIA Attribute          | Count | Locations                                                                                                                                                                                                                                                                               |
+| :---------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `role="alert"`          | 23    | app/error.tsx ×5, error-boundary.tsx, toast.tsx ×2, chat-view.tsx, thread-panel.tsx ×2, message-item.tsx ×2, delete-dialog.tsx, message-input.tsx, notification-prompt.tsx, verify/page.tsx, login-form.tsx ×2, avatar-upload.tsx, settings/page.tsx, channel-list.tsx, search/page.tsx |
+| `aria-live`             | 18    | error pages ×4, toast.tsx ×2, message-list.tsx, login-form.tsx ×2, thread-panel.tsx ×2, message-input.tsx, cookie-banner.tsx, update-notification.tsx, search/page.tsx, keyboard-shortcuts.tsx, error-boundary.tsx                                                                      |
+| `aria-modal="true"`     | 11    | dialog.tsx, settings/page.tsx ×2, onboarding-tour.tsx, cookie-banner.tsx, admin/page.tsx, chat-view.tsx ×2, notification-preferences-modal.tsx, keyboard-shortcuts.tsx                                                                                                                  |
+| `role="dialog"`         | 6     | dialog.tsx, onboarding-tour.tsx, cookie-banner.tsx, admin/page.tsx, keyboard-shortcuts.tsx                                                                                                                                                                                              |
+| `role="alertdialog"`    | 2     | settings/page.tsx (reset + delete confirmations)                                                                                                                                                                                                                                        |
+| `aria-busy="true"`      | 6     | loading.tsx ×5, thread-panel.tsx                                                                                                                                                                                                                                                        |
+| `role="tablist"`        | 1     | channel-info.tsx (with `role="tab"` + `aria-selected` on 3 tabs)                                                                                                                                                                                                                        |
+| `aria-activedescendant` | 1     | search-bar.tsx (with `aria-autocomplete="list"`)                                                                                                                                                                                                                                        |
+| `aria-pressed`          | 4+    | formatting-bar.tsx, search-bar.tsx (operator hints + filters)                                                                                                                                                                                                                           |
+| `aria-expanded`         | 4+    | search-bar.tsx, admin/page.tsx, channel-info.tsx                                                                                                                                                                                                                                        |
 
 ---
 
@@ -238,6 +238,7 @@ These items were noted as unresolved in the original July 16 audit and are now c
 **ALL 8 FINDINGS VERIFIED FIXED — 0 P1, 0 P2, 0 P3 remaining from the July 16 audit pipeline.**
 
 The frontend has been materially improved since the July 16 audit:
+
 - Admin mobile navigation now works via hamburger/drawer pattern
 - All formatting bar buttons meet WCAG 44px touch targets on mobile
 - Channel-info provides toast feedback on API failures
@@ -254,7 +255,7 @@ The frontend has been materially improved since the July 16 audit:
 
 ---
 
-*Report generated by principal UI/UX re-verification audit — July 24, 2026*
-*Source: `C:\temp\chat\docs\audits\compare\audit_ui_ux_8phase_20260716.md` (prior)*
-*Prompt pack: `C:\temp\chat\docs\prompts\ui_ux_audit_prompt_pack\`*
-*Evidence: All findings verified by reading actual source files, not relying on prior audit claims.*
+_Report generated by principal UI/UX re-verification audit — July 24, 2026_
+_Source: `C:\temp\chat\docs\audits\compare\audit_ui_ux_8phase_20260716.md` (prior)_
+_Prompt pack: `C:\temp\chat\docs\prompts\ui_ux_audit_prompt_pack\`_
+_Evidence: All findings verified by reading actual source files, not relying on prior audit claims._

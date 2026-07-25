@@ -62,7 +62,9 @@ export function KeyboardShortcuts() {
     return SHORTCUT_CATEGORIES.map((cat) => ({
       ...cat,
       shortcuts: cat.shortcuts.filter(
-        (s) => t(`keyboardShortcuts.${s.labelKey}`).toLowerCase().includes(q) || s.keys.toLowerCase().includes(q),
+        (s) =>
+          t(`keyboardShortcuts.${s.labelKey}`).toLowerCase().includes(q) ||
+          s.keys.toLowerCase().includes(q),
       ),
     })).filter((cat) => cat.shortcuts.length > 0);
   }, [search]);
@@ -205,7 +207,9 @@ export function KeyboardShortcuts() {
               <div className="space-y-1">
                 {cat.shortcuts.map((s) => (
                   <div key={s.keys} className="flex items-center justify-between">
-                    <span className="text-sm text-[var(--center-channel-color)]">{t(`keyboardShortcuts.${s.labelKey}`)}</span>
+                    <span className="text-sm text-[var(--center-channel-color)]">
+                      {t(`keyboardShortcuts.${s.labelKey}`)}
+                    </span>
                     <kbd
                       className="rounded-md border px-2 py-0.5 font-mono text-xs"
                       style={{
@@ -228,7 +232,10 @@ export function KeyboardShortcuts() {
               </span>
             )}
             {filteredCategories.length === 0 && (
-              <EmptyState description={t("keyboardShortcuts.noResults", { search })} className="!py-0" />
+              <EmptyState
+                description={t("keyboardShortcuts.noResults", { search })}
+                className="!py-0"
+              />
             )}
           </div>
         </div>

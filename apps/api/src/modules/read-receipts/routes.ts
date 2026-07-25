@@ -59,7 +59,9 @@ router.post(
       .eq("user_id", req.userId)
       .single();
     if (memErr || !member) {
-      res.status(403).json({ error: { code: "FORBIDDEN", message: "Not a member of this workspace" } });
+      res
+        .status(403)
+        .json({ error: { code: "FORBIDDEN", message: "Not a member of this workspace" } });
       return;
     }
     await markMessageRead(req.params.id as string, channelId, req.userId!, req.supabase!);
@@ -97,7 +99,9 @@ router.get(
       .eq("user_id", req.userId)
       .single();
     if (memErr || !member) {
-      res.status(403).json({ error: { code: "FORBIDDEN", message: "Not a member of this workspace" } });
+      res
+        .status(403)
+        .json({ error: { code: "FORBIDDEN", message: "Not a member of this workspace" } });
       return;
     }
     const readers = await getMessageReaders(req.params.id as string, req.supabase!);

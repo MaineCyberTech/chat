@@ -176,9 +176,7 @@ async function cleanupStaleUploads(
   if (!objects || objects.length === 0) return 0;
 
   const names: string[] = (objects as { name: string }[]).map((o) => o.name);
-  const { error: delError } = await supabase.storage
-    .from("chat-uploads")
-    .remove(names);
+  const { error: delError } = await supabase.storage.from("chat-uploads").remove(names);
 
   if (delError) {
     logger.error({ error: delError }, "Failed to delete stale uploads from storage");

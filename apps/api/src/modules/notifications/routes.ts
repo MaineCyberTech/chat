@@ -28,7 +28,13 @@ router.get(
       100,
     );
     const workspaceId = req.query.workspace_id as string | undefined;
-    const notifications = await notificationService.list(req.userId!, workspaceId, limit, offset, req.supabase!);
+    const notifications = await notificationService.list(
+      req.userId!,
+      workspaceId,
+      limit,
+      offset,
+      req.supabase!,
+    );
     res.json({ notifications, limit, offset });
   }),
 );

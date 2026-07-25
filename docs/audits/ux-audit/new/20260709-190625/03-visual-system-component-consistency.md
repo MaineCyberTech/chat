@@ -6,16 +6,16 @@
 
 ## 1. Visual Language Comparison
 
-| Aspect | Chat | Mattermost |
-|--------|------|-----------|
-| Typography | System font stack (SF Pro/Inter/Segoe UI) — fast, native | Metropolis + Open Sans — branded |
-| Spacing | Tailwind spacing scale + design tokens | SCSS variables |
-| Color system | Two-layer: MM-compatible CSS vars + design token Tailwind vars | Comprehensive CSS custom properties, dynamically themed |
-| Dark mode | `html.dark` with 60+ var overrides | User-theme-driven via `applyTheme()` |
-| Border radius | Token system (xs-xl) | Match |
-| Shadows | Elevation system (1-6) | Match |
-| Icons | lucide-react (consistent) | Compass Icons + Font Awesome (mixed) |
-| High-contrast | `@media (prefers-contrast: high)` with enhanced vars | Not available |
+| Aspect        | Chat                                                           | Mattermost                                              |
+| ------------- | -------------------------------------------------------------- | ------------------------------------------------------- |
+| Typography    | System font stack (SF Pro/Inter/Segoe UI) — fast, native       | Metropolis + Open Sans — branded                        |
+| Spacing       | Tailwind spacing scale + design tokens                         | SCSS variables                                          |
+| Color system  | Two-layer: MM-compatible CSS vars + design token Tailwind vars | Comprehensive CSS custom properties, dynamically themed |
+| Dark mode     | `html.dark` with 60+ var overrides                             | User-theme-driven via `applyTheme()`                    |
+| Border radius | Token system (xs-xl)                                           | Match                                                   |
+| Shadows       | Elevation system (1-6)                                         | Match                                                   |
+| Icons         | lucide-react (consistent)                                      | Compass Icons + Font Awesome (mixed)                    |
+| High-contrast | `@media (prefers-contrast: high)` with enhanced vars           | Not available                                           |
 
 ---
 
@@ -47,16 +47,18 @@
 ## 4. Inconsistencies Addressed vs Remaining
 
 ### Resolved (Phase 1-4)
-| Issue | Status |
-|-------|--------|
-| Modal backdrop pattern (14 files → `bg-black/50`) | ✓ Done |
-| Semantic opacity variables (264 replacements in 61 files) | ✓ Done |
-| Empty state standardization (20+ locations → EmptyState) | ✓ Done |
-| Button danger variant for delete/confirm | ✓ Done |
-| CSS variable deduplication | ✓ Done |
+
+| Issue                                                      | Status |
+| ---------------------------------------------------------- | ------ |
+| Modal backdrop pattern (14 files → `bg-black/50`)          | ✓ Done |
+| Semantic opacity variables (264 replacements in 61 files)  | ✓ Done |
+| Empty state standardization (20+ locations → EmptyState)   | ✓ Done |
+| Button danger variant for delete/confirm                   | ✓ Done |
+| CSS variable deduplication                                 | ✓ Done |
 | Focus ring standardization (CSS variables + high-contrast) | ✓ Done |
 
 ### Remaining (Minor)
+
 - Some `rgba(var(--center-channel-color-rgb), 0.64)` values still used (online count, member count) — no semantic variable for this exact value
 - `rgba(var(--center-channel-color-rgb), 0.08)` for border-light used inline in some places
 
@@ -75,10 +77,10 @@
 
 ## 6. High-Value Standardization Opportunities
 
-| Opportunity | Effort | Impact | Risk |
-|------------|--------|--------|------|
-| Replace remaining `rgba(..., 0.64)` with semantic var | 0.25 day | Low | Low |
-| Create shared ChannelHeaderMenu component | 0.5 day | Medium | Low |
+| Opportunity                                           | Effort   | Impact | Risk |
+| ----------------------------------------------------- | -------- | ------ | ---- |
+| Replace remaining `rgba(..., 0.64)` with semantic var | 0.25 day | Low    | Low  |
+| Create shared ChannelHeaderMenu component             | 0.5 day  | Medium | Low  |
 
 ---
 

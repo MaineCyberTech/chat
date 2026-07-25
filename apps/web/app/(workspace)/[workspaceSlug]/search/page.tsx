@@ -228,7 +228,10 @@ export default function SearchPage() {
           <>
             <div className="mt-3 flex flex-wrap gap-3">
               <div className="flex items-center gap-1.5">
-                <Calendar size={14} style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }} />
+                <Calendar
+                  size={14}
+                  style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
+                />
                 <input
                   type="date"
                   value={dateFrom}

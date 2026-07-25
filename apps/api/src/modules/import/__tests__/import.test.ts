@@ -3,7 +3,9 @@ import importRouter from "../routes.js";
 
 let insertErrors: boolean = false;
 
-const mockInsert = vi.fn(() => (insertErrors ? { error: { message: "duplicate key" } } : { error: null }));
+const mockInsert = vi.fn(() =>
+  insertErrors ? { error: { message: "duplicate key" } } : { error: null },
+);
 
 vi.mock("../../../lib/supabase.js", () => ({
   getSupabase: vi.fn(),

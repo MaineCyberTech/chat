@@ -416,7 +416,11 @@ export class ChannelService {
     return success;
   }
 
-  async removeMember(channelId: string, userId: string, supabase?: SupabaseClient): Promise<boolean> {
+  async removeMember(
+    channelId: string,
+    userId: string,
+    supabase?: SupabaseClient,
+  ): Promise<boolean> {
     const client = this.getClient(supabase);
     const { error } = await client
       .from("channel_members")

@@ -178,12 +178,21 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
   );
 }
 
-class TabErrorBoundary extends Component<{ children: React.ReactNode; tabName: string }, { hasError: boolean }> {
+class TabErrorBoundary extends Component<
+  { children: React.ReactNode; tabName: string },
+  { hasError: boolean }
+> {
   state = { hasError: false };
-  static getDerivedStateFromError() { return { hasError: true }; }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
   render() {
     if (this.state.hasError) {
-      return <p className="p-4 text-sm" style={{ color: "var(--error-text, var(--dnd-indicator))" }}>{t("admin.failedToLoadTab", { name: this.props.tabName })}</p>;
+      return (
+        <p className="p-4 text-sm" style={{ color: "var(--error-text, var(--dnd-indicator))" }}>
+          {t("admin.failedToLoadTab", { name: this.props.tabName })}
+        </p>
+      );
     }
     return this.props.children;
   }
@@ -315,9 +324,17 @@ export default function AdminPage() {
   async function handleUserRoleChange(userId: string, role: string) {
     try {
       await api.put(`/admin/users/${userId}/role`, { role });
-      addToast({ title: t("admin.roleChanged", "Role updated"), variant: "success", duration: 3000 });
+      addToast({
+        title: t("admin.roleChanged", "Role updated"),
+        variant: "success",
+        duration: 3000,
+      });
     } catch {
-      addToast({ title: t("common.error", "Error"), description: t("admin.roleChangeFailed", "Failed to update role"), variant: "error" });
+      addToast({
+        title: t("common.error", "Error"),
+        description: t("admin.roleChangeFailed", "Failed to update role"),
+        variant: "error",
+      });
     }
   }
 
@@ -409,7 +426,11 @@ export default function AdminPage() {
       items: [
         { id: "overview", label: t("admin.overview", "Overview"), icon: <Shield size={16} /> },
         { id: "security", label: t("admin.security", "Security"), icon: <Lock size={16} /> },
-        { id: "site-config", label: t("admin.siteConfig", "Site Configuration"), icon: <Settings size={16} /> },
+        {
+          id: "site-config",
+          label: t("admin.siteConfig", "Site Configuration"),
+          icon: <Settings size={16} />,
+        },
       ],
     },
     {
@@ -422,13 +443,19 @@ export default function AdminPage() {
     },
     {
       label: t("admin.integrations", "Integrations"),
-      items: [{ id: "integrations", label: t("admin.webhooks", "Webhooks"), icon: <Webhook size={16} /> }],
+      items: [
+        { id: "integrations", label: t("admin.webhooks", "Webhooks"), icon: <Webhook size={16} /> },
+      ],
     },
     {
       label: t("admin.compliance", "Compliance"),
       items: [
         { id: "audit-log", label: t("admin.auditLog", "Audit Log"), icon: <FileText size={16} /> },
-        { id: "import-export", label: t("admin.importExport", "Import / Export"), icon: <Download size={16} /> },
+        {
+          id: "import-export",
+          label: t("admin.importExport", "Import / Export"),
+          icon: <Download size={16} />,
+        },
       ],
     },
     {
@@ -620,7 +647,8 @@ export default function AdminPage() {
                   {u.display_name || u.email.split("@")[0]}
                 </div>
                 <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  {u.email} &middot; {t("admin.joined", "Joined")} {new Date(u.created_at).toLocaleDateString()}
+                  {u.email} &middot; {t("admin.joined", "Joined")}{" "}
+                  {new Date(u.created_at).toLocaleDateString()}
                 </div>
               </div>
               <select
@@ -675,7 +703,7 @@ export default function AdminPage() {
                 {new Date(ch.created_at).toLocaleDateString()}
               </div>
             </div>
-              {ch.is_private && (
+            {ch.is_private && (
               <span
                 className="rounded px-1.5 py-0.5 text-[10px] font-medium"
                 style={{
@@ -723,7 +751,8 @@ export default function AdminPage() {
                 {ws.name}
               </div>
               <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                /{ws.slug} &middot; {t("admin.membersCount", { count: String(ws.workspace_members?.[0]?.count ?? 0) })}
+                /{ws.slug} &middot;{" "}
+                {t("admin.membersCount", { count: String(ws.workspace_members?.[0]?.count ?? 0) })}
               </div>
             </div>
           </div>
@@ -736,7 +765,10 @@ export default function AdminPage() {
     return (
       <div className="space-y-1">
         {integrations.length === 0 && (
-          <EmptyState description={t("admin.noWebhooks", "No webhooks configured.")} className="!py-0" />
+          <EmptyState
+            description={t("admin.noWebhooks", "No webhooks configured.")}
+            className="!py-0"
+          />
         )}
         {integrations.map((i) => (
           <div
@@ -795,9 +827,21 @@ export default function AdminPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { label: t("admin.workspaces", "Workspaces"), path: "/admin/export/workspaces", icon: <Globe size={16} /> },
-              { label: t("admin.users", "Users"), path: "/admin/export/users", icon: <Users size={16} /> },
-              { label: t("admin.channels", "Channels"), path: "/admin/export/channels", icon: <Hash size={16} /> },
+              {
+                label: t("admin.workspaces", "Workspaces"),
+                path: "/admin/export/workspaces",
+                icon: <Globe size={16} />,
+              },
+              {
+                label: t("admin.users", "Users"),
+                path: "/admin/export/users",
+                icon: <Users size={16} />,
+              },
+              {
+                label: t("admin.channels", "Channels"),
+                path: "/admin/export/channels",
+                icon: <Hash size={16} />,
+              },
               {
                 label: t("admin.messages", "Messages"),
                 path: "/admin/export/messages",
@@ -832,7 +876,9 @@ export default function AdminPage() {
                   {item.icon}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium">{exporting === item.label ? t("admin.exporting", "Exporting...") : item.label}</div>
+                  <div className="text-sm font-medium">
+                    {exporting === item.label ? t("admin.exporting", "Exporting...") : item.label}
+                  </div>
                   <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                     {t("admin.downloadAs", { format: exportFormat.toUpperCase() })}
                   </div>
@@ -923,7 +969,9 @@ export default function AdminPage() {
                   className="rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
                   style={{ background: "var(--dnd-indicator)" }}
                 >
-                  {importing ? t("admin.importing", "Importing...") : t("admin.confirmImport", { type: importEndpoint })}
+                  {importing
+                    ? t("admin.importing", "Importing...")
+                    : t("admin.confirmImport", { type: importEndpoint })}
                 </button>
               )}
             </div>
@@ -1082,12 +1130,19 @@ export default function AdminPage() {
             {[
               {
                 label: t("admin.jwtAuth", "JWT Auth"),
-                value: security.sessionConfig.jwtEnabled ? t("admin.enabled", "Enabled") : t("admin.disabled", "Disabled"),
+                value: security.sessionConfig.jwtEnabled
+                  ? t("admin.enabled", "Enabled")
+                  : t("admin.disabled", "Disabled"),
               },
-              { label: t("admin.sessionDuration", "Session Duration"), value: security.sessionConfig.sessionDuration },
+              {
+                label: t("admin.sessionDuration", "Session Duration"),
+                value: security.sessionConfig.sessionDuration,
+              },
               {
                 label: t("admin.refreshTokenRotation", "Refresh Token Rotation"),
-                value: security.sessionConfig.refreshTokenRotation ? t("admin.enabled", "Enabled") : t("admin.disabled", "Disabled"),
+                value: security.sessionConfig.refreshTokenRotation
+                  ? t("admin.enabled", "Enabled")
+                  : t("admin.disabled", "Disabled"),
               },
             ].map((item) => (
               <div key={item.label}>
@@ -1213,7 +1268,10 @@ export default function AdminPage() {
             </div>
           ))}
           {auditLogs.length === 0 && (
-            <EmptyState description={t("admin.noAuditLogs", "No audit log entries found.")} className="!py-0" />
+            <EmptyState
+              description={t("admin.noAuditLogs", "No audit log entries found.")}
+              className="!py-0"
+            />
           )}
         </div>
         {auditTotal > 50 && (
@@ -1286,7 +1344,11 @@ export default function AdminPage() {
                         className="font-mono text-[10px]"
                         style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
                       >
-                        {t("admin.queued", { count: String(Object.values(check.queueCounts).reduce((a, b) => a + b, 0)) })}
+                        {t("admin.queued", {
+                          count: String(
+                            Object.values(check.queueCounts).reduce((a, b) => a + b, 0),
+                          ),
+                        })}
                       </span>
                     )}
                   </div>
@@ -1347,7 +1409,10 @@ export default function AdminPage() {
                   value: system.db_latency_ms ? `${system.db_latency_ms}ms` : "-",
                 },
                 { label: t("admin.uptime", "Uptime"), value: formatUptime(system.uptime_seconds) },
-                { label: t("admin.lastCheck", "Last Check"), value: new Date(system.timestamp).toLocaleString() },
+                {
+                  label: t("admin.lastCheck", "Last Check"),
+                  value: new Date(system.timestamp).toLocaleString(),
+                },
               ].map((item) => (
                 <div key={item.label}>
                   <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
@@ -1415,7 +1480,10 @@ export default function AdminPage() {
             {[
               { label: t("admin.frontendUrl", "Frontend URL"), value: siteConfig.frontendUrl },
               { label: t("admin.apiUrl", "API URL"), value: siteConfig.apiUrl },
-              { label: t("admin.supabaseProject", "Supabase Project"), value: siteConfig.supabaseProjectRef ?? t("common.na", "N/A") },
+              {
+                label: t("admin.supabaseProject", "Supabase Project"),
+                value: siteConfig.supabaseProjectRef ?? t("common.na", "N/A"),
+              },
             ].map((item) => (
               <div
                 key={item.label}
@@ -1445,7 +1513,10 @@ export default function AdminPage() {
               { label: t("admin.redis", "Redis"), configured: siteConfig.redisConfigured },
               { label: t("admin.smtp", "SMTP"), configured: siteConfig.smtpConfigured },
               { label: t("admin.sentry", "Sentry"), configured: siteConfig.sentryConfigured },
-              { label: t("admin.vapid", "VAPID (Web Push)"), configured: siteConfig.vapidConfigured },
+              {
+                label: t("admin.vapid", "VAPID (Web Push)"),
+                configured: siteConfig.vapidConfigured,
+              },
             ].map((item) => (
               <div
                 key={item.label}
@@ -1547,17 +1618,36 @@ export default function AdminPage() {
                   className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]"
                   style={{ color: "rgba(var(--center-channel-color-rgb), 0.4)" }}
                 >
-                  {log.path && <span>{t("admin.path", "Path:")} {log.path}</span>}
-                  {log.requestId && <span>{t("admin.req", "Req:")} {log.requestId.slice(0, 8)}...</span>}
-                  {log.code && <span>{t("admin.code", "Code:")} {log.code}</span>}
-                  {log.statusCode && <span>{t("admin.statusLabel", "Status:")} {log.statusCode}</span>}
+                  {log.path && (
+                    <span>
+                      {t("admin.path", "Path:")} {log.path}
+                    </span>
+                  )}
+                  {log.requestId && (
+                    <span>
+                      {t("admin.req", "Req:")} {log.requestId.slice(0, 8)}...
+                    </span>
+                  )}
+                  {log.code && (
+                    <span>
+                      {t("admin.code", "Code:")} {log.code}
+                    </span>
+                  )}
+                  {log.statusCode && (
+                    <span>
+                      {t("admin.statusLabel", "Status:")} {log.statusCode}
+                    </span>
+                  )}
                   <span>{new Date(log.timestamp).toLocaleString()}</span>
                 </div>
               </div>
             </div>
           ))}
           {logs.length === 0 && (
-            <EmptyState description={t("admin.noLogs", "No log entries captured yet.")} className="!py-0" />
+            <EmptyState
+              description={t("admin.noLogs", "No log entries captured yet.")}
+              className="!py-0"
+            />
           )}
         </div>
       </div>
@@ -1669,7 +1759,9 @@ export default function AdminPage() {
                 <div className="mb-4 flex items-center justify-between px-2">
                   <h2
                     className="text-sm font-bold"
-                    style={{ color: "var(--sidebar-header-text-color, var(--center-channel-color))" }}
+                    style={{
+                      color: "var(--sidebar-header-text-color, var(--center-channel-color))",
+                    }}
                   >
                     {t("admin.systemConsole", "System Console")}
                   </h2>
@@ -1701,7 +1793,8 @@ export default function AdminPage() {
                         }}
                         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors"
                         style={{
-                          background: tab === item.id ? "rgba(var(--button-bg-rgb), 0.16)" : "transparent",
+                          background:
+                            tab === item.id ? "rgba(var(--button-bg-rgb), 0.16)" : "transparent",
                           color:
                             tab === item.id
                               ? "var(--button-bg)"

@@ -189,11 +189,13 @@ export class WorkspaceService {
       .eq("workspace_id", workspaceId);
 
     if (!data) return [];
-    return (data as unknown as Array<{
-      user_id: string;
-      role: string;
-      users: { display_name: string | null; avatar_url: string | null; email: string | null };
-    }>).map((row) => {
+    return (
+      data as unknown as Array<{
+        user_id: string;
+        role: string;
+        users: { display_name: string | null; avatar_url: string | null; email: string | null };
+      }>
+    ).map((row) => {
       const user = row.users ?? { display_name: null, avatar_url: null, email: null };
       return {
         user_id: row.user_id,

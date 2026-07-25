@@ -11,13 +11,7 @@ import {
 } from "@chat/config/webhook-utils.js";
 
 export { validateWebhookUrl };
-import {
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
-  createHash,
-  randomUUID,
-} from "node:crypto";
+import { createCipheriv, createDecipheriv, randomBytes, createHash, randomUUID } from "node:crypto";
 
 const ENCRYPTION_ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;

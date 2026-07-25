@@ -14,10 +14,12 @@ export function HighlightText({ text, query, className = "" }: HighlightTextProp
     <span className={className}>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="rounded-sm bg-[var(--highlight-bg,rgba(255,255,0,0.3))]">{part}</mark>
+          <mark key={i} className="rounded-sm bg-[var(--highlight-bg,rgba(255,255,0,0.3))]">
+            {part}
+          </mark>
         ) : (
           <span key={i}>{part}</span>
-        )
+        ),
       )}
     </span>
   );

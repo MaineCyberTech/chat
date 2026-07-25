@@ -548,7 +548,7 @@ export function AppSidebar({
                     background: statusColor,
                     borderColor: "var(--sidebar-header-bg)",
                   }}
-                   aria-label={t(statusI18nKeys[userStatus.status] ?? "status.offline")}
+                  aria-label={t(statusI18nKeys[userStatus.status] ?? "status.offline")}
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -562,14 +562,17 @@ export function AppSidebar({
                       color: "var(--sidebar-header-text-color)",
                     }}
                   >
-                    <span className="truncate">{workspace?.name ?? workspaceSlug ?? t("sidebar.appName")}</span>
+                    <span className="truncate">
+                      {workspace?.name ?? workspaceSlug ?? t("sidebar.appName")}
+                    </span>
                     <ChevronDown size={10} className="shrink-0" />
                   </button>
                   <div
                     className="truncate text-xs"
                     style={{ color: "rgba(var(--sidebar-header-text-color-rgb), 0.8)" }}
                   >
-                    {userStatus.custom_status || t(statusI18nKeys[userStatus.status] ?? "status.offline")}
+                    {userStatus.custom_status ||
+                      t(statusI18nKeys[userStatus.status] ?? "status.offline")}
                   </div>
                   {showTeamMenu && (
                     <div
@@ -796,7 +799,7 @@ export function AppSidebar({
                           <button
                             onClick={() => moveCategoryUp(cat.id)}
                             className="mr-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
-                              aria-label={t("sidebar.moveUp", { name: cat.name })}
+                            aria-label={t("sidebar.moveUp", { name: cat.name })}
                             disabled={index === 0}
                           >
                             <ChevronUp size={8} style={{ color: "rgba(255,255,255,0.5)" }} />
@@ -804,7 +807,7 @@ export function AppSidebar({
                           <button
                             onClick={() => moveCategoryDown(cat.id)}
                             className="mr-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
-                             aria-label={t("sidebar.moveDown", { name: cat.name })}
+                            aria-label={t("sidebar.moveDown", { name: cat.name })}
                             title="Move down"
                             disabled={index === categories.length - 1}
                           >
@@ -847,7 +850,11 @@ export function AppSidebar({
                                     ? "rgba(255,255,255,0.15)"
                                     : "transparent",
                                 }}
-                aria-label={showUnreads ? t("sidebar.showAllChannels") : t("sidebar.showUnreadOnly")}
+                                aria-label={
+                                  showUnreads
+                                    ? t("sidebar.showAllChannels")
+                                    : t("sidebar.showUnreadOnly")
+                                }
                               >
                                 {showUnreads ? t("common.all") : t("sidebar.unreads")}
                               </button>

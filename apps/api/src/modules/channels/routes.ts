@@ -169,7 +169,12 @@ router.get(
       50,
       100,
     );
-    const members = await channelService.getMembers(req.params.id as string, req.supabase!, limit, offset);
+    const members = await channelService.getMembers(
+      req.params.id as string,
+      req.supabase!,
+      limit,
+      offset,
+    );
     res.json({ members });
   }),
 );
@@ -184,7 +189,11 @@ router.post(
       throw new BadRequestError(parsed.error.issues[0].message);
     }
 
-    const success = await channelService.addMember(req.params.id as string, parsed.data.user_id, req.supabase);
+    const success = await channelService.addMember(
+      req.params.id as string,
+      parsed.data.user_id,
+      req.supabase,
+    );
     if (!success) {
       throw new InternalServerError("Could not add member");
     }
@@ -266,7 +275,11 @@ router.patch(
     if (!Array.isArray(channelIds)) {
       throw new BadRequestError("channelIds array required");
     }
-    const ok = await channelService.reorderChannel(req.params.workspaceId as string, channelIds, req.supabase);
+    const ok = await channelService.reorderChannel(
+      req.params.workspaceId as string,
+      channelIds,
+      req.supabase,
+    );
     if (!ok) {
       throw new InternalServerError("Could not reorder channels");
     }
@@ -280,7 +293,10 @@ router.get(
   validateUuidParam("workspaceId"),
   requireWorkspaceMembership("workspaceId"),
   asyncHandler(async (req, res) => {
-    const ids = await channelService.listWorkspaceChannelIds(req.params.workspaceId as string, req.supabase);
+    const ids = await channelService.listWorkspaceChannelIds(
+      req.params.workspaceId as string,
+      req.supabase,
+    );
     res.json({ channelIds: ids });
   }),
 );

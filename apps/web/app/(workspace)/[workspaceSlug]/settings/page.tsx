@@ -3,7 +3,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
-import { Button, EmptyState, SidebarGroup, Skeleton, ToggleRow, useToast, useTheme } from "@chat/ui";
+import {
+  Button,
+  EmptyState,
+  SidebarGroup,
+  Skeleton,
+  ToggleRow,
+  useToast,
+  useTheme,
+} from "@chat/ui";
 import { t } from "@/lib/i18n";
 import { Bell, BellOff, AlertTriangle, X, Plus, Play } from "lucide-react";
 import { playNotificationSound } from "@/lib/notification-sound";
@@ -65,7 +73,11 @@ export default function SettingsPage() {
       setResetConfirmOpen(false);
       addToast({ title: t("settings.resetSuccess"), variant: "success", duration: 3000 });
     } catch {
-      addToast({ title: t("common.error"), description: t("settings.saveFailed"), variant: "error" });
+      addToast({
+        title: t("common.error"),
+        description: t("settings.saveFailed"),
+        variant: "error",
+      });
     } finally {
       setResetting(false);
     }
@@ -78,7 +90,11 @@ export default function SettingsPage() {
       addToast({ title: t("settings.accountDeleted"), variant: "success", duration: 3000 });
       setTimeout(() => (window.location.href = "/sign-in"), 1500);
     } catch {
-      addToast({ title: t("common.error"), description: t("settings.deleteFailed"), variant: "error" });
+      addToast({
+        title: t("common.error"),
+        description: t("settings.deleteFailed"),
+        variant: "error",
+      });
     } finally {
       setDeleting(false);
     }
@@ -190,7 +206,11 @@ export default function SettingsPage() {
       });
       addToast({ title: t("settings.autoResponderSaved"), variant: "success", duration: 2000 });
     } catch {
-      addToast({ title: t("common.error"), description: t("settings.autoResponderSaveFailed"), variant: "error" });
+      addToast({
+        title: t("common.error"),
+        description: t("settings.autoResponderSaveFailed"),
+        variant: "error",
+      });
     } finally {
       setAutoResponderSaving(false);
     }
@@ -361,185 +381,239 @@ export default function SettingsPage() {
 
   return (
     <div className="h-full overflow-y-auto px-4 py-2">
-    <div className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
-      <h1 className="text-2xl font-bold" style={{ color: "var(--center-channel-color)" }}>
-        {t("settings.title")}
-      </h1>
+      <div className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
+        <h1 className="text-2xl font-bold" style={{ color: "var(--center-channel-color)" }}>
+          {t("settings.title")}
+        </h1>
 
-      <SidebarGroup title={t("settings.appearance")} defaultOpen>
-        <div className="space-y-4">
-          <div>
-            <label
-              className="mb-2 block text-sm font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {t("settings.theme")}
-            </label>
-            <div className="flex gap-2">
-              {(["system", "light", "dark"] as ThemePreference[]).map((themeVal) => (
-                <Button
-                  key={themeVal}
-                  variant={theme === themeVal ? "primary" : "ghost"}
-                  size="sm"
-                  onClick={() => handleThemeChange(themeVal)}
-                  disabled={saving}
-                >
-                  {themeVal === "light" ? t("settings.themeLight") : themeVal === "dark" ? t("settings.themeDark") : t("settings.themeSystem")}
-                </Button>
-              ))}
+        <SidebarGroup title={t("settings.appearance")} defaultOpen>
+          <div className="space-y-4">
+            <div>
+              <label
+                className="mb-2 block text-sm font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {t("settings.theme")}
+              </label>
+              <div className="flex gap-2">
+                {(["system", "light", "dark"] as ThemePreference[]).map((themeVal) => (
+                  <Button
+                    key={themeVal}
+                    variant={theme === themeVal ? "primary" : "ghost"}
+                    size="sm"
+                    onClick={() => handleThemeChange(themeVal)}
+                    disabled={saving}
+                  >
+                    {themeVal === "light"
+                      ? t("settings.themeLight")
+                      : themeVal === "dark"
+                        ? t("settings.themeDark")
+                        : t("settings.themeSystem")}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label
+                className="mb-2 block text-sm font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {t("settings.clockFormat")}
+              </label>
+              <select
+                value={preferences?.clock_format ?? "12h"}
+                onChange={(e) => {
+                  const updated = {
+                    ...preferences,
+                    clock_format: e.target.value,
+                  } as UserPreferences;
+                  setPreferences(updated);
+                }}
+                className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+                style={{
+                  borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                  background: "var(--center-channel-bg)",
+                  color: "var(--center-channel-color)",
+                }}
+              >
+                <option value="12h">{t("settings.clock12h")}</option>
+                <option value="24h">{t("settings.clock24h")}</option>
+              </select>
+            </div>
+            <div>
+              <label
+                className="mb-2 block text-sm font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {t("settings.messageDisplay")}
+              </label>
+              <select
+                value={preferences?.message_display ?? "standard"}
+                onChange={(e) => {
+                  const updated = {
+                    ...preferences,
+                    message_display: e.target.value,
+                  } as UserPreferences;
+                  setPreferences(updated);
+                }}
+                className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+                style={{
+                  borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                  background: "var(--center-channel-bg)",
+                  color: "var(--center-channel-color)",
+                }}
+              >
+                <option value="standard">{t("settings.standard")}</option>
+                <option value="compact">{t("settings.compact")}</option>
+              </select>
+            </div>
+            <div>
+              <label
+                className="mb-2 block text-sm font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {t("settings.language")}
+              </label>
+              <select
+                value={locale}
+                onChange={(e) => {
+                  const newLocale = e.target.value;
+                  setLocale(newLocale);
+                  localStorage.setItem("chat-locale", newLocale);
+                  addToast({
+                    title: t("settings.languageChanged"),
+                    variant: "success",
+                    duration: 500,
+                  });
+                  setTimeout(() => window.location.reload(), 500);
+                }}
+                className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+                style={{
+                  borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                  background: "var(--center-channel-bg)",
+                  color: "var(--center-channel-color)",
+                }}
+              >
+                <option value="en">{t("settings.languageEn")} (en)</option>
+                <option value="es">{t("settings.languageEs")} (es)</option>
+                <option value="fr">{t("settings.languageFr")} (fr)</option>
+                <option value="de">{t("settings.languageDe")} (de)</option>
+                <option value="pt-BR">{t("settings.languagePtBr")} (pt-BR)</option>
+                <option value="ja">{t("settings.languageJa")} (ja)</option>
+              </select>
             </div>
           </div>
-          <div>
-            <label
-              className="mb-2 block text-sm font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {t("settings.clockFormat")}
-            </label>
-            <select
-              value={preferences?.clock_format ?? "12h"}
-              onChange={(e) => {
-                const updated = { ...preferences, clock_format: e.target.value } as UserPreferences;
+        </SidebarGroup>
+
+        <SidebarGroup title={t("settings.sidebar")} defaultOpen>
+          <div className="space-y-4">
+            <ToggleRow
+              label={t("settings.sidebarShowDisplayName")}
+              description={t("settings.sidebarShowDisplayNameDesc")}
+              checked={preferences?.sidebar_show_display_name ?? true}
+              onChange={(v) => {
+                const updated = { ...preferences, sidebar_show_display_name: v } as UserPreferences;
                 setPreferences(updated);
               }}
-              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
-              style={{
-                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                background: "var(--center-channel-bg)",
-                color: "var(--center-channel-color)",
-              }}
-            >
-              <option value="12h">{t("settings.clock12h")}</option>
-              <option value="24h">{t("settings.clock24h")}</option>
-            </select>
-          </div>
-          <div>
-            <label
-              className="mb-2 block text-sm font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {t("settings.messageDisplay")}
-            </label>
-            <select
-              value={preferences?.message_display ?? "standard"}
-              onChange={(e) => {
-                const updated = {
-                  ...preferences,
-                  message_display: e.target.value,
-                } as UserPreferences;
+              disabled={saving}
+            />
+            <ToggleRow
+              label={t("settings.sidebarSortAlphabetical")}
+              description={t("settings.sidebarSortAlphabeticalDesc")}
+              checked={preferences?.sidebar_sort_alphabetical ?? false}
+              onChange={(v) => {
+                const updated = { ...preferences, sidebar_sort_alphabetical: v } as UserPreferences;
                 setPreferences(updated);
               }}
-              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
-              style={{
-                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                background: "var(--center-channel-bg)",
-                color: "var(--center-channel-color)",
-              }}
-            >
-              <option value="standard">{t("settings.standard")}</option>
-              <option value="compact">{t("settings.compact")}</option>
-            </select>
+              disabled={saving}
+            />
           </div>
-          <div>
-            <label
-              className="mb-2 block text-sm font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {t("settings.language")}
-            </label>
-            <select
-              value={locale}
-              onChange={(e) => {
-                const newLocale = e.target.value;
-                setLocale(newLocale);
-                localStorage.setItem("chat-locale", newLocale);
-                addToast({ title: t("settings.languageChanged"), variant: "success", duration: 500 });
-                setTimeout(() => window.location.reload(), 500);
-              }}
-              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
-              style={{
-                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                background: "var(--center-channel-bg)",
-                color: "var(--center-channel-color)",
-              }}
-            >
-              <option value="en">{t("settings.languageEn")} (en)</option>
-              <option value="es">{t("settings.languageEs")} (es)</option>
-              <option value="fr">{t("settings.languageFr")} (fr)</option>
-              <option value="de">{t("settings.languageDe")} (de)</option>
-              <option value="pt-BR">{t("settings.languagePtBr")} (pt-BR)</option>
-              <option value="ja">{t("settings.languageJa")} (ja)</option>
-            </select>
-          </div>
-        </div>
-      </SidebarGroup>
+        </SidebarGroup>
 
-      <SidebarGroup title={t("settings.sidebar")} defaultOpen>
-        <div className="space-y-4">
-          <ToggleRow
-            label={t("settings.sidebarShowDisplayName")}
-            description={t("settings.sidebarShowDisplayNameDesc")}
-            checked={preferences?.sidebar_show_display_name ?? true}
-            onChange={(v) => {
-              const updated = { ...preferences, sidebar_show_display_name: v } as UserPreferences;
-              setPreferences(updated);
-            }}
-            disabled={saving}
-          />
-          <ToggleRow
-            label={t("settings.sidebarSortAlphabetical")}
-            description={t("settings.sidebarSortAlphabeticalDesc")}
-            checked={preferences?.sidebar_sort_alphabetical ?? false}
-            onChange={(v) => {
-              const updated = { ...preferences, sidebar_sort_alphabetical: v } as UserPreferences;
-              setPreferences(updated);
-            }}
-            disabled={saving}
-          />
-        </div>
-      </SidebarGroup>
-
-      <SidebarGroup title={t("settings.notifications")} defaultOpen>
-        <div className="space-y-4">
-          <ToggleRow
-            label={t("settings.desktopNotifications")}
-            description={t("settings.desktopNotificationsDesc")}
-            checked={notifPrefs.desktop_notifications ?? true}
-            onChange={(v) => handleNotificationChange("desktop_notifications", v)}
-            disabled={saving}
-          />
-          <ToggleRow
-            label={t("settings.messageNotifications")}
-            description={t("settings.messageNotificationsDesc")}
-            checked={notifPrefs.message_notifications ?? true}
-            onChange={(v) => handleNotificationChange("message_notifications", v)}
-            disabled={saving}
-          />
-          <ToggleRow
-            label={t("settings.mentionNotifications")}
-            description={t("settings.mentionNotificationsDesc")}
-            checked={notifPrefs.mention_notifications ?? true}
-            onChange={(v) => handleNotificationChange("mention_notifications", v)}
-            disabled={saving}
-          />
-          <ToggleRow
-            label={t("settings.mentionSound")}
-            description={t("settings.mentionSound")}
-            checked={notifPrefs.mention_notification_sound ?? true}
-            onChange={(v) => handleNotificationChange("mention_notification_sound", v)}
-            disabled={saving}
-          />
-          <div>
-            <label
-              className="mb-2 block text-sm font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {t("settings.notificationSound")}
-            </label>
-            <div className="flex gap-2">
+        <SidebarGroup title={t("settings.notifications")} defaultOpen>
+          <div className="space-y-4">
+            <ToggleRow
+              label={t("settings.desktopNotifications")}
+              description={t("settings.desktopNotificationsDesc")}
+              checked={notifPrefs.desktop_notifications ?? true}
+              onChange={(v) => handleNotificationChange("desktop_notifications", v)}
+              disabled={saving}
+            />
+            <ToggleRow
+              label={t("settings.messageNotifications")}
+              description={t("settings.messageNotificationsDesc")}
+              checked={notifPrefs.message_notifications ?? true}
+              onChange={(v) => handleNotificationChange("message_notifications", v)}
+              disabled={saving}
+            />
+            <ToggleRow
+              label={t("settings.mentionNotifications")}
+              description={t("settings.mentionNotificationsDesc")}
+              checked={notifPrefs.mention_notifications ?? true}
+              onChange={(v) => handleNotificationChange("mention_notifications", v)}
+              disabled={saving}
+            />
+            <ToggleRow
+              label={t("settings.mentionSound")}
+              description={t("settings.mentionSound")}
+              checked={notifPrefs.mention_notification_sound ?? true}
+              onChange={(v) => handleNotificationChange("mention_notification_sound", v)}
+              disabled={saving}
+            />
+            <div>
+              <label
+                className="mb-2 block text-sm font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {t("settings.notificationSound")}
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={notifPrefs.sound ?? "standard"}
+                  onChange={(e) => handleNotificationChange("sound", e.target.value)}
+                  disabled={saving}
+                  className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+                  style={{
+                    borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                    background: "var(--center-channel-bg)",
+                    color: "var(--center-channel-color)",
+                  }}
+                >
+                  <option value="none">{t("settings.soundNone")}</option>
+                  <option value="subtle">{t("settings.soundSubtle")}</option>
+                  <option value="standard">{t("settings.soundStandard")}</option>
+                  <option value="urgent">{t("settings.soundUrgent")}</option>
+                  <option value="chime">{t("settings.soundChime")}</option>
+                  <option value="bell">{t("settings.soundBell")}</option>
+                  <option value="ding">{t("settings.soundDing")}</option>
+                  <option value="pop">{t("settings.soundPop")}</option>
+                  <option value="tri-tone">{t("settings.soundTriTone")}</option>
+                </select>
+                <button
+                  onClick={() => playNotificationSound(notifPrefs.sound ?? "standard")}
+                  disabled={saving}
+                  className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                  style={{
+                    color: "var(--button-bg)",
+                    border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)",
+                  }}
+                  aria-label={t("settings.testSound")}
+                >
+                  <Play size={14} />
+                  {t("settings.testSound")}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                className="mb-2 block text-sm font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {t("settings.emailNotifications")}
+              </label>
               <select
-                value={notifPrefs.sound ?? "standard"}
-                onChange={(e) => handleNotificationChange("sound", e.target.value)}
+                value={notifPrefs.email_mode ?? "immediate"}
+                onChange={(e) => handleNotificationChange("email_mode", e.target.value)}
                 disabled={saving}
                 className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
                 style={{
@@ -548,399 +622,367 @@ export default function SettingsPage() {
                   color: "var(--center-channel-color)",
                 }}
               >
-                <option value="none">{t("settings.soundNone")}</option>
-                <option value="subtle">{t("settings.soundSubtle")}</option>
-                <option value="standard">{t("settings.soundStandard")}</option>
-                <option value="urgent">{t("settings.soundUrgent")}</option>
-                <option value="chime">{t("settings.soundChime")}</option>
-                <option value="bell">{t("settings.soundBell")}</option>
-                <option value="ding">{t("settings.soundDing")}</option>
-                <option value="pop">{t("settings.soundPop")}</option>
-                <option value="tri-tone">{t("settings.soundTriTone")}</option>
+                <option value="immediate">{t("settings.emailImmediate")}</option>
+                <option value="digest">{t("settings.emailDigest")}</option>
+                <option value="off">{t("settings.emailOff")}</option>
               </select>
-              <button
-                onClick={() => playNotificationSound(notifPrefs.sound ?? "standard")}
-                disabled={saving}
-                className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                style={{ color: "var(--button-bg)", border: "1px solid rgba(var(--center-channel-color-rgb), 0.16)" }}
-                aria-label={t("settings.testSound")}
-              >
-                <Play size={14} />
-                {t("settings.testSound")}
-              </button>
             </div>
-          </div>
-          <div>
-            <label
-              className="mb-2 block text-sm font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {t("settings.emailNotifications")}
-            </label>
-            <select
-              value={notifPrefs.email_mode ?? "immediate"}
-              onChange={(e) => handleNotificationChange("email_mode", e.target.value)}
-              disabled={saving}
-              className="rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
-              style={{
-                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                background: "var(--center-channel-bg)",
-                color: "var(--center-channel-color)",
-              }}
-            >
-              <option value="immediate">{t("settings.emailImmediate")}</option>
-              <option value="digest">{t("settings.emailDigest")}</option>
-              <option value="off">{t("settings.emailOff")}</option>
-            </select>
-          </div>
-          <div>
-            <label
-              className="mb-2 block text-sm font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {t("settings.triggerWords")}
-            </label>
-            <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
-              {t("settings.triggerWordsDesc")}
-            </p>
-            <div className="mb-3 flex gap-2">
-              <input
-                type="text"
-                value={newTriggerWord}
-                onChange={(e) => setNewTriggerWord(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") addTriggerWord();
-                }}
-                disabled={triggerSaving}
-                placeholder={t("settings.triggerWordPlaceholder")}
-                className="flex-1 rounded-lg border px-3 py-2 text-sm placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus-visible:outline-none"
-                style={{
-                  borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
-                  background: "var(--center-channel-bg)",
-                  color: "var(--center-channel-color)",
-                }}
-              />
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={addTriggerWord}
-                disabled={triggerSaving || !newTriggerWord.trim()}
+            <div>
+              <label
+                className="mb-2 block text-sm font-medium"
+                style={{ color: "var(--text-secondary)" }}
               >
-                <Plus size={14} className="mr-1" />
-                {t("settings.triggerWordAdd")}
-              </Button>
-            </div>
-            {triggerLoading ? (
-              <Skeleton className="h-8 w-full" />
-            ) : triggerWords.length === 0 ? (
-              <EmptyState description={t("settings.noTriggerWords")} className="!py-0" />
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {triggerWords.map((tw) => (
-                  <div
-                    key={tw.id}
-                    className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm"
-                    style={{
-                      background: "rgba(var(--button-bg-rgb), 0.1)",
-                      color: "var(--button-bg)",
-                    }}
-                  >
-                    {tw.word}
-                    <button
-                      onClick={() => deleteTriggerWord(tw.id)}
-                      className="ml-0.5 rounded-full p-0.5 hover:bg-[rgba(var(--button-bg-rgb),0.2)]"
-                      aria-label={t("common.remove") + " " + tw.word}
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </SidebarGroup>
-
-      <SidebarGroup title={t("settings.autoResponder")} defaultOpen={false}>
-        <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
-          {t("settings.autoResponderDesc")}
-        </p>
-        <div className="space-y-3">
-          <ToggleRow
-            label={t("settings.autoResponderEnabled")}
-            description={t("settings.autoResponderHint")}
-            checked={autoResponderEnabled}
-            onChange={setAutoResponderEnabled}
-            disabled={autoResponderSaving}
-          />
-          {autoResponderEnabled && (
-            <>
-              <div>
-                <label
-                  className="mb-1 block text-xs font-medium"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {t("settings.autoResponderMessageLabel")}
-                </label>
-                <textarea
-                  value={autoResponderMessage}
-                  onChange={(e) => setAutoResponderMessage(e.target.value)}
-                  disabled={autoResponderSaving}
-                  maxLength={500}
-                  rows={3}
-                  placeholder={t("settings.autoResponderPlaceholderMsg")}
-                  className="w-full rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+                {t("settings.triggerWords")}
+              </label>
+              <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
+                {t("settings.triggerWordsDesc")}
+              </p>
+              <div className="mb-3 flex gap-2">
+                <input
+                  type="text"
+                  value={newTriggerWord}
+                  onChange={(e) => setNewTriggerWord(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") addTriggerWord();
+                  }}
+                  disabled={triggerSaving}
+                  placeholder={t("settings.triggerWordPlaceholder")}
+                  className="flex-1 rounded-lg border px-3 py-2 text-sm placeholder:text-[rgba(var(--center-channel-color-rgb),0.56)] focus-visible:outline-none"
                   style={{
                     borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
                     background: "var(--center-channel-bg)",
                     color: "var(--center-channel-color)",
                   }}
                 />
-                <span
-                  className="text-xs"
-                  style={{
-                    color: autoResponderMessage.length > 400
-                      ? "var(--error-text)"
-                      : "var(--text-tertiary)",
-                  }}
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={addTriggerWord}
+                  disabled={triggerSaving || !newTriggerWord.trim()}
                 >
-                  {autoResponderMessage.length}/500
-                </span>
+                  <Plus size={14} className="mr-1" />
+                  {t("settings.triggerWordAdd")}
+                </Button>
               </div>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={saveAutoResponder}
-                disabled={autoResponderSaving}
-              >
-                {autoResponderSaving ? t("settings.saving") : t("settings.saveAutoResponder")}
-              </Button>
-            </>
-          )}
-        </div>
-      </SidebarGroup>
+              {triggerLoading ? (
+                <Skeleton className="h-8 w-full" />
+              ) : triggerWords.length === 0 ? (
+                <EmptyState description={t("settings.noTriggerWords")} className="!py-0" />
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {triggerWords.map((tw) => (
+                    <div
+                      key={tw.id}
+                      className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm"
+                      style={{
+                        background: "rgba(var(--button-bg-rgb), 0.1)",
+                        color: "var(--button-bg)",
+                      }}
+                    >
+                      {tw.word}
+                      <button
+                        onClick={() => deleteTriggerWord(tw.id)}
+                        className="ml-0.5 rounded-full p-0.5 hover:bg-[rgba(var(--button-bg-rgb),0.2)]"
+                        aria-label={t("common.remove") + " " + tw.word}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </SidebarGroup>
 
-      {saveStatus !== "idle" && (
-        <div
-          className={`rounded-lg p-3 text-sm ${
-            saveStatus === "success"
-              ? "bg-[rgba(var(--online-indicator-rgb,6,214,160),0.12)] text-[var(--online-indicator)]"
-              : "bg-[rgba(var(--dnd-indicator-rgb),0.12)] text-[var(--dnd-indicator)]"
-          }`}
-          role="alert"
-        >
-          {saveMessage}
-        </div>
-      )}
-
-      <SidebarGroup title={t("settings.perChannel")} defaultOpen={false}>
-        <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
-          {t("settings.perChannelDesc")}
-        </p>
-        <div className="space-y-1">
-          {channels.length === 0 && (
-            <EmptyState description={t("settings.noChannels")} className="!py-0" />
-          )}
-          {channels.map((ch) => {
-            const notify = channelPrefs.get(ch.id) ?? true;
-            return (
-              <div
-                key={ch.id}
-                className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-              >
-                <span className="text-sm" style={{ color: "var(--center-channel-color)" }}>
-                  # {ch.name}
-                </span>
-                <button
-                  onClick={() => toggleChannelNotif(ch.id, notify)}
-                  disabled={notifSaving === ch.id}
-                  className={`flex h-7 w-7 items-center justify-center rounded-md ${
-                    notify
-                      ? "hover:bg-[rgba(var(--button-bg-rgb),0.12)]"
-                      : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
-                  }`}
-                  style={{
-                    color: notify ? "var(--button-bg)" : "var(--text-tertiary)",
-                  }}
-                  aria-label={(notify ? t("channel.mute") + " " : t("channel.unmute") + " ") + ch.name}
+        <SidebarGroup title={t("settings.autoResponder")} defaultOpen={false}>
+          <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
+            {t("settings.autoResponderDesc")}
+          </p>
+          <div className="space-y-3">
+            <ToggleRow
+              label={t("settings.autoResponderEnabled")}
+              description={t("settings.autoResponderHint")}
+              checked={autoResponderEnabled}
+              onChange={setAutoResponderEnabled}
+              disabled={autoResponderSaving}
+            />
+            {autoResponderEnabled && (
+              <>
+                <div>
+                  <label
+                    className="mb-1 block text-xs font-medium"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {t("settings.autoResponderMessageLabel")}
+                  </label>
+                  <textarea
+                    value={autoResponderMessage}
+                    onChange={(e) => setAutoResponderMessage(e.target.value)}
+                    disabled={autoResponderSaving}
+                    maxLength={500}
+                    rows={3}
+                    placeholder={t("settings.autoResponderPlaceholderMsg")}
+                    className="w-full rounded-lg border px-3 py-2 text-sm focus-visible:outline-none"
+                    style={{
+                      borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                      background: "var(--center-channel-bg)",
+                      color: "var(--center-channel-color)",
+                    }}
+                  />
+                  <span
+                    className="text-xs"
+                    style={{
+                      color:
+                        autoResponderMessage.length > 400
+                          ? "var(--error-text)"
+                          : "var(--text-tertiary)",
+                    }}
+                  >
+                    {autoResponderMessage.length}/500
+                  </span>
+                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={saveAutoResponder}
+                  disabled={autoResponderSaving}
                 >
-                  {notify ? <Bell size={14} /> : <BellOff size={14} />}
+                  {autoResponderSaving ? t("settings.saving") : t("settings.saveAutoResponder")}
+                </Button>
+              </>
+            )}
+          </div>
+        </SidebarGroup>
+
+        {saveStatus !== "idle" && (
+          <div
+            className={`rounded-lg p-3 text-sm ${
+              saveStatus === "success"
+                ? "bg-[rgba(var(--online-indicator-rgb,6,214,160),0.12)] text-[var(--online-indicator)]"
+                : "bg-[rgba(var(--dnd-indicator-rgb),0.12)] text-[var(--dnd-indicator)]"
+            }`}
+            role="alert"
+          >
+            {saveMessage}
+          </div>
+        )}
+
+        <SidebarGroup title={t("settings.perChannel")} defaultOpen={false}>
+          <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
+            {t("settings.perChannelDesc")}
+          </p>
+          <div className="space-y-1">
+            {channels.length === 0 && (
+              <EmptyState description={t("settings.noChannels")} className="!py-0" />
+            )}
+            {channels.map((ch) => {
+              const notify = channelPrefs.get(ch.id) ?? true;
+              return (
+                <div
+                  key={ch.id}
+                  className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                >
+                  <span className="text-sm" style={{ color: "var(--center-channel-color)" }}>
+                    # {ch.name}
+                  </span>
+                  <button
+                    onClick={() => toggleChannelNotif(ch.id, notify)}
+                    disabled={notifSaving === ch.id}
+                    className={`flex h-7 w-7 items-center justify-center rounded-md ${
+                      notify
+                        ? "hover:bg-[rgba(var(--button-bg-rgb),0.12)]"
+                        : "hover:bg-[rgba(var(--center-channel-color-rgb),0.08)]"
+                    }`}
+                    style={{
+                      color: notify ? "var(--button-bg)" : "var(--text-tertiary)",
+                    }}
+                    aria-label={
+                      (notify ? t("channel.mute") + " " : t("channel.unmute") + " ") + ch.name
+                    }
+                  >
+                    {notify ? <Bell size={14} /> : <BellOff size={14} />}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </SidebarGroup>
+
+        <SidebarGroup title={t("settings.dangerZone")} defaultOpen={false}>
+          <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
+            {t("settings.dangerZoneDesc")}
+          </p>
+          <div className="space-y-3">
+            <div
+              className="rounded-lg border p-3"
+              style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
+            >
+              <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
+                {t("settings.resetPreferences")}
+              </p>
+              <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
+                {t("settings.resetPreferencesDesc")}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setResetConfirmOpen(true)}
+                className="mt-2"
+                style={{ color: "var(--dnd-indicator)" }}
+              >
+                {t("settings.resetPreferencesButton")}
+              </Button>
+            </div>
+            <div
+              className="rounded-lg border p-3"
+              style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
+            >
+              <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
+                {t("settings.exportData")}
+              </p>
+              <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
+                {t("settings.exportDataDesc")}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2"
+                style={{ color: "var(--dnd-indicator)" }}
+                onClick={async () => {
+                  try {
+                    const res = await api.get("/export/messages?format=json");
+                    const blob = new Blob([JSON.stringify(res, null, 2)], {
+                      type: "application/json",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "chat-export.json";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    addToast({ title: t("settings.exportComplete"), variant: "success" });
+                  } catch {
+                    addToast({ title: t("settings.exportFailed"), variant: "error" });
+                  }
+                }}
+              >
+                {t("settings.exportData")}
+              </Button>
+            </div>
+            <div
+              className="rounded-lg border p-3"
+              style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
+            >
+              <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
+                {t("settings.deleteAccount")}
+              </p>
+              <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
+                {t("settings.deleteAccountDesc")}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="mt-2"
+                style={{ color: "var(--dnd-indicator)" }}
+              >
+                {t("settings.deleteAccountButton")}
+              </Button>
+            </div>
+          </div>
+        </SidebarGroup>
+
+        {/* Reset preferences confirmation */}
+        {resetConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div
+              ref={resetDialogRef}
+              className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
+              role="alertdialog"
+              aria-modal="true"
+            >
+              <div
+                className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
+                style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}
+              >
+                <AlertTriangle size={20} style={{ color: "var(--dnd-indicator)" }} />
+              </div>
+              <h3
+                className="text-center text-sm font-semibold"
+                style={{ color: "var(--center-channel-color)" }}
+              >
+                {t("settings.resetConfirmTitle")}
+              </h3>
+              <p className="mt-2 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
+                {t("settings.resetConfirmDesc")}
+              </p>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  onClick={() => setResetConfirmOpen(false)}
+                  className="rounded-md px-3 py-1.5 text-xs font-medium"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {t("common.cancel")}
+                </button>
+                <button
+                  onClick={handleResetPreferences}
+                  disabled={resetting}
+                  className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
+                  style={{ background: "var(--dnd-indicator)" }}
+                >
+                  {resetting ? t("settings.resetting") : t("settings.reset")}
                 </button>
               </div>
-            );
-          })}
-        </div>
-      </SidebarGroup>
+            </div>
+          </div>
+        )}
 
-      <SidebarGroup title={t("settings.dangerZone")} defaultOpen={false}>
-        <p className="mb-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
-          {t("settings.dangerZoneDesc")}
-        </p>
-        <div className="space-y-3">
-          <div
-            className="rounded-lg border p-3"
-            style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
-          >
-            <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
-              {t("settings.resetPreferences")}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
-              {t("settings.resetPreferencesDesc")}
-            </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setResetConfirmOpen(true)}
-              className="mt-2"
-              style={{ color: "var(--dnd-indicator)" }}
-            >
-              {t("settings.resetPreferencesButton")}
-            </Button>
-          </div>
-          <div
-            className="rounded-lg border p-3"
-            style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
-          >
-            <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
-              {t("settings.exportData")}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
-              {t("settings.exportDataDesc")}
-            </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-2"
-              style={{ color: "var(--dnd-indicator)" }}
-              onClick={async () => {
-                try {
-                  const res = await api.get("/export/messages?format=json");
-                  const blob = new Blob([JSON.stringify(res, null, 2)], { type: "application/json" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a"); a.href = url; a.download = "chat-export.json"; a.click();
-                  URL.revokeObjectURL(url);
-                  addToast({ title: t("settings.exportComplete"), variant: "success" });
-                } catch {
-                  addToast({ title: t("settings.exportFailed"), variant: "error" });
-                }
-              }}
-            >
-              {t("settings.exportData")}
-            </Button>
-          </div>
-          <div
-            className="rounded-lg border p-3"
-            style={{ borderColor: "rgba(var(--dnd-indicator-rgb), 0.3)" }}
-          >
-            <p className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
-              {t("settings.deleteAccount")}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
-              {t("settings.deleteAccountDesc")}
-            </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDeleteConfirmOpen(true)}
-              className="mt-2"
-              style={{ color: "var(--dnd-indicator)" }}
-            >
-              {t("settings.deleteAccountButton")}
-            </Button>
-          </div>
-        </div>
-      </SidebarGroup>
-
-      {/* Reset preferences confirmation */}
-      {resetConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div
-            ref={resetDialogRef}
-            className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
-            role="alertdialog"
-            aria-modal="true"
-          >
+        {/* Delete account confirmation */}
+        {deleteConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div
-              className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
-              style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}
+              ref={deleteDialogRef}
+              className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
+              role="alertdialog"
+              aria-modal="true"
             >
-              <AlertTriangle size={20} style={{ color: "var(--dnd-indicator)" }} />
-            </div>
-            <h3
-              className="text-center text-sm font-semibold"
-              style={{ color: "var(--center-channel-color)" }}
-            >
-              {t("settings.resetConfirmTitle")}
-            </h3>
-            <p className="mt-2 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
-              {t("settings.resetConfirmDesc")}
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setResetConfirmOpen(false)}
-                className="rounded-md px-3 py-1.5 text-xs font-medium"
-                style={{ color: "var(--text-secondary)" }}
+              <div
+                className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
+                style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}
               >
-                {t("common.cancel")}
-              </button>
-              <button
-                onClick={handleResetPreferences}
-                disabled={resetting}
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
-                style={{ background: "var(--dnd-indicator)" }}
+                <AlertTriangle size={20} style={{ color: "var(--dnd-indicator)" }} />
+              </div>
+              <h3
+                className="text-center text-sm font-semibold"
+                style={{ color: "var(--center-channel-color)" }}
               >
-                {resetting ? t("settings.resetting") : t("settings.reset")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete account confirmation */}
-      {deleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div
-            ref={deleteDialogRef}
-            className="max-w-sm rounded-lg bg-[var(--center-channel-bg)] p-6 shadow-[var(--elevation-5)]"
-            role="alertdialog"
-            aria-modal="true"
-          >
-            <div
-              className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
-              style={{ background: "rgba(var(--dnd-indicator-rgb), 0.1)" }}
-            >
-              <AlertTriangle size={20} style={{ color: "var(--dnd-indicator)" }} />
-            </div>
-            <h3
-              className="text-center text-sm font-semibold"
-              style={{ color: "var(--center-channel-color)" }}
-            >
-              {t("settings.deleteConfirmTitle")}
-            </h3>
-            <p className="mt-2 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
-              {t("settings.deleteConfirmDesc")}
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setDeleteConfirmOpen(false)}
-                className="rounded-md px-3 py-1.5 text-xs font-medium"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deleting}
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
-                style={{ background: "var(--dnd-indicator)" }}
-              >
-                {deleting ? t("settings.deleting") : t("common.delete")}
-              </button>
+                {t("settings.deleteConfirmTitle")}
+              </h3>
+              <p className="mt-2 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
+                {t("settings.deleteConfirmDesc")}
+              </p>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  onClick={() => setDeleteConfirmOpen(false)}
+                  className="rounded-md px-3 py-1.5 text-xs font-medium"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {t("common.cancel")}
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
+                  style={{ background: "var(--dnd-indicator)" }}
+                >
+                  {deleting ? t("settings.deleting") : t("common.delete")}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
     </div>
   );
 }

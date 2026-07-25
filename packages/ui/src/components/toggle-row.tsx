@@ -14,7 +14,11 @@ export function ToggleRow({ label, description, checked, onChange, disabled, id 
   return (
     <div className="flex items-center justify-between gap-4 py-2">
       <div className="flex-1">
-        <label htmlFor={toggleId} className="text-sm font-medium" style={{ color: "var(--center-channel-color)" }}>
+        <label
+          htmlFor={toggleId}
+          className="text-sm font-medium"
+          style={{ color: "var(--center-channel-color)" }}
+        >
           {label}
         </label>
         {description && (
@@ -33,7 +37,9 @@ export function ToggleRow({ label, description, checked, onChange, disabled, id 
           disabled ? "cursor-not-allowed opacity-50" : ""
         }`}
         style={{
-          backgroundColor: checked ? "var(--button-bg)" : "rgba(var(--center-channel-color-rgb), 0.16)",
+          backgroundColor: checked
+            ? "var(--button-bg)"
+            : "rgba(var(--center-channel-color-rgb), 0.16)",
         }}
       >
         <span

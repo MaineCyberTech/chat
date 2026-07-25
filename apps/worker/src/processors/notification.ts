@@ -39,7 +39,10 @@ async function deliverInApp(
     .limit(1);
 
   if (existing && existing.length > 0) {
-    logger.debug({ userId: data.userId, type: data.type }, "Duplicate in-app notification suppressed");
+    logger.debug(
+      { userId: data.userId, type: data.type },
+      "Duplicate in-app notification suppressed",
+    );
     return true;
   }
 
@@ -128,10 +131,7 @@ async function withPerChannelRetry(
         await new Promise((r) => setTimeout(r, delay));
       }
     } catch (err) {
-      logger.warn(
-        { channel, attempt, error: String(err) },
-        "Channel delivery attempt failed",
-      );
+      logger.warn({ channel, attempt, error: String(err) }, "Channel delivery attempt failed");
       if (attempt < maxRetries) {
         const delay = Math.pow(2, attempt) * 500;
         await new Promise((r) => setTimeout(r, delay));
@@ -162,7 +162,10 @@ async function deliverEmail(
   if (!user?.email) return false;
 
   if (!EMAIL_REGEX.test(user.email)) {
-    logger.warn({ userId: data.userId, email: user.email }, "Invalid email address, skipping email notification");
+    logger.warn(
+      { userId: data.userId, email: user.email },
+      "Invalid email address, skipping email notification",
+    );
     return false;
   }
 
@@ -283,14 +286,10 @@ export function registerNotificationProcessor() {
         );
       }
       if (channels.includes("push")) {
-        results.push = await withPerChannelRetry("push", () =>
-          deliverPush(supabase, job.data),
-        );
+        results.push = await withPerChannelRetry("push", () => deliverPush(supabase, job.data));
       }
       if (channels.includes("email")) {
-        results.email = await withPerChannelRetry("email", () =>
-          deliverEmail(supabase, job.data),
-        );
+        results.email = await withPerChannelRetry("email", () => deliverEmail(supabase, job.data));
       }
 
       const allOk = Object.values(results).every((r) => r);

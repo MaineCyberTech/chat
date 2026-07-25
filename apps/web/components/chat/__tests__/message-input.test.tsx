@@ -49,9 +49,7 @@ vi.mock("../tiptap-editor", () => ({
       suppressContentEditableWarning: true,
       onInput: onUpdate
         ? (e: React.FormEvent<HTMLDivElement>) =>
-            (onUpdate as (html: string) => void)(
-              (e.target as HTMLDivElement).innerText,
-            )
+            (onUpdate as (html: string) => void)((e.target as HTMLDivElement).innerText)
         : undefined,
     }),
   ),

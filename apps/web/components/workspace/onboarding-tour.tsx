@@ -125,7 +125,10 @@ export function OnboardingTour() {
       const focusable = el.querySelectorAll<HTMLElement>("button, [tabindex]:not([tabindex='-1'])");
       if (focusable.length > 0) focusable[0]?.focus();
       const handler = (e: KeyboardEvent) => {
-        if (e.key === "Escape") { dismiss(); return; }
+        if (e.key === "Escape") {
+          dismiss();
+          return;
+        }
         if (e.key !== "Tab") return;
         e.preventDefault();
         const first = focusable[0];

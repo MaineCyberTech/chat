@@ -19,7 +19,10 @@ const mockAdminClient = mockChain({ error: null });
 
 vi.mock("../../../lib/supabase.js", () => ({
   getSupabase: vi.fn(),
-  getSupabaseAdmin: vi.fn(() => ({ from: vi.fn(() => mockAdminClient), insert: vi.fn(() => ({ error: null })) })),
+  getSupabaseAdmin: vi.fn(() => ({
+    from: vi.fn(() => mockAdminClient),
+    insert: vi.fn(() => ({ error: null })),
+  })),
 }));
 
 vi.mock("../push-subscription-service.js", () => ({

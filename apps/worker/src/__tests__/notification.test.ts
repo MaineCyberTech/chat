@@ -26,7 +26,9 @@ const { mockLogger, MockWorker, MockQueue, mockSupabaseClient } = vi.hoisted(() 
   const mockSupabaseClient = {
     from: vi.fn().mockReturnValue(chain),
     schema: vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue(chain) }),
-    storage: { from: vi.fn().mockReturnValue({ remove: vi.fn().mockResolvedValue({ error: null }) }) },
+    storage: {
+      from: vi.fn().mockReturnValue({ remove: vi.fn().mockResolvedValue({ error: null }) }),
+    },
     rpc: vi.fn().mockResolvedValue({}),
   };
 
@@ -82,8 +84,10 @@ describe("notification processor", () => {
   it("processes in_app notification job", async () => {
     const { registerNotificationProcessor } = await import("../processors/notification.js");
     registerNotificationProcessor();
-    const handler = (MockWorker.mock.calls[0] as unknown as [unknown, (job: unknown) => Promise<unknown>])?.[1];
-    const result = await (handler!)({
+    const handler = (
+      MockWorker.mock.calls[0] as unknown as [unknown, (job: unknown) => Promise<unknown>]
+    )?.[1];
+    const result = await handler!({
       data: {
         userId: "user-1",
         type: "mention",

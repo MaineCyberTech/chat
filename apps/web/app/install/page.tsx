@@ -92,7 +92,7 @@ export default function InstallPage() {
           >
             <p className="text-center text-xs" style={{ color: "var(--text-tertiary)" }}>
               <Link href="/" className="underline hover:text-[var(--center-channel-color)]">
-                {'\u2190'} Back to MaineCyberTech Chat
+                {"\u2190"} Back to MaineCyberTech Chat
               </Link>
             </p>
           </div>

@@ -21,73 +21,77 @@ All 24 items across 5 phases have been implemented and verified.
 ## 2. Completed Work Summary
 
 ### Phase 1 — Accessibility + Polish
-| # | Item | Effort | Risk | Status |
-|---|------|--------|------|--------|
-| 1 | `aria-live="polite"` on message list | 0.1 day | None | ✓ |
-| 2 | `role="alert"` on Toast | 0.1 day | None | ✓ |
-| 3 | Accessible labels on status pills | 0.2 day | None | ✓ |
-| 4 | Hardcoded `#fff` → `var(--button-color)` | 0.5 day | Very low | ✓ |
-| 5 | Button danger variant | 0.25 day | Very low | ✓ |
+
+| #   | Item                                     | Effort   | Risk     | Status |
+| --- | ---------------------------------------- | -------- | -------- | ------ |
+| 1   | `aria-live="polite"` on message list     | 0.1 day  | None     | ✓      |
+| 2   | `role="alert"` on Toast                  | 0.1 day  | None     | ✓      |
+| 3   | Accessible labels on status pills        | 0.2 day  | None     | ✓      |
+| 4   | Hardcoded `#fff` → `var(--button-color)` | 0.5 day  | Very low | ✓      |
+| 5   | Button danger variant                    | 0.25 day | Very low | ✓      |
 
 ### Phase 2 — Component Standardization
-| # | Item | Effort | Risk | Status |
-|---|------|--------|------|--------|
-| 1 | CSS variable consolidation | 2-3 days | Medium | ✓ |
-| 2 | Shared `<EmptyState>` component | 0.5 day | Very low | ✓ |
-| 3 | Shared `<StatusBadge>` component | 0.5 day | Very low | ✓ |
-| 4 | DeleteDialog → shared Dialog | 0.5 day | Low | ✓ |
-| 5 | Inline style standardization (14 files) | 1-2 days | Low | ✓ |
-| 6 | `<ScreenReaderOnly>` utility | 0.1 day | None | ✓ |
-| 7 | Toast for silent error paths | 1 day | Low | ✓ |
+
+| #   | Item                                    | Effort   | Risk     | Status |
+| --- | --------------------------------------- | -------- | -------- | ------ |
+| 1   | CSS variable consolidation              | 2-3 days | Medium   | ✓      |
+| 2   | Shared `<EmptyState>` component         | 0.5 day  | Very low | ✓      |
+| 3   | Shared `<StatusBadge>` component        | 0.5 day  | Very low | ✓      |
+| 4   | DeleteDialog → shared Dialog            | 0.5 day  | Low      | ✓      |
+| 5   | Inline style standardization (14 files) | 1-2 days | Low      | ✓      |
+| 6   | `<ScreenReaderOnly>` utility            | 0.1 day  | None     | ✓      |
+| 7   | Toast for silent error paths            | 1 day    | Low      | ✓      |
 
 ### Phase 3 — Layout/Workflow Refinement
-| # | Item | Effort | Risk | Status |
-|---|------|--------|------|--------|
-| 1 | Global announcement banner | 0.5 day | Low | ✓ |
-| 2 | Channel header action menu | 1 day | Medium | ✓ |
-| 3 | Tablet-optimized sidebar | 2 days | Medium | ✓ |
-| 4 | Channel intro for empty channels | 0.5 day | Low | ✓ |
-| 5 | Typing indicator in thread panel | 0.5 day | Low | ✓ |
+
+| #   | Item                             | Effort  | Risk   | Status |
+| --- | -------------------------------- | ------- | ------ | ------ |
+| 1   | Global announcement banner       | 0.5 day | Low    | ✓      |
+| 2   | Channel header action menu       | 1 day   | Medium | ✓      |
+| 3   | Tablet-optimized sidebar         | 2 days  | Medium | ✓      |
+| 4   | Channel intro for empty channels | 0.5 day | Low    | ✓      |
+| 5   | Typing indicator in thread panel | 0.5 day | Low    | ✓      |
 
 ### Phase 4 — Strategic UX Modernization
-| # | Item | Effort | Risk | Status |
-|---|------|--------|------|--------|
-| 1 | EmptyState adoption (20+ locations) | 0.5 day | Low | ✓ |
-| 2 | Opacity variable consolidation (264 replacements) | 0.5 day | Low | ✓ |
-| 3 | Focus ring standardization | 0.5 day | Medium | ✓ |
-| 4 | Post-delete undo toast | 0.5 day | Low | ✓ |
-| 5 | High-contrast mode | 0.5 day | Low | ✓ |
-| 6 | Channel inline topic editing | 1 day | Low | ✓ |
-| 7 | Drag-and-drop file upload overlay | 1 day | Low | ✓ |
+
+| #   | Item                                              | Effort  | Risk   | Status |
+| --- | ------------------------------------------------- | ------- | ------ | ------ |
+| 1   | EmptyState adoption (20+ locations)               | 0.5 day | Low    | ✓      |
+| 2   | Opacity variable consolidation (264 replacements) | 0.5 day | Low    | ✓      |
+| 3   | Focus ring standardization                        | 0.5 day | Medium | ✓      |
+| 4   | Post-delete undo toast                            | 0.5 day | Low    | ✓      |
+| 5   | High-contrast mode                                | 0.5 day | Low    | ✓      |
+| 6   | Channel inline topic editing                      | 1 day   | Low    | ✓      |
+| 7   | Drag-and-drop file upload overlay                 | 1 day   | Low    | ✓      |
 
 ---
 
 ## 3. Remaining Stretch Items (Not Gated)
 
-| Item | Effort | Impact | Risk |
-|------|--------|--------|------|
-| Global header with product switcher + search | 2 days | High | Medium |
-| Compose `/` command menu popup | 1 day | Medium | Low |
-| File upload progress indicator | 0.5 day | Medium | Low |
-| Thread participant read status | 1 day | Low | Medium |
-| Expand channel header menu (add members, leave) | 0.5 day | Medium | Low |
-| message-input.tsx decomposition | 3-5 days | High | High |
+| Item                                            | Effort   | Impact | Risk   |
+| ----------------------------------------------- | -------- | ------ | ------ |
+| Global header with product switcher + search    | 2 days   | High   | Medium |
+| Compose `/` command menu popup                  | 1 day    | Medium | Low    |
+| File upload progress indicator                  | 0.5 day  | Medium | Low    |
+| Thread participant read status                  | 1 day    | Low    | Medium |
+| Expand channel header menu (add members, leave) | 0.5 day  | Medium | Low    |
+| message-input.tsx decomposition                 | 3-5 days | High   | High   |
 
 ---
 
 ## 4. Accessibility and Responsiveness — All Priorities Met
 
-| Priority | Item | Phase | Status |
-|----------|------|-------|--------|
-| Critical | ARIA live region on message list | 1 | ✓ |
-| Critical | Toast screen reader announcements | 1 | ✓ |
-| High | Status indicator accessible labels | 1 | ✓ |
-| High | Silent catch block replacement | 2 | ✓ |
-| Medium | Dialog title consistency | 2 | ✓ |
-| Medium | Focus indicator audit | 4 | ✓ |
-| Low | Keyboard shortcut documentation | — | ✓ |
-| Medium | Tablet sidebar optimization | 3 | ✓ |
-| Low | High-contrast mode | 4 | ✓ |
+| Priority | Item                               | Phase | Status |
+| -------- | ---------------------------------- | ----- | ------ |
+| Critical | ARIA live region on message list   | 1     | ✓      |
+| Critical | Toast screen reader announcements  | 1     | ✓      |
+| High     | Status indicator accessible labels | 1     | ✓      |
+| High     | Silent catch block replacement     | 2     | ✓      |
+| Medium   | Dialog title consistency           | 2     | ✓      |
+| Medium   | Focus indicator audit              | 4     | ✓      |
+| Low      | Keyboard shortcut documentation    | —     | ✓      |
+| Medium   | Tablet sidebar optimization        | 3     | ✓      |
+| Low      | High-contrast mode                 | 4     | ✓      |
 
 ---
 

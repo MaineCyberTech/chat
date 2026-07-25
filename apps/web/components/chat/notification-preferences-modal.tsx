@@ -19,9 +19,21 @@ interface Props {
 }
 
 const OPTIONS: { value: "all" | "mentions" | "none"; label: () => string; desc: () => string }[] = [
-  { value: "all", label: () => t("notificationModal.allMessages"), desc: () => t("notificationModal.allMessagesDesc") },
-  { value: "mentions", label: () => t("notificationModal.mentionsOnly"), desc: () => t("notificationModal.mentionsOnlyDesc") },
-  { value: "none", label: () => t("notificationModal.nothing"), desc: () => t("notificationModal.nothingDesc") },
+  {
+    value: "all",
+    label: () => t("notificationModal.allMessages"),
+    desc: () => t("notificationModal.allMessagesDesc"),
+  },
+  {
+    value: "mentions",
+    label: () => t("notificationModal.mentionsOnly"),
+    desc: () => t("notificationModal.mentionsOnlyDesc"),
+  },
+  {
+    value: "none",
+    label: () => t("notificationModal.nothing"),
+    desc: () => t("notificationModal.nothingDesc"),
+  },
 ];
 
 export function NotificationPreferencesModal({
@@ -51,7 +63,8 @@ export function NotificationPreferencesModal({
     return () => prev?.focus();
   }, []);
 
-  const hasChanges = notify !== initialNotify || sound !== initialSound || notifyEveryone !== initialNotifyEveryone;
+  const hasChanges =
+    notify !== initialNotify || sound !== initialSound || notifyEveryone !== initialNotifyEveryone;
 
   const handleClose = useCallback(() => {
     if (hasChanges) {

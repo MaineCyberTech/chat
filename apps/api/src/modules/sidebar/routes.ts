@@ -3,7 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { authenticate as requireAuth } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, InternalServerError, ForbiddenError } from "../../lib/app-error.js";
+import {
+  BadRequestError,
+  NotFoundError,
+  InternalServerError,
+  ForbiddenError,
+} from "../../lib/app-error.js";
 import {
   createSidebarCategorySchema,
   updateSidebarCategorySchema,
@@ -133,7 +138,11 @@ router.patch(
     if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
 
     const supabase = req.supabase as SupabaseClient;
-    const workspaceId = await checkCategoryOwnership(supabase, req.params.id as string, req.userId!);
+    const workspaceId = await checkCategoryOwnership(
+      supabase,
+      req.params.id as string,
+      req.userId!,
+    );
     await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
 
     const updates: Record<string, unknown> = {};
@@ -160,7 +169,11 @@ router.delete(
   validateUuidParam("id"),
   asyncHandler(async (req: Request, res: Response) => {
     const supabase = req.supabase as SupabaseClient;
-    const workspaceId = await checkCategoryOwnership(supabase, req.params.id as string, req.userId!);
+    const workspaceId = await checkCategoryOwnership(
+      supabase,
+      req.params.id as string,
+      req.userId!,
+    );
     await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
 
     const { error } = await supabase
@@ -185,7 +198,11 @@ router.post(
 
     const { channel_id } = parsed.data;
     const supabase = req.supabase as SupabaseClient;
-    const workspaceId = await checkCategoryOwnership(supabase, req.params.id as string, req.userId!);
+    const workspaceId = await checkCategoryOwnership(
+      supabase,
+      req.params.id as string,
+      req.userId!,
+    );
     await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
 
     const { data: cat } = await supabase
@@ -225,7 +242,11 @@ router.delete(
   validateUuidParam("channelId"),
   asyncHandler(async (req: Request, res: Response) => {
     const supabase = req.supabase as SupabaseClient;
-    const workspaceId = await checkCategoryOwnership(supabase, req.params.id as string, req.userId!);
+    const workspaceId = await checkCategoryOwnership(
+      supabase,
+      req.params.id as string,
+      req.userId!,
+    );
     await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
 
     const { error } = await supabase
@@ -286,7 +307,11 @@ router.patch(
 
     const { channelIds } = parsed.data;
     const supabase = req.supabase as SupabaseClient;
-    const workspaceId = await checkCategoryOwnership(supabase, req.params.id as string, req.userId!);
+    const workspaceId = await checkCategoryOwnership(
+      supabase,
+      req.params.id as string,
+      req.userId!,
+    );
     await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
     const errs: string[] = [];
 

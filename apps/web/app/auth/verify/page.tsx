@@ -96,15 +96,24 @@ function VerifyContent() {
 
 export default function VerifyPage() {
   return (
-    <Suspense fallback={
-      <main className="flex min-h-screen items-center justify-center p-8">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2"
-            style={{ borderColor: "rgba(var(--center-channel-color-rgb), 0.16)", borderTopColor: "var(--button-bg)" }} />
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Loading...</p>
-        </div>
-      </main>
-    }>
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center p-8">
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="h-8 w-8 animate-spin rounded-full border-2"
+              style={{
+                borderColor: "rgba(var(--center-channel-color-rgb), 0.16)",
+                borderTopColor: "var(--button-bg)",
+              }}
+            />
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+              Loading...
+            </p>
+          </div>
+        </main>
+      }
+    >
       <VerifyContent />
     </Suspense>
   );

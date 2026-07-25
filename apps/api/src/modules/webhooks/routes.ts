@@ -11,7 +11,12 @@ import { webhookService } from "./service.js";
 import { validateWebhookUrl } from "./service.js";
 import { logAuditEvent } from "../../services/audit.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, InternalServerError, ForbiddenError } from "../../lib/app-error.js";
+import {
+  BadRequestError,
+  NotFoundError,
+  InternalServerError,
+  ForbiddenError,
+} from "../../lib/app-error.js";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parsePaginationParams } from "../../lib/pagination.js";

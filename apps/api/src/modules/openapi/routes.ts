@@ -48,18 +48,15 @@ function generateDynamicSpec(): Record<string, unknown> {
     for (const layer of routerStack) {
       if (!layer.route) continue;
       const route = layer.route as unknown as { path: string; methods: Record<string, boolean> };
-      const methods = Object.keys(route.methods).filter(
-        (m) => route.methods[m],
-      );
+      const methods = Object.keys(route.methods).filter((m) => route.methods[m]);
       for (const method of methods) {
         const fullPath = entry.path + route.path;
         if (!dynamicPaths[fullPath]) dynamicPaths[fullPath] = {};
         dynamicPaths[fullPath][method.toLowerCase()] = {
           summary: entry.description || "",
           tags: [entry.path],
-          parameters: route.path
-            .match(/:([a-zA-Z0-9_]+)/g)
-            ?.map((p: string) => ({
+          parameters:
+            route.path.match(/:([a-zA-Z0-9_]+)/g)?.map((p: string) => ({
               name: p.slice(1),
               in: "path",
               required: true,
@@ -71,7 +68,7 @@ function generateDynamicSpec(): Record<string, unknown> {
     }
   }
 
-  spec.paths = { ...(spec.paths as Record<string, unknown> ?? {}), ...dynamicPaths };
+  spec.paths = { ...((spec.paths as Record<string, unknown>) ?? {}), ...dynamicPaths };
 
   return spec;
 }

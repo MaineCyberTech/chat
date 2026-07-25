@@ -7,12 +7,12 @@
 
 ## Summary
 
-| Severity | Count | Description |
-|----------|-------|-------------|
-| **P0** | 3 | GDPR data leak, runtime crash, column name mismatch |
-| **P1** | 14 | FK inconsistencies, missing GDPR cleanup, regressed RLS |
-| **P2** | 22 | Missing indexes, stale policies, type gaps, missing rollbacks |
-| **P3** | 18 | Redundancy, naming ambiguity, cosmetic issues |
+| Severity | Count | Description                                                   |
+| -------- | ----- | ------------------------------------------------------------- |
+| **P0**   | 3     | GDPR data leak, runtime crash, column name mismatch           |
+| **P1**   | 14    | FK inconsistencies, missing GDPR cleanup, regressed RLS       |
+| **P2**   | 22    | Missing indexes, stale policies, type gaps, missing rollbacks |
+| **P3**   | 18    | Redundancy, naming ambiguity, cosmetic issues                 |
 
 **Overall**: 57 findings. Production-blocking: 3 (P0). Must-fix-before-GDPR-audit: 8 more (P1). Worth cleanup: 46 (P2+P3).
 
@@ -447,129 +447,129 @@ Already covered in P2-19 but also listed here for the type-gap category.
 
 ### FK Consistency Audit
 
-| Table | Column | References | ON DELETE | GDPR Cleaned? |
-|-------|--------|-----------|-----------|----------------|
-| `users` | `id` | `auth.users(id)` | CASCADE | Yes |
-| `workspaces` | `owner_id` | `public.users(id)` | CASCADE | Via cascade |
-| `workspace_members` | `workspace_id` | `public.workspaces(id)` | CASCADE | Yes |
-| `workspace_members` | `user_id` | `public.users(id)` | CASCADE | Yes |
-| `channels` | `workspace_id` | `public.workspaces(id)` | CASCADE | Via cascade |
-| `channels` | `created_by` | `public.users(id)` | **SET NULL** | Via SET NULL |
-| `channel_members` | `channel_id` | `public.channels(id)` | CASCADE | Yes |
-| `channel_members` | `user_id` | `public.users(id)` | CASCADE | Yes |
-| `messages` | `channel_id` | `public.channels(id)` | CASCADE | Via cascade |
-| `messages` | `user_id` | `public.users(id)` | CASCADE | Yes |
-| `messages` | `parent_id` | `public.messages(id)` | SET NULL | Via SET NULL |
-| `reactions` | `message_id` | `public.messages(id)` | CASCADE | Yes |
-| `reactions` | `user_id` | `public.users(id)` | CASCADE | Yes |
-| `notifications` | `user_id` | `auth.users(id)` | CASCADE | Yes |
-| `notifications` | `workspace_id` | `public.workspaces(id)` | CASCADE | Via cascade |
-| `push_subscriptions` | `user_id` | `public.users(id)` | CASCADE | Yes |
-| `user_preferences` | `user_id` | `public.users(id)` | CASCADE | Yes |
-| `audit_logs` | `organization_id` | `public.workspaces(id)` | SET NULL | Via SET NULL |
-| `audit_logs` | `actor_user_id` | `auth.users(id)` | SET NULL | Yes (explicit) |
-| `consent_logs` | `user_id` | `auth.users(id)` | CASCADE | Yes |
-| `webhook_endpoints` | `workspace_id` | `public.workspaces(id)` | CASCADE | Via cascade |
-| `webhook_endpoints` | `created_by` | `auth.users(id)` | **NONE** | **MISSING** |
-| `webhook_deliveries` | `webhook_id` | `webhook_endpoints(id)` | CASCADE | Via cascade |
-| `webhook_dead_letters` | `webhook_id` | `webhook_endpoints(id)` | CASCADE | Via cascade |
-| `feature_flags` | — | — | — | N/A (global) |
-| `notification_preferences` | `user_id` | `auth.users(id)` | CASCADE | **MISSING** |
-| `notification_preferences` | `workspace_id` | `public.workspaces(id)` | CASCADE | Via cascade |
-| `notification_preferences` | `channel_id` | `public.channels(id)` | CASCADE | Via cascade |
-| `thread_metadata` | `message_id` | `public.messages(id)` | CASCADE | Via cascade |
-| `thread_participants` | `thread_id` | `thread_metadata(id)` | CASCADE | **MISSING** |
-| `thread_participants` | `user_id` | `public.users(id)` | CASCADE | **MISSING** |
-| `dm_channels` | `channel_id` | `public.channels(id)` | CASCADE | Yes |
-| `dm_channels` | `user1_id` | `auth.users(id)` | CASCADE | Yes |
-| `dm_channels` | `user2_id` | `auth.users(id)` | CASCADE | Yes |
-| `dm_members` | `channel_id` | `public.channels(id)` | CASCADE | **MISSING** |
-| `dm_members` | `user_id` | `auth.users(id)` | CASCADE | **MISSING** |
-| `user_presence` | `user_id` | `auth.users(id)` | CASCADE | Yes |
-| `channel_bookmarks` | `channel_id` | `public.channels(id)` | CASCADE | Via cascade |
-| `channel_bookmarks` | `message_id` | `public.messages(id)` | SET NULL | Via SET NULL |
-| `channel_bookmarks` | `created_by` | `auth.users(id)` | CASCADE | Yes |
-| `sidebar_categories` | `user_id` | `auth.users(id)` | CASCADE | Yes |
-| `sidebar_categories` | `workspace_id` | `public.workspaces(id)` | CASCADE | Via cascade |
-| `sidebar_channel_assignments` | `category_id` | `sidebar_categories(id)` | CASCADE | Yes (via subquery) |
-| `sidebar_channel_assignments` | `channel_id` | `public.channels(id)` | CASCADE | Via cascade |
-| `channel_notification_prefs` | `user_id` | `auth.users(id)` | CASCADE | Yes |
-| `channel_notification_prefs` | `channel_id` | `public.channels(id)` | CASCADE | Via cascade |
-| `user_statuses` | `user_id` | `public.users(id)` | CASCADE | Yes |
-| `channel_role_overrides` | `channel_id` | `public.channels(id)` | CASCADE | **MISSING** |
-| `channel_role_overrides` | `user_id` | `public.users(id)` | CASCADE | **MISSING** |
-| `message_flags` | `user_id` | `auth.users(id)` | CASCADE | Yes |
-| `message_flags` | `message_id` | `public.messages(id)` | CASCADE | Via cascade |
-| `message_edit_history` | `message_id` | `public.messages(id)` | CASCADE | Via cascade |
-| `message_edit_history` | `edited_by` | `auth.users(id)` | CASCADE | Yes |
-| `message_reminders` | `user_id` | `auth.users(id)` | CASCADE | Yes |
-| `message_reminders` | `message_id` | `public.messages(id)` | CASCADE | Via cascade |
-| `custom_emoji` | `workspace_id` | `public.workspaces(id)` | CASCADE | **MISSING** |
-| `custom_emoji` | `created_by` | `auth.users(id)` | CASCADE | **MISSING** |
-| `user_groups` | `workspace_id` | `public.workspaces(id)` | CASCADE | **MISSING** |
-| `user_groups` | `created_by` | `auth.users(id)` | CASCADE | **MISSING** |
-| `user_group_members` | `group_id` | `user_groups(id)` | CASCADE | **MISSING** |
-| `user_group_members` | `user_id` | `public.users(id)` | CASCADE | **MISSING** |
-| `scheduled_posts` | `user_id` | `auth.users(id)` | CASCADE | Yes |
-| `scheduled_posts` | `channel_id` | `public.channels(id)` | CASCADE | Via cascade |
-| `channel_member_history` | `channel_id` | `public.channels(id)` | CASCADE | **MISSING** |
-| `channel_member_history` | `user_id` | `public.users(id)` | CASCADE | **MISSING** |
-| `auto_responders` | `user_id` | `auth.users(id)` | CASCADE | Yes |
-| `auto_responders` | `workspace_id` | `public.workspaces(id)` | CASCADE | Via cascade |
-| `message_reads` | `message_id` | `public.messages(id)` | CASCADE | **MISSING** |
-| `message_reads` | `user_id` | `public.users(id)` | CASCADE | **MISSING** |
-| `message_reads` | `channel_id` | `public.channels(id)` | CASCADE | **MISSING** |
-| `trigger_words` | `user_id` | `auth.users(id)` | CASCADE | Yes |
-| `compliance_exports` | `created_by` | `public.users(id)` | SET NULL | **MISSING** |
-| `compliance_exports` | `workspace_id` | `public.workspaces(id)` | SET NULL | Via SET NULL |
-| `announcements` | `workspace_id` | `public.workspaces(id)` | CASCADE | Via cascade |
-| `announcements` | `created_by` | — | **NONE (no FK!)** | **MISSING** |
+| Table                         | Column            | References               | ON DELETE         | GDPR Cleaned?      |
+| ----------------------------- | ----------------- | ------------------------ | ----------------- | ------------------ |
+| `users`                       | `id`              | `auth.users(id)`         | CASCADE           | Yes                |
+| `workspaces`                  | `owner_id`        | `public.users(id)`       | CASCADE           | Via cascade        |
+| `workspace_members`           | `workspace_id`    | `public.workspaces(id)`  | CASCADE           | Yes                |
+| `workspace_members`           | `user_id`         | `public.users(id)`       | CASCADE           | Yes                |
+| `channels`                    | `workspace_id`    | `public.workspaces(id)`  | CASCADE           | Via cascade        |
+| `channels`                    | `created_by`      | `public.users(id)`       | **SET NULL**      | Via SET NULL       |
+| `channel_members`             | `channel_id`      | `public.channels(id)`    | CASCADE           | Yes                |
+| `channel_members`             | `user_id`         | `public.users(id)`       | CASCADE           | Yes                |
+| `messages`                    | `channel_id`      | `public.channels(id)`    | CASCADE           | Via cascade        |
+| `messages`                    | `user_id`         | `public.users(id)`       | CASCADE           | Yes                |
+| `messages`                    | `parent_id`       | `public.messages(id)`    | SET NULL          | Via SET NULL       |
+| `reactions`                   | `message_id`      | `public.messages(id)`    | CASCADE           | Yes                |
+| `reactions`                   | `user_id`         | `public.users(id)`       | CASCADE           | Yes                |
+| `notifications`               | `user_id`         | `auth.users(id)`         | CASCADE           | Yes                |
+| `notifications`               | `workspace_id`    | `public.workspaces(id)`  | CASCADE           | Via cascade        |
+| `push_subscriptions`          | `user_id`         | `public.users(id)`       | CASCADE           | Yes                |
+| `user_preferences`            | `user_id`         | `public.users(id)`       | CASCADE           | Yes                |
+| `audit_logs`                  | `organization_id` | `public.workspaces(id)`  | SET NULL          | Via SET NULL       |
+| `audit_logs`                  | `actor_user_id`   | `auth.users(id)`         | SET NULL          | Yes (explicit)     |
+| `consent_logs`                | `user_id`         | `auth.users(id)`         | CASCADE           | Yes                |
+| `webhook_endpoints`           | `workspace_id`    | `public.workspaces(id)`  | CASCADE           | Via cascade        |
+| `webhook_endpoints`           | `created_by`      | `auth.users(id)`         | **NONE**          | **MISSING**        |
+| `webhook_deliveries`          | `webhook_id`      | `webhook_endpoints(id)`  | CASCADE           | Via cascade        |
+| `webhook_dead_letters`        | `webhook_id`      | `webhook_endpoints(id)`  | CASCADE           | Via cascade        |
+| `feature_flags`               | —                 | —                        | —                 | N/A (global)       |
+| `notification_preferences`    | `user_id`         | `auth.users(id)`         | CASCADE           | **MISSING**        |
+| `notification_preferences`    | `workspace_id`    | `public.workspaces(id)`  | CASCADE           | Via cascade        |
+| `notification_preferences`    | `channel_id`      | `public.channels(id)`    | CASCADE           | Via cascade        |
+| `thread_metadata`             | `message_id`      | `public.messages(id)`    | CASCADE           | Via cascade        |
+| `thread_participants`         | `thread_id`       | `thread_metadata(id)`    | CASCADE           | **MISSING**        |
+| `thread_participants`         | `user_id`         | `public.users(id)`       | CASCADE           | **MISSING**        |
+| `dm_channels`                 | `channel_id`      | `public.channels(id)`    | CASCADE           | Yes                |
+| `dm_channels`                 | `user1_id`        | `auth.users(id)`         | CASCADE           | Yes                |
+| `dm_channels`                 | `user2_id`        | `auth.users(id)`         | CASCADE           | Yes                |
+| `dm_members`                  | `channel_id`      | `public.channels(id)`    | CASCADE           | **MISSING**        |
+| `dm_members`                  | `user_id`         | `auth.users(id)`         | CASCADE           | **MISSING**        |
+| `user_presence`               | `user_id`         | `auth.users(id)`         | CASCADE           | Yes                |
+| `channel_bookmarks`           | `channel_id`      | `public.channels(id)`    | CASCADE           | Via cascade        |
+| `channel_bookmarks`           | `message_id`      | `public.messages(id)`    | SET NULL          | Via SET NULL       |
+| `channel_bookmarks`           | `created_by`      | `auth.users(id)`         | CASCADE           | Yes                |
+| `sidebar_categories`          | `user_id`         | `auth.users(id)`         | CASCADE           | Yes                |
+| `sidebar_categories`          | `workspace_id`    | `public.workspaces(id)`  | CASCADE           | Via cascade        |
+| `sidebar_channel_assignments` | `category_id`     | `sidebar_categories(id)` | CASCADE           | Yes (via subquery) |
+| `sidebar_channel_assignments` | `channel_id`      | `public.channels(id)`    | CASCADE           | Via cascade        |
+| `channel_notification_prefs`  | `user_id`         | `auth.users(id)`         | CASCADE           | Yes                |
+| `channel_notification_prefs`  | `channel_id`      | `public.channels(id)`    | CASCADE           | Via cascade        |
+| `user_statuses`               | `user_id`         | `public.users(id)`       | CASCADE           | Yes                |
+| `channel_role_overrides`      | `channel_id`      | `public.channels(id)`    | CASCADE           | **MISSING**        |
+| `channel_role_overrides`      | `user_id`         | `public.users(id)`       | CASCADE           | **MISSING**        |
+| `message_flags`               | `user_id`         | `auth.users(id)`         | CASCADE           | Yes                |
+| `message_flags`               | `message_id`      | `public.messages(id)`    | CASCADE           | Via cascade        |
+| `message_edit_history`        | `message_id`      | `public.messages(id)`    | CASCADE           | Via cascade        |
+| `message_edit_history`        | `edited_by`       | `auth.users(id)`         | CASCADE           | Yes                |
+| `message_reminders`           | `user_id`         | `auth.users(id)`         | CASCADE           | Yes                |
+| `message_reminders`           | `message_id`      | `public.messages(id)`    | CASCADE           | Via cascade        |
+| `custom_emoji`                | `workspace_id`    | `public.workspaces(id)`  | CASCADE           | **MISSING**        |
+| `custom_emoji`                | `created_by`      | `auth.users(id)`         | CASCADE           | **MISSING**        |
+| `user_groups`                 | `workspace_id`    | `public.workspaces(id)`  | CASCADE           | **MISSING**        |
+| `user_groups`                 | `created_by`      | `auth.users(id)`         | CASCADE           | **MISSING**        |
+| `user_group_members`          | `group_id`        | `user_groups(id)`        | CASCADE           | **MISSING**        |
+| `user_group_members`          | `user_id`         | `public.users(id)`       | CASCADE           | **MISSING**        |
+| `scheduled_posts`             | `user_id`         | `auth.users(id)`         | CASCADE           | Yes                |
+| `scheduled_posts`             | `channel_id`      | `public.channels(id)`    | CASCADE           | Via cascade        |
+| `channel_member_history`      | `channel_id`      | `public.channels(id)`    | CASCADE           | **MISSING**        |
+| `channel_member_history`      | `user_id`         | `public.users(id)`       | CASCADE           | **MISSING**        |
+| `auto_responders`             | `user_id`         | `auth.users(id)`         | CASCADE           | Yes                |
+| `auto_responders`             | `workspace_id`    | `public.workspaces(id)`  | CASCADE           | Via cascade        |
+| `message_reads`               | `message_id`      | `public.messages(id)`    | CASCADE           | **MISSING**        |
+| `message_reads`               | `user_id`         | `public.users(id)`       | CASCADE           | **MISSING**        |
+| `message_reads`               | `channel_id`      | `public.channels(id)`    | CASCADE           | **MISSING**        |
+| `trigger_words`               | `user_id`         | `auth.users(id)`         | CASCADE           | Yes                |
+| `compliance_exports`          | `created_by`      | `public.users(id)`       | SET NULL          | **MISSING**        |
+| `compliance_exports`          | `workspace_id`    | `public.workspaces(id)`  | SET NULL          | Via SET NULL       |
+| `announcements`               | `workspace_id`    | `public.workspaces(id)`  | CASCADE           | Via cascade        |
+| `announcements`               | `created_by`      | —                        | **NONE (no FK!)** | **MISSING**        |
 
 ### Index Coverage Audit
 
-| Query Pattern | Index Present | Notes |
-|--------------|--------------|-------|
-| Channel messages (channel_id, created_at DESC) | YES — `idx_messages_channel_created` | Good |
-| Unread notifications (user_id, read, created_at) | YES — `idx_notifications_user_unread` | Good |
-| Workspace members (user_id) | YES — `idx_workspace_members_user_id` | Good |
-| Channel members (user_id) | YES — `idx_channel_members_user_id` | Good |
-| Thread replies (parent_id) | YES — `idx_messages_parent_id` (partial) | Good |
-| Reactions per message (message_id) | YES — `idx_reactions_message_id` | Good |
-| Reactions per user (user_id) | YES — `idx_reactions_user_id` | Good |
-| DM channels per user (user_id) | YES — `idx_dm_members_user_id` | Good |
-| Message flags per user (user_id) | YES — `idx_message_flags_user` | Good |
-| Edit history per message (message_id) | YES — `idx_message_edit_history_message` | Good |
-| User autocomplete (display_name ILIKE) | YES — `idx_users_display_name_trgm` (GIN) | Good |
-| Pinned messages per channel (channel_id, is_pinned) | YES — `idx_messages_channel_pinned` (partial) | Good |
-| Scheduled posts due (scheduled_at) | YES — `idx_scheduled_posts_due` (partial) | Good |
-| Message reminders due (remind_at) | YES — `idx_message_reminders_due` (partial) | Good |
-| Workspace by slug | YES — `idx_workspaces_slug` | Good |
-| Channel by workspace+slug | YES — `idx_channels_workspace_slug` | Good |
-| Thread participants by thread (thread_id) | **MISSING** | P2-08 |
-| Thread participants by user (user_id) | YES — `idx_thread_participants_user` | Good |
-| Message reads per message (message_id) | YES — `idx_message_reads_message` | Good |
-| Message reads per user+channel | YES — `idx_message_reads_user` | Good |
-| Channel member history (channel_id, created_at) | YES — `idx_channel_member_history_channel` | Good |
-| Message searches (content FTS) | YES — `idx_messages_content_fts` (GIN) | Good |
-| Webhook deliveries due (status, next_retry_at) | YES — `idx_webhook_deliveries_status_retry` (partial) | Good |
+| Query Pattern                                       | Index Present                                         | Notes |
+| --------------------------------------------------- | ----------------------------------------------------- | ----- |
+| Channel messages (channel_id, created_at DESC)      | YES — `idx_messages_channel_created`                  | Good  |
+| Unread notifications (user_id, read, created_at)    | YES — `idx_notifications_user_unread`                 | Good  |
+| Workspace members (user_id)                         | YES — `idx_workspace_members_user_id`                 | Good  |
+| Channel members (user_id)                           | YES — `idx_channel_members_user_id`                   | Good  |
+| Thread replies (parent_id)                          | YES — `idx_messages_parent_id` (partial)              | Good  |
+| Reactions per message (message_id)                  | YES — `idx_reactions_message_id`                      | Good  |
+| Reactions per user (user_id)                        | YES — `idx_reactions_user_id`                         | Good  |
+| DM channels per user (user_id)                      | YES — `idx_dm_members_user_id`                        | Good  |
+| Message flags per user (user_id)                    | YES — `idx_message_flags_user`                        | Good  |
+| Edit history per message (message_id)               | YES — `idx_message_edit_history_message`              | Good  |
+| User autocomplete (display_name ILIKE)              | YES — `idx_users_display_name_trgm` (GIN)             | Good  |
+| Pinned messages per channel (channel_id, is_pinned) | YES — `idx_messages_channel_pinned` (partial)         | Good  |
+| Scheduled posts due (scheduled_at)                  | YES — `idx_scheduled_posts_due` (partial)             | Good  |
+| Message reminders due (remind_at)                   | YES — `idx_message_reminders_due` (partial)           | Good  |
+| Workspace by slug                                   | YES — `idx_workspaces_slug`                           | Good  |
+| Channel by workspace+slug                           | YES — `idx_channels_workspace_slug`                   | Good  |
+| Thread participants by thread (thread_id)           | **MISSING**                                           | P2-08 |
+| Thread participants by user (user_id)               | YES — `idx_thread_participants_user`                  | Good  |
+| Message reads per message (message_id)              | YES — `idx_message_reads_message`                     | Good  |
+| Message reads per user+channel                      | YES — `idx_message_reads_user`                        | Good  |
+| Channel member history (channel_id, created_at)     | YES — `idx_channel_member_history_channel`            | Good  |
+| Message searches (content FTS)                      | YES — `idx_messages_content_fts` (GIN)                | Good  |
+| Webhook deliveries due (status, next_retry_at)      | YES — `idx_webhook_deliveries_status_retry` (partial) | Good  |
 
 ### Trigger Inventory
 
-| Trigger Name | Table | Event | Function | SECURITY | Notes |
-|-------------|-------|-------|----------|----------|-------|
-| `users_updated_at` | `users` | BEFORE UPDATE | `set_updated_at` | INVOKER | Fine |
-| `workspaces_updated_at` | `workspaces` | BEFORE UPDATE | `set_updated_at` | INVOKER | Fine |
-| `channels_updated_at` | `channels` | BEFORE UPDATE | `set_updated_at` | INVOKER | Fine |
-| `on_workspace_created` | `workspaces` | AFTER INSERT | `handle_new_workspace` | DEFINER | Auto-adds owner as member |
-| `on_channel_created` | `channels` | AFTER INSERT | `handle_new_channel` | DEFINER | Auto-adds creator as member |
-| `on_auth_user_created` | `auth.users` | AFTER INSERT | `handle_new_user` | DEFINER | Creates profile + prefs |
-| `on_auth_user_deleted` | `auth.users` | BEFORE DELETE | `handle_user_deletion` | DEFINER | Cleanup cascade |
-| `on_message_reply` | `messages` | AFTER INSERT | `handle_thread_reply` | DEFINER | Creates thread metadata |
-| `check_read_only_on_insert` | `messages` | BEFORE INSERT | `prevent_read_only_message` | DEFINER | Read-only check |
-| `messages_version` | `messages` | BEFORE UPDATE | `increment_version` | INVOKER | Optimistic locking |
-| `channels_version` | `channels` | BEFORE UPDATE | `increment_version` | INVOKER | Optimistic locking |
-| `on_channel_member_joined` | `channel_members` | AFTER INSERT | `log_channel_member_join` | DEFINER | Member history logging |
-| `feature_flags_updated_at` | `feature_flags` | BEFORE UPDATE | `set_updated_at` | INVOKER | Fine |
+| Trigger Name                | Table             | Event         | Function                    | SECURITY | Notes                       |
+| --------------------------- | ----------------- | ------------- | --------------------------- | -------- | --------------------------- |
+| `users_updated_at`          | `users`           | BEFORE UPDATE | `set_updated_at`            | INVOKER  | Fine                        |
+| `workspaces_updated_at`     | `workspaces`      | BEFORE UPDATE | `set_updated_at`            | INVOKER  | Fine                        |
+| `channels_updated_at`       | `channels`        | BEFORE UPDATE | `set_updated_at`            | INVOKER  | Fine                        |
+| `on_workspace_created`      | `workspaces`      | AFTER INSERT  | `handle_new_workspace`      | DEFINER  | Auto-adds owner as member   |
+| `on_channel_created`        | `channels`        | AFTER INSERT  | `handle_new_channel`        | DEFINER  | Auto-adds creator as member |
+| `on_auth_user_created`      | `auth.users`      | AFTER INSERT  | `handle_new_user`           | DEFINER  | Creates profile + prefs     |
+| `on_auth_user_deleted`      | `auth.users`      | BEFORE DELETE | `handle_user_deletion`      | DEFINER  | Cleanup cascade             |
+| `on_message_reply`          | `messages`        | AFTER INSERT  | `handle_thread_reply`       | DEFINER  | Creates thread metadata     |
+| `check_read_only_on_insert` | `messages`        | BEFORE INSERT | `prevent_read_only_message` | DEFINER  | Read-only check             |
+| `messages_version`          | `messages`        | BEFORE UPDATE | `increment_version`         | INVOKER  | Optimistic locking          |
+| `channels_version`          | `channels`        | BEFORE UPDATE | `increment_version`         | INVOKER  | Optimistic locking          |
+| `on_channel_member_joined`  | `channel_members` | AFTER INSERT  | `log_channel_member_join`   | DEFINER  | Member history logging      |
+| `feature_flags_updated_at`  | `feature_flags`   | BEFORE UPDATE | `set_updated_at`            | INVOKER  | Fine                        |
 
 No recursion detected. All triggers use SECURITY DEFINER appropriately for cross-schema access (auth.users) or RLS bypass. The `increment_version` trigger is correctly SECURITY INVOKER since it only modifies the row being updated.
 
@@ -579,52 +579,53 @@ No recursion detected. All triggers use SECURITY DEFINER appropriately for cross
 
 ### What `gdpr_delete_user()` handles (line-by-line):
 
-| Line | Table | Column | Status |
-|------|-------|--------|--------|
-| 10-11 | `sidebar_channel_assignments` | via `sidebar_categories` subquery | OK |
-| 13 | `sidebar_categories` | `user_id` | OK |
-| 14 | `channel_notification_preferences` | `user_id` | OK |
-| 15 | `consent_logs` | `user_id` | OK |
-| 16 | `channel_bookmarks` | `created_by` | OK |
-| 17 | `message_reminders` | `user_id` | OK |
-| 18 | `notifications` | `user_id` | OK |
-| 19 | `push_subscriptions` | `user_id` | OK |
-| 20 | `message_edit_history` | `edited_by` | OK |
-| 21 | `scheduled_posts` | `user_id` | OK |
-| 22 | `trigger_words` | `user_id` | OK |
-| 23 | `auto_responders` | `user_id` | OK |
-| 24 | `user_statuses` | `user_id` | OK |
-| 25 | `user_presence` | `user_id` | OK |
-| 26 | `message_flags` | `user_id` | OK |
-| 27 | `reactions` | `user_id` | OK |
-| 28 | `messages` | `user_id` | OK |
-| 29 | `dm_channels` | `user1_id`, `user2_id` | Partially OK (deprecated) |
-| 30 | `webhook_endpoints` | `created_by` | OK |
-| 31 | `channel_members` | `user_id` | OK |
-| 32 | `workspace_members` | `user_id` | OK |
-| 33 | `audit_logs` | `actor_user_id` | OK |
-| 34 | `user_preferences` | `user_id` | OK |
-| 35 | `users` | `id` | OK |
+| Line  | Table                              | Column                            | Status                    |
+| ----- | ---------------------------------- | --------------------------------- | ------------------------- |
+| 10-11 | `sidebar_channel_assignments`      | via `sidebar_categories` subquery | OK                        |
+| 13    | `sidebar_categories`               | `user_id`                         | OK                        |
+| 14    | `channel_notification_preferences` | `user_id`                         | OK                        |
+| 15    | `consent_logs`                     | `user_id`                         | OK                        |
+| 16    | `channel_bookmarks`                | `created_by`                      | OK                        |
+| 17    | `message_reminders`                | `user_id`                         | OK                        |
+| 18    | `notifications`                    | `user_id`                         | OK                        |
+| 19    | `push_subscriptions`               | `user_id`                         | OK                        |
+| 20    | `message_edit_history`             | `edited_by`                       | OK                        |
+| 21    | `scheduled_posts`                  | `user_id`                         | OK                        |
+| 22    | `trigger_words`                    | `user_id`                         | OK                        |
+| 23    | `auto_responders`                  | `user_id`                         | OK                        |
+| 24    | `user_statuses`                    | `user_id`                         | OK                        |
+| 25    | `user_presence`                    | `user_id`                         | OK                        |
+| 26    | `message_flags`                    | `user_id`                         | OK                        |
+| 27    | `reactions`                        | `user_id`                         | OK                        |
+| 28    | `messages`                         | `user_id`                         | OK                        |
+| 29    | `dm_channels`                      | `user1_id`, `user2_id`            | Partially OK (deprecated) |
+| 30    | `webhook_endpoints`                | `created_by`                      | OK                        |
+| 31    | `channel_members`                  | `user_id`                         | OK                        |
+| 32    | `workspace_members`                | `user_id`                         | OK                        |
+| 33    | `audit_logs`                       | `actor_user_id`                   | OK                        |
+| 34    | `user_preferences`                 | `user_id`                         | OK                        |
+| 35    | `users`                            | `id`                              | OK                        |
 
 ### What `gdpr_delete_user()` MISSES (must be added before GDPR production):
 
-| Table | Column | GDPR Impact |
-|-------|--------|-------------|
-| `notification_preferences` | `user_id` | User notification settings leaked |
-| `dm_members` | `user_id` | DM association data retained |
-| `custom_emoji` | `created_by` | Creator attribution retained |
-| `user_groups` | `created_by` | Creator attribution retained |
-| `user_group_members` | `user_id` | Group membership data retained |
-| `thread_participants` | `user_id` | Thread participation tracking retained |
-| `channel_member_history` | `user_id` | Join/leave history retained |
-| `channel_role_overrides` | `user_id` | Access override data retained |
-| `message_reads` | `user_id` | Read receipt data retained |
-| `compliance_exports` | `created_by` | Export creator attribution leaked |
-| `announcements` | `created_by` | Announcement author data leaked |
+| Table                      | Column       | GDPR Impact                            |
+| -------------------------- | ------------ | -------------------------------------- |
+| `notification_preferences` | `user_id`    | User notification settings leaked      |
+| `dm_members`               | `user_id`    | DM association data retained           |
+| `custom_emoji`             | `created_by` | Creator attribution retained           |
+| `user_groups`              | `created_by` | Creator attribution retained           |
+| `user_group_members`       | `user_id`    | Group membership data retained         |
+| `thread_participants`      | `user_id`    | Thread participation tracking retained |
+| `channel_member_history`   | `user_id`    | Join/leave history retained            |
+| `channel_role_overrides`   | `user_id`    | Access override data retained          |
+| `message_reads`            | `user_id`    | Read receipt data retained             |
+| `compliance_exports`       | `created_by` | Export creator attribution leaked      |
+| `announcements`            | `created_by` | Announcement author data leaked        |
 
 **GDPR Verdict**: **NOT READY**. 11 tables with user-identifiable data not purged. Must fix all before any production GDPR subject access request.
 
 ### `gdpr_delete_user()` also doesn't:
+
 - Handle user's owned workspaces (owner_id FK ON DELETE CASCADE — cascades to all workspace data)
 - Anonymize messages rather than delete (some jurisdictions require retention)
 - Log the deletion event to `audit_logs`
@@ -634,14 +635,14 @@ No recursion detected. All triggers use SECURITY DEFINER appropriately for cross
 
 ## TypeScript Type ↔ Schema Consistency
 
-| Type | Mismatches |
-|------|-----------|
-| `Channel` | Missing: `version`, `is_read_only`, `channel_type`, `sort_order`. Nullability: `created_by` is `string` but DB allows NULL. |
-| `UserGroup` | Missing: `display_name` |
-| `ChannelNotificationPreference` | Missing: `notify_everyone` |
-| `NotificationPreference` | `workspace_id` is `string` in TS but nullable in DB. `channel_id` is `string | null` in TS — correct. |
-| `SidebarChannelAssignment` | Not exported from `index.ts` |
-| `ChannelMember` | Missing: `last_viewed_at` on type definition — actually, checking line 62-63: `last_viewed_at: string;` IS present. OK. |
+| Type                            | Mismatches                                                                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `Channel`                       | Missing: `version`, `is_read_only`, `channel_type`, `sort_order`. Nullability: `created_by` is `string` but DB allows NULL. |
+| `UserGroup`                     | Missing: `display_name`                                                                                                     |
+| `ChannelNotificationPreference` | Missing: `notify_everyone`                                                                                                  |
+| `NotificationPreference`        | `workspace_id` is `string` in TS but nullable in DB. `channel_id` is `string                                                | null` in TS — correct. |
+| `SidebarChannelAssignment`      | Not exported from `index.ts`                                                                                                |
+| `ChannelMember`                 | Missing: `last_viewed_at` on type definition — actually, checking line 62-63: `last_viewed_at: string;` IS present. OK.     |
 
 ---
 
@@ -652,10 +653,12 @@ No recursion detected. All triggers use SECURITY DEFINER appropriately for cross
 **Rollbacks present for**: 20260625 through 20260710 base migrations, and the July 16/24 fix migrations.
 
 **Rollbacks MISSING for**: 20260718 and 20260719 fix/bugfix migrations:
+
 - `20260718000001` through `20260718000004`
 - `20260719000001` through `20260719000004`
 
 Also missing for some June 25/26 migrations:
+
 - `20260625000017` (audit_logs_org_fk)
 - `20260625000018` (workspace_member_unique_owner)
 - `20260625000019` (feature_flags)
