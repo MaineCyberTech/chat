@@ -5,7 +5,7 @@
 }
 
 chat.mainecybertech.com {
-    tls /certs/cf-origin.pem /certs/cf-origin-key.pem
+    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
 
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
