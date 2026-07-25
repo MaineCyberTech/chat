@@ -10,6 +10,8 @@ export default defineConfig({
       "@": resolve(workspaceRoot, "apps/web"),
       "@chat/ui": resolve(workspaceRoot, "packages/ui/src"),
       "@chat/db": resolve(workspaceRoot, "packages/db/src"),
+      "@chat/config": resolve(workspaceRoot, "packages/config"),
+      "@chat/sdk": resolve(workspaceRoot, "packages/sdk/src"),
     },
   },
   test: {
