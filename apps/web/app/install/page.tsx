@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import { useInstallPrompt } from "@/lib/pwa/install-state";
@@ -19,7 +19,7 @@ export default function InstallPage() {
             className="flex h-16 w-16 items-center justify-center rounded-full text-2xl"
             style={{ backgroundColor: "rgba(var(--online-indicator-rgb,6,214,160),0.12)" }}
           >
-            âœ“
+            ✓
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-[var(--center-channel-color)]">
             Already Installed
@@ -92,7 +92,7 @@ export default function InstallPage() {
           >
             <p className="text-center text-xs" style={{ color: "var(--text-tertiary)" }}>
               <Link href="/" className="underline hover:text-[var(--center-channel-color)]">
-                â† Back to MaineCyberTech Chat
+                {'\u2190'} Back to MaineCyberTech Chat
               </Link>
             </p>
           </div>

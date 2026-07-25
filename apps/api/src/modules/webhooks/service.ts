@@ -3,29 +3,21 @@ import { logger } from "../../lib/logger.js";
 import { recordWebhookDelivery } from "../../lib/metrics.js";
 import { executeWithCircuitBreaker } from "../../lib/circuit-breaker.js";
 import {
+  validateWebhookUrl,
+  computeHmacSignature,
+  buildWebhookPayload,
+  MAX_RETRIES,
+  BASE_DELAY_MS,
+} from "@chat/config/webhook-utils.js";
+
+export { validateWebhookUrl };
+import {
   createCipheriv,
   createDecipheriv,
   randomBytes,
   createHash,
-  createHmac,
   randomUUID,
 } from "node:crypto";
-
-// SSRF protection: private IP ranges and localhost
-const PRIVATE_IP_RANGES = [
-  /^127\./, // localhost
-  /^10\./, // 10.0.0.0/8
-  /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // 172.16.0.0/12
-  /^192\.168\./, // 192.168.0.0/16
-  /^169\.254\./, // link-local
-  /^::1$/, // IPv6 localhost
-  /^fc00:/, // IPv6 unique local
-  /^fe80:/, // IPv6 link-local
-];
-
-function isPrivateIp(hostname: string): boolean {
-  return PRIVATE_IP_RANGES.some((range) => range.test(hostname));
-}
 
 const ENCRYPTION_ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
@@ -68,7 +60,7 @@ const WEBHOOK_SECRET_MIN_LENGTH = 16;
 
 function validateSecret(secret: string | undefined): { valid: boolean; error?: string } {
   if (!secret || secret.length === 0) {
-    return { valid: true }; // empty secret is allowed (no signature)
+    return { valid: true };
   }
   if (secret.length < WEBHOOK_SECRET_MIN_LENGTH) {
     return {
@@ -77,49 +69,6 @@ function validateSecret(secret: string | undefined): { valid: boolean; error?: s
     };
   }
   return { valid: true };
-}
-
-async function resolveHostname(url: string): Promise<string[]> {
-  try {
-    const { hostname } = new URL(url);
-    // Check if it's already an IP address
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) || /^\[.+\]$/.test(hostname)) {
-      // eslint-disable-next-line no-useless-escape
-      return [hostname.replace(/[\[\]]/g, "")];
-    }
-    // Resolve hostname to IPs
-    const dns = await import("node:dns/promises");
-    const records = await dns.resolve4(hostname);
-    return records;
-  } catch {
-    return [];
-  }
-}
-
-export async function validateWebhookUrl(url: string): Promise<{ valid: boolean; error?: string }> {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "https:") {
-      return { valid: false, error: "Only HTTPS URLs are allowed" };
-    }
-
-    // Check for private IPs in hostname
-    if (isPrivateIp(parsed.hostname)) {
-      return { valid: false, error: "Webhook URLs cannot point to private/internal IP addresses" };
-    }
-
-    // Resolve hostname and check resolved IPs
-    const ips = await resolveHostname(url);
-    for (const ip of ips) {
-      if (isPrivateIp(ip)) {
-        return { valid: false, error: "Webhook URL resolves to private/internal IP address" };
-      }
-    }
-
-    return { valid: true };
-  } catch {
-    return { valid: false, error: "Invalid webhook URL" };
-  }
 }
 
 interface WebhookEndpoint {
@@ -147,9 +96,6 @@ interface WebhookDelivery {
   dead_letter: boolean;
   created_at: string;
 }
-
-const MAX_RETRIES = 5;
-const BASE_DELAY_MS = 60_000; // 1 minute
 
 export class WebhookService {
   async getChannelWorkspaceId(channelId: string): Promise<string | null> {
@@ -272,17 +218,13 @@ export class WebhookService {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (endpoint.secret) {
         const decryptedSecret = decryptSecret(endpoint.secret);
-        const signature = createHmac("sha256", decryptedSecret)
-          .update(JSON.stringify({ event, ...payload }))
-          .digest("hex");
-        headers["X-Webhook-Signature"] = `sha256=${signature}`;
+        headers["X-Webhook-Signature"] = computeHmacSignature(decryptedSecret, payload, event);
       }
 
       const breakerName = `webhook:${endpoint.id}`;
 
       const idempotencyKey = randomUUID();
 
-      // SSRF protection: validate URL at delivery time (DNS may have changed)
       const urlValidation = await validateWebhookUrl(endpoint.url);
       if (!urlValidation.valid) {
         logger.error("Webhook URL validation failed at delivery time", {
@@ -296,6 +238,8 @@ export class WebhookService {
         return;
       }
 
+      const body = buildWebhookPayload(event, payload);
+
       const res = await executeWithCircuitBreaker(
         breakerName,
         async () => {
@@ -305,7 +249,7 @@ export class WebhookService {
               ...headers,
               "X-Idempotency-Key": idempotencyKey,
             },
-            body: JSON.stringify({ event, ...payload }),
+            body,
             signal: AbortSignal.timeout(10000),
           });
           return response;

@@ -3,7 +3,12 @@ import { z } from "zod";
 const slugRegex = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 export const createChannelSchema = z.object({
-  name: z.string().min(1).max(80),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Channel name must not be empty")
+    .max(80, "Channel name must be at most 80 characters")
+    .refine((v) => v.trim().length > 0, "Channel name must not be whitespace-only"),
   slug: z
     .string()
     .regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens only")
@@ -16,7 +21,13 @@ export const createChannelSchema = z.object({
 });
 
 export const updateChannelSchema = z.object({
-  name: z.string().min(1).max(80).optional(),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Channel name must not be empty")
+    .max(80, "Channel name must be at most 80 characters")
+    .refine((v) => v.trim().length > 0, "Channel name must not be whitespace-only")
+    .optional(),
   slug: z
     .string()
     .regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens only")

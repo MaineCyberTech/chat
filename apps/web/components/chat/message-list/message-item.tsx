@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useRef } from "react";
 import { Reply, Pencil, X, Smile, Bookmark, AlertCircle, AlertTriangle } from "lucide-react";
@@ -407,7 +407,7 @@ export const MessageItem = React.memo(function MessageItem({
                   )}
                 </div>
 
-                {/* Post menu â€” floating action bar */}
+                {/* Post menu — floating action bar */}
                 <div className="post-menu">
                   {onReply && (
                     <button

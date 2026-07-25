@@ -17,3 +17,5 @@ jobs:
         with:
           filename: tests/k6/smoke-test.js
           flags: --vus 10 --duration 30s
+        env:
+          BASE_URL: https://chat.mainecybertech.com

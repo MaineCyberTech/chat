@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import { Router } from "express";
 
 vi.mock("node:fs", () => ({
   readFileSync: vi.fn(() => {
@@ -6,8 +7,27 @@ vi.mock("node:fs", () => ({
   }),
 }));
 
+vi.mock("../../../route-registry.js", () => ({
+  routeRegistry: [
+    {
+      path: "/v1",
+      router: Router().get("/test", (_req, res) => res.json({ ok: true })),
+      description: "Test routes",
+    },
+  ],
+}));
+
 describe("OpenAPI routes", () => {
   let router: import("express").Router;
+
+  beforeAll(() => {
+    vi.stubEnv("LIVEKIT_API_KEY", "test-key");
+    vi.stubEnv("LIVEKIT_API_SECRET", "test-secret");
+  });
+
+  afterAll(() => {
+    vi.unstubAllEnvs();
+  });
 
   beforeEach(async () => {
     vi.resetModules();

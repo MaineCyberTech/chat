@@ -18,3 +18,9 @@ jobs:
     name: Lint, Typecheck, Test, Build
     uses: ./.github/workflows/validate.yml
     secrets: inherit
+
+  k6-smoke:
+    name: k6 Smoke Test
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/load-test.yml
+    secrets: inherit

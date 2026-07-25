@@ -8,11 +8,9 @@ import {
 import { typographyTokens, typeScale, type TypographyTokens, type TypeScale } from "./typography";
 import {
   spacingTokens,
-  density,
   getSpacing,
   getComponentSpacing,
   type SpacingTokens,
-  type Density,
 } from "./spacing";
 import {
   motionTokens,
@@ -42,11 +40,9 @@ export {
   type TypographyTokens,
   type TypeScale,
   spacingTokens,
-  density,
   getSpacing,
   getComponentSpacing,
   type SpacingTokens,
-  type Density,
   motionTokens,
   componentTransitions,
   type MotionTokens,

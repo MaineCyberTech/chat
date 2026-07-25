@@ -3,13 +3,23 @@ import { z } from "zod";
 const postPriorityEnum = z.enum(["standard", "important", "urgent", "critical"]);
 
 export const createMessageSchema = z.object({
-  content: z.string().min(1).max(4000),
+  content: z
+    .string()
+    .trim()
+    .min(1, "Message content must not be empty")
+    .max(4000, "Message content must be at most 4000 characters")
+    .refine((v) => v.trim().length > 0, "Message content must not be whitespace-only"),
   parent_id: z.string().uuid().optional(),
   priority: postPriorityEnum.default("standard"),
 });
 
 export const updateMessageSchema = z.object({
-  content: z.string().min(1).max(4000),
+  content: z
+    .string()
+    .trim()
+    .min(1, "Message content must not be empty")
+    .max(4000, "Message content must be at most 4000 characters")
+    .refine((v) => v.trim().length > 0, "Message content must not be whitespace-only"),
   version: z.number().int().positive().optional(),
 });
 

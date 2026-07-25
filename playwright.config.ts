@@ -2,8 +2,12 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  snapshotDir: "./tests/e2e/__snapshots__",
   timeout: 30000,
   retries: process.env.CI ? 2 : 0,
+  expect: {
+    toHaveScreenshot: { maxDiffPixels: 100 },
+  },
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
     screenshot: "only-on-failure",

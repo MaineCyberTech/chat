@@ -13,7 +13,9 @@
     "./errors": "./dist/errors.js",
     "./errors.js": "./dist/errors.js",
     "./date": "./dist/date.js",
-    "./date.js": "./dist/date.js"
+    "./date.js": "./dist/date.js",
+    "./webhook-utils": "./dist/webhook-utils.js",
+    "./webhook-utils.js": "./dist/webhook-utils.js"
   },
   "scripts": {
     "build": "tsc",

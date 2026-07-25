@@ -1,12 +1,14 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import importRouter from "../routes.js";
 
-const _mockData = { data: [], error: null };
+let insertErrors: boolean = false;
+
+const mockInsert = vi.fn(() => (insertErrors ? { error: { message: "duplicate key" } } : { error: null }));
 
 vi.mock("../../../lib/supabase.js", () => ({
   getSupabase: vi.fn(),
   getSupabaseAdmin: vi.fn(() => ({
-    from: vi.fn(() => ({ insert: vi.fn(() => ({ error: null })) })),
+    from: vi.fn(() => ({ insert: mockInsert })),
   })),
 }));
 
@@ -41,13 +43,18 @@ function csvBody(csv: string) {
 }
 
 describe("Import Routes", () => {
-  it("POST /admin/import/workspaces accepts CSV body", async () => {
+  beforeEach(() => {
+    insertErrors = false;
+    mockInsert.mockClear();
+  });
+
+  it("POST /admin/import/workspaces returns correct imported count", async () => {
     const handler = findHandler("post", "/admin/import/workspaces");
     expect(handler).toBeTruthy();
-    const req = mockReq(csvBody("name,slug\nTest,test"));
+    const req = mockReq(csvBody("name,slug\nTest,test\nSecond,second"));
     const res = mockRes();
     await handler(req, res);
-    expect(res.json).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ imported: 2, errors: undefined });
   });
 
   it("POST /admin/import/workspaces handles empty CSV", async () => {
@@ -56,18 +63,39 @@ describe("Import Routes", () => {
     const res = mockRes();
     const next = vi.fn();
     await handler(req, res, next);
-    // asyncHandler catches BadRequestError and forwards to next
     expect(next).toHaveBeenCalled();
     const err = next.mock.calls[0]?.[0];
     expect(err?.message).toContain("CSV must contain a header row");
   });
 
-  it("POST /admin/import/users accepts CSV body", async () => {
-    const handler = findHandler("post", "/admin/import/users");
-    expect(handler).toBeTruthy();
-    const req = mockReq(csvBody("email,display_name\ntest@test.com,Tester"));
+  it("POST /admin/import/workspaces reports errors on insert failure", async () => {
+    insertErrors = true;
+    const handler = findHandler("post", "/admin/import/workspaces");
+    const req = mockReq(csvBody("name,slug\nTest,test"));
     const res = mockRes();
     await handler(req, res);
-    expect(res.json).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ imported: 0, errors: expect.any(Array) }),
+    );
+  });
+
+  it("POST /admin/import/users returns correct imported count", async () => {
+    const handler = findHandler("post", "/admin/import/users");
+    expect(handler).toBeTruthy();
+    const req = mockReq(csvBody("email,display_name\na@test.com,UserA\nb@test.com,UserB"));
+    const res = mockRes();
+    await handler(req, res);
+    expect(res.json).toHaveBeenCalledWith({ imported: 2, errors: undefined });
+  });
+
+  it("POST /admin/import/users reports missing email column", async () => {
+    const handler = findHandler("post", "/admin/import/users");
+    const req = mockReq(csvBody("email,display_name\n,Tester"));
+    const res = mockRes();
+    await handler(req, res);
+    const call = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(call.imported).toBe(0);
+    expect(call.errors).toBeDefined();
+    expect(call.errors.length).toBeGreaterThan(0);
   });
 });

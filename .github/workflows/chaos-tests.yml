@@ -1,0 +1,87 @@
+name: Chaos Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chaos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chaos-api-crash:
+    name: API Crash Recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve droplet IP
+        id: ip
+        run: |
+          DO_TOKEN="${{ secrets.DO_API_TOKEN }}"
+          IP=$(curl -sf -H "Authorization: Bearer $DO_TOKEN" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
+            | jq -r '[.droplets[] | select(.name=="chat-development")] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
+          if [ -z "$IP" ]; then
+            echo "ERROR: No chat-development droplet found"
+            exit 1
+          fi
+          echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
+          echo "Using droplet IP: $IP"
+
+      - name: Run API crash chaos test
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ steps.ip.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /opt/chat
+            git fetch origin develop
+            git checkout develop
+            git reset --hard origin/develop
+            chmod +x tests/chaos/scenarios/api-crash.sh
+            ./tests/chaos/scenarios/api-crash.sh
+
+  chaos-redis-down:
+    name: Redis Failure Recovery
+    needs: chaos-api-crash
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve droplet IP
+        id: ip
+        run: |
+          DO_TOKEN="${{ secrets.DO_API_TOKEN }}"
+          IP=$(curl -sf -H "Authorization: Bearer $DO_TOKEN" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
+            | jq -r '[.droplets[] | select(.name=="chat-development")] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
+          if [ -z "$IP" ]; then
+            echo "ERROR: No chat-development droplet found"
+            exit 1
+          fi
+          echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
+          echo "Using droplet IP: $IP"
+
+      - name: Run Redis down chaos test
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ steps.ip.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /opt/chat
+            git fetch origin develop
+            git checkout develop
+            git reset --hard origin/develop
+            chmod +x tests/chaos/scenarios/redis-down.sh
+            ./tests/chaos/scenarios/redis-down.sh

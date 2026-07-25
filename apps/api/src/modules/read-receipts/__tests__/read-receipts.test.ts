@@ -24,6 +24,33 @@ vi.mock("@chat/db", () => ({
   },
 }));
 
+type MockChain = { [key: string]: any; then: (fn: (v: unknown) => unknown) => Promise<unknown> };
+
+function createChain(result: unknown): MockChain {
+  const chain: any = {};
+  for (const m of [
+    "select",
+    "eq",
+    "in",
+    "order",
+    "limit",
+    "single",
+    "insert",
+    "update",
+    "delete",
+    "is",
+    "or",
+    "gt",
+    "lt",
+    "contains",
+    "lte",
+  ]) {
+    chain[m] = vi.fn(() => chain);
+  }
+  chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
+  return chain;
+}
+
 function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (readReceiptsRouter as any).stack) {
@@ -37,7 +64,7 @@ function findHandler(method: string, path: string) {
 function mockReq(overrides: Record<string, unknown> = {}) {
   return {
     userId: "user-1",
-    supabase: { from: vi.fn(() => ({ select: vi.fn(() => ({ data: [], error: null })) })) },
+    supabase: { from: vi.fn(() => createChain({ data: [], error: null })) },
     params: {},
     body: {},
     query: {},
@@ -74,7 +101,10 @@ describe("Read Receipts Routes", () => {
   it("POST /messages/:id/read marks message as read", async () => {
     const handler = findHandler("post", "/messages/:id/read");
     expect(handler).toBeTruthy();
-    const req = mockReq({ params: { id: "msg-1" }, body: { channelId: "channel-1" } });
+    const channelChain = createChain({ data: { workspace_id: "ws-1" }, error: null });
+    const memberChain = createChain({ data: { role: "member" }, error: null });
+    const from = vi.fn().mockReturnValueOnce(channelChain).mockReturnValueOnce(memberChain);
+    const req = mockReq({ params: { id: "msg-1" }, body: { channelId: "channel-1" }, supabase: { from } });
     const res = mockRes();
     await handler(req, res);
     expect(res.json).toHaveBeenCalledWith({ ok: true });
@@ -91,7 +121,14 @@ describe("Read Receipts Routes", () => {
   it("GET /messages/:id/readers returns readers list", async () => {
     const handler = findHandler("get", "/messages/:id/readers");
     expect(handler).toBeTruthy();
-    const req = mockReq({ params: { id: "msg-1" } });
+    const msgChain = createChain({ data: { channel_id: "ch-1" }, error: null });
+    const channelChain = createChain({ data: { workspace_id: "ws-1" }, error: null });
+    const memberChain = createChain({ data: { role: "member" }, error: null });
+    const from = vi.fn()
+      .mockReturnValueOnce(msgChain)
+      .mockReturnValueOnce(channelChain)
+      .mockReturnValueOnce(memberChain);
+    const req = mockReq({ params: { id: "msg-1" }, supabase: { from } });
     const res = mockRes();
     await handler(req, res);
     expect(res.json).toHaveBeenCalledWith({ readers: [] });

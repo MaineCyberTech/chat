@@ -13,7 +13,7 @@
     "build": "tsc",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"No DB tests yet — schema and migration tests will be added in later phases\"; exit 0",
+    "test": "vitest run",
     "clean": "rimraf dist"
   },
   "dependencies": {

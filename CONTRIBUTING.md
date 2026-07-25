@@ -74,15 +74,98 @@ infra/
 ## Testing
 
 ```bash
-# Unit tests
-pnpm test
-
-# E2E tests (requires local Supabase)
-pnpm test:e2e
-
-# Coverage report
-pnpm test -- --coverage
+pnpm test              # Unit + integration tests (Vitest)
+pnpm test:e2e          # E2E tests (Playwright, requires local Supabase)
+pnpm test:e2e:ui       # E2E tests with Playwright UI inspector
+pnpm test -- --coverage # Coverage report
 ```
+
+Tests live in `__tests__/` directories next to source. E2E tests are in `apps/web/e2e/` and `tests/e2e/`.
+
+## Database Migrations
+
+Migrations use the Supabase CLI. Place SQL files in `supabase/migrations/` with a timestamp prefix:
+
+```
+supabase/migrations/20260718000000_add_feature.sql
+```
+
+Each migration must have a corresponding rollback in `supabase/rollback/`:
+
+```
+supabase/rollback/20260718000000_add_feature_down.sql
+```
+
+Apply locally:
+
+```bash
+supabase db push
+# or
+supabase db reset
+```
+
+Verify on CI before merge — the `supabase-migrations` workflow runs `supabase db push` against the hosted project.
+
+Guidelines:
+- One logical change per migration
+- Use `IF NOT EXISTS` / `IF EXISTS` for idempotency
+- Include `-- up` / `-- down` comments at the top
+- Test rollback locally before pushing
+
+## Adding i18n Keys
+
+All UI strings go through the i18n system. Translation files live in `apps/web/messages/` by locale (e.g. `en.json`).
+
+1. Add new keys to `apps/web/messages/en.json` in the appropriate category:
+
+```json
+{
+  "auth": {
+    "login": {
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "submitButton": "Sign In"
+    }
+  }
+}
+```
+
+2. Use in components:
+
+```tsx
+import { useLocale } from "@/lib/i18n";
+
+function LoginForm() {
+  const { t } = useLocale();
+  return <input aria-label={t("auth.login.emailLabel")} />;
+}
+```
+
+3. For pluralization:
+
+```tsx
+t("messages.count", { count: 5 }); // resolves "5 messages" or "1 message"
+```
+
+4. To extract new keys for translation:
+
+```bash
+pnpm --filter @chat/web i18n:extract
+```
+
+Categories: `auth`, `chat`, `sidebar`, `settings`, `admin`, `search`, `notifications`, `onboarding`, `formatting`, `shortcuts`, `groups`, `status`, `errors`, `common`.
+
+## PR Checklist
+
+- [ ] All CI checks pass: `pnpm check` (format, lint, typecheck, test)
+- [ ] New features include unit tests
+- [ ] UI changes include i18n keys (added to `en.json`)
+- [ ] Database changes include forward migration + rollback script
+- [ ] API changes documented in `docs/api/changelog.json`
+- [ ] New environment variables documented in `.env.example` and `docs/environments/env-vars.md`
+- [ ] No secrets or keys committed
+- [ ] Rebased on latest `develop`, conflicts resolved
+- [ ] PR title follows conventional commits format (`feat:`, `fix:`, etc.)
 
 ## Documentation
 

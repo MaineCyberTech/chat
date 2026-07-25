@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { authenticate as requireAuth } from "../../middleware/authenticate.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
+import { BadRequestError, NotFoundError, InternalServerError, ForbiddenError } from "../../lib/app-error.js";
 import {
   createSidebarCategorySchema,
   updateSidebarCategorySchema,
@@ -13,6 +13,38 @@ import {
 } from "../../config/validators.js";
 
 const router = Router();
+router.use(requireAuth);
+
+async function requireWorkspaceMembershipInline(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  userId: string,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .single();
+  if (error || !data) {
+    throw new ForbiddenError("Not a member of this workspace");
+  }
+}
+
+async function checkCategoryOwnership(
+  supabase: SupabaseClient,
+  categoryId: string,
+  userId: string,
+): Promise<string> {
+  const { data, error } = await supabase
+    .from("sidebar_categories")
+    .select("workspace_id")
+    .eq("id", categoryId)
+    .eq("user_id", userId)
+    .single();
+  if (error || !data) throw new NotFoundError("Category not found");
+  return data.workspace_id as string;
+}
 
 // GET /v1/sidebar-categories?workspace_id=xxx - list categories with channel assignments
 router.get(
@@ -23,6 +55,7 @@ router.get(
     if (!workspaceId) throw new BadRequestError("workspace_id required");
 
     const supabase = req.supabase as SupabaseClient;
+    await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
 
     const { data: categories, error: catErr } = await supabase
       .from("sidebar_categories")
@@ -67,6 +100,7 @@ router.post(
 
     const { workspace_id, name } = parsed.data;
     const supabase = req.supabase as SupabaseClient;
+    await requireWorkspaceMembershipInline(supabase, workspace_id, req.userId!);
 
     const { data: existing } = await supabase
       .from("sidebar_categories")
@@ -99,6 +133,8 @@ router.patch(
     if (!parsed.success) throw new BadRequestError(parsed.error.issues[0].message);
 
     const supabase = req.supabase as SupabaseClient;
+    const workspaceId = await checkCategoryOwnership(supabase, req.params.id as string, req.userId!);
+    await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
 
     const updates: Record<string, unknown> = {};
     if (parsed.data.name !== undefined) updates.name = parsed.data.name;
@@ -124,6 +160,8 @@ router.delete(
   validateUuidParam("id"),
   asyncHandler(async (req: Request, res: Response) => {
     const supabase = req.supabase as SupabaseClient;
+    const workspaceId = await checkCategoryOwnership(supabase, req.params.id as string, req.userId!);
+    await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
 
     const { error } = await supabase
       .from("sidebar_categories")
@@ -147,6 +185,8 @@ router.post(
 
     const { channel_id } = parsed.data;
     const supabase = req.supabase as SupabaseClient;
+    const workspaceId = await checkCategoryOwnership(supabase, req.params.id as string, req.userId!);
+    await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
 
     const { data: cat } = await supabase
       .from("sidebar_categories")
@@ -185,6 +225,8 @@ router.delete(
   validateUuidParam("channelId"),
   asyncHandler(async (req: Request, res: Response) => {
     const supabase = req.supabase as SupabaseClient;
+    const workspaceId = await checkCategoryOwnership(supabase, req.params.id as string, req.userId!);
+    await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
 
     const { error } = await supabase
       .from("sidebar_channel_assignments")
@@ -207,6 +249,16 @@ router.patch(
 
     const { categoryIds } = parsed.data;
     const supabase = req.supabase as SupabaseClient;
+
+    const { data: firstCat } = await supabase
+      .from("sidebar_categories")
+      .select("workspace_id")
+      .eq("id", categoryIds[0])
+      .eq("user_id", req.userId)
+      .single();
+    if (!firstCat) throw new NotFoundError("Category not found");
+    await requireWorkspaceMembershipInline(supabase, firstCat.workspace_id as string, req.userId!);
+
     const errs: string[] = [];
 
     for (let i = 0; i < categoryIds.length; i++) {
@@ -234,6 +286,8 @@ router.patch(
 
     const { channelIds } = parsed.data;
     const supabase = req.supabase as SupabaseClient;
+    const workspaceId = await checkCategoryOwnership(supabase, req.params.id as string, req.userId!);
+    await requireWorkspaceMembershipInline(supabase, workspaceId, req.userId!);
     const errs: string[] = [];
 
     for (let i = 0; i < channelIds.length; i++) {

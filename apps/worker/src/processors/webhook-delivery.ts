@@ -3,6 +3,13 @@ import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 import { createSupabaseClient } from "../lib/supabase.js";
 import { randomUUID } from "node:crypto";
+import {
+  validateWebhookUrl,
+  computeHmacSignature,
+  buildWebhookPayload,
+  MAX_RETRIES,
+  BASE_DELAY_MS,
+} from "@chat/config/webhook-utils.js";
 
 export interface WebhookDeliveryJobData {
   webhookId: string;
@@ -10,59 +17,6 @@ export interface WebhookDeliveryJobData {
   payload: Record<string, unknown>;
   retryCount?: number;
   deliveryId?: string;
-}
-
-const MAX_RETRIES = 5;
-const BASE_DELAY_MS = 60_000;
-
-const PRIVATE_IP_RANGES = [
-  /^127\./,
-  /^10\./,
-  /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
-  /^192\.168\./,
-  /^169\.254\./,
-  /^::1$/,
-  /^fc00:/,
-  /^fe80:/,
-];
-
-function isPrivateIp(hostname: string): boolean {
-  return PRIVATE_IP_RANGES.some((range) => range.test(hostname));
-}
-
-async function resolveHostname(url: string): Promise<string[]> {
-  try {
-    const { hostname } = new URL(url);
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) || /^\[.+\]$/.test(hostname)) {
-      return [hostname.replace(/[[\]]/g, "")];
-    }
-    const dns = await import("node:dns/promises");
-    const records = await dns.resolve4(hostname);
-    return records;
-  } catch {
-    return [];
-  }
-}
-
-async function validateWebhookUrl(url: string): Promise<{ valid: boolean; error?: string }> {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "https:") {
-      return { valid: false, error: "Only HTTPS URLs are allowed" };
-    }
-    if (isPrivateIp(parsed.hostname)) {
-      return { valid: false, error: "Webhook URLs cannot point to private/internal IP addresses" };
-    }
-    const ips = await resolveHostname(url);
-    for (const ip of ips) {
-      if (isPrivateIp(ip)) {
-        return { valid: false, error: "Webhook URL resolves to private/internal IP address" };
-      }
-    }
-    return { valid: true };
-  } catch {
-    return { valid: false, error: "Invalid webhook URL" };
-  }
 }
 
 export const webhookQueue = new Queue<WebhookDeliveryJobData>("webhook-delivery", {
@@ -113,15 +67,10 @@ async function performWebhookDelivery(
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (endpoint.secret) {
-      const crypto = await import("node:crypto");
-      const signature = crypto
-        .createHmac("sha256", endpoint.secret)
-        .update(JSON.stringify({ event, ...payload }))
-        .digest("hex");
-      headers["X-Webhook-Signature"] = `sha256=${signature}`;
+      headers["X-Webhook-Signature"] = computeHmacSignature(endpoint.secret, payload, event);
     }
 
-    const body = JSON.stringify({ event, ...payload });
+    const body = buildWebhookPayload(event, payload);
     const idempotencyKey = randomUUID();
 
     const response = await fetch(endpoint.url, {

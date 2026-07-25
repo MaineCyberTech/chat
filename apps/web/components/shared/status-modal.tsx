@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import { api } from "@/lib/api";
@@ -32,7 +32,7 @@ const PRESET_EMOJIS = [
   "ðŸ•",
   "ðŸ“ž",
   "ðŸŽ§",
-  "âœˆï¸",
+  "✈️",
   "ðŸ ",
   "ðŸ’Š",
   "ðŸŽ‰",

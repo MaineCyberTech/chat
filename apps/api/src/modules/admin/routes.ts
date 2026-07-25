@@ -20,31 +20,63 @@ async function requireAdmin(req: Request, _res: Response, next: NextFunction) {
     }
     const { data, error } = await supabase
       .from("workspace_members")
-      .select("role")
+      .select("workspace_id, role")
       .eq("user_id", req.userId)
-      .in("role", ["owner", "admin"])
-      .limit(1);
+      .in("role", ["owner", "admin"]);
     if (error || !data || data.length === 0) {
       next(new ForbiddenError("Admin access required"));
       return;
     }
+    (req as Request & { adminWorkspaceIds?: string[] }).adminWorkspaceIds = data.map(
+      (m: { workspace_id: string }) => m.workspace_id,
+    );
     next();
   } catch {
     next(new ForbiddenError("Admin access check failed"));
   }
 }
 
+async function getAdminWorkspaceIds(req: Request): Promise<string[]> {
+  return (
+    (req as Request & { adminWorkspaceIds?: string[] }).adminWorkspaceIds ??
+    (
+      await req
+        .supabase!.from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", req.userId)
+        .in("role", ["owner", "admin"])
+    ).data?.map((m: { workspace_id: string }) => m.workspace_id) ?? []
+  );
+}
+
+async function verifyWorkspaceMembership(
+  req: Request,
+  workspaceId: string,
+): Promise<void> {
+  const supabase = req.supabase;
+  if (!supabase) throw new ForbiddenError("Auth context missing");
+  const { data } = await supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", req.userId)
+    .single();
+  if (!data) throw new ForbiddenError("Not a member of this workspace");
+}
+
 router.get(
   "/stats",
   authenticate,
   requireAdmin,
-  asyncHandler(async (_req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
+
     const [{ count: users }, { count: workspaces }, { count: channels }, { count: messages }] =
       await Promise.all([
         admin.from("users").select("*", { count: "exact", head: true }),
-        admin.from("workspaces").select("*", { count: "exact", head: true }),
-        admin.from("channels").select("*", { count: "exact", head: true }),
+        admin.from("workspaces").select("*", { count: "exact", head: true }).in("id", workspaceIds),
+        admin.from("channels").select("*", { count: "exact", head: true }).in("workspace_id", workspaceIds),
         admin.from("messages").select("*", { count: "exact", head: true }),
       ]);
     res.json({ stats: { users, workspaces, channels, messages } });
@@ -78,11 +110,13 @@ router.get(
   requireAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
     const page = parseInt(req.query.page as string) || 0;
     const limit = 20;
     const { data, error, count } = await admin
       .from("channels")
       .select("*, workspaces!inner(name, slug)", { count: "exact" })
+      .in("workspace_id", workspaceIds)
       .range(page * limit, (page + 1) * limit - 1)
       .order("created_at", { ascending: false });
     if (error) throw new InternalServerError(error.message);
@@ -94,11 +128,13 @@ router.get(
   "/workspaces",
   authenticate,
   requireAdmin,
-  asyncHandler(async (_req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
     const { data, error } = await admin
       .from("workspaces")
       .select("*, workspace_members(count)")
+      .in("id", workspaceIds)
       .order("created_at", { ascending: false });
     if (error) throw new InternalServerError(error.message);
     res.json({ workspaces: data });
@@ -109,11 +145,13 @@ router.get(
   "/integrations",
   authenticate,
   requireAdmin,
-  asyncHandler(async (_req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
     const { data, error } = await admin
       .from("webhook_endpoints")
       .select("*, workspaces(name, slug)")
+      .in("workspace_id", workspaceIds)
       .order("created_at", { ascending: false });
     if (error) throw new InternalServerError(error.message);
     res.json({ integrations: data });
@@ -262,12 +300,22 @@ router.get(
   requireAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
     const page = parseInt(req.query.page as string) || 0;
     const limit = 20;
     const webhookId = req.query.webhook_id as string | undefined;
+
+    const endpointIds = (
+      await admin
+        .from("webhook_endpoints")
+        .select("id")
+        .in("workspace_id", workspaceIds)
+    ).data?.map((e: { id: string }) => e.id) ?? [];
+
     let query = admin
       .from("webhook_deliveries")
       .select("*, webhook_endpoints!inner(name, workspace_id)", { count: "exact" })
+      .in("webhook_id", endpointIds)
       .order("created_at", { ascending: false })
       .range(page * limit, (page + 1) * limit - 1);
     if (webhookId) query = query.eq("webhook_id", webhookId);
@@ -281,11 +329,21 @@ router.get(
   "/webhooks/dead-letters",
   authenticate,
   requireAdmin,
-  asyncHandler(async (_req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
+
+    const endpointIds = (
+      await admin
+        .from("webhook_endpoints")
+        .select("id")
+        .in("workspace_id", workspaceIds)
+    ).data?.map((e: { id: string }) => e.id) ?? [];
+
     const { data, error } = await admin
       .from("webhook_dead_letters")
       .select("*, webhook_endpoints!inner(name, workspace_id)")
+      .in("webhook_id", endpointIds)
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new InternalServerError(error.message);
@@ -398,6 +456,10 @@ router.get(
     const dateFrom = req.query.dateFrom as string | undefined;
     const dateTo = req.query.dateTo as string | undefined;
 
+    if (workspaceId) {
+      await verifyWorkspaceMembership(req, workspaceId);
+    }
+
     let query = admin
       .from("audit_logs")
       .select("*, auth_users:actor_user_id(email)", { count: "exact" });
@@ -429,6 +491,8 @@ router.get(
       res.status(400).json({ error: { code: "BAD_REQUEST", message: "workspace_id query param is required" } });
       return;
     }
+
+    await verifyWorkspaceMembership(req, workspaceId);
 
     async function fetchAll(
       query: PromiseLike<{ data: unknown; error: { message: string } | null }>,

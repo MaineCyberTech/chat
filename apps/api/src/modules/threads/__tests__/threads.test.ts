@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ThreadService } from "../service.js";
 
-function mockSupabase(result: unknown) {
+function makeChain(result: unknown) {
   const chain: any = {};
   for (const m of [
     "select",
@@ -16,12 +16,18 @@ function mockSupabase(result: unknown) {
     "or",
     "gt",
     "lt",
+    "upsert",
+    "count",
+    "head",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
   chain.then = (onfulfilled: (v: unknown) => unknown) => Promise.resolve(result).then(onfulfilled);
+  return chain;
+}
 
-  return { from: vi.fn(() => chain) };
+function mockSupabase(result: unknown) {
+  return { from: vi.fn(() => makeChain(result)) };
 }
 
 describe("ThreadService", () => {
@@ -68,6 +74,78 @@ describe("ThreadService", () => {
       const participants = await service.getParticipants("thread-1", supabase as any);
 
       expect(participants).toEqual([]);
+    });
+  });
+
+  describe("joinThread", () => {
+    it("returns true on successful join", async () => {
+      const supabase = mockSupabase({ data: null, error: null });
+
+      const joined = await service.joinThread("thread-1", "user-1", supabase as any);
+
+      expect(joined).toBe(true);
+    });
+
+    it("returns false on join error", async () => {
+      const supabase = mockSupabase({ data: null, error: { message: "duplicate" } });
+
+      const joined = await service.joinThread("thread-1", "user-1", supabase as any);
+
+      expect(joined).toBe(false);
+    });
+  });
+
+  describe("leaveThread", () => {
+    it("returns true on successful leave", async () => {
+      const supabase = mockSupabase({ data: null, error: null });
+
+      const left = await service.leaveThread("thread-1", "user-1", supabase as any);
+
+      expect(left).toBe(true);
+    });
+
+    it("returns false on leave error", async () => {
+      const supabase = mockSupabase({ data: null, error: { message: "not found" } });
+
+      const left = await service.leaveThread("thread-1", "user-1", supabase as any);
+
+      expect(left).toBe(false);
+    });
+  });
+
+  describe("getUnreadCount", () => {
+    it("returns unread count when participant has last_read_at", async () => {
+      let callCount = 0;
+      const supabase = {
+        from: vi.fn(() => {
+          callCount++;
+          if (callCount === 1) {
+            return makeChain({ data: { last_read_at: "2024-01-01T00:00:00Z" }, error: null });
+          }
+          return makeChain({ data: null, error: null, count: 5 });
+        }),
+      };
+
+      const count = await service.getUnreadCount("thread-1", "user-1", supabase as any);
+
+      expect(count).toBe(5);
+    });
+
+    it("returns 0 when no participant record", async () => {
+      let callCount = 0;
+      const supabase = {
+        from: vi.fn(() => {
+          callCount++;
+          if (callCount === 1) {
+            return makeChain({ data: null, error: null });
+          }
+          return makeChain({ data: null, error: null, count: 0 });
+        }),
+      };
+
+      const count = await service.getUnreadCount("thread-1", "user-1", supabase as any);
+
+      expect(count).toBe(0);
     });
   });
 });

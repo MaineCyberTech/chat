@@ -1,10 +1,32 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import exportRouter from "../routes.js";
 
-const mockData = { data: [], error: null };
+const mockWorkspaces = [
+  { id: "ws-1", name: "Test WS", slug: "test-ws", created_at: "2024-01-01" },
+  { id: "ws-2", name: "Second", slug: "second", created_at: "2024-01-02" },
+];
 
-const mockFrom = vi.fn(() => ({
-  select: vi.fn(() => ({ order: vi.fn(() => mockData) })),
+const mockUsers = [
+  { id: "u-1", email: "a@test.com", display_name: "User A", created_at: "2024-01-01" },
+];
+
+const mockChannels = [
+  { id: "ch-1", name: "General", slug: "general", workspace_id: "ws-1", channel_type: "public", created_at: "2024-01-01" },
+];
+
+const mockMessages = [
+  { id: "m-1", channel_id: "ch-1", user_id: "u-1", content: "Hello world", created_at: "2024-01-01" },
+];
+
+const tableData: Record<string, unknown[]> = {
+  workspaces: mockWorkspaces,
+  users: mockUsers,
+  channels: mockChannels,
+  messages: mockMessages,
+};
+
+const mockFrom = vi.fn((table: string) => ({
+  select: vi.fn(() => ({ order: vi.fn(() => ({ data: tableData[table] ?? [], error: null })) })),
 }));
 
 vi.mock("../../../lib/supabase.js", () => ({
@@ -41,39 +63,58 @@ function mockRes() {
 }
 
 describe("Export Routes", () => {
-  it("GET /admin/export/workspaces returns CSV", async () => {
+  beforeEach(() => {
+    mockFrom.mockClear();
+  });
+
+  it("GET /admin/export/workspaces returns CSV with headers and rows", async () => {
     const handler = findHandler("get", "/admin/export/workspaces");
     expect(handler).toBeTruthy();
     const req = mockReq();
     const res = mockRes();
     await handler(req, res);
-    expect(res.setHeader).toHaveBeenCalled();
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/csv");
+    expect(res.send).toHaveBeenCalled();
+    const csv = (res.send as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const lines = csv.split("\n");
+    expect(lines[0]).toBe("id,name,slug,created_at");
+    expect(lines[1]).toContain("ws-1");
+    expect(lines[2]).toContain("ws-2");
+    expect(lines).toHaveLength(3);
   });
 
-  it("GET /admin/export/users returns CSV", async () => {
+  it("GET /admin/export/users returns CSV with headers and rows", async () => {
     const handler = findHandler("get", "/admin/export/users");
     expect(handler).toBeTruthy();
     const req = mockReq();
     const res = mockRes();
     await handler(req, res);
-    expect(res.setHeader).toHaveBeenCalled();
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/csv");
+    const csv = (res.send as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(csv).toContain("id,email,display_name,created_at");
+    expect(csv).toContain("u-1");
   });
 
-  it("GET /admin/export/channels returns CSV", async () => {
+  it("GET /admin/export/channels returns CSV with headers and rows", async () => {
     const handler = findHandler("get", "/admin/export/channels");
     expect(handler).toBeTruthy();
     const req = mockReq();
     const res = mockRes();
     await handler(req, res);
-    expect(res.setHeader).toHaveBeenCalled();
+    const csv = (res.send as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(csv).toContain("id,name,slug,workspace_id,channel_type,created_at");
+    expect(csv).toContain("ch-1");
+    expect(csv).toContain("public");
   });
 
-  it("GET /admin/export/messages returns CSV", async () => {
+  it("GET /admin/export/messages returns CSV with headers and rows", async () => {
     const handler = findHandler("get", "/admin/export/messages");
     expect(handler).toBeTruthy();
     const req = mockReq();
     const res = mockRes();
     await handler(req, res);
-    expect(res.setHeader).toHaveBeenCalled();
+    const csv = (res.send as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(csv).toContain("id,channel_id,user_id,content,created_at");
+    expect(csv).toContain("Hello world");
   });
 });

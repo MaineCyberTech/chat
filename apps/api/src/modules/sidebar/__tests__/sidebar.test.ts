@@ -100,6 +100,7 @@ describe("sidebar categories routes", () => {
     });
 
     it("lists categories with channel assignments", async () => {
+      const memChain = createChain({ data: { role: "member" }, error: null });
       const catChain = createChain({
         data: [
           { id: "cat-1", workspace_id: "ws-1", user_id: "user-1", name: "General", sort_order: 0 },
@@ -110,7 +111,10 @@ describe("sidebar categories routes", () => {
         data: [{ id: "asgn-1", category_id: "cat-1", channel_id: "ch-1", sort_order: 0 }],
         error: null,
       });
-      const from = vi.fn().mockReturnValueOnce(catChain).mockReturnValueOnce(asgnChain);
+      const from = vi.fn()
+        .mockReturnValueOnce(memChain)
+        .mockReturnValueOnce(catChain)
+        .mockReturnValueOnce(asgnChain);
 
       const handler = findHandler("get", "/");
       const req = mockReq({ query: { workspace_id: "ws-1" }, supabase: { from } });
@@ -140,12 +144,16 @@ describe("sidebar categories routes", () => {
     });
 
     it("creates a category", async () => {
+      const memChain = createChain({ data: { role: "member" }, error: null });
       const sortChain = createChain({ data: [{ sort_order: 0 }], error: null });
       const insertChain = createChain({
         data: { id: "cat-new", workspace_id: "ws-1", name: "New Category", sort_order: 1 },
         error: null,
       });
-      const from = vi.fn().mockReturnValueOnce(sortChain).mockReturnValueOnce(insertChain);
+      const from = vi.fn()
+        .mockReturnValueOnce(memChain)
+        .mockReturnValueOnce(sortChain)
+        .mockReturnValueOnce(insertChain);
 
       const handler = findHandler("post", "/");
       const req = mockReq({
@@ -167,11 +175,19 @@ describe("sidebar categories routes", () => {
 
   describe("PATCH /:id", () => {
     it("renames a category", async () => {
+      const ownerChain = createChain({
+        data: { id: "cat-1", workspace_id: "11111111-1111-1111-1111-111111111111", name: "Old", sort_order: 0 },
+        error: null,
+      });
+      const memChain = createChain({ data: { role: "member" }, error: null });
       const updateChain = createChain({
         data: { id: "cat-1", name: "Renamed", sort_order: 0 },
         error: null,
       });
-      const from = vi.fn(() => updateChain);
+      const from = vi.fn()
+        .mockReturnValueOnce(ownerChain)
+        .mockReturnValueOnce(memChain)
+        .mockReturnValueOnce(updateChain);
 
       const handler = findHandler("patch", "/:id");
       const req = mockReq({
@@ -193,8 +209,16 @@ describe("sidebar categories routes", () => {
 
   describe("DELETE /:id", () => {
     it("deletes a category", async () => {
+      const ownerChain = createChain({
+        data: { id: "cat-1", workspace_id: "11111111-1111-1111-1111-111111111111" },
+        error: null,
+      });
+      const memChain = createChain({ data: { role: "member" }, error: null });
       const deleteChain = createChain({ error: null });
-      const from = vi.fn(() => deleteChain);
+      const from = vi.fn()
+        .mockReturnValueOnce(ownerChain)
+        .mockReturnValueOnce(memChain)
+        .mockReturnValueOnce(deleteChain);
 
       const handler = findHandler("delete", "/:id");
       const req = mockReq({
@@ -211,8 +235,16 @@ describe("sidebar categories routes", () => {
 
   describe("PATCH /reorder", () => {
     it("reorders categories", async () => {
+      const firstCatChain = createChain({
+        data: { id: "11111111-1111-1111-1111-111111111111", workspace_id: "11111111-1111-1111-1111-111111111111" },
+        error: null,
+      });
+      const memChain = createChain({ data: { role: "member" }, error: null });
       const updateChain = createChain({ error: null });
-      const from = vi.fn(() => updateChain);
+      const from = vi.fn()
+        .mockReturnValueOnce(firstCatChain)
+        .mockReturnValueOnce(memChain)
+        .mockReturnValue(updateChain);
 
       const handler = findHandler("patch", "/reorder");
       const req = mockReq({
@@ -244,6 +276,11 @@ describe("sidebar categories routes", () => {
 
   describe("POST /:id/assignments", () => {
     it("adds a channel to a category", async () => {
+      const ownerChain = createChain({
+        data: { id: "cat-1", workspace_id: "11111111-1111-1111-1111-111111111111" },
+        error: null,
+      });
+      const memChain = createChain({ data: { role: "member" }, error: null });
       const catCheckChain = createChain({
         data: { id: "cat-1" },
         error: null,
@@ -255,6 +292,8 @@ describe("sidebar categories routes", () => {
       });
       const from = vi
         .fn()
+        .mockReturnValueOnce(ownerChain)
+        .mockReturnValueOnce(memChain)
         .mockReturnValueOnce(catCheckChain)
         .mockReturnValueOnce(sortChain)
         .mockReturnValueOnce(insertChain);

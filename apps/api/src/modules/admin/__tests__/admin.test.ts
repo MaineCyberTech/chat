@@ -39,9 +39,13 @@ function createChain(result: unknown): MockChain {
 }
 
 function mockReq(overrides: Record<string, unknown> = {}) {
+  const membershipChain = createChain({
+    data: [{ workspace_id: "ws-1", role: "owner" }],
+    error: null,
+  });
   return {
     userId: "user-1",
-    supabase: { from: vi.fn() },
+    supabase: { from: vi.fn(() => membershipChain) },
     query: {},
     body: {},
     params: {},
