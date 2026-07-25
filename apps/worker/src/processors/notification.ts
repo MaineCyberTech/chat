@@ -28,6 +28,21 @@ async function deliverInApp(
   supabase: ReturnType<typeof createSupabaseClient>,
   data: NotificationJobData,
 ): Promise<boolean> {
+  const tenSecondsAgo = new Date(Date.now() - 10_000).toISOString();
+  const { data: existing } = await supabase
+    .from("notifications")
+    .select("id")
+    .eq("user_id", data.userId)
+    .eq("type", data.type)
+    .eq("body", data.message)
+    .gte("created_at", tenSecondsAgo)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    logger.debug({ userId: data.userId, type: data.type }, "Duplicate in-app notification suppressed");
+    return true;
+  }
+
   const { error } = await supabase.from("notifications").insert({
     user_id: data.userId,
     workspace_id: data.workspaceId ?? null,

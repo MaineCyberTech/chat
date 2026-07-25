@@ -305,6 +305,20 @@ router.delete(
     const supabase = getSupabaseAdmin();
     const userId = req.userId!;
 
+    const { password } = req.body ?? {};
+    if (!password || typeof password !== "string" || password.length === 0) {
+      throw new BadRequestError("Password is required to delete your account");
+    }
+
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: req.userEmail!,
+      password,
+    });
+
+    if (verifyError) {
+      throw new BadRequestError("Invalid password");
+    }
+
     const { data: rpcResult, error: rpcError } = await supabase.rpc("gdpr_delete_user", {
       target_user_id: userId,
     });

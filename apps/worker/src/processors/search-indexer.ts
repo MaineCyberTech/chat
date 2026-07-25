@@ -37,12 +37,13 @@ async function updateMessageIndex(
     logger.warn({ messageId, error: error.message }, "RPC not available, using direct SQL update");
 
     if (contentToIndex) {
+      const { data: vectorResult } = await supabase.rpc("to_tsvector", {
+        english: contentToIndex,
+      });
       const { error: updateError } = await supabase
         .from("messages")
         .update({
-          search_vector: supabase.rpc("to_tsvector", {
-            english: contentToIndex,
-          }) as unknown as undefined,
+          search_vector: (vectorResult as unknown) ?? undefined,
         })
         .eq("id", messageId);
 

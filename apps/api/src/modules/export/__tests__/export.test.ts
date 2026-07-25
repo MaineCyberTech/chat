@@ -18,20 +18,33 @@ const mockMessages = [
   { id: "m-1", channel_id: "ch-1", user_id: "u-1", content: "Hello world", created_at: "2024-01-01" },
 ];
 
+const mockMembers = [
+  { user_id: "u-1" },
+];
+
 const tableData: Record<string, unknown[]> = {
   workspaces: mockWorkspaces,
   users: mockUsers,
   channels: mockChannels,
   messages: mockMessages,
+  workspace_members: mockMembers,
 };
 
-const mockFrom = vi.fn((table: string) => ({
-  select: vi.fn(() => ({ order: vi.fn(() => ({ data: tableData[table] ?? [], error: null })) })),
-}));
+const mockAdminFrom = vi.fn((table: string) => {
+  const data = tableData[table] ?? [];
+  const chain: any = {
+    select: vi.fn(() => chain),
+    eq: vi.fn(() => chain),
+    in: vi.fn(() => chain),
+    order: vi.fn(() => chain),
+  };
+  chain.then = (fn: (v: unknown) => unknown) => Promise.resolve({ data, error: null }).then(fn);
+  return chain;
+});
 
 vi.mock("../../../lib/supabase.js", () => ({
   getSupabase: vi.fn(),
-  getSupabaseAdmin: vi.fn(() => ({ from: mockFrom })),
+  getSupabaseAdmin: vi.fn(() => ({ from: mockAdminFrom })),
 }));
 
 vi.mock("../../../lib/logger.js", () => ({
@@ -48,8 +61,31 @@ function findHandler(method: string, path: string) {
   return null;
 }
 
+function createAdminChain(result: unknown) {
+  const chain: any = {
+    select: vi.fn(() => chain),
+    eq: vi.fn(() => chain),
+    in: vi.fn(() => chain),
+    order: vi.fn(() => chain),
+  };
+  chain.then = (fn: (v: unknown) => unknown) => Promise.resolve(result).then(fn);
+  return chain;
+}
+
 function mockReq(overrides: Record<string, unknown> = {}) {
-  return { userId: "admin-1", supabase: { from: vi.fn() }, query: {}, ...overrides } as any;
+  const adminRows = [{ workspace_id: "ws-1" }];
+  const adminChain = createAdminChain({ data: adminRows, error: null });
+  const from = vi.fn((table: string) => {
+    if (table === "workspace_members") return adminChain;
+    const chain: any = {
+      select: vi.fn(() => chain),
+      eq: vi.fn(() => chain),
+      in: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+    };
+    return chain;
+  });
+  return { userId: "admin-1", supabase: { from }, query: {}, ...overrides } as any;
 }
 
 function mockRes() {
@@ -64,7 +100,7 @@ function mockRes() {
 
 describe("Export Routes", () => {
   beforeEach(() => {
-    mockFrom.mockClear();
+    mockAdminFrom.mockClear();
   });
 
   it("GET /admin/export/workspaces returns CSV with headers and rows", async () => {

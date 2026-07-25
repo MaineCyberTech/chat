@@ -19,6 +19,10 @@ function recordFailure(label: string): void {
   failureTracker.set(label, failures.slice(-CB_MAX_FAILURES * 2));
 }
 
+function recordSuccess(label: string): void {
+  failureTracker.delete(label);
+}
+
 export async function executeWithCircuitBreaker<T>(
   label: string,
   fn: () => Promise<T>,
@@ -29,6 +33,7 @@ export async function executeWithCircuitBreaker<T>(
   }
   try {
     const result = await fn();
+    recordSuccess(label);
     return result;
   } catch (err) {
     recordFailure(label);

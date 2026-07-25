@@ -168,6 +168,21 @@ export default function TestAccountsPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  if (process.env.NODE_ENV === "production") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[var(--center-channel-bg)]">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-[var(--center-channel-color)]">
+            Not Available
+          </h1>
+          <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+            This page is only available in development.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   async function handleLogin(email: string) {
     setLoading(email);
     setError(null);

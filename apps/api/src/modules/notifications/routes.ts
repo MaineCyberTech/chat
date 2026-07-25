@@ -2,7 +2,7 @@ import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { requireChannelAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
-import { getSupabase } from "../../lib/supabase.js";
+
 import { asyncHandler } from "../../lib/async-handler.js";
 import {
   BadRequestError,
@@ -28,7 +28,7 @@ router.get(
       100,
     );
     const workspaceId = req.query.workspace_id as string | undefined;
-    const notifications = await notificationService.list(req.userId!, workspaceId, limit, offset);
+    const notifications = await notificationService.list(req.userId!, workspaceId, limit, offset, req.supabase!);
     res.json({ notifications, limit, offset });
   }),
 );
@@ -38,7 +38,7 @@ router.get(
   "/notifications/unread",
   asyncHandler(async (req, res) => {
     const workspaceId = req.query.workspace_id as string | undefined;
-    const unread = await notificationService.unreadCount(req.userId!, workspaceId);
+    const unread = await notificationService.unreadCount(req.userId!, workspaceId, req.supabase!);
     res.json({ unread });
   }),
 );
@@ -47,7 +47,7 @@ router.get(
 router.get(
   "/notifications/preferences",
   asyncHandler(async (req, res) => {
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data, error } = await supabase
       .from("channel_notification_preferences")
       .select("channel_id, notify")
@@ -63,7 +63,7 @@ router.get(
   validateUuidParam("id"),
   requireChannelAccess("id"),
   asyncHandler(async (req, res) => {
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data } = await supabase
       .from("channel_notification_preferences")
       .select("notify, notify_sound")
@@ -93,7 +93,7 @@ router.put(
       notify_sound?: boolean;
       notify_everyone?: boolean;
     };
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data, error } = await supabase
       .from("channel_notification_preferences")
       .upsert(
@@ -127,7 +127,7 @@ router.delete(
   validateUuidParam("id"),
   requireChannelAccess("id"),
   asyncHandler(async (req, res) => {
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     await supabase
       .from("channel_notification_preferences")
       .delete()
@@ -141,7 +141,7 @@ router.delete(
 router.get(
   "/trigger-words",
   asyncHandler(async (req, res) => {
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data, error } = await supabase
       .from("trigger_words")
       .select("id, word, created_at")
@@ -158,7 +158,7 @@ router.get(
 router.get(
   "/notifications/trigger-words",
   asyncHandler(async (req, res) => {
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data, error } = await supabase
       .from("trigger_words")
       .select("id, word, created_at")
@@ -181,7 +181,7 @@ router.post(
     if (trimmed.length > 100) {
       throw new BadRequestError("Word must be 100 characters or less");
     }
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data, error } = await supabase
       .from("trigger_words")
       .insert({ user_id: req.userId, word: trimmed })
@@ -202,7 +202,7 @@ router.delete(
   "/trigger-words/:id",
   validateUuidParam("id"),
   asyncHandler(async (req, res) => {
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data: _data, error } = await supabase
       .from("trigger_words")
       .delete()

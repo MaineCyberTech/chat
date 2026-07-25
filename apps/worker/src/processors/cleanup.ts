@@ -248,7 +248,7 @@ export function registerCleanupProcessor() {
             logger.info({ type }, "Stale session cleanup handled by Supabase auth hooks");
             break;
           case "expired_uploads":
-            logger.info({ type }, "Expired upload cleanup not implemented via DB (use stale_uploads)");
+            cleaned = await cleanupStaleUploads(supabase, olderThanDays);
             break;
           case "stale_uploads":
             cleaned = await cleanupStaleUploads(supabase, olderThanDays);

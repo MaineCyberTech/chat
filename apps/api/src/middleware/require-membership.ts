@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { getSupabaseForUser, getSupabase } from "../lib/supabase.js";
+import { getSupabaseForUser } from "../lib/supabase.js";
 
 /**
  * Permission model:
@@ -156,8 +156,7 @@ export function requireMessageAccess(messageParamName = "id") {
       return;
     }
 
-    const supabase = getSupabase();
-    const { data: message, error: messageError } = await supabase
+    const { data: message, error: messageError } = await req.supabase!
       .from("messages")
       .select("channel_id")
       .eq("id", messageId)

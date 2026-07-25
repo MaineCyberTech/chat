@@ -86,12 +86,9 @@ describe("status routes", () => {
 
   describe("GET /status", () => {
     it("returns null when no status set", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const from = vi.fn(() => createChain({ data: null, error: null }));
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("get", "/status");
-      const req = mockReq();
+      const req = mockReq({ supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -102,16 +99,13 @@ describe("status routes", () => {
 
   describe("PUT /status", () => {
     it("sets a status with emoji and text", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const insertChain = createChain({
         data: { user_id: "user-1", emoji: "smile", text: "Happy", expires_at: null },
         error: null,
       });
       const from = vi.fn(() => insertChain);
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("put", "/status");
-      const req = mockReq({ body: { emoji: "smile", text: "Happy" } });
+      const req = mockReq({ body: { emoji: "smile", text: "Happy" }, supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -139,7 +133,6 @@ describe("status routes", () => {
     });
 
     it("sets a status with duration", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const insertChain = createChain({
         data: {
           user_id: "user-1",
@@ -150,10 +143,8 @@ describe("status routes", () => {
         error: null,
       });
       const from = vi.fn(() => insertChain);
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("put", "/status");
-      const req = mockReq({ body: { duration: "1h" } });
+      const req = mockReq({ body: { duration: "1h" }, supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -168,13 +159,10 @@ describe("status routes", () => {
 
   describe("DELETE /status", () => {
     it("clears status and returns 204", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const deleteChain = createChain({ data: null, error: null });
       const from = vi.fn(() => deleteChain);
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("delete", "/status");
-      const req = mockReq();
+      const req = mockReq({ supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -186,7 +174,6 @@ describe("status routes", () => {
 
   describe("POST /status/batch", () => {
     it("returns statuses for user ids", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const batchChain = createChain({
         data: [
           { user_id: "user-1", emoji: "wave", text: "Hello" },
@@ -195,10 +182,8 @@ describe("status routes", () => {
         error: null,
       });
       const from = vi.fn(() => batchChain);
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("post", "/status/batch");
-      const req = mockReq({ body: { userIds: ["user-1", "user-2"] } });
+      const req = mockReq({ body: { userIds: ["user-1", "user-2"] }, supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);

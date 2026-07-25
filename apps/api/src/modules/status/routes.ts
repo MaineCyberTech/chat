@@ -1,6 +1,6 @@
 import { Router, type Router as RouterType } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
-import { getSupabase } from "../../lib/supabase.js";
+
 import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, InternalServerError } from "../../lib/app-error.js";
 
@@ -41,7 +41,7 @@ function calcExpiry(duration: string): string | null {
 router.get(
   "/status",
   asyncHandler(async (req, res) => {
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data } = await supabase
       .from("user_statuses")
       .select("*")
@@ -58,7 +58,7 @@ router.put(
     if (text.length > 100) {
       throw new BadRequestError("Status text max 100 chars");
     }
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const expiresAt = duration ? calcExpiry(duration) : null;
     const { data, error } = await supabase
       .from("user_statuses")
@@ -84,7 +84,7 @@ router.put(
 router.delete(
   "/status",
   asyncHandler(async (req, res) => {
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     await supabase.from("user_statuses").delete().eq("user_id", req.userId);
     res.status(204).send();
   }),
@@ -99,7 +99,7 @@ router.post(
       res.json({ statuses: {} });
       return;
     }
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data } = await supabase
       .from("user_statuses")
       .select("*")
@@ -125,7 +125,7 @@ router.post(
       res.json({ presence: {} });
       return;
     }
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data } = await supabase
       .from("user_presence")
       .select("user_id, status, last_seen_at")
@@ -162,7 +162,7 @@ router.get(
       });
       return;
     }
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data } = await supabase
       .from("auto_responders")
       .select("*")
@@ -191,7 +191,7 @@ router.put(
     if (!workspace_id) {
       throw new BadRequestError("workspace_id required");
     }
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data, error } = await supabase
       .from("auto_responders")
       .upsert(

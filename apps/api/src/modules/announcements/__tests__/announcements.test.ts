@@ -86,16 +86,13 @@ describe("announcements routes", () => {
 
   describe("GET /workspaces/:workspaceId/announcements", () => {
     it("returns active announcements for workspace", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const mockData = [
         { id: "1", title: "Welcome", body: "Hello!", created_by: "user-1", created_at: "2026-01-01", updated_at: "2026-01-01" },
       ];
       const chain = createChain({ data: mockData, error: null });
       const from = vi.fn(() => chain);
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("get", "/workspaces/:workspaceId/announcements");
-      const req = mockReq({ params: { workspaceId: "ws-1" } });
+      const req = mockReq({ params: { workspaceId: "ws-1" }, supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -104,13 +101,10 @@ describe("announcements routes", () => {
     });
 
     it("throws on database error", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const chain = createChain({ data: null, error: new Error("DB error") });
       const from = vi.fn(() => chain);
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("get", "/workspaces/:workspaceId/announcements");
-      const req = mockReq({ params: { workspaceId: "ws-1" } });
+      const req = mockReq({ params: { workspaceId: "ws-1" }, supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -121,16 +115,13 @@ describe("announcements routes", () => {
 
   describe("POST /workspaces/:workspaceId/announcements", () => {
     it("creates an announcement and returns 201", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const mockAnnouncement = {
         id: "ann-1", title: "New Policy", body: "Please read", created_by: "user-1", created_at: "2026-01-01", updated_at: "2026-01-01",
       };
       const insertChain = createChain({ data: mockAnnouncement, error: null });
       const from = vi.fn(() => insertChain);
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("post", "/workspaces/:workspaceId/announcements");
-      const req = mockReq({ params: { workspaceId: "ws-1" }, body: { title: "New Policy", body: "Please read" } });
+      const req = mockReq({ params: { workspaceId: "ws-1" }, body: { title: "New Policy", body: "Please read" }, supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -163,13 +154,10 @@ describe("announcements routes", () => {
     });
 
     it("throws on database error", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const insertChain = createChain({ data: null, error: new Error("Insert failed") });
       const from = vi.fn(() => insertChain);
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("post", "/workspaces/:workspaceId/announcements");
-      const req = mockReq({ params: { workspaceId: "ws-1" }, body: { title: "Title", body: "Body" } });
+      const req = mockReq({ params: { workspaceId: "ws-1" }, body: { title: "Title", body: "Body" }, supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -180,7 +168,6 @@ describe("announcements routes", () => {
 
   describe("PATCH /workspaces/:workspaceId/announcements/:id/dismiss", () => {
     it("dismisses an announcement", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const existingChain = createChain({ data: { id: "ann-1", active: true }, error: null });
       const updateChain = createChain({
         data: { id: "ann-1", title: "Old", body: "Old", active: false, created_by: "user-1", created_at: "2026-01-01", updated_at: "2026-01-02" },
@@ -191,10 +178,8 @@ describe("announcements routes", () => {
         callCount++;
         return callCount === 1 ? existingChain : updateChain;
       });
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("patch", "/workspaces/:workspaceId/announcements/:id/dismiss");
-      const req = mockReq({ params: { workspaceId: "ws-1", id: "ann-1" } });
+      const req = mockReq({ params: { workspaceId: "ws-1", id: "ann-1" }, supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -207,13 +192,10 @@ describe("announcements routes", () => {
     });
 
     it("returns 404 when announcement not found", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       const chain = createChain({ data: null, error: { code: "PGRST116", message: "Not found" } });
       const from = vi.fn(() => chain);
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("patch", "/workspaces/:workspaceId/announcements/:id/dismiss");
-      const req = mockReq({ params: { workspaceId: "ws-1", id: "missing" } });
+      const req = mockReq({ params: { workspaceId: "ws-1", id: "missing" }, supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);
@@ -222,7 +204,6 @@ describe("announcements routes", () => {
     });
 
     it("throws on database error during update", async () => {
-      const { getSupabase } = await import("../../../lib/supabase.js");
       let callCount = 0;
       const existingChain = createChain({ data: { id: "ann-1", active: true }, error: null });
       const updateChain = createChain({ data: null, error: new Error("Update failed") });
@@ -230,10 +211,8 @@ describe("announcements routes", () => {
         callCount++;
         return callCount === 1 ? existingChain : updateChain;
       });
-      (getSupabase as any).mockReturnValue({ from });
-
       const handler = findHandler("patch", "/workspaces/:workspaceId/announcements/:id/dismiss");
-      const req = mockReq({ params: { workspaceId: "ws-1", id: "ann-1" } });
+      const req = mockReq({ params: { workspaceId: "ws-1", id: "ann-1" }, supabase: { from } });
       const res = mockRes();
 
       await callHandler(handler, req, res);

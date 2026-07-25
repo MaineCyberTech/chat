@@ -507,6 +507,7 @@ router.post(
   "/messages/:id/remind",
   authenticate,
   validateUuidParam("id"),
+  requireMessageAccess("id"),
   asyncHandler(async (req, res) => {
     const { remindAt } = req.body;
     if (!remindAt) {
@@ -566,7 +567,7 @@ router.get(
     const format = (req.query.format as string) ?? "json";
     const { data: messages } = await req
       .supabase!.from("messages")
-      .select("*, users!inner(display_name, email)")
+      .select("*, users!inner(display_name)")
       .eq("channel_id", req.params.channelId as string)
       .is("deleted_at", null)
       .order("created_at", { ascending: true });
@@ -578,8 +579,7 @@ router.get(
     const rows = messages.map((m: Record<string, unknown>) => ({
       id: m.id,
       author:
-        (m.users as Record<string, unknown>).display_name ??
-        (m.users as Record<string, unknown>).email,
+        (m.users as Record<string, unknown>).display_name ?? "Unknown User",
       content: typeof m.content === "string" ? m.content.replace(/[\n\r]+/g, " ") : "",
       created_at: m.created_at,
       edited_at: m.edited_at ?? "",

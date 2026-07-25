@@ -1,4 +1,4 @@
-import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
+import { getSupabase } from "../../lib/supabase.js";
 import { webhookService } from "../webhooks/service.js";
 import { logger } from "../../lib/logger.js";
 import { getIO, removeAllFromRoom } from "../../lib/socket.js";
@@ -52,15 +52,19 @@ export class ChannelService {
     return (data ?? []) as unknown as Channel[];
   }
 
-  async reorderChannel(workspaceId: string, channelIds: string[]): Promise<boolean> {
-    const supabase = getSupabase();
+  async reorderChannel(
+    workspaceId: string,
+    channelIds: string[],
+    supabase?: SupabaseClient,
+  ): Promise<boolean> {
+    const client = this.getClient(supabase);
     const updates = channelIds.map((id, index) => ({
       id,
       sort_order: index,
     }));
     // Update each channel's sort_order
     for (const update of updates) {
-      const { error } = await supabase
+      const { error } = await client
         .from("channels")
         .update({ sort_order: update.sort_order })
         .eq("id", update.id)
@@ -150,13 +154,17 @@ export class ChannelService {
     );
   }
 
-  async update(channelId: string, input: UpdateChannelInput): Promise<Channel | null> {
-    const supabase = getSupabase();
+  async update(
+    channelId: string,
+    input: UpdateChannelInput,
+    supabase?: SupabaseClient,
+  ): Promise<Channel | null> {
+    const client = this.getClient(supabase);
     const updates: Record<string, unknown> = {};
     if (input.name !== undefined) updates.name = input.name;
     if (input.topic !== undefined) updates.topic = input.topic;
 
-    let query = supabase.from("channels").update(updates).eq("id", channelId);
+    let query = client.from("channels").update(updates).eq("id", channelId);
 
     if (input.version !== undefined) {
       query = query.eq("version", input.version);
@@ -185,12 +193,12 @@ export class ChannelService {
     return data as Channel;
   }
 
-  async remove(channelId: string): Promise<boolean> {
-    const supabase = getSupabase();
-    const channel = await this.getById(channelId);
+  async remove(channelId: string, supabase?: SupabaseClient): Promise<boolean> {
+    const client = this.getClient(supabase);
+    const channel = await this.getById(channelId, client);
     if (!channel) return false;
 
-    const { error } = await supabase.from("channels").delete().eq("id", channelId);
+    const { error } = await client.from("channels").delete().eq("id", channelId);
     const success = !error;
 
     if (success) {
@@ -216,10 +224,10 @@ export class ChannelService {
 
   async getMembers(
     channelId: string,
+    supabase: SupabaseClient,
     limit = 50,
     offset = 0,
   ): Promise<{ user_id: string; display_name: string | null }[]> {
-    const supabase = getSupabaseAdmin();
     const { data } = await supabase
       .from("channel_members")
       .select("user_id, users(display_name)")
@@ -298,7 +306,7 @@ export class ChannelService {
 
     // Add all users as channel members and dm_members
     for (const userId of allUserIds) {
-      await this.addMember(channel.id, userId);
+      await this.addMember(channel.id, userId, client);
       await client
         .from("dm_members")
         .upsert({ channel_id: channel.id, user_id: userId }, { onConflict: "channel_id,user_id" });
@@ -380,9 +388,9 @@ export class ChannelService {
     });
   }
 
-  async listWorkspaceChannelIds(workspaceId: string): Promise<string[]> {
-    const supabase = getSupabase();
-    const { data } = await supabase
+  async listWorkspaceChannelIds(workspaceId: string, supabase?: SupabaseClient): Promise<string[]> {
+    const client = this.getClient(supabase);
+    const { data } = await client
       .from("channels")
       .select("id")
       .eq("workspace_id", workspaceId)
@@ -391,9 +399,9 @@ export class ChannelService {
     return (data ?? []).map((d: { id: string }) => d.id);
   }
 
-  async addMember(channelId: string, userId: string): Promise<boolean> {
-    const supabase = getSupabase();
-    const { error } = await supabase.from("channel_members").insert({
+  async addMember(channelId: string, userId: string, supabase?: SupabaseClient): Promise<boolean> {
+    const client = this.getClient(supabase);
+    const { error } = await client.from("channel_members").insert({
       channel_id: channelId,
       user_id: userId,
     });
@@ -408,9 +416,9 @@ export class ChannelService {
     return success;
   }
 
-  async removeMember(channelId: string, userId: string): Promise<boolean> {
-    const supabase = getSupabase();
-    const { error } = await supabase
+  async removeMember(channelId: string, userId: string, supabase?: SupabaseClient): Promise<boolean> {
+    const client = this.getClient(supabase);
+    const { error } = await client
       .from("channel_members")
       .delete()
       .eq("channel_id", channelId)

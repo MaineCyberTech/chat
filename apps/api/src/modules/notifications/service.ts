@@ -1,4 +1,5 @@
-import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { pushSubscriptionService } from "./push-subscription-service.js";
 import { logger } from "../../lib/logger.js";
 
@@ -17,11 +18,11 @@ interface Notification {
 export class NotificationService {
   async list(
     userId: string,
-    workspaceId?: string,
-    limit = 20,
-    offset = 0,
+    workspaceId: string | undefined,
+    limit: number,
+    offset: number,
+    supabase: SupabaseClient,
   ): Promise<Notification[]> {
-    const supabase = getSupabase();
     let query = supabase
       .from("notifications")
       .select("*")
@@ -35,8 +36,11 @@ export class NotificationService {
     return (data ?? []) as Notification[];
   }
 
-  async unreadCount(userId: string, workspaceId?: string): Promise<number> {
-    const supabase = getSupabase();
+  async unreadCount(
+    userId: string,
+    workspaceId: string | undefined,
+    supabase: SupabaseClient,
+  ): Promise<number> {
     let query = supabase
       .from("notifications")
       .select("*", { count: "exact", head: true })
@@ -49,8 +53,11 @@ export class NotificationService {
     return count ?? 0;
   }
 
-  async markRead(userId: string, notificationId: string): Promise<boolean> {
-    const supabase = getSupabase();
+  async markRead(
+    userId: string,
+    notificationId: string,
+    supabase: SupabaseClient,
+  ): Promise<boolean> {
     const { error } = await supabase
       .from("notifications")
       .update({ read: true })
@@ -59,8 +66,7 @@ export class NotificationService {
     return !error;
   }
 
-  async markAllRead(userId: string): Promise<boolean> {
-    const supabase = getSupabase();
+  async markAllRead(userId: string, supabase: SupabaseClient): Promise<boolean> {
     const { error } = await supabase
       .from("notifications")
       .update({ read: true })

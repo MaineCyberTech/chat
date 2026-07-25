@@ -1,4 +1,4 @@
-import { Worker, Job, Queue } from "bullmq";
+import { Worker, Job, Queue, UnrecoverableError } from "bullmq";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 import { createSupabaseClient } from "../lib/supabase.js";
@@ -35,7 +35,7 @@ async function performWebhookDelivery(
   event: string,
   payload: Record<string, unknown>,
   retryCount: number,
-): Promise<{ status: string; statusCode: number | null }> {
+): Promise<{ status: string; statusCode: number | null; permanent: boolean }> {
   const { data: endpoint } = await supabase
     .from("webhook_endpoints")
     .select("*")
@@ -45,7 +45,7 @@ async function performWebhookDelivery(
 
   if (!endpoint) {
     logger.error({ webhookId }, "Webhook endpoint not found or inactive");
-    return { status: "failed", statusCode: null };
+    return { status: "failed", statusCode: null, permanent: true };
   }
 
   const urlValidation = await validateWebhookUrl(endpoint.url);
@@ -55,7 +55,7 @@ async function performWebhookDelivery(
       .from("webhook_endpoints")
       .update({ last_failure_at: new Date().toISOString(), last_error: urlValidation.error })
       .eq("id", webhookId);
-    return { status: "failed", statusCode: null };
+    return { status: "failed", statusCode: null, permanent: true };
   }
 
   const start = Date.now();
@@ -106,6 +106,11 @@ async function performWebhookDelivery(
   }
 
   const durationMs = Date.now() - start;
+  const permanent =
+    deliveryStatus === "failed" &&
+    responseStatus !== null &&
+    responseStatus >= 400 &&
+    responseStatus < 500;
 
   await supabase.from("webhook_deliveries").insert({
     webhook_id: webhookId,
@@ -120,7 +125,7 @@ async function performWebhookDelivery(
     dead_letter: false,
   });
 
-  if (deliveryStatus === "failed" && retryCount >= MAX_RETRIES) {
+  if (deliveryStatus === "failed" && (permanent || retryCount >= MAX_RETRIES)) {
     await supabase.from("webhook_dead_letters").insert({
       webhook_id: webhookId,
       event,
@@ -133,7 +138,7 @@ async function performWebhookDelivery(
     logger.error({ webhookId, event, attempts: retryCount }, "Webhook moved to dead letter queue");
   }
 
-  return { status: deliveryStatus, statusCode: responseStatus };
+  return { status: deliveryStatus, statusCode: responseStatus, permanent };
 }
 
 export function registerWebhookProcessor() {
@@ -148,10 +153,17 @@ export function registerWebhookProcessor() {
   const worker = new Worker<WebhookDeliveryJobData>(
     "webhook-delivery",
     async (job: Job<WebhookDeliveryJobData>) => {
-      const { webhookId, event, payload, retryCount = 0 } = job.data;
+      const { webhookId, event, payload } = job.data;
+      const retryCount = job.attemptsMade;
       logger.info({ webhookId, event, retryCount }, "Processing webhook delivery");
 
-      return performWebhookDelivery(supabase, webhookId, event, payload, retryCount);
+      const result = await performWebhookDelivery(supabase, webhookId, event, payload, retryCount);
+
+      if (result.status === "failed" && !result.permanent && retryCount < MAX_RETRIES) {
+        throw new Error(`Webhook delivery failed (attempt ${retryCount + 1}), will retry`);
+      }
+
+      return result;
     },
     {
       connection: { url: env.REDIS_URL },

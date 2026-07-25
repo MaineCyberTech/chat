@@ -2,6 +2,7 @@ import { Router } from "express";
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { authenticate } from "../../middleware/authenticate.js";
 import { routeRegistry } from "../../route-registry.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -36,6 +37,7 @@ try {
 }
 
 const router = Router();
+router.use(authenticate);
 
 function generateDynamicSpec(): Record<string, unknown> {
   const spec = JSON.parse(JSON.stringify(openApiSpec)) as Record<string, unknown>;

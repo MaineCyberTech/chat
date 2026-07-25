@@ -5,7 +5,6 @@ import {
   requireWorkspaceMembership,
   requireWorkspaceRole,
 } from "../../middleware/require-membership.js";
-import { getSupabase } from "../../lib/supabase.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
 
@@ -18,7 +17,7 @@ router.get(
   requireWorkspaceMembership("workspaceId"),
   asyncHandler(async (req, res) => {
     const { workspaceId } = req.params;
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data, error } = await supabase
       .from("announcements")
       .select("id, title, body, created_by, created_at, updated_at")
@@ -46,7 +45,7 @@ router.post(
     if (!body || !body.trim()) {
       throw new BadRequestError("Body is required");
     }
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data, error } = await supabase
       .from("announcements")
       .insert({
@@ -71,7 +70,7 @@ router.patch(
   requireWorkspaceMembership("workspaceId"),
   asyncHandler(async (req, res) => {
     const { workspaceId, id } = req.params;
-    const supabase = getSupabase();
+    const supabase = req.supabase!;
     const { data: existing, error: fetchError } = await supabase
       .from("announcements")
       .select("id, active")
