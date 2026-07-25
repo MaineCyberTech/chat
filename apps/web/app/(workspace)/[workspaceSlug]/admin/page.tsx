@@ -1197,10 +1197,10 @@ export default function AdminPage() {
                   </span>
                 </div>
                 <div className="mt-0.5 text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  {log.auth_users?.email ?? log.actor_user_id ?? "system"}
+                  {log.auth_users?.email ?? log.actor_user_id ?? t("admin.systemActor", "System")}
                   {log.entity_id ? ` \u00b7 ${log.entity_id}` : ""}
                   {log.organization_id
-                    ? ` \u00b7 workspace: ${log.organization_id.slice(0, 8)}...`
+                    ? ` \u00b7 ${t("admin.workspaceLabel", "Workspace:")} ${log.organization_id.slice(0, 8)}...`
                     : ""}
                 </div>
                 <div
