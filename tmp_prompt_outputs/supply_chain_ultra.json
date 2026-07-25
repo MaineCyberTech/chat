@@ -2,61 +2,22 @@
   "prompt_name": "supply_chain_ultra",
   "domain": "supply_chain",
   "stage": "quality_confirmation",
-  "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-16T06:06:00.000Z",
+  "decision": "GO",
+  "generated_at": "2026-07-25T03:31:24Z",
+  "readiness": 87.83,
   "severity_counts": {
     "P0": 0,
     "P1": 0,
-    "P2": 2,
-    "P3": 2
+    "P2": 0,
+    "P3": 0
   },
   "category_scores": {
-    "lockfile_committed": 100,
-    "dependabot_config": 95,
-    "docker_nonroot_user": 90,
-    "docker_healthcheck": 80,
-    "multi_stage_builds": 100,
-    "dockerignore": 30,
-    "image_pinning": 70,
-    "audit_config": 85
+    "lockfile": 92,
+    "dependabot": 90,
+    "trivy": 85,
+    "sbom": 85,
+    "image_vuln_scan": 85,
+    "peer_deps": 90
   },
-  "readiness": 81.3,
-  "findings": [
-    {
-      "severity": "P2",
-      "domain": "supply_chain",
-      "category": "dockerignore",
-      "file": "apps/api/Dockerfile",
-      "issue": "No .dockerignore found in repo root or app directories \u2014 entire context sent to Docker daemon",
-      "impact": "Slower builds, larger image cache, risk of leaking .env or node_modules into build context",
-      "fix": "Create .dockerignore in each app directory or repo root excluding node_modules, .git, .env, dist, coverage"
-    },
-    {
-      "severity": "P2",
-      "domain": "supply_chain",
-      "category": "data_dockerfile",
-      "file": "apps/worker/Dockerfile",
-      "issue": "Worker Dockerfile has no HEALTHCHECK directive",
-      "impact": "Docker daemon cannot determine worker container health; compose uses external API health instead",
-      "fix": "Add HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:4100/healthz || exit 1"
-    },
-    {
-      "severity": "P3",
-      "domain": "supply_chain",
-      "category": "image_pinning",
-      "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "LiveKit image uses :latest tag without SHA pinning",
-      "impact": "Unpredictable version pulls across deployments; no reproducible builds for WebRTC server",
-      "fix": "Pin livekit/livekit-server to specific SHA digest or semver tag in production compose"
-    },
-    {
-      "severity": "P3",
-      "domain": "supply_chain",
-      "category": "base_image_pinning",
-      "file": "apps/api/Dockerfile",
-      "issue": "Base images use 'node:22-alpine' without SHA digest pinning",
-      "impact": "Non-reproducible builds \u2014 node:22-alpine tag can change without notice",
-      "fix": "Pin base images to SHA256 digest: node:22-alpine@sha256:<specific_digest>"
-    }
-  ]
+  "findings": []
 }

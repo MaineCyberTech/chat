@@ -82,8 +82,8 @@ describe("notification processor", () => {
   it("processes in_app notification job", async () => {
     const { registerNotificationProcessor } = await import("../processors/notification.js");
     registerNotificationProcessor();
-    const handler = MockWorker.mock.calls[0][1];
-    const result = await handler({
+    const handler = (MockWorker.mock.calls[0] as unknown as [unknown, (job: unknown) => Promise<unknown>])?.[1];
+    const result = await (handler!)({
       data: {
         userId: "user-1",
         type: "mention",
@@ -95,6 +95,6 @@ describe("notification processor", () => {
       id: "job-2",
     });
     expect(result).toBeDefined();
-    expect(result.status).toBe("sent");
+    expect((result as { status: string })?.status).toBe("sent");
   });
 });

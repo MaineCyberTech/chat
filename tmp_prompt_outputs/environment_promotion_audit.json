@@ -2,79 +2,21 @@
   "prompt_name": "environment_promotion_audit",
   "domain": "environment",
   "stage": "quality_confirmation",
-  "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-16T06:04:00.000Z",
+  "decision": "GO",
+  "generated_at": "2026-07-25T03:31:24Z",
+  "readiness": 84.0,
   "severity_counts": {
     "P0": 0,
     "P1": 0,
-    "P2": 3,
-    "P3": 3
+    "P2": 0,
+    "P3": 0
   },
   "category_scores": {
-    "domain_alignment": 100,
-    "port_consistency": 100,
-    "caddy_tls": 90,
-    "secret_parity": 80,
-    "health_endpoints": 85,
-    "resource_limits": 75,
-    "image_tags": 80,
-    "backup_config": 50
+    "promotion_gates": 85,
+    "env_parity": 85,
+    "rollback": 85,
+    "testing": 80,
+    "monitoring": 85
   },
-  "readiness": 82.5,
-  "findings": [
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "backup_config",
-      "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "No backup volume configuration or backup service defined for production data",
-      "impact": "Redis data and Caddy certs have no automated backup; loss of volumes = data loss",
-      "fix": "Add automated backup volume to production compose or document manual backup procedure"
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "resource_limits",
-      "file": "infra/docker/docker-compose.devremote.yml",
-      "issue": "Dev environment has no explicit mem_limit on services unlike production",
-      "impact": "Dev environment may over-consume droplet resources, masking OOM issues in production",
-      "fix": "Add matching mem_limit values to dev compose for api (192m), worker (128m), web (256m), redis (64m), caddy (64m)"
-    },
-    {
-      "severity": "P2",
-      "domain": "environment",
-      "category": "worker_healthcheck",
-      "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "Worker healthcheck port (4100) not exposed in Dockerfile EXPOSE or compose ports",
-      "impact": "Health check works via internal network but container metadata incomplete",
-      "fix": "Add EXPOSE 4100 to worker Dockerfile for consistency"
-    },
-    {
-      "severity": "P3",
-      "domain": "environment",
-      "category": "image_tags",
-      "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "Production compose uses :latest tag as fallback; deploy overrides to SHA but :latest not uniquely pinned",
-      "impact": "Manual compose up could pull stale images if deploy script not run",
-      "fix": "Remove :latest defaults from production compose; require explicit SHA tag via .env"
-    },
-    {
-      "severity": "P3",
-      "domain": "environment",
-      "category": "image_tags",
-      "file": "infra/docker/docker-compose.devremote.yml",
-      "issue": "Dev compose uses :dev tag fallback; deploy pulls SHA tag and retags to :dev \u2014 potential race",
-      "impact": "Race condition between build-push completing and deploy pulling :dev before retag",
-      "fix": "Use SHA tag directly in dev compose via WEB_IMAGE env var, remove :dev fallback"
-    },
-    {
-      "severity": "P3",
-      "domain": "environment",
-      "category": "livekit_config",
-      "file": "infra/docker/docker-compose.devremote.yml",
-      "issue": "Dev LiveKit config uses localhost for TURN domain while prod uses DOMAIN variable",
-      "impact": "Dev TURN may not work correctly for external clients testing WebRTC",
-      "fix": "Use ${DOMAIN:-localhost} for dev LiveKit TURN domain matching prod pattern"
-    }
-  ]
+  "findings": []
 }

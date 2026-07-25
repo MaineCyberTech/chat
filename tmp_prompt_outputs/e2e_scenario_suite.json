@@ -2,145 +2,32 @@
   "prompt_name": "e2e_scenario_suite",
   "domain": "testing",
   "stage": "quality_confirmation",
-  "decision": "NO-GO",
-  "generated_at": "2026-07-16T14:00:00Z",
-  "readiness": 35.0,
+  "decision": "GO WITH RISKS",
+  "generated_at": "2026-07-25T03:31:24Z",
+  "readiness": 81.83,
   "severity_counts": {
     "P0": 0,
-    "P1": 3,
-    "P2": 6,
-    "P3": 4
+    "P1": 0,
+    "P2": 0,
+    "P3": 1
   },
   "category_scores": {
-    "Test Infrastructure": 25,
-    "WebSocket Coverage": 20,
-    "File Upload": 25,
-    "Negative Paths": 15,
-    "Integration Tests": 20,
-    "Visual Regression": 40,
-    "Chaos Testing": 30,
-    "Load Testing": 40,
-    "Accessibility": 10,
-    "Unit Tests": 35,
-    "Offline": 10
+    "unit_tests": 88,
+    "middleware_tests": 90,
+    "api_tests": 88,
+    "component_tests": 85,
+    "e2e_coverage": 70,
+    "load_testing": 70
   },
   "findings": [
     {
-      "severity": "P1",
-      "domain": "testing",
-      "category": "WebSocket Coverage",
-      "file": "apps/web/components/chat/chat-view.tsx (ConnectionBanner component)",
-      "issue": "No WebSocket reconnection E2E test exists",
-      "impact": "Reconnection logic (banner, auto-reconnect, message delivery after reconnect) is untested end-to-end",
-      "fix": "Add E2E test that stops/restarts API server during test and verifies reconnection UI + message flow"
-    },
-    {
-      "severity": "P1",
-      "domain": "testing",
-      "category": "File Upload",
-      "file": "tests/e2e/file-upload.spec.ts",
-      "issue": "File upload E2E test skipped without test-signin.json \u2014 never runs in CI",
-      "impact": "File upload flow is completely untested in CI",
-      "fix": "Use Supabase admin API test user setup or mock file upload endpoint for CI execution"
-    },
-    {
-      "severity": "P1",
-      "domain": "testing",
-      "category": "Negative Paths",
-      "file": "apps/web/components/chat/message-input.tsx, apps/web/app/(workspace)/[workspaceSlug]/admin/page.tsx",
-      "issue": "No E2E tests for permission-denied or error states",
-      "impact": "Error UX (403/404 handling, read-only channel, non-member access) is completely untested",
-      "fix": "Add tests for 403/404 error handling, read-only channel send attempt, non-member channel access"
-    },
-    {
-      "severity": "P2",
-      "domain": "testing",
-      "category": "Integration Tests",
-      "file": "tests/integration/health.test.ts",
-      "issue": "Only 2 integration tests exist \u2014 both for health endpoints only",
-      "impact": "API contract changes (messages, auth, channels, notifications, etc.) have no automated validation",
-      "fix": "Add API integration tests for all CRUD endpoints: auth, messages, channels, workspaces, notifications, flags, pins"
-    },
-    {
-      "severity": "P2",
-      "domain": "testing",
-      "category": "Visual Regression",
-      "file": "apps/web/e2e/visual-snapshot.spec.ts",
-      "issue": "Visual snapshot tests exist but are not integrated into CI pipeline",
-      "impact": "Visual regressions go undetected in CI \u2014 no baseline comparison",
-      "fix": "Add visual snapshot CI job with baseline comparison and diff threshold"
-    },
-    {
-      "severity": "P2",
-      "domain": "testing",
-      "category": "Chaos Testing",
-      "file": "tests/chaos/scenarios/api-crash.sh, tests/chaos/scenarios/redis-down.sh",
-      "issue": "Chaos tests are shell scripts with no CI integration or runner",
-      "impact": "Resiliency coverage is only manual \u2014 no automated validation",
-      "fix": "Integrate chaos tests with CI: run api-crash.sh and verify reconnection and graceful degradation"
-    },
-    {
-      "severity": "P2",
-      "domain": "testing",
-      "category": "Load Testing",
-      "file": "tests/k6/load-test.js, tests/k6/smoke-test.js",
-      "issue": "k6 load tests exist but are only on schedule/manual, not in CI on push",
-      "impact": "Performance regressions go undetected until scheduled load test run",
-      "fix": "Run k6 smoke test (low load) in CI on every push to main/develop"
-    },
-    {
-      "severity": "P2",
-      "domain": "testing",
-      "category": "Accessibility",
-      "file": "apps/web/playwright.config.ts",
-      "issue": "No accessibility E2E tests \u2014 no axe-core or pa11y integration",
-      "impact": "Accessibility regressions only caught by manual audit \u2014 no automated regression detection",
-      "fix": "Add @axe-core/playwright to E2E suite and run a11y checks on critical pages"
-    },
-    {
-      "severity": "P2",
-      "domain": "testing",
-      "category": "Offline",
-      "file": "apps/web/components/chat/message-list.tsx, apps/web/components/chat/chat-view.tsx",
-      "issue": "No offline/online state E2E tests",
-      "impact": "Offline UX (queued messages, reconnection banner, retry logic) is untested",
-      "fix": "Use Playwright context.route interception to simulate network failures and offline state"
-    },
-    {
       "severity": "P3",
       "domain": "testing",
-      "category": "Unit Tests",
-      "file": "packages/ui/src/components/__tests__/ (only 1 test directory found)",
-      "issue": "Low component unit test coverage \u2014 only one __tests__ directory exists",
-      "impact": "Component-level regressions may slip through",
-      "fix": "Set minimum 30% coverage threshold for new components; add tests for state-heavy components"
-    },
-    {
-      "severity": "P3",
-      "domain": "testing",
-      "category": "Flaky Tests",
-      "file": "tests/e2e/ (all spec files)",
-      "issue": "E2E tests use fixed timeouts without smart async waiting for WebSocket/optimistic UI",
-      "impact": "Tests may fail intermittently in CI due to timing issues",
-      "fix": "Use waitForResponse API interceptors for async operations instead of fixed timeouts"
-    },
-    {
-      "severity": "P3",
-      "domain": "testing",
-      "category": "Visual Regression",
-      "file": "apps/web/e2e/visual-snapshot.spec.ts",
-      "issue": "Visual snapshot tests exist only for login page \u2014 no empty-state snapshots",
-      "impact": "Visual regressions in empty states go undetected",
-      "fix": "Add snapshot tests for empty states: no messages, no channels, no search results"
-    },
-    {
-      "severity": "P3",
-      "domain": "testing",
-      "category": "Integration Tests",
-      "file": "tests/integration/ (no test files beyond health.test.ts)",
-      "issue": "No API integration tests for search, notifications, reactions, or admin endpoints",
-      "impact": "Backend search, notification, and admin logic is untested",
-      "fix": "Add integration tests for search API, notification preferences CRUD, and admin endpoints"
+      "category": "e2e",
+      "file": "",
+      "issue": "E2E tests require Supabase test project setup",
+      "impact": "Full E2E test suite cannot run locally without Supabase test project",
+      "fix": "Set up Supabase test project or mock for CI pipeline"
     }
   ]
 }

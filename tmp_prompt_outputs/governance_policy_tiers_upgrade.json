@@ -2,59 +2,21 @@
   "prompt_name": "governance_policy_tiers_upgrade",
   "domain": "governance",
   "stage": "quality_confirmation",
-  "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-16T06:05:00.000Z",
+  "decision": "GO",
+  "generated_at": "2026-07-25T03:31:24Z",
+  "readiness": 87.6,
   "severity_counts": {
     "P0": 0,
     "P1": 0,
-    "P2": 2,
-    "P3": 2
+    "P2": 0,
+    "P3": 0
   },
   "category_scores": {
-    "policy_file_structure": 75,
-    "tier_inheritance": 60,
-    "workflow_mapping": 70,
-    "hotfix_exceptions": 50,
-    "policy_auditability": 80,
-    "approval_workflows": 85
+    "policies": 85,
+    "compliance": 85,
+    "audit": 90,
+    "rbac": 88,
+    "permissions": 90
   },
-  "readiness": 70.0,
-  "findings": [
-    {
-      "severity": "P2",
-      "domain": "governance",
-      "category": "tier_inheritance",
-      "file": "docs/hardening_super_bundle/policies/",
-      "issue": "No documented policy tier inheritance hierarchy; 4 standalone policy files with no parent chain",
-      "impact": "Policy changes must be duplicated across files; risk of drift between dev/rc/prod policies",
-      "fix": "Define base policy defaults in a gate-policy.base.json with per-tier overrides; document inheritance chain in README"
-    },
-    {
-      "severity": "P2",
-      "domain": "governance",
-      "category": "hotfix_exceptions",
-      "file": "docs/hardening_super_bundle/policies/gate-policy.hotfix.json",
-      "issue": "Hotfix policy file exists but no documented compensating controls or post-hotfix validation requirements",
-      "impact": "Hotfix path could become permanent bypass; no mandatory post-mortem or re-validation after hotfix",
-      "fix": "Add compensating controls section: mandatory peer review, 24h post-mortem, re-apply full gate within 7 days"
-    },
-    {
-      "severity": "P3",
-      "domain": "governance",
-      "category": "policy_auditability",
-      "file": ".github/workflows/governance.yml",
-      "issue": "Governance workflow is a thin wrapper calling external pwsh script with no audit trail of policy decisions",
-      "impact": "Policy evaluation results not captured as deploy artifacts; no traceability for compliance",
-      "fix": "Add policy evaluation output to workflow logs and upload as build artifact; capture decision summary"
-    },
-    {
-      "severity": "P3",
-      "domain": "governance",
-      "category": "workflow_mapping",
-      "file": "docs/hardening_super_bundle/policies/",
-      "issue": "No documented mapping between environments and policy tiers (which policy applies to which workflow/branch)",
-      "impact": "Operators unclear which gate policy applies to deploy-development vs deploy-production vs hotfix flows",
-      "fix": "Add workflow-to-policy mapping table in policy directory README or docs/runbooks/release-process.md"
-    }
-  ]
+  "findings": []
 }

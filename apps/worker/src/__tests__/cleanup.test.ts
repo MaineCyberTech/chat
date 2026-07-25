@@ -81,8 +81,8 @@ describe("cleanup processor", () => {
   it("handles old_deliveries job type", async () => {
     const { registerCleanupProcessor } = await import("../processors/cleanup.js");
     registerCleanupProcessor();
-    const handler = MockWorker.mock.calls[0][1];
-    const result = await handler({
+    const handler = (MockWorker.mock.calls[0] as unknown as [unknown, (job: unknown) => Promise<unknown>])?.[1];
+    const result = await (handler!)({
       data: { type: "old_deliveries", olderThanDays: 30 },
       id: "job-1",
     });

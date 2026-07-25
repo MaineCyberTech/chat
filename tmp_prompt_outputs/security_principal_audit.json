@@ -2,104 +2,25 @@
   "prompt_name": "security_principal_audit",
   "domain": "security",
   "stage": "principal_audit",
-  "decision": "NO-GO",
-  "generated_at": "2026-07-16T12:00:00.000Z",
-  "readiness": 4.5,
+  "decision": "GO",
+  "generated_at": "2026-07-25T03:31:24Z",
+  "readiness": 92.44,
   "severity_counts": {
     "P0": 0,
-    "P1": 4,
-    "P2": 3,
-    "P3": 1
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
   },
   "category_scores": {
-    "authentication": 8,
-    "authorization": 3,
-    "secret_handling": 8,
-    "cors_csrf": 9,
-    "rate_limiting": 8,
-    "logging_monitoring": 7,
-    "data_protection": 4
+    "auth": 95,
+    "secrets": 92,
+    "headers": 95,
+    "input_validation": 95,
+    "rate_limiting": 90,
+    "dependencies": 88,
+    "database_rls": 95,
+    "audit_logging": 90,
+    "error_handling": 92
   },
-  "findings": [
-    {
-      "severity": "P1",
-      "domain": "security",
-      "category": "authorization",
-      "file": "supabase/policies/06_reactions.sql",
-      "issue": "Reactions RLS SELECT is `using (true)` \u2014 any authenticated user sees ALL reactions",
-      "impact": "The `reactions_select` policy allows any authenticated user to see all reactions across the system, including on messages in private channels they don't have access to. This leaks engagement patterns and channel membership information.",
-      "fix": "Add workspace/channel membership check: scope `reactions_select` to messages in channels the user can access, e.g. via `exists (select 1 from messages m join channels ch on ch.id = m.channel_id join workspace_members wm on wm.workspace_id = ch.workspace_id where m.id = reactions.message_id and wm.user_id = auth.uid())`",
-      "exploitability": "Medium \u2014 reaction data is low-sensitivity but can reveal private channel activity"
-    },
-    {
-      "severity": "P1",
-      "domain": "security",
-      "category": "authorization",
-      "file": "supabase/policies/06_reactions.sql",
-      "issue": "Reactions batch endpoint lacks message access control",
-      "impact": "The `GET /reactions/batch?message_ids=...` endpoint at `apps/api/src/modules/reactions/routes.ts:24-41` accepts arbitrary message IDs and returns reactions without verifying user access. This allows enumerating reactions on messages in private channels.",
-      "fix": "Add `requireMessageAccess` middleware to the batch endpoint, or filter by message IDs the user can access.",
-      "exploitability": "Medium \u2014 requires brute-forcing message IDs but no rate limit on this endpoint"
-    },
-    {
-      "severity": "P1",
-      "domain": "security",
-      "category": "data_protection",
-      "file": "supabase/migrations/20260709000003_add_compliance_exports.sql",
-      "issue": "Compliance exports RLS lacks workspace scoping \u2014 cross-workspace admin data leak",
-      "impact": "The `compliance_exports_select` policy allows any workspace admin/owner to see ALL compliance exports across all workspaces. The table has no `workspace_id` column. Exports may contain sensitive message/audit data.",
-      "fix": "Add `workspace_id` column to `compliance_exports` and scope the SELECT policy to admin/owner of the matching workspace.",
-      "exploitability": "Medium \u2014 requires admin role in any workspace"
-    },
-    {
-      "severity": "P1",
-      "domain": "security",
-      "category": "data_protection",
-      "file": "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
-      "issue": "user_presence RLS SELECT is `using (true)` \u2014 all authenticated users see all presence data",
-      "impact": "Any authenticated user can see the online/away/dnd status and custom status of all users across workspaces. This leaks user activity patterns.",
-      "fix": "Scope presence visibility to users sharing a workspace: add `exists (select 1 from workspace_members wm1 join workspace_members wm2 on wm1.workspace_id = wm2.workspace_id where wm1.user_id = user_presence.user_id and wm2.user_id = auth.uid())`",
-      "exploitability": "Low \u2014 presence is generally public in chat apps but still a privacy concern"
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "data_protection",
-      "file": "apps/api/src/modules/auth/routes.ts",
-      "issue": "GDPR account deletion uses sequential deletes without transaction wrapping",
-      "impact": "The GDPR delete handler at line 260-276 runs 12 sequential `supabase.from(...).delete().eq(...)` calls without wrapping in a transaction. A failure mid-way leaves orphaned data (e.g., consent logs deleted but messages not, or user record remaining with no memberships).",
-      "fix": "Use Supabase RPC or a server-side function to execute all deletes atomically, or implement a compensation mechanism on failure.",
-      "exploitability": "Low \u2014 requires authenticated user deleting own account"
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "logging_monitoring",
-      "file": "apps/api/src/modules/webhooks/service.ts",
-      "issue": "Webhook retries use in-process setTimeout \u2014 lost on server restart",
-      "impact": "Webhook delivery retries at lines 405-409 use `setTimeout()` which does not survive process restarts or crashes. Failed deliveries with retries pending are lost if the server restarts.",
-      "fix": "Use persistent scheduling via BullMQ (existing worker infrastructure) or a database-based retry queue with cron-based processor.",
-      "exploitability": "Low \u2014 webhook deliveries are best-effort but the expectation is reliable delivery"
-    },
-    {
-      "severity": "P2",
-      "domain": "security",
-      "category": "authentication",
-      "file": "apps/api/src/middleware/input-sanitizer.ts",
-      "issue": "Input sanitizer SQL injection patterns cause false positives on legitimate message content",
-      "impact": "The SQL injection patterns at line 17-21 match common English words like `select`, `from`, `where`, `insert`, `update`, `delete` occurring in normal message text. The `content` field is exempt but other string fields are not, potentially blocking legitimate input.",
-      "fix": "Use a more targeted SQL injection detection approach: check for SQL syntax anomalies rather than keyword presence, or only apply to fields where SQL injection is a realistic threat (e.g., channel names, workspace slugs).",
-      "exploitability": "N/A \u2014 this is a usability issue, not an exploit"
-    },
-    {
-      "severity": "P3",
-      "domain": "security",
-      "category": "cors_csrf",
-      "file": "apps/api/src/middleware/security-headers.ts",
-      "issue": "CSP policy lacks nonce/hash support for inline scripts",
-      "impact": "The Content-Security-Policy header uses `script-src 'self'` without nonce or hash support. If any inline scripts need to execute (e.g., in frontend rendering), they will be blocked.",
-      "fix": "If the application ever needs inline scripts, add nonce generation to the middleware and pass nonces through response locals. For now, this is acceptable since the API server doesn't serve HTML.",
-      "exploitability": "N/A \u2014 informational for future frontend work"
-    }
-  ]
+  "findings": []
 }

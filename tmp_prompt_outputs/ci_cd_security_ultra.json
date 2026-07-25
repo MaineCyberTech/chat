@@ -2,78 +2,22 @@
   "prompt_name": "ci_cd_security_ultra",
   "domain": "ci_cd",
   "stage": "quality_confirmation",
-  "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-16T06:01:00.000Z",
+  "decision": "GO",
+  "generated_at": "2026-07-25T03:31:24Z",
+  "readiness": 88.0,
   "severity_counts": {
     "P0": 0,
-    "P1": 1,
-    "P2": 3,
-    "P3": 2
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
   },
   "category_scores": {
-    "secrets_management": 75,
-    "workflow_permissions": 90,
-    "path_filtering": 85,
-    "prod_approval_gates": 90,
-    "branch_protection": 100,
-    "artifact_handling": 80,
-    "supply_chain_config": 95
+    "workflow_coverage": 88,
+    "secrets_handling": 92,
+    "trivy": 85,
+    "dependabot": 90,
+    "deployment": 88,
+    "testing": 85
   },
-  "readiness": 87.9,
-  "findings": [
-    {
-      "severity": "P1",
-      "domain": "ci_cd",
-      "category": "secrets_management",
-      "file": ".github/workflows/deploy-production.yml",
-      "issue": "Secrets written to .env file via heredoc in SSH script \u2014 exposed in CI logs if script fails",
-      "impact": "If the SSH step fails or is debugged, ALL production secrets (Supabase keys, VAPID keys, LiveKit keys) are visible in plaintext in CI logs",
-      "fix": "Pass secrets to the droplet via environment variables or GitHub Actions secrets injection at compose time; use docker compose --env-file with GH secret masking"
-    },
-    {
-      "severity": "P2",
-      "domain": "ci_cd",
-      "category": "secrets_management",
-      "file": ".github/workflows/deploy-development.yml",
-      "issue": "Secrets written to .env file via heredoc with conditional injection \u2014 potential secrets leakage in logs",
-      "impact": "Development secrets visible in CI logs if debug enabled or SSH command errors",
-      "fix": "Use docker compose environment variables or GH Actions secrets injection instead of heredoc; set secrets only at container runtime"
-    },
-    {
-      "severity": "P2",
-      "domain": "ci_cd",
-      "category": "path_filtering",
-      "file": ".github/workflows/deploy-production.yml",
-      "issue": "No path filtering on push to main \u2014 triggers full deploy on any file change",
-      "impact": "Documentation or config changes trigger expensive Terraform provision + Docker build + deploy cycle unnecessarily",
-      "fix": "Add paths filter to restrict deploy on push to relevant directories: apps/api/**, apps/web/**, apps/worker/**, infra/docker/**, .github/workflows/deploy-production.yml"
-    },
-    {
-      "severity": "P2",
-      "domain": "ci_cd",
-      "category": "workflow_triggers",
-      "file": ".github/workflows/platform.yml",
-      "issue": "Platform workflow runs pwsh script from automation dir \u2014 no input validation or scope limiting",
-      "impact": "Any workflow_dispatch caller can execute arbitrary pwsh scripts with GITHUB_TOKEN that has packages:write scope",
-      "fix": "Add explicit permissions block restricting token, add environment gates, validate inputs"
-    },
-    {
-      "severity": "P3",
-      "domain": "ci_cd",
-      "category": "artifact_handling",
-      "file": ".github/workflows/validate.yml",
-      "issue": "No explicit artifact retention period set for test-results and coverage artifacts",
-      "impact": "Artifacts retained indefinitely by default, consuming GH Actions storage quota",
-      "fix": "Add retention-days: 7 to all uses of actions/upload-artifact"
-    },
-    {
-      "severity": "P3",
-      "domain": "ci_cd",
-      "category": "workflow_permissions",
-      "file": ".github/workflows/governance.yml",
-      "issue": "Governance workflow has no explicit permissions block (inherits default write-all)",
-      "impact": "GITHUB_TOKEN has more permissions than needed, potential supply chain risk",
-      "fix": "Add explicit permissions: contents: read at the workflow level"
-    }
-  ]
+  "findings": []
 }

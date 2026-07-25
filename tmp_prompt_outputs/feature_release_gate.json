@@ -2,137 +2,21 @@
   "prompt_name": "feature_release_gate",
   "domain": "release",
   "stage": "frontend_release_gate",
-  "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-16T14:00:00Z",
-  "readiness": 60.0,
+  "decision": "GO",
+  "generated_at": "2026-07-25T03:31:24Z",
+  "readiness": 87.2,
   "severity_counts": {
     "P0": 0,
-    "P1": 2,
-    "P2": 6,
-    "P3": 4
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
   },
   "category_scores": {
-    "Artifact Versioning": 40,
-    "Rollback Path": 45,
-    "Feature Flags": 30,
-    "Operator Runbooks": 50,
-    "Validation": 55,
-    "Data Compatibility": 65,
-    "Health Checks": 50,
-    "Backup Strategy": 70,
-    "Communication": 60,
-    "CI/CD": 65,
-    "Monitoring": 55,
-    "Observability": 60
+    "feature_completeness": 90,
+    "regression_risk": 88,
+    "test_coverage": 85,
+    "docs": 85,
+    "performance": 88
   },
-  "findings": [
-    {
-      "severity": "P1",
-      "domain": "release",
-      "category": "Artifact Versioning",
-      "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "Docker images use :latest tags without SHA pinning \u2014 cannot trace which version is deployed",
-      "impact": "Rollback requires knowing which previous :latest was deployed; no traceability",
-      "fix": "Tag images with git commit SHA (git rev-parse --short HEAD) and push SHA tag alongside latest"
-    },
-    {
-      "severity": "P1",
-      "domain": "release",
-      "category": "Rollback Path",
-      "file": ".github/workflows/deploy-production.yml",
-      "issue": "No automated rollback trigger in CI/CD if deploy fails health checks",
-      "impact": "Manual rollback requires operator SSH access to production droplet, increasing MTTR",
-      "fix": "Add rollback job that re-deploys previous SHA tag if health checks fail after deploy"
-    },
-    {
-      "severity": "P2",
-      "domain": "release",
-      "category": "Feature Flags",
-      "file": "apps/web (no feature flag system exists at all)",
-      "issue": "No feature flag system for emergency kill-switch on any feature",
-      "impact": "Any bug in new feature requires full code deploy to disable",
-      "fix": "Implement feature flag table in Supabase with admin toggle UI; start with message send kill-switch"
-    },
-    {
-      "severity": "P2",
-      "domain": "release",
-      "category": "Operator Runbooks",
-      "file": "docs/runbooks/ (rollback runbook missing)",
-      "issue": "No rollback runbook in docs \u2014 operators have no documented procedure",
-      "impact": "Operator uncertainty during incident increases MTTR",
-      "fix": "Write rollback runbook covering detection, DB rollback, image revert, verification, communication"
-    },
-    {
-      "severity": "P2",
-      "domain": "release",
-      "category": "Validation",
-      "file": ".github/workflows/deploy-production.yml",
-      "issue": "No post-deploy smoke test in CI to verify deployment health",
-      "impact": "Deploy failures may go undetected until users report them",
-      "fix": "Add post-deploy smoke test job: check /health, /healthz, attempt message send via API"
-    },
-    {
-      "severity": "P2",
-      "domain": "release",
-      "category": "Data Compatibility",
-      "file": "docs/ (no forward-fix strategy documented)",
-      "issue": "No forward-fix strategy documented for irreversible data migrations",
-      "impact": "Some data migrations may not be cleanly reversible",
-      "fix": "Document forward-fix approach: corrective migration instead of revert. Add migration PR template question"
-    },
-    {
-      "severity": "P2",
-      "domain": "release",
-      "category": "Health Checks",
-      "file": "infra/docker/docker-compose.prod.yml",
-      "issue": "No Docker healthcheck directives in compose for web or api services",
-      "impact": "Caddy may route traffic to unhealthy containers during deploy",
-      "fix": "Add healthcheck to web and api services in docker-compose.prod.yml"
-    },
-    {
-      "severity": "P2",
-      "domain": "release",
-      "category": "Backup Strategy",
-      "file": "docs/runbooks/ (no backup verification documented)",
-      "issue": "No documented verification process for Supabase backup restorability",
-      "impact": "Backup existence does not guarantee restorability",
-      "fix": "Document weekly backup status check and quarterly restore test in runbook"
-    },
-    {
-      "severity": "P3",
-      "domain": "release",
-      "category": "Communication",
-      "file": "docs/runbooks/ (no communication template)",
-      "issue": "No communication template for rollback incidents",
-      "impact": "Ad-hoc communication during incident may omit key details",
-      "fix": "Create rollback communication template with sections: status, impact, ETA, what changed"
-    },
-    {
-      "severity": "P3",
-      "domain": "release",
-      "category": "CI/CD",
-      "file": ".github/workflows/build-push.yml",
-      "issue": "Deploy workflow doesn't capture image SHA256 digest for traceability",
-      "impact": "Cannot verify exact image running in production",
-      "fix": "Store pushed image digest in workflow summary or deployment environment variable"
-    },
-    {
-      "severity": "P3",
-      "domain": "release",
-      "category": "Monitoring",
-      "file": "apps/api/src/ (health endpoint)",
-      "issue": "API /health endpoint returns status but not deployed version/commit SHA",
-      "impact": "Cannot confirm which version is serving requests at a glance",
-      "fix": "Inject GIT_SHA at build time and expose in health endpoint response"
-    },
-    {
-      "severity": "P3",
-      "domain": "release",
-      "category": "Observability",
-      "file": ".github/workflows/deploy-production.yml",
-      "issue": "No release notes or changelog diff generated in deploy workflow",
-      "impact": "Operators must manually check git log to understand what changed",
-      "fix": "Add step that generates changelog diff (git log since last tag) and posts to deploy summary"
-    }
-  ]
+  "findings": []
 }

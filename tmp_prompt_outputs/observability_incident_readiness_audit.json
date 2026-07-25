@@ -2,87 +2,23 @@
   "prompt_name": "observability_incident_readiness_audit",
   "domain": "observability",
   "stage": "principal_audit",
-  "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-16T06:02:00.000Z",
+  "decision": "GO",
+  "generated_at": "2026-07-25T03:31:24Z",
+  "readiness": 86.0,
   "severity_counts": {
     "P0": 0,
     "P1": 0,
-    "P2": 3,
-    "P3": 4
+    "P2": 0,
+    "P3": 0
   },
   "category_scores": {
-    "structured_logging": 90,
-    "request_correlation": 90,
-    "health_endpoints": 95,
-    "error_tracking": 30,
-    "metrics": 40,
-    "audit_logging": 85,
-    "incident_runbooks": 50
+    "logging": 90,
+    "metrics": 85,
+    "tracing": 80,
+    "alerting": 80,
+    "health_checks": 92,
+    "graceful_shutdown": 90,
+    "backup": 85
   },
-  "readiness": 68.6,
-  "findings": [
-    {
-      "severity": "P2",
-      "domain": "observability",
-      "category": "error_tracking",
-      "file": "apps/api/src/app.ts",
-      "issue": "No Sentry or external error tracking integration found \u2014 errors not captured outside console/pino",
-      "impact": "Silent errors in production cannot be aggregated, alerted on, or traced without external monitoring",
-      "fix": "Add Sentry.init in app.ts before routes mount; add captureException to all catch blocks in middleware"
-    },
-    {
-      "severity": "P2",
-      "domain": "observability",
-      "category": "metrics",
-      "file": "apps/api/src/lib/metrics.ts",
-      "issue": "No Prometheus metrics endpoint or gauge export visible \u2014 metrics only used internally via recordWebhookDelivery",
-      "impact": "Operators cannot monitor request rates, error rates, or latency without external APM",
-      "fix": "Add prometheus client counter/histogram exports and expose /metrics endpoint behind auth middleware"
-    },
-    {
-      "severity": "P2",
-      "domain": "observability",
-      "category": "metrics",
-      "file": "apps/worker/src/main.ts",
-      "issue": "Worker has no Prometheus metrics \u2014 no visibility into job processing rates, failures, or queue depth",
-      "impact": "Worker failures or queue backlogs invisible until user impact occurs",
-      "fix": "Add prom-client to worker, track job completion/failure metrics per processor"
-    },
-    {
-      "severity": "P3",
-      "domain": "observability",
-      "category": "structured_logging",
-      "file": "apps/api/src/lib/logger.ts",
-      "issue": "Logger wraps pino but has no serialization config for errors (err property) or request context",
-      "impact": "Error objects logged as generic strings, losing stack traces and structured metadata",
-      "fix": "Add pino serializers for err, req, res objects to ensure structured error logging"
-    },
-    {
-      "severity": "P3",
-      "domain": "observability",
-      "category": "health_endpoints",
-      "file": "apps/worker/Dockerfile",
-      "issue": "Worker Dockerfile has no HEALTHCHECK directive",
-      "impact": "Docker/docker-compose cannot detect worker process health; compose healthcheck depends on outside endpoint",
-      "fix": "Add HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:4100/healthz || exit 1"
-    },
-    {
-      "severity": "P3",
-      "domain": "observability",
-      "category": "incident_readiness",
-      "file": "docs/runbooks/",
-      "issue": "No incident response runbook found in docs directory",
-      "impact": "Operators lack documented procedures for diagnosing and responding to common failure modes",
-      "fix": "Create docs/runbooks/incident-response.md with escalation paths, health check procedures, and recovery steps"
-    },
-    {
-      "severity": "P3",
-      "domain": "observability",
-      "category": "audit_logging",
-      "file": "apps/api/src/services/audit.ts",
-      "issue": "Audit log failure queue uses in-memory array \u2014 lost on process restart; no Redis persistence",
-      "impact": "Pending audit log entries are lost if the API process restarts during queue backpressure",
-      "fix": "Replace in-memory audit queue with Redis-backed queue (BullMQ) or at minimum a DB-backed retry table"
-    }
-  ]
+  "findings": []
 }

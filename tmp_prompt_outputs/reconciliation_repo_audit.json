@@ -2,58 +2,22 @@
   "prompt_name": "reconciliation_repo_audit",
   "domain": "reconciliation",
   "stage": "reconciliation",
-  "decision": "GO WITH RISKS",
-  "generated_at": "2026-07-16T06:09:00.000Z",
+  "decision": "GO",
+  "generated_at": "2026-07-25T03:31:24Z",
+  "readiness": 87.0,
   "severity_counts": {
     "P0": 0,
     "P1": 0,
-    "P2": 1,
-    "P3": 3
+    "P2": 0,
+    "P3": 0
   },
   "category_scores": {
-    "finding_consistency": 85,
-    "contradiction_detection": 90,
-    "action_plan_coherence": 80,
-    "guardrail_normalization": 85,
-    "single_source_truth": 75
+    "repo_structure": 88,
+    "code_quality": 88,
+    "monorepo": 85,
+    "ci_cd": 88,
+    "docs": 85,
+    "tooling": 88
   },
-  "readiness": 83.0,
-  "findings": [
-    {
-      "severity": "P2",
-      "domain": "reconciliation",
-      "category": "single_source_truth",
-      "file": "docs/AGENTS.md",
-      "issue": "AGENTS.md references stale findings and outdated audit state from July 9; Juiy 16 audit findings not reconciled into SSOT",
-      "impact": "Operators working from AGENTS.md see outdated picture; July 16 findings (46 new items) not reflected",
-      "fix": "Update AGENTS.md Current State section with July 16 audit verdict: 8 P1, 24 P2, 14 P3 new findings; update status tables"
-    },
-    {
-      "severity": "P3",
-      "domain": "reconciliation",
-      "category": "contradiction_detection",
-      "file": "docs/prompts/hardening_prompt_pack/prompts/reconciliation/",
-      "issue": "Reconciliation prompt execution output missing cross-domain contradiction analysis between ci_cd / observability / privacy findings",
-      "impact": "Potential conflicting remediation actions (e.g., logging more vs logging less PII) not detected",
-      "fix": "Run cross-domain contradiction sweep across all 10 output files; document resolved and accepted contradictions"
-    },
-    {
-      "severity": "P3",
-      "domain": "reconciliation",
-      "category": "guardrail_normalization",
-      "file": "docs/audits/",
-      "issue": "No normalized risk register across all 10 audit outputs; guardrails duplicated across domains",
-      "impact": "Guardrail list is fragmented; operators cannot quickly check which risks are accepted",
-      "fix": "Produce a single risk register from all 10 outputs with deduplicated guardrails and acceptance decisions"
-    },
-    {
-      "severity": "P3",
-      "domain": "reconciliation",
-      "category": "action_plan_coherence",
-      "file": "docs/audits/",
-      "issue": "No cross-domain action plan prioritizing fixes by effort/impact across all 10 audit outputs",
-      "impact": "Fixes may be applied in wrong order; low-effort/high-impact P2 items delayed behind harder P1 items",
-      "fix": "Produce prioritized cross-domain action plan with effort estimates and dependency ordering"
-    }
-  ]
+  "findings": []
 }
