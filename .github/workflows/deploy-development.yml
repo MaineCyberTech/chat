@@ -441,14 +441,3 @@ jobs:
           done
           echo "Health check failed"
           exit 1
-
-      - name: Cleanup .env files
-        if: always()
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ steps.ip.outputs.droplet_ip }}
-          username: root
-          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          strict_host_key_checking: true
-          script: |
-            shred -u ${{ env.REPO_DIR }}/.env ${{ env.REPO_DIR }}/infra/docker/.env 2>/dev/null || true
