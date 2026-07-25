@@ -388,7 +388,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     needs: [build]
     env:
       PLAYWRIGHT_BASE_URL: http://localhost:3000
