@@ -13,4 +13,5 @@ tmp_prompt_outputs/
 docs/audits/
 docs/prompts/
 hardening/
+apps/web/public/version.json
 FINAL_RECONCILIATION_REPO_AUDIT_PROMPT.md
