@@ -28,7 +28,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "eslint": "^9.22.0",
+    "eslint": "^10.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.8.0",
