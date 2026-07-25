@@ -77,7 +77,7 @@ export function registerReminderProcessor() {
 
   const worker = new Worker<ReminderJobData>(
     "reminder",
-    async (job: Job<ReminderJobData>) => {
+    async (_job: Job<ReminderJobData>) => {
       logger.info("Processing due reminders");
       return await processDueReminders();
     },

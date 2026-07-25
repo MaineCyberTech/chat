@@ -59,7 +59,7 @@ describe("notification processor", () => {
   });
 
   it("creates notification queue with retry config", async () => {
-    const { notificationQueue } = await import("../processors/notification.js");
+    await import("../processors/notification.js");
     expect(MockQueue).toHaveBeenCalledWith(
       "notification",
       expect.objectContaining({

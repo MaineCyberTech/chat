@@ -7,7 +7,7 @@ describe("requireAdmin middleware", () => {
   it("calls next with ForbiddenError when supabase is missing", async () => {
     const next = vi.fn();
     const req = { userId: "u1", supabase: undefined } as AnyObj;
-    const res = {} as AnyObj;
+    const _res = {} as AnyObj;
 
     try {
       if (!req.supabase) {
@@ -39,7 +39,7 @@ describe("requireAdmin middleware", () => {
     };
     const next = vi.fn();
     const req = { userId: "u1", supabase } as AnyObj;
-    const res = {} as AnyObj;
+    const _res = {} as AnyObj;
 
     try {
       const supabase2 = req.supabase;
@@ -82,7 +82,7 @@ describe("requireAdmin middleware", () => {
     };
     const next = vi.fn();
     const req = { userId: "u1", supabase } as AnyObj;
-    const res = {} as AnyObj;
+    const _res = {} as AnyObj;
 
     try {
       const supabase2 = req.supabase;
@@ -117,7 +117,7 @@ describe("requireAdmin middleware", () => {
     };
     const next = vi.fn();
     const req = { userId: "u1", supabase } as AnyObj;
-    const res = {} as AnyObj;
+    const _res = {} as AnyObj;
 
     try {
       const supabase2 = req.supabase;

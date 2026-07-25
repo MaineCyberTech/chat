@@ -1,4 +1,4 @@
-import { Worker, Job, Queue, UnrecoverableError } from "bullmq";
+import { Worker, Job, Queue } from "bullmq";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 import { createSupabaseClient } from "../lib/supabase.js";

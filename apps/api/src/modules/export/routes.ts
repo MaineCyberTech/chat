@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from "express";
+import { Router } from "express";
 import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { asyncHandler } from "../../lib/async-handler.js";

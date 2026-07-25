@@ -67,7 +67,7 @@ function startHealthServer(redis: ReturnType<typeof createRedisClient>) {
         const body = JSON.stringify(await gatherMetrics());
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(body);
-      } catch (err) {
+      } catch {
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "metrics unavailable" }));
       }
