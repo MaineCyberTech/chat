@@ -5,5 +5,5 @@ jobs:
   platform:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: pwsh ./scripts/automation/run_full.ps1

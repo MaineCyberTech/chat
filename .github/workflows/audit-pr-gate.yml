@@ -8,8 +8,8 @@ jobs:
   audit-gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6.3.0
         with:
           python-version: "3.12"
       - name: Evaluate audit gate policy
@@ -17,7 +17,7 @@ jobs:
           python scripts/audits/evaluate_gate.py --repo-root . --policy-file docs/hardening_super_bundle/policies/gate-policy.dev.json
       - name: Upload gate result
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: audit-gate-result
           path: docs/hardening_super_bundle/examples/results/generated_gate_result.md
