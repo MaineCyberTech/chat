@@ -17,7 +17,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.0",
+    "@supabase/supabase-js": "^2.111.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
