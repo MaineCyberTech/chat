@@ -19,22 +19,22 @@
     "clean": "rimraf dist"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.2.0",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@testing-library/user-event": "^14.6.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "eslint": "^9.22.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "typescript": "^5.8.0",
     "vitest": "^3.0.0"
   },
   "dependencies": {
-    "lucide-react": "^1.21.0"
+    "lucide-react": "^1.30.0"
   }
 }
