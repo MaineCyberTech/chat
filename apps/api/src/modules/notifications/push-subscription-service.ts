@@ -1,4 +1,4 @@
-import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
+import { getSupabaseAdmin } from "../../lib/supabase.js";
 import webPush from "web-push";
 import { logger } from "../../lib/logger.js";
 
@@ -85,7 +85,9 @@ export class PushSubscriptionService {
   }
 
   async list(userId: string): Promise<PushSubscription[]> {
-    const supabase = getSupabase();
+    // Push subscriptions are system-owned records (worker delivery path); use the
+    // service-role client. The anon client has no JWT and RLS denies it.
+    const supabase = getSupabaseAdmin();
     const { data } = await supabase
       .from("push_subscriptions")
       .select("*")

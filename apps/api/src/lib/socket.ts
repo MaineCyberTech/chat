@@ -2,6 +2,7 @@ import { Server as HttpServer } from "node:http";
 import { Server as SocketServer } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
 import Redis from "ioredis";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "./logger.js";
 import { incrementWebsocketConnections } from "./metrics.js";
 
@@ -28,6 +29,9 @@ let subClient: Redis | null = null;
 declare module "socket.io" {
   interface Socket {
     userId?: string;
+    // Per-socket Supabase client carrying the user's JWT so RLS sees auth.uid()
+    // for channel/workspace membership and presence queries.
+    supabase?: SupabaseClient;
   }
 }
 
@@ -111,7 +115,7 @@ export function initSocket(
 
     try {
       // Dynamic import to avoid circular dependency at module init
-      const { getSupabase } = await import("./supabase.js");
+      const { getSupabase, getSupabaseForUser } = await import("./supabase.js");
       const supabase = getSupabase();
       const { data, error } = await supabase.auth.getUser(token);
 
@@ -122,6 +126,9 @@ export function initSocket(
 
       clearTimeout(authTimer);
       socket.userId = data.user.id;
+      // Build a user-scoped client so downstream queries run as `authenticated`
+      // with auth.uid() set; the bare anon client is denied by RLS.
+      socket.supabase = getSupabaseForUser(token);
       next();
     } catch (err) {
       clearTimeout(authTimer);
@@ -138,8 +145,8 @@ export function initSocket(
     // Update user presence to online
     (async () => {
       try {
-        const { getSupabase } = await import("./supabase.js");
-        const supabase = getSupabase();
+        const supabase = socket.supabase;
+        if (!supabase) return;
         await supabase
           .from("user_presence")
           .upsert(
@@ -154,8 +161,11 @@ export function initSocket(
 
     socket.on("channel:join", async (channelId: string) => {
       try {
-        const { getSupabase } = await import("./supabase.js");
-        const supabase = getSupabase();
+        const supabase = socket.supabase;
+        if (!supabase) {
+          socket.emit("channel:join_error", { channelId, error: "Not authenticated" });
+          return;
+        }
         const { data: channel, error } = await supabase
           .from("channels")
           .select("workspace_id, is_private")
@@ -223,8 +233,8 @@ export function initSocket(
 
     socket.on("presence:set", async (status: "online" | "away" | "dnd") => {
       try {
-        const { getSupabase } = await import("./supabase.js");
-        const supabase = getSupabase();
+        const supabase = socket.supabase;
+        if (!supabase) return;
         await supabase.from("user_presence").upsert(
           {
             user_id: userId,
@@ -264,8 +274,8 @@ export function initSocket(
 
       // Update presence to offline
       try {
-        const { getSupabase } = await import("./supabase.js");
-        const supabase = getSupabase();
+        const supabase = socket.supabase;
+        if (!supabase) return;
         await supabase
           .from("user_presence")
           .upsert(
