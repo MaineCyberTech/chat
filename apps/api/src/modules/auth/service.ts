@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "../../lib/supabase.js";
+import { containsPattern } from "../../lib/postgrest-filter.js";
 import type { User, UserProfile } from "@chat/db";
 
 export class AuthService {
@@ -43,7 +44,7 @@ export class AuthService {
     const { data } = await supabase
       .from("users")
       .select("id, display_name, avatar_url")
-      .or(`display_name.ilike.%${query}%`)
+      .ilike("display_name", containsPattern(query))
       .limit(20);
 
     return (data ?? []) as UserProfile[];

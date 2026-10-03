@@ -190,6 +190,23 @@ describe("admin routes", () => {
         }),
       );
     });
+
+    it("quotes filter syntax in admin user search so it cannot alter the filter", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const chain = createChain({ data: [], count: 0, error: null });
+      (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
+
+      const handler = findHandler("get", "/users");
+      const req = mockReq({ query: { search: "a,b(c)" } });
+      const res = mockRes();
+      const next = vi.fn();
+
+      await handler(req, res, next);
+
+      expect(chain.or).toHaveBeenCalledWith(
+        'email.ilike."%a,b(c)%",display_name.ilike."%a,b(c)%"',
+      );
+    });
   });
 
   describe("GET /channels", () => {
