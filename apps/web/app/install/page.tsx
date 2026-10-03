@@ -1,15 +1,21 @@
 "use client";
 
-import React from "react";
-import { useInstallPrompt } from "@/lib/pwa/install-state";
+import React, { useEffect, useState } from "react";
+import { useInstallPrompt, type InstallPlatform } from "@/lib/pwa/install-state";
 import { Button } from "@chat/ui";
 import Link from "next/link";
 
 export default function InstallPage() {
   const { isInstalled, isInstallable, install, getPlatform, getInstallInstructions } =
     useInstallPrompt();
-  const platform = getPlatform();
-  const instructions = getInstallInstructions();
+  // Derive platform client-side. The server/prerender default is "unknown" so the
+  // static HTML and the first client render match; the effect then upgrades it.
+  const [platform, setPlatform] = useState<InstallPlatform>("unknown");
+  const instructions = getInstallInstructions(platform);
+
+  useEffect(() => {
+    setPlatform(getPlatform());
+  }, [getPlatform]);
 
   if (isInstalled) {
     return (
