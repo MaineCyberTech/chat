@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import importRouter from "../routes.js";
 
 let insertErrors: boolean = false;
@@ -23,6 +23,16 @@ function findHandler(method: string, path: string) {
   for (const layer of (importRouter as any).stack) {
     if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
       return layer.route.stack[layer.route.stack.length - 1].handle;
+    }
+  }
+  return null;
+}
+
+function findMiddleware(method: string, path: string, index: number) {
+  const m = method.toLowerCase();
+  for (const layer of (importRouter as any).stack) {
+    if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
+      return layer.route.stack[index].handle;
     }
   }
   return null;
@@ -99,5 +109,38 @@ describe("Import Routes", () => {
     expect(call.imported).toBe(0);
     expect(call.errors).toBeDefined();
     expect(call.errors.length).toBeGreaterThan(0);
+  });
+
+  describe("platform admin gate", () => {
+    const original = process.env.PLATFORM_ADMIN_USER_IDS;
+
+    afterEach(() => {
+      if (original === undefined) delete process.env.PLATFORM_ADMIN_USER_IDS;
+      else process.env.PLATFORM_ADMIN_USER_IDS = original;
+    });
+
+    it("denies imports when no platform admins are configured (fail closed)", () => {
+      delete process.env.PLATFORM_ADMIN_USER_IDS;
+      const mw = findMiddleware("post", "/admin/import/workspaces", 1);
+      const next = vi.fn();
+      mw({ userId: "admin-1" }, {}, next);
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 403 }));
+    });
+
+    it("denies imports for users outside the platform-admin allowlist", () => {
+      process.env.PLATFORM_ADMIN_USER_IDS = "platform-1";
+      const mw = findMiddleware("post", "/admin/import/users", 1);
+      const next = vi.fn();
+      mw({ userId: "admin-1" }, {}, next);
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 403 }));
+    });
+
+    it("allows imports for allowlisted platform admins", () => {
+      process.env.PLATFORM_ADMIN_USER_IDS = "platform-1, platform-2";
+      const mw = findMiddleware("post", "/admin/import/workspaces", 1);
+      const next = vi.fn();
+      mw({ userId: "platform-2" }, {}, next);
+      expect(next).toHaveBeenCalledWith();
+    });
   });
 });

@@ -76,12 +76,26 @@ router.get(
   requireAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
     const search = normalizeSearchTerm((req.query.search as string) ?? "");
     const page = parseInt(req.query.page as string) || 0;
     const limit = 20;
+
+    // Scope the directory to members of the caller's admin workspaces (SEC-P1-003).
+    const { data: members } =
+      workspaceIds.length > 0
+        ? await admin.from("workspace_members").select("user_id").in("workspace_id", workspaceIds)
+        : { data: [] };
+    const userIds = [...new Set((members ?? []).map((m: { user_id: string }) => m.user_id))];
+    if (userIds.length === 0) {
+      res.json({ users: [], total: 0, page, limit });
+      return;
+    }
+
     let query = admin
       .from("users")
       .select("*", { count: "exact" })
+      .in("id", userIds)
       .range(page * limit, (page + 1) * limit - 1)
       .order("created_at", { ascending: false });
     if (search) {
@@ -434,6 +448,7 @@ router.get(
   requireAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
     const page = parseInt(req.query.page as string) || 0;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     const workspaceId = req.query.workspaceId as string | undefined;
@@ -442,15 +457,23 @@ router.get(
     const dateFrom = req.query.dateFrom as string | undefined;
     const dateTo = req.query.dateTo as string | undefined;
 
-    if (workspaceId) {
-      await verifyWorkspaceMembership(req, workspaceId);
+    // Audit logs are tenant-scoped: a workspace is required and the caller must be
+    // an admin of that workspace, otherwise all tenants' logs would be returned (SEC-P1-004).
+    if (!workspaceId) {
+      res.status(400).json({
+        error: { code: "BAD_REQUEST", message: "workspaceId query param is required" },
+      });
+      return;
+    }
+    if (!workspaceIds.includes(workspaceId)) {
+      throw new ForbiddenError("Not an admin of this workspace");
     }
 
     let query = admin
       .from("audit_logs")
-      .select("*, auth_users:actor_user_id(email)", { count: "exact" });
+      .select("*, auth_users:actor_user_id(email)", { count: "exact" })
+      .eq("organization_id", workspaceId);
 
-    if (workspaceId) query = query.eq("organization_id", workspaceId);
     if (action) query = query.eq("action", action);
     if (actorUserId) query = query.eq("actor_user_id", actorUserId);
     if (dateFrom) query = query.gte("created_at", dateFrom);
@@ -586,9 +609,11 @@ router.get(
   requireAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
     const { data, error } = await admin
       .from("compliance_exports")
       .select("id, type, date_from, date_to, row_count, status, error_msg, created_at")
+      .in("workspace_id", workspaceIds)
       .order("created_at", { ascending: false })
       .limit(50);
 
@@ -603,10 +628,12 @@ router.get(
   requireAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
     const { data, error } = await admin
       .from("compliance_exports")
       .select("csv_content, type, date_from, date_to, status")
       .eq("id", req.params.id)
+      .in("workspace_id", workspaceIds)
       .single();
 
     if (error || !data) {
