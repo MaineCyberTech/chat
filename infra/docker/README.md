@@ -92,6 +92,18 @@ GitHub Actions workflows in `.github/workflows/` automatically:
 | Web     | `wget http://localhost:3000`         | 15-30s   | 10s     |
 | API     | `wget http://localhost:4000/healthz` | 10s      | 5s      |
 | Worker  | `wget http://localhost:4100/healthz` | 10-30s   | 5-10s   |
+
+The worker health/metrics server (`:4100`) is **not published on the host** in any compose
+file (`docker-compose.prod.yml`, `docker-compose.devremote.yml`) and binds to loopback
+(`HEALTH_HOST`, default `127.0.0.1`) so the port is unreachable from the host or the compose
+network. The container healthcheck above keeps working because it runs inside the worker
+container.
+
+- Set `HEALTH_HOST` only if a trusted in-network sidecar must scrape `/metrics`.
+- Set `HEALTH_TOKEN` to additionally require `Authorization: Bearer <token>` (or an
+  `X-Health-Token` header) on `/metrics`.
+- `GET /healthz` and `GET /health` stay unauthenticated for healthcheck use and remain
+  loopback-bound.
 | Redis   | `redis-cli ping`                     | 5s       | 3s      |
 | LiveKit | None                                 | —        | —       |
 
