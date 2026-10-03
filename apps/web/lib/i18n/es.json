@@ -2,7 +2,7 @@
   "common": {
     "loading": "Cargando...",
     "error": "Error",
-    "success": "�xito",
+    "success": "Éxito",
     "cancel": "Cancelar",
     "save": "Guardar",
     "delete": "Delete",
@@ -31,9 +31,9 @@
     "noData": "No data available"
   },
   "auth": {
-    "signIn": "Iniciar sesi�n",
-    "signOut": "Cerrar sesi�n",
-    "sendMagicLink": "Enviar enlace m�gico",
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "sendMagicLink": "Enviar enlace mágico",
     "checkEmail": "Check your email for the magic link",
     "signInWithGoogle": "Sign in with Google",
     "signInWithGithub": "Sign in with GitHub",
@@ -49,7 +49,7 @@
     "signingIn": "Signing in...",
     "createAccount": "Create Account",
     "orContinueWith": "O continuar con",
-    "emailLabel": "Correo electr�nico",
+    "emailLabel": "Correo electrónico",
     "passwordLabel": "Password",
     "passwordOptional": "Password (optional for magic link)",
     "passwordRequired": "Password is required for sign-up.",

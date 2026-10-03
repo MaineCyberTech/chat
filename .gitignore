@@ -32,6 +32,12 @@ coverage-ts/
 .vite/
 *.test.tsx.snap
 __snapshots__/
+test-results/
+
+# Generated inventory/audit artifacts (INV-P2-001, HYG-P2-001, SUPPLY-P3-005)
+tmp_prompt_outputs/
+docs-prompts-archive.zip
+infra.zip
 
 # Environment
 .env.local
