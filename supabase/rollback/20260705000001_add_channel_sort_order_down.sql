@@ -3,7 +3,6 @@
 
 BEGIN;
 
-ALTER TABLE public.channels DROP COLUMN IF EXISTS sort_order;
--- Manual rollback needed: UPDATE on public.channels
+ALTER TABLE IF EXISTS public.channels DROP COLUMN IF EXISTS sort_order;
 
 COMMIT;

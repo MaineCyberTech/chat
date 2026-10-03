@@ -3,11 +3,11 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.notification_preferences CASCADE;
-ALTER TABLE public.notification_preferences DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "notification_preferences_select_own";
-DROP POLICY IF EXISTS "notification_preferences_insert_own";
-DROP POLICY IF EXISTS "notification_preferences_update_own";
 DROP INDEX IF EXISTS idx_notification_preferences_user;
+DROP POLICY IF EXISTS "notification_preferences_update_own" ON public.notification_preferences;
+DROP POLICY IF EXISTS "notification_preferences_insert_own" ON public.notification_preferences;
+DROP POLICY IF EXISTS "notification_preferences_select_own" ON public.notification_preferences;
+ALTER TABLE IF EXISTS public.notification_preferences DISABLE ROW LEVEL SECURITY;
+DROP TABLE IF EXISTS public.notification_preferences CASCADE;
 
 COMMIT;

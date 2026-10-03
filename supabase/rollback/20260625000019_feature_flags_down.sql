@@ -3,12 +3,11 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.feature_flags CASCADE;
+DROP TRIGGER IF EXISTS feature_flags_updated_at ON public.feature_flags;
+DROP POLICY IF EXISTS "feature_flags_manage_admin" ON public.feature_flags;
+DROP POLICY IF EXISTS "feature_flags_select_admin" ON public.feature_flags;
+ALTER TABLE IF EXISTS public.feature_flags DISABLE ROW LEVEL SECURITY;
 DROP INDEX IF EXISTS idx_feature_flags_enabled;
-ALTER TABLE public.feature_flags DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "feature_flags_select_admin";
-DROP POLICY IF EXISTS "feature_flags_manage_admin";
-DROP TRIGGER IF EXISTS feature_flags_updated_at;
--- Manual rollback needed: UPDATE on on
+DROP TABLE IF EXISTS public.feature_flags CASCADE;
 
 COMMIT;

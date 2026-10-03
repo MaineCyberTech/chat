@@ -3,6 +3,7 @@
 
 BEGIN;
 
-DROP FUNCTION IF EXISTS public.prune_audit_logs();
+DROP FUNCTION IF EXISTS public.prune_audit_logs CASCADE;
+-- Extension pg_cron; cannot be removed via DROP; skip manual removal if unused
 
 COMMIT;

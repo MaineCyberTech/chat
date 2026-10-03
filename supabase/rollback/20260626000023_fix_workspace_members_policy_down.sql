@@ -3,6 +3,6 @@
 
 BEGIN;
 
-DROP POLICY IF EXISTS "workspace_members_select_own";
+DROP POLICY IF EXISTS "workspace_members_select_own" ON public.workspace_members;
 
 COMMIT;

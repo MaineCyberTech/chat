@@ -3,7 +3,7 @@
 
 BEGIN;
 
-ALTER TABLE public.messages DROP COLUMN IF EXISTS priority;
-DROP POLICY IF EXISTS "channel_member_insert";
+DROP POLICY IF EXISTS "channel_member_insert" ON public.messages;
+ALTER TABLE IF EXISTS public.messages DROP COLUMN IF EXISTS priority;
 
 COMMIT;

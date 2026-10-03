@@ -3,13 +3,12 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.webhook_dead_letters CASCADE;
+DROP FUNCTION IF EXISTS public.process_webhook_retries CASCADE;
+DROP FUNCTION IF EXISTS public.schedule_webhook_retry CASCADE;
+DROP POLICY IF EXISTS "webhook_dead_letters_select_workspace_member" ON public.webhook_dead_letters;
+ALTER TABLE IF EXISTS public.webhook_dead_letters DISABLE ROW LEVEL SECURITY;
 DROP INDEX IF EXISTS idx_webhook_dead_letters_webhook;
-ALTER TABLE public.webhook_dead_letters DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "webhook_dead_letters_select_workspace_member";
-DROP FUNCTION IF EXISTS public.schedule_webhook_retry(;
--- Manual rollback needed: UPDATE on public.webhook_deliveries
--- Manual rollback needed: UPDATE on public.webhook_deliveries
-DROP FUNCTION IF EXISTS public.process_webhook_retries();
+DROP TABLE IF EXISTS public.webhook_dead_letters CASCADE;
+ALTER TABLE IF EXISTS public.webhook_deliveries DROP COLUMN IF EXISTS retry_count;
 
 COMMIT;

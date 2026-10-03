@@ -3,6 +3,6 @@
 
 BEGIN;
 
-DROP FUNCTION IF EXISTS public.handle_new_workspace();
+DROP FUNCTION IF EXISTS public.handle_new_workspace CASCADE;
 
 COMMIT;

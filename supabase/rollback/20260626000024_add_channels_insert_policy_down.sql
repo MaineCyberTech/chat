@@ -3,6 +3,6 @@
 
 BEGIN;
 
-DROP POLICY IF EXISTS "channels_insert_member";
+DROP POLICY IF EXISTS "channels_insert_member" ON public.channels;
 
 COMMIT;

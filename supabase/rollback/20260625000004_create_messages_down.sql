@@ -3,8 +3,8 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.messages CASCADE;
+ALTER TABLE IF EXISTS public.messages DISABLE ROW LEVEL SECURITY;
 DROP INDEX IF EXISTS idx_messages_channel_created;
-ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
+DROP TABLE IF EXISTS public.messages CASCADE;
 
 COMMIT;

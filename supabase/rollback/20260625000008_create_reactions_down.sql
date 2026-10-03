@@ -3,10 +3,10 @@
 
 BEGIN;
 
+DROP POLICY IF EXISTS "reactions_delete_own" ON public.reactions;
+DROP POLICY IF EXISTS "reactions_insert_own" ON public.reactions;
+DROP POLICY IF EXISTS "reactions_select" ON public.reactions;
+ALTER TABLE IF EXISTS public.reactions DISABLE ROW LEVEL SECURITY;
 DROP TABLE IF EXISTS public.reactions CASCADE;
-ALTER TABLE public.reactions DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "reactions_select";
-DROP POLICY IF EXISTS "reactions_insert_own";
-DROP POLICY IF EXISTS "reactions_delete_own";
 
 COMMIT;

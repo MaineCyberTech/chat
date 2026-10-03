@@ -3,7 +3,7 @@
 
 BEGIN;
 
+DROP FUNCTION IF EXISTS public.search_messages CASCADE;
 DROP INDEX IF EXISTS idx_messages_content_fts;
-DROP FUNCTION IF EXISTS public.search_messages(;
 
 COMMIT;

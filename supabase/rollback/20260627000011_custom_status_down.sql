@@ -3,11 +3,11 @@
 
 BEGIN;
 
+DROP POLICY IF EXISTS "user_statuses_delete_own" ON public.user_statuses;
+DROP POLICY IF EXISTS "user_statuses_update_own" ON public.user_statuses;
+DROP POLICY IF EXISTS "user_statuses_upsert_own" ON public.user_statuses;
+DROP POLICY IF EXISTS "user_statuses_select" ON public.user_statuses;
+ALTER TABLE IF EXISTS public.user_statuses DISABLE ROW LEVEL SECURITY;
 DROP TABLE IF EXISTS public.user_statuses CASCADE;
-ALTER TABLE public.user_statuses DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "user_statuses_select";
-DROP POLICY IF EXISTS "user_statuses_upsert_own";
-DROP POLICY IF EXISTS "user_statuses_update_own";
-DROP POLICY IF EXISTS "user_statuses_delete_own";
 
 COMMIT;

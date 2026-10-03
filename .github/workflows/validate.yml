@@ -328,8 +328,7 @@ jobs:
         run: supabase start
 
       - name: Dry-run migrations (catch SQL errors early)
-        run: |
-          supabase db diff --schema public || true
+        run: supabase db diff --schema public
 
       - name: Apply migrations
         run: supabase db reset
@@ -337,26 +336,26 @@ jobs:
       - name: Verify migration status
         run: supabase migration list || echo "Migration list not available (project not linked), skipping verification"
 
-      - name: Validate migration order (non-blocking)
+      - name: Validate migration order (blocking)
         run: |
           MANIFEST="supabase/migrations/migrations.list"
           if [ ! -f "$MANIFEST" ]; then
-            echo "⚠️ Migration manifest not found at $MANIFEST, skipping order validation"
-            exit 0
+            echo "ERROR: Migration manifest not found at $MANIFEST"
+            exit 1
           fi
-          # Compare filesystem order with manifest (non-blocking)
-          actual=$(ls supabase/migrations/*.sql 2>/dev/null | xargs -n1 basename | sort)
-          expected=$(cat "$MANIFEST")
+          # Compare filesystem order with the manifest.
+          actual=$(ls supabase/migrations/*.sql 2>/dev/null | xargs -n1 basename | sort | tr -d '\r')
+          expected=$(sort "$MANIFEST" | tr -d '\r')
           if [ "$actual" != "$expected" ]; then
-            echo "⚠️ Migration order mismatch (non-blocking)"
+            echo "ERROR: Migration order mismatch"
             diff <(echo "$expected") <(echo "$actual") || true
-          else
-            echo "✅ Migration order matches manifest"
+            exit 1
           fi
+          echo "✅ Migration order matches manifest"
 
       - name: Run SQL lint
         run: |
-          supabase db lint --level warning || echo "Lint warnings found (non-blocking)"
+          supabase db lint --level error
 
       - name: Run real-database RLS integration tests (blocking)
         run: |
@@ -378,9 +377,16 @@ jobs:
             docker exec -i "$DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$test"
           done
 
-      - name: Test migration rollback
+      - name: Test migration rollback (execute downs in reverse, then re-apply ups)
         run: |
-          # Verify down scripts exist for all migrations
+          set -euo pipefail
+          DB_URL=$(supabase status -o env | sed -n 's/^DB_URL="\(.*\)"$/\1/p')
+          if [ -z "$DB_URL" ]; then
+            echo "ERROR: could not determine local database URL"
+            exit 1
+          fi
+
+          # 1. Require a down script for every migration.
           for f in supabase/migrations/*.sql; do
             base=$(basename "$f" .sql)
             down="supabase/rollback/${base}_down.sql"
@@ -388,8 +394,29 @@ jobs:
               echo "ERROR: Missing rollback for $base"
               exit 1
             fi
-            echo "✅ $base has rollback"
           done
+          echo "✅ All migrations have matching rollback scripts"
+
+          # 2. Actually execute the down scripts in reverse order.
+          failures=0
+          count=0
+          while IFS= read -r down; do
+            echo "Applying rollback: $down"
+            if ! psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f "$down"; then
+              echo "ERROR: rollback failed: $down"
+              failures=$((failures + 1))
+            fi
+            count=$((count + 1))
+          done < <(find supabase/rollback -name '*_down.sql' | sort -r)
+          echo "Executed $count rollback script(s), $failures failure(s)"
+          if [ "$failures" -ne 0 ]; then
+            echo "ERROR: migration rollback is not clean; see failures above"
+            exit 1
+          fi
+
+          # 3. Re-apply all migrations to prove the up/down/up round-trip.
+          supabase db reset
+          echo "✅ Migration up/down/up round-trip succeeded"
 
   build:
     runs-on: ubuntu-latest

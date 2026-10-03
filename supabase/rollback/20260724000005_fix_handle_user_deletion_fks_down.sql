@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS public.handle_user_deletion();
+DROP FUNCTION IF EXISTS public.handle_user_deletion() CASCADE;
 
 CREATE OR REPLACE FUNCTION public.handle_user_deletion()
 RETURNS TRIGGER AS $$

@@ -3,10 +3,10 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.notifications CASCADE;
+DROP POLICY IF EXISTS "Users can update own notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Users can view own notifications" ON public.notifications;
+ALTER TABLE IF EXISTS public.notifications DISABLE ROW LEVEL SECURITY;
 DROP INDEX IF EXISTS idx_notifications_user_unread;
-ALTER TABLE public.notifications DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users;
-DROP POLICY IF EXISTS "Users;
+DROP TABLE IF EXISTS public.notifications CASCADE;
 
 COMMIT;

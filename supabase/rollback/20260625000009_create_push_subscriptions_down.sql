@@ -3,12 +3,12 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.push_subscriptions CASCADE;
-ALTER TABLE public.push_subscriptions DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "push_subscriptions_select_own";
-DROP POLICY IF EXISTS "push_subscriptions_insert_own";
-DROP POLICY IF EXISTS "push_subscriptions_delete_own";
-DROP POLICY IF EXISTS "push_subscriptions_update_own";
 DROP INDEX IF EXISTS push_subscriptions_user_id_idx;
+DROP POLICY IF EXISTS "push_subscriptions_update_own" ON public.push_subscriptions;
+DROP POLICY IF EXISTS "push_subscriptions_delete_own" ON public.push_subscriptions;
+DROP POLICY IF EXISTS "push_subscriptions_insert_own" ON public.push_subscriptions;
+DROP POLICY IF EXISTS "push_subscriptions_select_own" ON public.push_subscriptions;
+ALTER TABLE IF EXISTS public.push_subscriptions DISABLE ROW LEVEL SECURITY;
+DROP TABLE IF EXISTS public.push_subscriptions CASCADE;
 
 COMMIT;

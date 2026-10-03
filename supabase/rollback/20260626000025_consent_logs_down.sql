@@ -3,10 +3,10 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.consent_logs CASCADE;
+DROP POLICY IF EXISTS "Users can insert own consent" ON public.consent_logs;
+DROP POLICY IF EXISTS "Users can view own consent" ON public.consent_logs;
+ALTER TABLE IF EXISTS public.consent_logs DISABLE ROW LEVEL SECURITY;
 DROP INDEX IF EXISTS idx_consent_logs_user_id;
-ALTER TABLE public.consent_logs DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users;
-DROP POLICY IF EXISTS "Users;
+DROP TABLE IF EXISTS public.consent_logs CASCADE;
 
 COMMIT;
