@@ -1,0 +1,1013 @@
+{
+  "repo": "C:\\temp\\chat",
+  "generated_at": "2026-10-03T04:18:30.564740+00:00",
+  "git": {
+    "branch": "develop",
+    "sha": "a72b8cc",
+    "dirty": false
+  },
+  "totals": {
+    "files": 1489,
+    "lines": 154580,
+    "by_ext": {
+      ".css": 3,
+      ".csv": 3,
+      ".dev": 3,
+      ".example": 9,
+      ".hcl": 1,
+      ".html": 1,
+      ".js": 8,
+      ".json": 345,
+      ".list": 1,
+      ".md": 389,
+      ".mjs": 4,
+      ".png": 18,
+      ".prod": 1,
+      ".ps1": 54,
+      ".py": 40,
+      ".sh": 9,
+      ".sql": 168,
+      ".svg": 7,
+      ".tf": 5,
+      ".tftpl": 1,
+      ".toml": 1,
+      ".ts": 224,
+      ".tsx": 135,
+      ".txt": 5,
+      ".webmanifest": 1,
+      ".yaml": 2,
+      ".yml": 28,
+      ".zip": 4
+    }
+  },
+  "stacks": [
+    "github-actions",
+    "node",
+    "pnpm",
+    "supabase",
+    "terraform"
+  ],
+  "entry_points": [
+    ".storybook/main.ts",
+    "apps/api/src/app.ts",
+    "apps/api/src/server.ts",
+    "apps/worker/src/main.ts",
+    "packages/config/index.ts",
+    "packages/db/src/index.ts",
+    "packages/sdk/src/index.ts",
+    "packages/ui/src/index.ts"
+  ],
+  "routes": [
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/healthz"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/metrics"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/stats"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/users"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/channels"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/workspaces"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/integrations"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/health"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/system"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/webhooks/deliveries"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/webhooks/dead-letters"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/webhooks/dead-letters/:id/retry"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/security"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/logs"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/config"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/audit-logs"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/export/compliance"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/exports"
+    },
+    {
+      "file": "apps/api/src/modules/admin/routes.ts",
+      "path": "/exports/:id/download"
+    },
+    {
+      "file": "apps/api/src/modules/ai/routes.ts",
+      "path": "/rewrite"
+    },
+    {
+      "file": "apps/api/src/modules/announcements/routes.ts",
+      "path": "/workspaces/:workspaceId/announcements"
+    },
+    {
+      "file": "apps/api/src/modules/announcements/routes.ts",
+      "path": "/workspaces/:workspaceId/announcements"
+    },
+    {
+      "file": "apps/api/src/modules/announcements/routes.ts",
+      "path": "/workspaces/:workspaceId/announcements/:id/dismiss"
+    },
+    {
+      "file": "apps/api/src/modules/audit/routes.ts",
+      "path": "/audit/logs"
+    },
+    {
+      "file": "apps/api/src/modules/audit/routes.ts",
+      "path": "/audit/logs/:id"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/magic-link"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/session"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/profile"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/online"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/profiles"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/search"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/avatar"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/avatar/:userId"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/status"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/status"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/export"
+    },
+    {
+      "file": "apps/api/src/modules/auth/routes.ts",
+      "path": "/account"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/workspaces/:workspaceId/channels"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/workspaces/:workspaceId/channels"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id/members"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id/members"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/workspaces/:workspaceId/dm"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/workspaces/:workspaceId/gm"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/dm-channels"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/workspaces/:workspaceId/channels/reorder"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/workspaces/:workspaceId/channel-ids"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id/bookmarks"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id/bookmarks"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id/bookmarks/:bookmarkId"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id/bookmarks/:bookmarkId"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id/members/:userId"
+    },
+    {
+      "file": "apps/api/src/modules/channels/routes.ts",
+      "path": "/channels/:id/members/history"
+    },
+    {
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "path": "/consent"
+    },
+    {
+      "file": "apps/api/src/modules/consent/routes.ts",
+      "path": "/consent"
+    },
+    {
+      "file": "apps/api/src/modules/emoji/routes.ts",
+      "path": "/workspaces/:workspaceId/emoji"
+    },
+    {
+      "file": "apps/api/src/modules/emoji/routes.ts",
+      "path": "/workspaces/:workspaceId/emoji"
+    },
+    {
+      "file": "apps/api/src/modules/emoji/routes.ts",
+      "path": "/emoji/:id"
+    },
+    {
+      "file": "apps/api/src/modules/export/routes.ts",
+      "path": "/admin/export/workspaces"
+    },
+    {
+      "file": "apps/api/src/modules/export/routes.ts",
+      "path": "/admin/export/users"
+    },
+    {
+      "file": "apps/api/src/modules/export/routes.ts",
+      "path": "/admin/export/channels"
+    },
+    {
+      "file": "apps/api/src/modules/export/routes.ts",
+      "path": "/admin/export/messages"
+    },
+    {
+      "file": "apps/api/src/modules/feature-flags/routes.ts",
+      "path": "/feature-flags"
+    },
+    {
+      "file": "apps/api/src/modules/feature-flags/routes.ts",
+      "path": "/feature-flags/:key"
+    },
+    {
+      "file": "apps/api/src/modules/feature-flags/routes.ts",
+      "path": "/feature-flags"
+    },
+    {
+      "file": "apps/api/src/modules/feature-flags/routes.ts",
+      "path": "/feature-flags/:key"
+    },
+    {
+      "file": "apps/api/src/modules/feature-flags/routes.ts",
+      "path": "/feature-flags/:key"
+    },
+    {
+      "file": "apps/api/src/modules/feature-flags/routes.ts",
+      "path": "/feature-flags/:key/evaluate"
+    },
+    {
+      "file": "apps/api/src/modules/groups/routes.ts",
+      "path": "/workspaces/:workspaceId/groups"
+    },
+    {
+      "file": "apps/api/src/modules/groups/routes.ts",
+      "path": "/workspaces/:workspaceId/groups"
+    },
+    {
+      "file": "apps/api/src/modules/groups/routes.ts",
+      "path": "/groups/:id/members"
+    },
+    {
+      "file": "apps/api/src/modules/groups/routes.ts",
+      "path": "/groups/:id/members/:userId"
+    },
+    {
+      "file": "apps/api/src/modules/groups/routes.ts",
+      "path": "/groups/:id"
+    },
+    {
+      "file": "apps/api/src/modules/health/routes.ts",
+      "path": "/health"
+    },
+    {
+      "file": "apps/api/src/modules/import/routes.ts",
+      "path": "/admin/import/workspaces"
+    },
+    {
+      "file": "apps/api/src/modules/import/routes.ts",
+      "path": "/admin/import/users"
+    },
+    {
+      "file": "apps/api/src/modules/livekit/routes.ts",
+      "path": "/livekit/token"
+    },
+    {
+      "file": "apps/api/src/modules/livekit/routes.ts",
+      "path": "/livekit/status"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/search"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/channels/:channelId/messages"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/channels/:channelId/messages"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/:id"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/:id/pin"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/:id/pin"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/channels/:channelId/pinned"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/:id/flag"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/:id/flag"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/flagged"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/:id/forward"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/:id/history"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/:id"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/upload"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/messages/:id/remind"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/reminders"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/reminders/:id"
+    },
+    {
+      "file": "apps/api/src/modules/messages/routes.ts",
+      "path": "/channels/:channelId/export"
+    },
+    {
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "path": "/notifications"
+    },
+    {
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "path": "/notifications/unread"
+    },
+    {
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "path": "/notifications/preferences"
+    },
+    {
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "path": "/channels/:id/notification-preference"
+    },
+    {
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "path": "/channels/:id/notification-preference"
+    },
+    {
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "path": "/channels/:id/notification-preference"
+    },
+    {
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "path": "/trigger-words"
+    },
+    {
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "path": "/notifications/trigger-words"
+    },
+    {
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "path": "/trigger-words"
+    },
+    {
+      "file": "apps/api/src/modules/notifications/routes.ts",
+      "path": "/trigger-words/:id"
+    },
+    {
+      "file": "apps/api/src/modules/openapi/routes.ts",
+      "path": "/openapi.json"
+    },
+    {
+      "file": "apps/api/src/modules/openapi/routes.ts",
+      "path": "/changelog"
+    },
+    {
+      "file": "apps/api/src/modules/preferences/routes.ts",
+      "path": "/preferences"
+    },
+    {
+      "file": "apps/api/src/modules/preferences/routes.ts",
+      "path": "/preferences"
+    },
+    {
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "path": "/messages/:id/reactions"
+    },
+    {
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "path": "/reactions/batch"
+    },
+    {
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "path": "/messages/:id/reactions"
+    },
+    {
+      "file": "apps/api/src/modules/reactions/routes.ts",
+      "path": "/messages/:id/reactions/:emoji"
+    },
+    {
+      "file": "apps/api/src/modules/read-receipts/routes.ts",
+      "path": "/channels/:id/read"
+    },
+    {
+      "file": "apps/api/src/modules/read-receipts/routes.ts",
+      "path": "/channels/:id/last-viewed"
+    },
+    {
+      "file": "apps/api/src/modules/read-receipts/routes.ts",
+      "path": "/messages/:id/read"
+    },
+    {
+      "file": "apps/api/src/modules/read-receipts/routes.ts",
+      "path": "/messages/:id/readers"
+    },
+    {
+      "file": "apps/api/src/modules/read-receipts/routes.ts",
+      "path": "/unread/counts"
+    },
+    {
+      "file": "apps/api/src/modules/scheduled-posts/routes.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/modules/scheduled-posts/routes.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/modules/scheduled-posts/routes.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/modules/sidebar/routes.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/modules/sidebar/routes.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/modules/sidebar/routes.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/modules/sidebar/routes.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/modules/sidebar/routes.ts",
+      "path": "/:id/assignments"
+    },
+    {
+      "file": "apps/api/src/modules/sidebar/routes.ts",
+      "path": "/:id/assignments/:channelId"
+    },
+    {
+      "file": "apps/api/src/modules/sidebar/routes.ts",
+      "path": "/reorder"
+    },
+    {
+      "file": "apps/api/src/modules/sidebar/routes.ts",
+      "path": "/:id/assignments/reorder"
+    },
+    {
+      "file": "apps/api/src/modules/status/routes.ts",
+      "path": "/status"
+    },
+    {
+      "file": "apps/api/src/modules/status/routes.ts",
+      "path": "/status"
+    },
+    {
+      "file": "apps/api/src/modules/status/routes.ts",
+      "path": "/status"
+    },
+    {
+      "file": "apps/api/src/modules/status/routes.ts",
+      "path": "/status/batch"
+    },
+    {
+      "file": "apps/api/src/modules/status/routes.ts",
+      "path": "/status/presence/batch"
+    },
+    {
+      "file": "apps/api/src/modules/status/routes.ts",
+      "path": "/auto-responder"
+    },
+    {
+      "file": "apps/api/src/modules/status/routes.ts",
+      "path": "/auto-responder"
+    },
+    {
+      "file": "apps/api/src/modules/threads/routes.ts",
+      "path": "/threads"
+    },
+    {
+      "file": "apps/api/src/modules/threads/routes.ts",
+      "path": "/messages/:id/thread"
+    },
+    {
+      "file": "apps/api/src/modules/threads/routes.ts",
+      "path": "/threads/:id/participants"
+    },
+    {
+      "file": "apps/api/src/modules/threads/routes.ts",
+      "path": "/threads/:id/join"
+    },
+    {
+      "file": "apps/api/src/modules/threads/routes.ts",
+      "path": "/threads/:id/leave"
+    },
+    {
+      "file": "apps/api/src/modules/threads/routes.ts",
+      "path": "/threads/:id/unread"
+    },
+    {
+      "file": "apps/api/src/modules/user-groups/routes.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/modules/user-groups/routes.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/modules/user-groups/routes.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/modules/user-groups/routes.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/modules/user-groups/routes.ts",
+      "path": "/:id/members"
+    },
+    {
+      "file": "apps/api/src/modules/user-groups/routes.ts",
+      "path": "/:id/members"
+    },
+    {
+      "file": "apps/api/src/modules/user-groups/routes.ts",
+      "path": "/:id/members/:userId"
+    },
+    {
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "path": "/webhooks/deliveries"
+    },
+    {
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "path": "/webhooks"
+    },
+    {
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "path": "/webhooks/:id"
+    },
+    {
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "path": "/webhooks"
+    },
+    {
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "path": "/webhooks/:id"
+    },
+    {
+      "file": "apps/api/src/modules/webhooks/routes.ts",
+      "path": "/webhooks/:id"
+    },
+    {
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "path": "/bootstrap"
+    },
+    {
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "path": "/:id/members"
+    },
+    {
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "path": "/:id/members"
+    },
+    {
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "path": "/:id/members/:userId"
+    },
+    {
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "path": "/:id/members/:userId"
+    },
+    {
+      "file": "apps/api/src/modules/workspaces/routes.ts",
+      "path": "/:id"
+    }
+  ],
+  "migrations": [
+    "run_all_migrations.sql",
+    "supabase/migrations/20260625000001_create_users.sql",
+    "supabase/migrations/20260625000002_create_workspaces.sql",
+    "supabase/migrations/20260625000003_create_channels.sql",
+    "supabase/migrations/20260625000004_create_messages.sql",
+    "supabase/migrations/20260625000005_create_search.sql",
+    "supabase/migrations/20260625000006_create_user_preferences.sql",
+    "supabase/migrations/20260625000007_add_missing_indexes.sql",
+    "supabase/migrations/20260625000008_create_reactions.sql",
+    "supabase/migrations/20260625000009_create_push_subscriptions.sql",
+    "supabase/migrations/20260625000010_create_audit_logs.sql",
+    "supabase/migrations/20260625000011_create_notifications.sql",
+    "supabase/migrations/20260625000012_create_webhooks.sql",
+    "supabase/migrations/20260625000013_audit_log_pruning.sql",
+    "supabase/migrations/20260625000014_soft_delete.sql",
+    "supabase/migrations/20260625000015_data_retention.sql",
+    "supabase/migrations/20260625000016_webhook_retry_dlq.sql",
+    "supabase/migrations/20260625000017_audit_logs_org_fk.sql",
+    "supabase/migrations/20260625000018_workspace_member_unique_owner.sql",
+    "supabase/migrations/20260625000019_feature_flags.sql",
+    "supabase/migrations/20260625000020_auto_create_user_profile.sql",
+    "supabase/migrations/20260625000021_backfill_user_profiles.sql",
+    "supabase/migrations/20260626000001_fix_workspace_member_trigger.sql",
+    "supabase/migrations/20260626000022_apply_rls_policies.sql",
+    "supabase/migrations/20260626000023_fix_workspace_members_policy.sql",
+    "supabase/migrations/20260626000024_add_channels_insert_policy.sql",
+    "supabase/migrations/20260626000025_consent_logs.sql",
+    "supabase/migrations/20260627000001_add_missing_indexes.sql",
+    "supabase/migrations/20260627000002_enforce_data_retention.sql",
+    "supabase/migrations/20260627000003_enhanced_search.sql",
+    "supabase/migrations/20260627000004_threads.sql",
+    "supabase/migrations/20260627000005_notification_preferences.sql",
+    "supabase/migrations/20260627000006_channel_role_overrides.sql",
+    "supabase/migrations/20260627000007_fix_rls_recursion.sql",
+    "supabase/migrations/20260627000008_simplify_rls_policies.sql",
+    "supabase/migrations/20260627000009_add_optimistic_locking.sql",
+    "supabase/migrations/20260627000010_add_search_offset.sql",
+    "supabase/migrations/20260627000011_custom_status.sql",
+    "supabase/migrations/20260627000012_read_only_channels.sql",
+    "supabase/migrations/20260703000001_add_message_features.sql",
+    "supabase/migrations/20260704000001_add_dm_presence_categories.sql",
+    "supabase/migrations/20260704000002_add_group_messaging.sql",
+    "supabase/migrations/20260704000005_add_message_reminders.sql",
+    "supabase/migrations/20260704000006_add_custom_emoji.sql",
+    "supabase/migrations/20260704000007_add_user_groups.sql",
+    "supabase/migrations/20260704000008_add_post_priority.sql",
+    "supabase/migrations/20260705000001_add_channel_sort_order.sql",
+    "supabase/migrations/20260705000002_add_scheduled_posts.sql",
+    "supabase/migrations/20260705000003_add_user_groups.sql",
+    "supabase/migrations/20260706000001_add_performance_indexes.sql",
+    "supabase/migrations/20260707000001_add_channel_member_history.sql",
+    "supabase/migrations/20260707000002_cleanup_deleted_users.sql",
+    "supabase/migrations/20260707000003_add_notify_everyone.sql",
+    "supabase/migrations/20260707000004_add_channel_notification_prefs_index.sql",
+    "supabase/migrations/20260708000001_add_trigger_words.sql",
+    "supabase/migrations/20260709000001_add_auto_responder.sql",
+    "supabase/migrations/20260709000002_add_read_receipts.sql",
+    "supabase/migrations/20260709000003_add_compliance_exports.sql",
+    "supabase/migrations/20260709000004_add_announcements.sql",
+    "supabase/migrations/20260710000001_add_preference_columns.sql",
+    "supabase/migrations/20260716000001_add_compliance_export_workspace.sql",
+    "supabase/migrations/20260716000002_fix_channels_created_by_fk.sql",
+    "supabase/migrations/20260718000001_fix_channel_member_trigger.sql",
+    "supabase/migrations/20260718000002_fix_notify_everyone_column.sql",
+    "supabase/migrations/20260718000003_fix_thread_reply_trigger.sql",
+    "supabase/migrations/20260718000004_fix_user_deletion_trigger.sql",
+    "supabase/migrations/20260719000001_fix_workspace_members_rls.sql",
+    "supabase/migrations/20260719000002_fix_users_rls_policy.sql",
+    "supabase/migrations/20260719000003_fix_user_group_members_fk.sql",
+    "supabase/migrations/20260719000004_backfill_user_display_names.sql",
+    "supabase/migrations/20260724000001_fix_sidebar_assignments_trigger.sql",
+    "supabase/migrations/20260724000002_fix_compliance_export_rls.sql",
+    "supabase/migrations/20260724000003_create_gdpr_delete_function.sql",
+    "supabase/migrations/20260724000004_fix_gdpr_delete_completeness.sql",
+    "supabase/migrations/20260724000005_fix_handle_user_deletion_fks.sql",
+    "supabase/migrations/20260724000006_fix_database_p1_findings.sql",
+    "supabase/policies/01_users.sql",
+    "supabase/policies/02_workspaces.sql",
+    "supabase/policies/03_channels.sql",
+    "supabase/policies/04_messages.sql",
+    "supabase/policies/05_user_preferences.sql",
+    "supabase/policies/06_reactions.sql",
+    "supabase/policies/07_push_subscriptions.sql",
+    "supabase/policies/08_notifications.sql",
+    "supabase/policies/09_webhooks.sql",
+    "supabase/policies/10_audit_logs.sql",
+    "supabase/policies/11_feature_flags.sql",
+    "supabase/rollback/20260625000001_create_users_down.sql",
+    "supabase/rollback/20260625000002_create_workspaces_down.sql",
+    "supabase/rollback/20260625000003_create_channels_down.sql",
+    "supabase/rollback/20260625000004_create_messages_down.sql",
+    "supabase/rollback/20260625000005_create_search_down.sql",
+    "supabase/rollback/20260625000006_create_user_preferences_down.sql",
+    "supabase/rollback/20260625000007_add_missing_indexes_down.sql",
+    "supabase/rollback/20260625000008_create_reactions_down.sql",
+    "supabase/rollback/20260625000009_create_push_subscriptions_down.sql",
+    "supabase/rollback/20260625000010_create_audit_logs_down.sql",
+    "supabase/rollback/20260625000011_create_notifications_down.sql",
+    "supabase/rollback/20260625000012_create_webhooks_down.sql",
+    "supabase/rollback/20260625000013_audit_log_pruning_down.sql",
+    "supabase/rollback/20260625000014_soft_delete_down.sql",
+    "supabase/rollback/20260625000015_data_retention_down.sql",
+    "supabase/rollback/20260625000016_webhook_retry_dlq_down.sql",
+    "supabase/rollback/20260625000017_audit_logs_org_fk_down.sql",
+    "supabase/rollback/20260625000018_workspace_member_unique_owner_down.sql",
+    "supabase/rollback/20260625000019_feature_flags_down.sql",
+    "supabase/rollback/20260625000020_auto_create_user_profile_down.sql",
+    "supabase/rollback/20260625000021_backfill_user_profiles_down.sql",
+    "supabase/rollback/20260626000001_fix_workspace_member_trigger_down.sql",
+    "supabase/rollback/20260626000022_apply_rls_policies_down.sql",
+    "supabase/rollback/20260626000023_fix_workspace_members_policy_down.sql",
+    "supabase/rollback/20260626000024_add_channels_insert_policy_down.sql",
+    "supabase/rollback/20260626000025_consent_logs_down.sql",
+    "supabase/rollback/20260627000001_add_missing_indexes_down.sql",
+    "supabase/rollback/20260627000002_enforce_data_retention_down.sql",
+    "supabase/rollback/20260627000003_enhanced_search_down.sql",
+    "supabase/rollback/20260627000004_threads_down.sql",
+    "supabase/rollback/20260627000005_notification_preferences_down.sql",
+    "supabase/rollback/20260627000006_channel_role_overrides_down.sql",
+    "supabase/rollback/20260627000007_fix_rls_recursion_down.sql",
+    "supabase/rollback/20260627000008_simplify_rls_policies_down.sql",
+    "supabase/rollback/20260627000009_add_optimistic_locking_down.sql",
+    "supabase/rollback/20260627000010_add_search_offset_down.sql",
+    "supabase/rollback/20260627000011_custom_status_down.sql",
+    "supabase/rollback/20260627000012_read_only_channels_down.sql",
+    "supabase/rollback/20260703000001_add_message_features_down.sql",
+    "supabase/rollback/20260704000001_add_dm_presence_categories_down.sql",
+    "supabase/rollback/20260704000002_add_group_messaging_down.sql",
+    "supabase/rollback/20260704000005_add_message_reminders_down.sql",
+    "supabase/rollback/20260704000006_add_custom_emoji_down.sql",
+    "supabase/rollback/20260704000007_add_user_groups_down.sql",
+    "supabase/rollback/20260704000008_add_post_priority_down.sql",
+    "supabase/rollback/20260705000001_add_channel_sort_order_down.sql",
+    "supabase/rollback/20260705000002_add_scheduled_posts_down.sql",
+    "supabase/rollback/20260705000003_add_user_groups_down.sql",
+    "supabase/rollback/20260706000001_add_performance_indexes_down.sql",
+    "supabase/rollback/20260707000001_add_channel_member_history_down.sql",
+    "supabase/rollback/20260707000002_cleanup_deleted_users_down.sql",
+    "supabase/rollback/20260707000003_add_notify_everyone_down.sql",
+    "supabase/rollback/20260707000004_add_channel_notification_prefs_index_down.sql",
+    "supabase/rollback/20260708000001_add_trigger_words_down.sql",
+    "supabase/rollback/20260709000001_add_auto_responder_down.sql",
+    "supabase/rollback/20260709000002_add_read_receipts_down.sql",
+    "supabase/rollback/20260709000003_add_compliance_exports_down.sql",
+    "supabase/rollback/20260709000004_add_announcements_down.sql",
+    "supabase/rollback/20260710000001_add_preference_columns_down.sql",
+    "supabase/rollback/20260716000001_add_compliance_export_workspace_down.sql",
+    "supabase/rollback/20260716000002_fix_channels_created_by_fk_down.sql",
+    "supabase/rollback/20260718000001_fix_channel_member_trigger_down.sql",
+    "supabase/rollback/20260718000002_fix_notify_everyone_column_down.sql",
+    "supabase/rollback/20260718000003_fix_thread_reply_trigger_down.sql",
+    "supabase/rollback/20260718000004_fix_user_deletion_trigger_down.sql",
+    "supabase/rollback/20260719000001_fix_workspace_members_rls_down.sql",
+    "supabase/rollback/20260719000002_fix_users_rls_policy_down.sql",
+    "supabase/rollback/20260719000003_fix_user_group_members_fk_down.sql",
+    "supabase/rollback/20260719000004_backfill_user_display_names_down.sql",
+    "supabase/rollback/20260724000001_fix_sidebar_assignments_trigger_down.sql",
+    "supabase/rollback/20260724000002_fix_compliance_export_rls_down.sql",
+    "supabase/rollback/20260724000003_create_gdpr_delete_function_down.sql",
+    "supabase/rollback/20260724000004_fix_gdpr_delete_completeness_down.sql",
+    "supabase/rollback/20260724000005_fix_handle_user_deletion_fks_down.sql",
+    "supabase/rollback/20260724000006_fix_database_p1_findings_down.sql",
+    "supabase/seeds/00_comprehensive_users.sql",
+    "supabase/seeds/01_comprehensive_workspaces.sql",
+    "supabase/seeds/02_comprehensive_channels.sql",
+    "supabase/seeds/03_comprehensive_messages.sql",
+    "supabase/seeds/04_comprehensive_features.sql",
+    "supabase/seeds/05_comprehensive_expansion.sql"
+  ],
+  "workflows": [
+    ".github/workflows/audit-badges-autocommit.yml",
+    ".github/workflows/audit-ci-autocommit.yml",
+    ".github/workflows/audit-ci.yml",
+    ".github/workflows/audit-pr-gate.yml",
+    ".github/workflows/audit-release-certification.yml",
+    ".github/workflows/build-push.yml",
+    ".github/workflows/chaos-tests.yml",
+    ".github/workflows/ci.yml",
+    ".github/workflows/deploy-development.yml",
+    ".github/workflows/deploy-production.yml",
+    ".github/workflows/environment-promotion-audit.yml",
+    ".github/workflows/executive-stakeholder-pack.yml",
+    ".github/workflows/feature-rollout-checkpoint.yml",
+    ".github/workflows/governance.yml",
+    ".github/workflows/hardening-automation-runner.yml",
+    ".github/workflows/infra-development.yml",
+    ".github/workflows/load-test.yml",
+    ".github/workflows/platform.yml",
+    ".github/workflows/seed-database.yml",
+    ".github/workflows/stale.yml",
+    ".github/workflows/supabase-migrations.yml",
+    ".github/workflows/validate.yml"
+  ],
+  "containers": [
+    "apps/api/Dockerfile",
+    "apps/web/Dockerfile",
+    "apps/worker/Dockerfile"
+  ],
+  "tests": {
+    "files": 85,
+    "dirs": []
+  },
+  "secret_adjacent_files": [
+    ".env.example",
+    ".env.local.example",
+    "apps/api/.env.example",
+    "apps/web/.env.example",
+    "apps/worker/.env.example",
+    "docs/security/secrets-rotation.md",
+    "infra/docker/.env.dev.example",
+    "infra/docker/.env.devremote.example",
+    "infra/docker/.env.prod.example"
+  ],
+  "largest_dirs": [
+    {
+      "dir": "docs",
+      "files": 674
+    },
+    {
+      "dir": "apps",
+      "files": 303
+    },
+    {
+      "dir": "supabase",
+      "files": 171
+    },
+    {
+      "dir": "scripts",
+      "files": 106
+    },
+    {
+      "dir": "packages",
+      "files": 91
+    },
+    {
+      "dir": "(root)",
+      "files": 37
+    },
+    {
+      "dir": ".github",
+      "files": 29
+    },
+    {
+      "dir": "tests",
+      "files": 24
+    },
+    {
+      "dir": "infra",
+      "files": 20
+    },
+    {
+      "dir": "tmp_prompt_outputs",
+      "files": 18
+    },
+    {
+      "dir": "test-results",
+      "files": 7
+    },
+    {
+      "dir": "hardening",
+      "files": 5
+    },
+    {
+      "dir": ".husky",
+      "files": 2
+    },
+    {
+      "dir": ".storybook",
+      "files": 2
+    }
+  ],
+  "ci": [
+    "github-actions"
+  ]
+}
