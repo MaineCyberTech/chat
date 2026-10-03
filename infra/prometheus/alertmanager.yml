@@ -1,0 +1,47 @@
+# Alertmanager routing for the Chat platform (OBS-P1-001).
+#
+# Pair with rules/chat.rules.yml. Receiver endpoints are supplied by the
+# environment and expanded by Alertmanager (run with --config.expand-env):
+#
+#   ALERT_EMAIL        Destination address for the default (email) receiver.
+#   ALERT_WEBHOOK_URL  PagerDuty / OpsGenie / Slack-compatible webhook for
+#                      critical alerts.
+#
+# Validate with: amtool check-config infra/prometheus/alertmanager.yml
+# Deploy:        see infra/prometheus/README.md.
+route:
+  receiver: default
+  group_by: ["alertname", "service", "severity"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # P0/P1 escalations go to the on-call webhook immediately; everything else
+    # falls through to the default email receiver.
+    - matchers:
+        - severity="critical"
+      receiver: oncall-webhook
+      group_wait: 10s
+      repeat_interval: 1h
+
+receivers:
+  - name: default
+    email_configs:
+      - to: ${ALERT_EMAIL}
+        send_resolved: true
+        headers:
+          subject: "[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} (chat)"
+
+  - name: oncall-webhook
+    webhook_configs:
+      - url: ${ALERT_WEBHOOK_URL}
+        send_resolved: true
+
+# Do not page on warning-level symptoms while a critical alert for the same
+# service/alert family is already firing.
+inhibit_rules:
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ["alertname", "service"]

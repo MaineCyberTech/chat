@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/node";
 import { loadEnv } from "../config/env.js";
+import { logger } from "./logger.js";
 
 function setupGlobalHandlers() {
   process.on("unhandledRejection", (reason) => {
@@ -19,7 +20,14 @@ function setupGlobalHandlers() {
 
 export function initSentry() {
   const env = loadEnv();
-  if (!env.SENTRY_DSN) return;
+  if (!env.SENTRY_DSN) {
+    // Surface the gap instead of silently running without error tracking
+    // (OBS-P2-003). Set SENTRY_DSN in every deployed environment.
+    logger.warn(
+      "SENTRY_DSN is not set — error tracking is disabled; unhandled errors are only logged",
+    );
+    return;
+  }
 
   Sentry.init({
     dsn: env.SENTRY_DSN,

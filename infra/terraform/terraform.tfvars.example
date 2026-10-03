@@ -4,3 +4,6 @@ region                = "nyc3"
 droplet_size          = "s-2vcpu-2gb"
 domain                = "mainecybertech.us"
 ci_public_key         = "ssh-ed25519 AAAAC3..."
+# Required for DigitalOcean CPU/memory/disk alerts; alerts are not created
+# while this is empty (see infra/terraform/main.tf).
+alert_email           = "ops@mainecybertech.us"

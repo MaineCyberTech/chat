@@ -4,19 +4,22 @@ import { loadEnv, logEnvStatus } from "./config/env.js";
 import { initSupabase } from "./lib/supabase.js";
 import { initSocket, shutdownSocket } from "./lib/socket.js";
 import { initSentry } from "./lib/sentry.js";
+import { initErrorLog } from "./modules/admin/error-buffer.js";
 import { logger } from "./lib/logger.js";
 import { initializeCache, shutdownCache } from "./middleware/cache.js";
 import type { Socket } from "node:net";
 
-// TODO(OBS-P1-001): Configure alerting channels:
-//   - Prometheus / Alertmanager rules (see metrics.ts)
-//   - Sentry (initialized below via initSentry())
-//   - DO monitoring alerts (CPU > 80 %, memory > 80 %)
-//   - PagerDuty webhook for P0/P1 escalations
-//   - Health check at GET /health (for LB / DO monitoring)
+// Alerting: Prometheus/Alertmanager rules and routing are checked in under
+// infra/prometheus/ (see docs/runbooks/alerting.md). Operator tasks:
+//   - Deploy the Prometheus + Alertmanager stack and set ALERT_EMAIL /
+//     ALERT_WEBHOOK_URL.
+//   - Configure DO monitoring alerts (CPU > 80 %, memory > 80 %) via
+//     terraform alert_email.
+//   - Health check at GET /health (for LB / DO monitoring).
 
 const env = loadEnv();
 logEnvStatus(env);
+initErrorLog();
 initSentry();
 if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
   initSupabase(env);
