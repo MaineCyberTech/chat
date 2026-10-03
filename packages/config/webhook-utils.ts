@@ -1,7 +1,36 @@
-import { createHmac } from "node:crypto";
+import { createDecipheriv, createHash, createHmac } from "node:crypto";
 
 export const MAX_RETRIES = 5;
 export const BASE_DELAY_MS = 60_000;
+
+const WEBHOOK_ENCRYPTION_ALGORITHM = "aes-256-gcm";
+
+function deriveWebhookEncryptionKey(encryptionKey: string): Buffer {
+  return createHash("sha256").update(encryptionKey).digest();
+}
+
+/**
+ * Decrypt a webhook signing secret produced by the API's `encryptSecret`
+ * (`iv:authTag:ciphertext`, all hex, AES-256-GCM). Shared so the worker can
+ * sign deliveries/retries with the real secret rather than the ciphertext.
+ */
+export function decryptWebhookSecret(encrypted: string, encryptionKey: string): string {
+  const key = deriveWebhookEncryptionKey(encryptionKey);
+  const parts = encrypted.split(":");
+  if (parts.length !== 3) {
+    throw new Error("Invalid encrypted secret format");
+  }
+  const [ivHex, authTagHex, encryptedData] = parts;
+  const decipher = createDecipheriv(
+    WEBHOOK_ENCRYPTION_ALGORITHM,
+    key,
+    Buffer.from(ivHex, "hex"),
+  );
+  decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
+  let plaintext = decipher.update(encryptedData, "hex", "utf8");
+  plaintext += decipher.final("utf8");
+  return plaintext;
+}
 
 const PRIVATE_IP_RANGES = [
   /^127\./,

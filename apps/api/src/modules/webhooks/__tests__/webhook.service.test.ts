@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { WebhookService, validateWebhookUrl } from "../service.js";
 
+const { enqueueWebhookRetry } = vi.hoisted(() => ({
+  enqueueWebhookRetry: vi.fn(async () => true),
+}));
+
+vi.mock("../../../lib/webhook-queue.js", () => ({ enqueueWebhookRetry }));
+
 const mockClient = () => ({
   from: vi.fn(() => ({
     select: vi.fn(() => ({
@@ -132,6 +138,7 @@ describe("WebhookService", () => {
 
   beforeEach(() => {
     service = new WebhookService();
+    vi.clearAllMocks();
   });
 
   it("gets channel workspace id", async () => {
@@ -175,6 +182,38 @@ describe("WebhookService", () => {
 
   it("triggers events for matching webhooks", async () => {
     await service.triggerEvent("message.created", "ws-1", { channel_id: "ch-1" });
+  });
+
+  it("enqueues a durable retry job when a delivery fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("upstream error", { status: 500 })),
+    );
+
+    await service.triggerEvent("message.created", "ws-1", { channel_id: "ch-2" });
+
+    type RetryCall = [
+      {
+        payload: { channel_id?: string };
+        webhookId: string;
+        retryCount: number;
+        deliveryId: string;
+        idempotencyKey: string;
+      },
+      number,
+    ];
+    const calls = enqueueWebhookRetry.mock.calls as unknown as RetryCall[];
+    const findCall = () => calls.find(([data]) => data.payload.channel_id === "ch-2");
+
+    await vi.waitFor(() => expect(findCall()).toBeTruthy(), { timeout: 15_000 });
+
+    const [jobData, delayMs] = findCall() as RetryCall;
+    expect(jobData.webhookId).toBe("wh-1");
+    expect(jobData.retryCount).toBe(1);
+    expect(jobData.idempotencyKey).toBeTruthy();
+    expect(delayMs).toBeGreaterThan(0);
+
+    vi.unstubAllGlobals();
   });
 });
 

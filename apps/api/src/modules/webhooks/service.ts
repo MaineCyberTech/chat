@@ -2,6 +2,7 @@ import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
 import { recordWebhookDelivery } from "../../lib/metrics.js";
 import { executeWithCircuitBreaker } from "../../lib/circuit-breaker.js";
+import { enqueueWebhookRetry } from "../../lib/webhook-queue.js";
 import {
   validateWebhookUrl,
   computeHmacSignature,
@@ -208,6 +209,10 @@ export class WebhookService {
     let responseBody: string | null = null;
     let error: string | null = null;
 
+    // Generated once per delivery so the first attempt and every durable retry
+    // of the same delivery carry the same X-Idempotency-Key.
+    const idempotencyKey = randomUUID();
+
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (endpoint.secret) {
@@ -216,8 +221,6 @@ export class WebhookService {
       }
 
       const breakerName = `webhook:${endpoint.id}`;
-
-      const idempotencyKey = randomUUID();
 
       const urlValidation = await validateWebhookUrl(endpoint.url);
       if (!urlValidation.valid) {
@@ -326,10 +329,13 @@ export class WebhookService {
 
     recordWebhookDelivery(status === "success" ? "success" : "failed", event);
 
-    // Schedule retry if failed and not exceeded max retries
+    // Schedule retry if failed and not exceeded max retries.
+    // The retry is a durable BullMQ job on the shared `webhook-delivery` queue,
+    // not an in-process timer, so it survives an API restart/pod eviction.
     if (status === "failed" && retryCount < MAX_RETRIES) {
       const delayMs = BASE_DELAY_MS * Math.pow(2, retryCount) + Math.random() * 30_000;
       const nextRetryAt = new Date(Date.now() + delayMs).toISOString();
+      const deliveryId = delivery?.id ?? "";
 
       await admin
         .from("webhook_deliveries")
@@ -337,14 +343,29 @@ export class WebhookService {
           retry_count: retryCount + 1,
           next_retry_at: nextRetryAt,
         })
-        .eq("id", delivery!.id);
+        .eq("id", deliveryId);
 
-      // Schedule retry
-      setTimeout(() => {
-        this.retryDelivery(endpoint, event, payload, retryCount + 1).catch((err) =>
-          logger.error("webhook retry failed", { webhookId: endpoint.id, error: String(err) }),
-        );
-      }, delayMs);
+      const enqueued = await enqueueWebhookRetry(
+        {
+          webhookId: endpoint.id,
+          event,
+          payload,
+          retryCount: retryCount + 1,
+          deliveryId,
+          // Reuse the key from the attempt that just failed so receivers can
+          // deduplicate retries of the same delivery.
+          idempotencyKey,
+        },
+        delayMs,
+      );
+
+      if (!enqueued) {
+        logger.error("webhook retry could not be durably enqueued", {
+          webhookId: endpoint.id,
+          deliveryId,
+          retryCount: retryCount + 1,
+        });
+      }
     } else if (status === "failed" && retryCount >= MAX_RETRIES) {
       // Move to dead letter queue
       await admin.from("webhook_dead_letters").insert({
