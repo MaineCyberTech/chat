@@ -331,17 +331,25 @@ jobs:
         run: |
           supabase db lint --level warning || echo "Lint warnings found (non-blocking)"
 
-      - name: Run database tests (if any)
+      - name: Run real-database RLS integration tests (blocking)
         run: |
-          # Run any SQL-based tests
-          if [ -d "./supabase/tests" ]; then
-            for test in ./supabase/tests/*.sql; do
-              echo "Running $test..."
-              supabase db execute --file "$test" || exit 1
-            done
-          else
-            echo "No SQL tests found, skipping"
+          # Execute every SQL test against the real local Postgres, so RLS and
+          # tenant-isolation regressions fail CI (closes TEST-P2-003).
+          DB_CONTAINER="$(docker ps --filter 'name=supabase_db_' --format '{{.Names}}' | head -n 1)"
+          if [ -z "$DB_CONTAINER" ]; then
+            echo "ERROR: local Supabase database container not found"
+            exit 1
           fi
+          shopt -s nullglob
+          tests=(supabase/tests/*.sql)
+          if [ ${#tests[@]} -eq 0 ]; then
+            echo "ERROR: no SQL tests found under supabase/tests/"
+            exit 1
+          fi
+          for test in "${tests[@]}"; do
+            echo "Running $test..."
+            docker exec -i "$DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$test"
+          done
 
       - name: Test migration rollback
         run: |
