@@ -22,6 +22,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters").optional(),
   SHOW_STACK_TRACES: z.enum(["true", "false"]).default("false"),
   WEBHOOK_ENCRYPTION_KEY: z.string().min(32).optional(),
+  METRICS_TOKEN: z.string().min(16, "METRICS_TOKEN must be at least 16 characters").optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

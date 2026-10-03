@@ -19,7 +19,7 @@ import { requestTimeout } from "./middleware/request-timeout.js";
 import { register, httpRequestsTotal, httpRequestDuration } from "./lib/metrics.js";
 import { sentryErrorMiddleware } from "./lib/sentry.js";
 import { logger } from "./lib/logger.js";
-import { authenticate } from "./middleware/authenticate.js";
+import { requireMetricsAccess } from "./middleware/metrics-auth.js";
 import { inputSanitizer } from "./middleware/input-sanitizer.js";
 import { routeRegistry } from "./route-registry.js";
 import { healthService } from "./modules/health/service.js";
@@ -100,7 +100,7 @@ export function createApp(frontendUrl: string): Express {
     res.status(statusCode).json(result);
   });
 
-  app.get("/metrics", authenticate, async (_req: Request, res: Response) => {
+  app.get("/metrics", requireMetricsAccess, async (_req: Request, res: Response) => {
     res.set("Content-Type", register.contentType);
     res.send(await register.metrics());
   });

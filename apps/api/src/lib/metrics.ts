@@ -63,10 +63,11 @@ export const webhookDeliveriesTotal = new Counter({
   registers: [register],
 });
 
+// No per-tenant labels: channel/workspace ids would leak tenant activity and
+// cause unbounded cardinality (see OBS-P2-002).
 export const messagesCreatedTotal = new Counter({
   name: "chat_messages_created_total",
   help: "Total number of messages created",
-  labelNames: ["channel_id"],
   registers: [register],
 });
 
@@ -156,8 +157,8 @@ export function recordWebhookDelivery(status: "success" | "failed", event: strin
   webhookDeliveriesTotal.inc({ status, event });
 }
 
-export function recordMessageCreated(channelId: string) {
-  messagesCreatedTotal.inc({ channel_id: channelId });
+export function recordMessageCreated() {
+  messagesCreatedTotal.inc();
 }
 
 export function recordAuthAttempt(result: "success" | "failure") {
