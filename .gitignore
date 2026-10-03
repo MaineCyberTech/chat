@@ -41,3 +41,7 @@ __snapshots__/
 *.swp
 *.swo
 *~
+
+# Local E2E credentials (never commit real credentials; see SECURITY.md)
+test-signin*.json
+!test-signin.example.json
