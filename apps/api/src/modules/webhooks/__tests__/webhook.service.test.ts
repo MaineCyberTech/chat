@@ -127,6 +127,9 @@ vi.mock("../../../lib/supabase.js", () => ({
 vi.mock("../../../lib/logger.js", () => ({ logger: { info: vi.fn(), error: vi.fn() } }));
 vi.mock("../../../lib/metrics.js", () => ({ recordWebhookDelivery: vi.fn() }));
 
+// Required by encryptSecret(); value is a throwaway test key, not a real secret.
+process.env.WEBHOOK_ENCRYPTION_KEY ??= "test-encryption-key";
+
 describe("WebhookService", () => {
   let service: WebhookService;
 
@@ -156,11 +159,37 @@ describe("WebhookService", () => {
       workspace_id: "ws-1",
       name: "New",
       url: "https://example.com/new",
+      secret: "a".repeat(16),
       events: [],
       created_by: "u1",
     });
     expect(wh).not.toBeNull();
     expect(wh?.name).toBe("New");
+  });
+
+  it("rejects creating a webhook without a secret", async () => {
+    await expect(
+      service.create({
+        workspace_id: "ws-1",
+        name: "New",
+        url: "https://example.com/new",
+        events: [],
+        created_by: "u1",
+      } as unknown as Parameters<WebhookService["create"]>[0]),
+    ).rejects.toThrow(/secret is required/i);
+  });
+
+  it("rejects creating a webhook with a too-short secret", async () => {
+    await expect(
+      service.create({
+        workspace_id: "ws-1",
+        name: "New",
+        url: "https://example.com/new",
+        secret: "short",
+        events: [],
+        created_by: "u1",
+      }),
+    ).rejects.toThrow(/at least 16/i);
   });
 
   it("updates a webhook", async () => {

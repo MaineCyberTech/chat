@@ -6,7 +6,9 @@ type AnyObj = any;
 vi.mock("node:crypto", () => ({
   randomBytes: vi.fn((size: number) => Buffer.alloc(size, 0x61)),
   timingSafeEqual: vi.fn((a: Buffer, b: Buffer) => {
-    if (a.length !== b.length) return false;
+    if (a.length !== b.length) {
+      throw new RangeError("Input buffers must have the same byte length");
+    }
     return a.toString("latin1") === b.toString("latin1");
   }),
 }));
@@ -143,6 +145,20 @@ describe("csrfProtection", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  it("returns 403 instead of throwing for a header token of a different length", () => {
+    const middleware = csrfProtection({ cookie: true });
+    const req = mockReq("POST", { "x-csrf-token": "a" }, { csrf_token: "a".repeat(64) });
+    const res = mockRes();
+    const next = vi.fn();
+
+    expect(() => middleware(req, res, next)).not.toThrow();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.objectContaining({ code: "CSRF_INVALID" }) }),
+    );
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("accepts POST with csrfMiddleware token matching cookie token", () => {
     const middleware = csrfProtection({ cookie: true });
     const req = mockReq("POST", { "x-csrf-token": "a".repeat(64) }, { csrf_token: "a".repeat(64) });
@@ -246,6 +262,19 @@ describe("doubleSubmitCookieCsrf", () => {
     doubleSubmitCookieCsrf(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 instead of throwing when the header token length differs", () => {
+    const req = mockReq("POST", { "x-csrf-token": "a" }, { csrf_token: "a".repeat(64) });
+    const res = mockRes();
+    const next = vi.fn();
+
+    expect(() => doubleSubmitCookieCsrf(req, res, next)).not.toThrow();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.objectContaining({ code: "CSRF_INVALID" }) }),
+    );
     expect(next).not.toHaveBeenCalled();
   });
 

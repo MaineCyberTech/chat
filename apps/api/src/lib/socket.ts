@@ -9,6 +9,15 @@ const ipConnectionTimestamps = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW_MS = 1000;
 const RATE_LIMIT_MAX_CONNECTIONS = 10;
 
+/**
+ * A socket may only broadcast to a channel room it has actually joined.
+ * `channel:join` performs the workspace/private-channel membership checks before
+ * `socket.join(...)`, so membership of the room is the authorization signal here.
+ */
+export function isChannelRoomMember(rooms: ReadonlySet<string>, channelId: string): boolean {
+  return rooms.has(`channel:${channelId}`);
+}
+
 function checkSocketRateLimit(ip: string): boolean {
   const now = Date.now();
   const timestamps = ipConnectionTimestamps.get(ip) ?? [];
@@ -212,6 +221,7 @@ export function initSocket(
     });
 
     socket.on("channel:leave", (channelId: string) => {
+      if (!isChannelRoomMember(socket.rooms, channelId)) return;
       socket.leave(`channel:${channelId}`);
       socket.to(`channel:${channelId}`).emit("channel:user_left", { userId });
       socket.to(`channel:${channelId}`).emit("presence:update", {
@@ -251,10 +261,12 @@ export function initSocket(
     });
 
     socket.on("typing:start", (channelId: string) => {
+      if (!isChannelRoomMember(socket.rooms, channelId)) return;
       socket.to(`channel:${channelId}`).emit("typing:start", { userId, channelId });
     });
 
     socket.on("typing:stop", (channelId: string) => {
+      if (!isChannelRoomMember(socket.rooms, channelId)) return;
       socket.to(`channel:${channelId}`).emit("typing:stop", { userId, channelId });
     });
 
