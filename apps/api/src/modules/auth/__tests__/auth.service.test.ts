@@ -2,8 +2,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AuthService } from "../service.js";
 import authRouter from "../routes.js";
 
+const { signInWithOtp } = vi.hoisted(() => ({
+  signInWithOtp: vi.fn(
+    async (): Promise<{ data: Record<string, never>; error: { message: string } | null }> => ({
+      data: {},
+      error: null,
+    }),
+  ),
+}));
+
 vi.mock("../../../lib/supabase.js", () => ({
   getSupabase: vi.fn(() => ({
+    auth: { signInWithOtp },
     from: vi.fn(() => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
@@ -197,6 +207,10 @@ describe("AuthService", () => {
 });
 
 describe("Auth Routes", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("GET /session returns user profile via authenticate middleware", async () => {
     const handler = findHandler("get", "/session");
     expect(handler).toBeTruthy();
@@ -208,10 +222,28 @@ describe("Auth Routes", () => {
     );
   });
 
-  it("POST /magic-link accepts valid email", async () => {
+  it("POST /magic-link sends a magic link for a valid email", async () => {
     const handler = findHandler("post", "/magic-link");
     expect(handler).toBeTruthy();
     const req = mockReq({ body: { email: "test@example.com" } });
+    const res = mockRes();
+    await handler(req, res);
+    expect(signInWithOtp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "test@example.com",
+        options: expect.objectContaining({
+          shouldCreateUser: false,
+          emailRedirectTo: expect.stringContaining("/auth/callback"),
+        }),
+      }),
+    );
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+  });
+
+  it("POST /magic-link still returns a neutral success when delivery fails", async () => {
+    signInWithOtp.mockResolvedValueOnce({ data: {}, error: { message: "rate limited" } });
+    const handler = findHandler("post", "/magic-link");
+    const req = mockReq({ body: { email: "missing@example.com" } });
     const res = mockRes();
     await handler(req, res);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));

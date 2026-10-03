@@ -37,6 +37,7 @@ router.post(
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.issues[0].message);
     }
+    await authService.sendMagicLink(parsed.data.email);
     res.json({ success: true, message: "Magic link sent if account exists" });
   }),
 );

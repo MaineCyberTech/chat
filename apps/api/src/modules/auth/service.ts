@@ -1,5 +1,7 @@
-import { getSupabaseAdmin } from "../../lib/supabase.js";
+import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import { containsPattern } from "../../lib/postgrest-filter.js";
+import { loadEnv } from "../../config/env.js";
+import { logger } from "../../lib/logger.js";
 import type { User, UserProfile } from "@chat/db";
 
 export class AuthService {
@@ -59,6 +61,30 @@ export class AuthService {
       .in("id", userIds);
 
     return (data ?? []) as UserProfile[];
+  }
+
+  /**
+   * Sends a Supabase magic-link (email OTP) server-side.
+   *
+   * The endpoint previously only validated the address and always reported
+   * success without sending anything. Delivery failures and unknown-account
+   * errors are logged but never surfaced, so the route stays neutral and cannot
+   * be used to enumerate accounts.
+   */
+  async sendMagicLink(email: string): Promise<void> {
+    const env = loadEnv();
+    const supabase = getSupabase();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${env.FRONTEND_URL}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      logger.warn("Magic link dispatch failed", { error: error.message });
+    }
   }
 }
 
