@@ -61,7 +61,14 @@ variable "ci_ssh_key_fingerprint" {
 }
 
 variable "ssh_allowed_ips" {
-  description = "Comma-separated list of CIDR blocks allowed to access SSH (port 22)"
+  description = "Comma-separated list of CIDR blocks allowed to access SSH (port 22). Required; must be restricted to trusted operator ranges."
   type        = string
-  default     = "0.0.0.0/0"
+
+  validation {
+    condition = alltrue([
+      for cidr in split(",", var.ssh_allowed_ips) :
+      trimspace(cidr) != "" && !contains(["0.0.0.0/0", "::/0"], trimspace(cidr))
+    ])
+    error_message = "ssh_allowed_ips is required and must list trusted operator CIDRs; 0.0.0.0/0 and ::/0 are not allowed."
+  }
 }
