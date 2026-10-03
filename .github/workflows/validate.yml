@@ -274,38 +274,53 @@ jobs:
     name: Check Branch Protection
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    continue-on-error: true
-    if: github.repository_owner == github.actor || github.event_name == 'pull_request'
+    # Blocking, not advisory. `main` must carry active rules requiring PR review,
+    # passing status checks, and no force pushes. This is the in-repo gate for the
+    # governance findings CI-P1-001 / CI-P2-007: a misconfigured `main` fails CI
+    # instead of silently reporting a false sense of protection.
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          fetch-depth: 0
-      - name: Check branch protection on main
+      - name: Check branch rules on main
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
-            const branch = await github.rest.repos.getBranchProtection({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              branch: 'main'
-            });
+            const { owner, repo } = context.repo;
+            const branch = 'main';
 
-            const required = [
-              'required_status_checks',
-              'enforce_admins',
-              'required_pull_request_reviews',
-              'restrictions'
-            ];
+            // GET /repos/{owner}/{repo}/rules/branches/{branch} returns every active
+            // rule applying to the branch, whether configured as a repository ruleset
+            // or as a classic branch protection rule. The legacy getBranchProtection
+            // endpoint 404s when protection is expressed as a ruleset and misreports
+            // the optional `restrictions` field, so it is not used here.
+            let rules;
+            try {
+              rules = await github.paginate('GET /repos/{owner}/{repo}/rules/branches/{branch}', {
+                owner,
+                repo,
+                branch,
+                per_page: 100
+              });
+            } catch (error) {
+              core.setFailed(`Unable to read branch rules for '${branch}': ${error.message}`);
+              return;
+            }
 
-            const missing = required.filter(r => !branch.data[r]);
+            const types = new Set(rules.map(rule => rule.type));
+            const required = {
+              pull_request: 'require pull request reviews before merging',
+              required_status_checks: 'require status checks to pass before merging',
+              non_fast_forward: 'block force pushes'
+            };
+
+            const missing = Object.entries(required)
+              .filter(([type]) => !types.has(type))
+              .map(([, description]) => description);
 
             if (missing.length > 0) {
-              console.log('❌ Missing branch protection rules:', missing.join(', '));
-              core.setFailed(`Branch protection not fully configured. Missing: ${missing.join(', ')}`);
-              process.exit(1);
-            } else {
-              console.log('✅ All branch protection rules configured');
+              core.setFailed(`Branch rules for '${branch}' are incomplete. Missing: ${missing.join('; ')}`);
+              return;
             }
+            core.info(`Branch rules for '${branch}' satisfy the required gates: ${[...types].sort().join(', ')}`);
 
   migration-test:
     name: Test Database Migrations
