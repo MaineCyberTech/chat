@@ -29,3 +29,9 @@
 - **Trigger**: Emergency `workflow_dispatch` with `hotfix=true`
 - **Approval**: Bypasses environment approval; requires post-deployment audit within 24 hours
 - **Process**: Branch from `main`, minimal fix, PR review, deploy, notify #operations, schedule post-mortem
+
+## Database Changes
+
+Deploys ship application images only. Schema, RLS policies, functions, and seed
+data are applied through versioned, reviewed channels — never from a deploy
+workflow. See [Database Change & Deploy Governance](database-change-governance.md).
