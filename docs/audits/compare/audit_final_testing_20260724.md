@@ -2,6 +2,14 @@
 
 **Verdict:** 7.2/10 — Solid unit/integration test base; significant gaps in component tests, E2E coverage, worker tests, and chaos engineering.
 
+> **Correction (remediation `PS-U09`, finding `INV-P2-003`).** This report described the
+> `test-signin.json` credentials file as absent from the repository. That is incorrect:
+> `test-signin.json` **is tracked** at the audited commit (`git ls-files test-signin.json` lists
+> it). Finding `E2E-002` (and the track of it in this report) remains valid — E2E tests should not
+> depend on a committed credential file — but the reason is that the file is committed (see
+> `INV-P2-002`), not that it is missing. This artifact is a historical snapshot; see
+> `docs/audits/README.md` for authoritativeness.
+
 ---
 
 ## 1. Executive Summary
@@ -215,7 +223,7 @@ Two separate Playwright configurations exist:
 | ID      | Severity | Finding                                                                                                                                                                                                            | Fix                                                                                                                     |
 | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | E2E-001 | **P1**   | **Dual playwright configs**: Root `playwright.config.ts` and `apps/web/playwright.config.ts` define different test dirs, browser matrices, and webServer configs. Running `pnpm test:e2e` may execute wrong config | Consolidate to single `playwright.config.ts` at root. Remove `apps/web/playwright.config.ts`                            |
-| E2E-002 | **P1**   | **Most E2E tests require `test-signin.json`** credentials file not present in repo. 50%+ of tests skip at runtime on fresh checkout                                                                                | Implement auth via API token or mock Supabase auth handler in Playwright setup; remove file-based credential dependency |
+| E2E-002 | **P1**   | **Most E2E tests require `test-signin.json`** — credentials file **tracked in the repo** (should be removed; see `INV-P2-002`). 50%+ of tests skip at runtime on fresh checkout                                                                                | Implement auth via API token or mock Supabase auth handler in Playwright setup; remove file-based credential dependency |
 | E2E-003 | **P1**   | `apps/web/e2e/comprehensive.spec.ts` has **17 of 20 tests permanently skipped** (`test.skip(true, ...)`) — dead test code requiring Supabase project setup                                                         | Either implement proper Supabase test project setup in CI or remove dead tests                                          |
 | E2E-004 | **P1**   | `apps/web/e2e/auth-workspace-chat.spec.ts` has **all 3 tests permanently skipped** — entire file is dead code                                                                                                      | Remove or implement                                                                                                     |
 | E2E-005 | P2       | No E2E test for: notification preferences, settings page changes, user profile editing, admin bulk operations, channel mute/unmute, emoji reactions, file preview, channel bookmarks, slash commands               | Add E2E scenarios for these critical user flows                                                                         |
@@ -405,7 +413,7 @@ lines: 50%, functions: 40%, branches: 40%, statements: 50%
 | PKG-001 | Packages   | packages/ui has zero tests                                  |
 | WEB-001 | Components | 43/55 web components (78%) have no tests                    |
 | E2E-001 | E2E        | Dual playwright config files — conflicting                  |
-| E2E-002 | E2E        | E2E tests require test-signin.json not in repo              |
+| E2E-002 | E2E        | E2E tests require committed test-signin.json (tracked; see INV-P2-002) |
 | E2E-003 | E2E        | 17 of 20 tests in comprehensive.spec.ts permanently skipped |
 | E2E-004 | E2E        | auth-workspace-chat.spec.ts entirely skipped                |
 | WKR-001 | Worker     | Zero tests for 6 BullMQ worker processors                   |
