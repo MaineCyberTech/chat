@@ -330,6 +330,9 @@ router.delete(
       throw new BadRequestError("Invalid password");
     }
 
+    // gdpr_delete_user atomically erases the public rows, the auth sessions/identities,
+    // and the auth.users row in a single transaction (DATA-P2-005). If it reports
+    // failure the whole erasure rolled back, so the request is safe to retry.
     const { data: rpcResult, error: rpcError } = await supabase.rpc("gdpr_delete_user", {
       target_user_id: userId,
     });
@@ -343,18 +346,6 @@ router.delete(
     if (!result?.success) {
       logger.error("GDPR RPC delete returned failure", { userId, result });
       throw new InternalServerError(result?.error ?? "Failed to delete user data");
-    }
-
-    try {
-      await supabase.auth.admin.deleteUser(userId);
-    } catch (err) {
-      logger.error("Failed to delete auth user during GDPR deletion", {
-        userId,
-        error: String(err),
-      });
-      throw new InternalServerError(
-        "Failed to complete account deletion. Auth user could not be removed.",
-      );
     }
 
     res.status(204).send();

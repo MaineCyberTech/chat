@@ -73,3 +73,4 @@
 20260724000004_fix_gdpr_delete_completeness.sql
 20260724000005_fix_handle_user_deletion_fks.sql
 20260724000006_fix_database_p1_findings.sql
+20260725000001_make_gdpr_delete_atomic.sql
