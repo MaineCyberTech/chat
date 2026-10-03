@@ -17,11 +17,22 @@ fi
 
 npx lint-staged
 
-# Check for high-severity production vulnerabilities
-echo "Checking pnpm audit for high vulnerabilities..."
-pnpm audit --prod --audit-level=high --no-fix; audit_exit=$?
-if [ "$audit_exit" -ne 0 ]; then
-  echo "⚠️  WARNING: pnpm audit found high vulnerabilities (exit code $audit_exit). Consider running 'pnpm audit --fix'."
+# Check for high/critical production vulnerabilities (SUPPLY-P2-003).
+# Blocking by default: fail on any HIGH/CRITICAL advisory not in the time-boxed
+# exception list shared with the CI audit gate (.pnpm-audit-exceptions.json).
+# Set HUSKY_AUDIT=off to bypass locally; CI still enforces the gate.
+if [ "${HUSKY_AUDIT:-on}" != "off" ]; then
+  echo "Checking pnpm audit for high/critical vulnerabilities..."
+  pnpm audit --prod --json > .husky-audit.json 2>/dev/null || true
+  node .husky/audit-gate.mjs .husky-audit.json
+  audit_exit=$?
+  rm -f .husky-audit.json
+  if [ "$audit_exit" -ne 0 ]; then
+    echo "ERROR: pnpm audit found un-allowlisted high/critical vulnerabilities (exit code $audit_exit)."
+    echo "Fix them, add a tracked time-boxed entry to .pnpm-audit-exceptions.json,"
+    echo "or bypass intentionally with HUSKY_AUDIT=off (CI still blocks)."
+    exit "$audit_exit"
+  fi
 fi
 
 exec npx --yes turbo typecheck --affected --continue
