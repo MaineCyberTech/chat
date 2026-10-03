@@ -1,40 +1,25 @@
-import { Router, type Request, type Response, type NextFunction } from "express";
+import { Router, type Request, type Response } from "express";
 import * as Sentry from "@sentry/node";
 import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { authenticate } from "../../middleware/authenticate.js";
+import { requireAdmin as requireAdminMiddleware } from "../../middleware/require-admin.js";
 import { logger } from "../../lib/logger.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { InternalServerError, ForbiddenError } from "../../lib/app-error.js";
+import {
+  BadRequestError,
+  InternalServerError,
+  ForbiddenError,
+  NotFoundError,
+} from "../../lib/app-error.js";
 import { loadEnv } from "../../config/env.js";
 import { getErrors } from "./error-buffer.js";
 
 const router = Router();
 const startTime = Date.now();
 
-async function requireAdmin(req: Request, _res: Response, next: NextFunction) {
-  try {
-    const supabase = req.supabase;
-    if (!supabase) {
-      next(new ForbiddenError("Auth context missing"));
-      return;
-    }
-    const { data, error } = await supabase
-      .from("workspace_members")
-      .select("workspace_id, role")
-      .eq("user_id", req.userId)
-      .in("role", ["owner", "admin"]);
-    if (error || !data || data.length === 0) {
-      next(new ForbiddenError("Admin access required"));
-      return;
-    }
-    (req as Request & { adminWorkspaceIds?: string[] }).adminWorkspaceIds = data.map(
-      (m: { workspace_id: string }) => m.workspace_id,
-    );
-    next();
-  } catch {
-    next(new ForbiddenError("Admin access check failed"));
-  }
-}
+// Single source of truth for the admin check (ARCH-P3-005); this route group
+// additionally needs the caller's admin workspace ids attached.
+const requireAdmin = requireAdminMiddleware(null, { attachWorkspaceIds: true });
 
 async function getAdminWorkspaceIds(req: Request): Promise<string[]> {
   return (
@@ -355,8 +340,8 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { webhookService } = await import("../../modules/webhooks/service.js");
     const success = await webhookService.retryDeadLetter(req.params.id as string);
-    if (!success) res.status(404).json({ error: "Dead letter not found or webhook inactive" });
-    else res.json({ success: true });
+    if (!success) throw new NotFoundError("Dead letter not found or webhook inactive");
+    res.json({ success: true });
   }),
 );
 
@@ -485,10 +470,7 @@ router.get(
     const workspaceId = req.query.workspace_id as string | undefined;
 
     if (!workspaceId) {
-      res
-        .status(400)
-        .json({ error: { code: "BAD_REQUEST", message: "workspace_id query param is required" } });
-      return;
+      throw new BadRequestError("workspace_id query param is required");
     }
 
     await verifyWorkspaceMembership(req, workspaceId);
