@@ -1,7 +1,7 @@
 # apps/api/Dockerfile
 # Multi-stage production build for the Express API server.
 
-FROM node:26-alpine AS base
+FROM node:26-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS base
 WORKDIR /app
 
 # pnpm
@@ -24,7 +24,7 @@ COPY apps/api/src ./apps/api/src
 RUN pnpm turbo build --filter @chat/api
 
 # ---- Runtime stage ----
-FROM node:26-alpine AS runtime
+FROM node:26-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS runtime
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
