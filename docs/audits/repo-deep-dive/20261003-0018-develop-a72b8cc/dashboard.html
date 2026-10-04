@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Audit Dashboard - 20261003-0018-develop-a72b8cc</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2em auto; }
+.score { font-size: 4em; font-weight: bold; text-align: center; }
+.score.high { color: #15803d; } .score.mid { color: #a16207; } .score.low { color: #b91c1c; }
+table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+th, td { border: 1px solid #999; padding: .5em; text-align: left; }
+</style></head>
+<body>
+<h1>Audit Dashboard - 20261003-0018-develop-a72b8cc</h1>
+<div class="score low">0<small>/100</small></div>
+<p style="text-align:center"><strong>Advisory:</strong> NO-GO (gate in RELEASE_GATE.md is authoritative)</p>
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td>P0</td><td>1</td></tr>
+<tr><td>P1</td><td>24</td></tr>
+<tr><td>P2</td><td>31</td></tr>
+<tr><td>P3</td><td>7</td></tr>
+</table>
+<h2>Areas</h2>
+<table><tr><th>Area</th><th>Count</th></tr>
+<tr><td>API</td><td>5</td></tr>
+<tr><td>ARCH</td><td>5</td></tr>
+<tr><td>CI</td><td>7</td></tr>
+<tr><td>DATA</td><td>5</td></tr>
+<tr><td>EXEC</td><td>2</td></tr>
+<tr><td>FEAT</td><td>4</td></tr>
+<tr><td>FINAL</td><td>3</td></tr>
+<tr><td>HYG</td><td>4</td></tr>
+<tr><td>INV</td><td>5</td></tr>
+<tr><td>OBS</td><td>4</td></tr>
+<tr><td>SEC</td><td>10</td></tr>
+<tr><td>SUPPLY</td><td>5</td></tr>
+<tr><td>TEST</td><td>4</td></tr>
+</table>
+<h2>Top P0/P1</h2>
+<table><tr><th>Sev</th><th>ID</th><th>Title</th></tr>
+<tr><td>P0</td><td>SEC-P0-001</td><td>Production deploy creates `users_select USING (true)`, exposing all users&#x27; PII to any authenticated user</td></tr>
+<tr><td>P1</td><td>API-P1-001</td><td>`/metrics` is readable by any authenticated user</td></tr>
+<tr><td>P1</td><td>ARCH-P1-001</td><td>Webhook service uses the anonymous Supabase client, so RLS denies all operations</td></tr>
+<tr><td>P1</td><td>ARCH-P1-002</td><td>Socket.io authorization and presence use the anonymous client; membership checks fail/bypass</td></tr>
+<tr><td>P1</td><td>CI-P1-001</td><td>Production auto-deploys on push to `main` without a required review gate in-repo</td></tr>
+<tr><td>P1</td><td>CI-P1-002</td><td>Deploy workflow mutates production schema and data from CI</td></tr>
+<tr><td>P1</td><td>CI-P1-003</td><td>Security scans are non-blocking</td></tr>
+<tr><td>P1</td><td>CI-P1-004</td><td>Deploy prunes all Docker volumes (data loss)</td></tr>
+<tr><td>P1</td><td>DATA-P1-001</td><td>Deploy workflows seed production with test users and a hardcoded password</td></tr>
+<tr><td>P1</td><td>DATA-P1-002</td><td>Deploy runs `docker system prune -af --volumes`, destroying the Redis named volume</td></tr>
+<tr><td>P1</td><td>EXEC-P1-001</td><td>Release gate must be conditional on P0/P1 remediation</td></tr>
+<tr><td>P1</td><td>FEAT-P1-001</td><td>`/v1/auth/magic-link` does not send a magic link</td></tr>
+<tr><td>P1</td><td>FEAT-P1-002</td><td>Webhook retries are in-process `setTimeout`, not durable</td></tr>
+<tr><td>P1</td><td>FINAL-P1-001</td><td>Systemic Supabase client/role mismatch</td></tr>
+<tr><td>P1</td><td>FINAL-P1-002</td><td>Deploy pipeline mutates schema/policies/data outside migrations</td></tr>
+<tr><td>P1</td><td>OBS-P1-001</td><td>No alerting is wired despite metrics and a TODO</td></tr>
+<tr><td>P1</td><td>SEC-P1-002</td><td>Tracked credential file `test-signin.json`</td></tr>
+<tr><td>P1</td><td>SEC-P1-003</td><td>Admin `/v1/admin/users` returns all platform users (including email) to any workspace admin</td></tr>
+<tr><td>P1</td><td>SEC-P1-004</td><td>Admin `/v1/admin/audit-logs` leaks other tenants&#x27; logs when `workspaceId` omitted</td></tr>
+<tr><td>P1</td><td>SEC-P1-005</td><td>Admin compliance exports are not tenant-scoped on list/download</td></tr>
+</table>
+</body></html>
