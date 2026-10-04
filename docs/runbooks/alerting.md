@@ -17,12 +17,19 @@
 
 ## Current Monitoring Setup
 
-### Prometheus Metrics
+### Prometheus / Alertmanager
 
-- Endpoint: `GET /metrics` (authenticated)
-- Metrics exposed: HTTP request count/duration, WebSocket connections, DB query duration, circuit breaker status, webhook deliveries, auth attempts
-- Intended for Prometheus + Alertmanager; rules and routing are checked in
-  under `infra/prometheus/` (the stack itself is not yet deployed)
+- Deployed with the app: `prometheus` and `alertmanager` services in
+  `infra/docker/docker-compose.prod.yml` (and `docker-compose.dev.yml`), with no
+  public ports.
+- Prometheus scrapes `GET /metrics` on the API using the shared `METRICS_TOKEN`
+  and loads `infra/prometheus/rules/chat.rules.yml`.
+- Alertmanager routes firing alerts to the org ntfy instance
+  (`https://ntfy.mainecybertech.us/chat-alerts`) via a chat-specific, write-only
+  user. The password comes from `CHAT_NTFY_PASS` in `infra/docker/.env`; it is
+  never committed.
+- Metrics exposed: HTTP request count/duration, WebSocket connections, DB query
+  duration, circuit breaker status, webhook deliveries, auth attempts
 
 ### Sentry
 
@@ -57,15 +64,22 @@
 
 ### Prometheus / Alertmanager
 
-Rules and routing are checked in under `infra/prometheus/`:
+The stack is wired into the app's compose files and runs by default with the
+services (no public ports):
 
-- `rules/chat.rules.yml` — API availability, 5xx rate, p95 latency, circuit
-  breaker, health-check, and worker-queue alerts.
-- `alertmanager.yml` — email default receiver plus a webhook receiver for
-  critical alerts.
+- `prometheus` scrapes `chat-api` `/metrics` (bearer `METRICS_TOKEN`) and loads
+  `rules/chat.rules.yml`: API up, 5xx rate, p95 latency, circuit breaker. The
+  blackbox and worker-queue rules stay inert until those exporters exist.
+- `alertmanager` renders `infra/prometheus/alertmanager.yml` at startup and
+  delivers firing alerts to the org ntfy topic `chat-alerts` using HTTP basic
+  auth.
 
-Deployment steps, required env (`METRICS_TOKEN`, `ALERT_EMAIL`,
-`ALERT_WEBHOOK_URL`), and validation commands are in
+Set the receiver credentials in `infra/docker/.env` (see
+`infra/docker/.env.prod.example`): `CHAT_NTFY_URL` (default
+`https://ntfy.mainecybertech.us/chat-alerts`), `CHAT_NTFY_USER` (default
+`chat-relay`) and `CHAT_NTFY_PASS` (secret, required).
+
+Deployment steps, validation commands, and the full required env are in
 [`infra/prometheus/README.md`](../../infra/prometheus/README.md).
 
 ## Runbook Links

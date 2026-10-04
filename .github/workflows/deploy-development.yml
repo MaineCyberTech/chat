@@ -180,6 +180,14 @@ jobs:
             if [ -n "${{ secrets.VAPID_PRIVATE_KEY }}" ]; then
               echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> ${{ env.REPO_DIR }}/.env
             fi
+            if [ -n "${{ secrets.METRICS_TOKEN }}" ]; then
+              echo "METRICS_TOKEN=${{ secrets.METRICS_TOKEN }}" >> ${{ env.REPO_DIR }}/.env
+            fi
+            if [ -n "${{ secrets.CHAT_NTFY_PASS }}" ]; then
+              echo "CHAT_NTFY_URL=https://ntfy.mainecybertech.us/chat-alerts" >> ${{ env.REPO_DIR }}/.env
+              echo "CHAT_NTFY_USER=chat-relay" >> ${{ env.REPO_DIR }}/.env
+              echo "CHAT_NTFY_PASS=${{ secrets.CHAT_NTFY_PASS }}" >> ${{ env.REPO_DIR }}/.env
+            fi
             set -x
 
             # Also create .env in infra/docker for docker-compose

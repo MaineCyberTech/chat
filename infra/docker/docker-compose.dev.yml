@@ -73,6 +73,9 @@ services:
       LIVEKIT_HOST: http://livekit:7880
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       API_ORIGIN: ${API_ORIGIN:-http://api:4000}
+      # Dev default enables GET /metrics so the local Prometheus scrape works
+      # out of the box (OBS-P1-001). Production requires a real token.
+      METRICS_TOKEN: ${METRICS_TOKEN:-dev-metrics-token-change-me}
     volumes:
       - ../../apps/api/src:/app/apps/api/src
       - ../../packages/db/src:/app/packages/db/src
@@ -157,6 +160,71 @@ services:
     networks:
       - chat-dev
 
+  # Prometheus + Alertmanager (OBS-P1-001). Same wiring as production; the dev
+  # API defaults to a local METRICS_TOKEN so the scrape is enabled without extra
+  # setup. No published ports.
+  prometheus:
+    image: prom/prometheus:v3.5.1
+    container_name: chat-prometheus-dev
+    restart: unless-stopped
+    mem_limit: 256m
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    environment:
+      METRICS_TOKEN: ${METRICS_TOKEN:-dev-metrics-token-change-me}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        printf '%s' "$${METRICS_TOKEN}" > /tmp/metrics_token
+        && chmod 600 /tmp/metrics_token
+        && exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml
+        --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=30d
+        --web.enable-lifecycle
+    expose:
+      - "9090"
+    networks:
+      - chat-dev
+    depends_on:
+      alertmanager:
+        condition: service_healthy
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: chat-alertmanager-dev
+    restart: unless-stopped
+    mem_limit: 128m
+    volumes:
+      - ../prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    environment:
+      CHAT_NTFY_URL: ${CHAT_NTFY_URL:-https://ntfy.mainecybertech.us/chat-alerts}
+      CHAT_NTFY_USER: ${CHAT_NTFY_USER:-chat-relay}
+      CHAT_NTFY_PASS: ${CHAT_NTFY_PASS:-}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        awk '{
+          gsub(/\$\{CHAT_NTFY_URL\}/, ENVIRON["CHAT_NTFY_URL"]);
+          gsub(/\$\{CHAT_NTFY_USER\}/, ENVIRON["CHAT_NTFY_USER"]);
+          gsub(/\$\{CHAT_NTFY_PASS\}/, ENVIRON["CHAT_NTFY_PASS"]);
+          print
+        }' /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.yml
+        && ! grep -E '\$\{CHAT_NTFY' /tmp/alertmanager.yml | grep -vE '^[[:space:]]*#' | grep -q .
+        && exec /bin/alertmanager --config.file=/tmp/alertmanager.yml
+        --storage.path=/alertmanager --log.level=info
+    expose:
+      - "9093"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - chat-dev
+
 networks:
   chat-dev:
     driver: bridge
@@ -165,3 +233,5 @@ volumes:
   caddy-data:
   caddy-config:
   redis-data:
+  prometheus-data:
+  alertmanager-data:
