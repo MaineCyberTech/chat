@@ -67,6 +67,13 @@ vi.mock("../../../lib/supabase.js", () => ({
             ],
           })),
         })),
+        ilike: vi.fn(() => ({
+          limit: vi.fn(() => ({
+            data: [
+              { id: "user-1", email: "test@example.com", display_name: "Tester", avatar_url: null },
+            ],
+          })),
+        })),
       })),
       update: vi.fn(() => ({
         eq: vi.fn(() => ({
@@ -159,6 +166,32 @@ describe("AuthService", () => {
       const users = await service.searchUsers("test");
       expect(users).toHaveLength(1);
       expect(users[0].email).toBe("test@example.com");
+    });
+
+    it("uses a structured ilike filter and passes filter syntax as a literal value", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const limit = vi.fn(() => ({ data: [] }));
+      const ilike = vi.fn((_column: string, _pattern: string) => ({ limit }));
+      const select = vi.fn(() => ({ ilike }));
+      (getSupabaseAdmin as any).mockReturnValueOnce({ from: vi.fn(() => ({ select })) });
+
+      await service.searchUsers("a,b(c).%");
+
+      expect(select).toHaveBeenCalledWith("id, display_name, avatar_url");
+      expect(ilike).toHaveBeenCalledWith("display_name", "%a,b(c).%%");
+    });
+
+    it("normalises whitespace and caps the search term length", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const limit = vi.fn(() => ({ data: [] }));
+      const ilike = vi.fn((_column: string, _pattern: string) => ({ limit }));
+      const select = vi.fn(() => ({ ilike }));
+      (getSupabaseAdmin as any).mockReturnValueOnce({ from: vi.fn(() => ({ select })) });
+
+      await service.searchUsers(`  ${"x".repeat(150)}  `);
+
+      const [, pattern] = ilike.mock.calls[0];
+      expect(pattern).toBe(`%${"x".repeat(100)}%`);
     });
   });
 });

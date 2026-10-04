@@ -39,7 +39,7 @@ try {
 const router = Router();
 router.use(authenticate);
 
-function generateDynamicSpec(): Record<string, unknown> {
+export function generateDynamicSpec(): Record<string, unknown> {
   const spec = JSON.parse(JSON.stringify(openApiSpec)) as Record<string, unknown>;
   const dynamicPaths: Record<string, Record<string, unknown>> = {};
 

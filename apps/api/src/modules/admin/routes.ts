@@ -12,6 +12,7 @@ import {
   NotFoundError,
 } from "../../lib/app-error.js";
 import { loadEnv } from "../../config/env.js";
+import { normalizeSearchTerm, quotePostgrestValue } from "../../lib/postgrest-filter.js";
 import { getErrors } from "./error-buffer.js";
 
 const router = Router();
@@ -75,7 +76,7 @@ router.get(
   requireAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     const admin = getSupabaseAdmin();
-    const search = req.query.search as string;
+    const search = normalizeSearchTerm((req.query.search as string) ?? "");
     const page = parseInt(req.query.page as string) || 0;
     const limit = 20;
     let query = admin
@@ -83,7 +84,10 @@ router.get(
       .select("*", { count: "exact" })
       .range(page * limit, (page + 1) * limit - 1)
       .order("created_at", { ascending: false });
-    if (search) query = query.or(`email.ilike.%${search}%,display_name.ilike.%${search}%`);
+    if (search) {
+      const term = quotePostgrestValue(`%${search}%`);
+      query = query.or(`email.ilike.${term},display_name.ilike.${term}`);
+    }
     const { data, error, count } = await query;
     if (error) throw new InternalServerError(error.message);
     res.json({ users: data, total: count ?? 0, page, limit });

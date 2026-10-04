@@ -18,6 +18,7 @@ import {
   updatePresenceStatusSchema,
 } from "../../config/validators.js";
 import { asyncHandler } from "../../lib/async-handler.js";
+import { normalizeSearchTerm } from "../../lib/postgrest-filter.js";
 import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
 
 const emailSchema = z.object({
@@ -93,9 +94,10 @@ router.get(
   authenticate,
   searchLimiter,
   asyncHandler(async (req, res) => {
-    const query = req.query.q as string;
-    if (!query || query.length < 2 || query.length > 100) {
-      throw new BadRequestError("Query must be at least 2 characters");
+    const rawQuery = req.query.q as string | undefined;
+    const query = normalizeSearchTerm(rawQuery ?? "");
+    if (!rawQuery || rawQuery.length > 100 || query.length < 2) {
+      throw new BadRequestError("Query must be between 2 and 100 characters");
     }
     const profiles = await authService.searchUsers(query);
     res.json({ profiles });
