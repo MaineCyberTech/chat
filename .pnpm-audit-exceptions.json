@@ -1,6 +1,6 @@
 {
-  "expires": "2026-11-03",
-  "note": "Pre-existing HIGH/CRITICAL advisories present at audit commit a72b8cc (run 20261003-0018). The CI audit gate fails on any HIGH/CRITICAL advisory NOT listed here, and on the whole list after the expiry date. Remediate via dependency updates before expiry.",
+  "expires": "2027-01-04",
+  "note": "Dated risk acceptance (issued 2026-10-04, expires 2027-01-04). See docs/security/risk-acceptances/2026-10-04-trivy-dependency-cves.md and DET-P1-002 / DET-P2-003 / DET-P3-004. Same-major patch/minor bumps were applied via pnpm.overrides; the advisories below are retained until a re-scan confirms them fixed, and until the breaking next@16 migration lands. The CI audit gate fails on any HIGH/CRITICAL advisory NOT listed here, and on the whole list after the expiry date.",
   "ignoreGhsas": [
     "GHSA-28wg-ghj8-5hjv",
     "GHSA-2gc4-cqfq-p2gv",
