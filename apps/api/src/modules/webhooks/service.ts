@@ -1,4 +1,4 @@
-import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
+import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { logger } from "../../lib/logger.js";
 import { recordWebhookDelivery } from "../../lib/metrics.js";
 import { executeWithCircuitBreaker } from "../../lib/circuit-breaker.js";
@@ -89,9 +89,14 @@ interface WebhookDelivery {
   created_at: string;
 }
 
+// Webhook tenant data is accessed with the service-role client: callers of the
+// user-facing methods (webhook routes) authorize access via requireWorkspaceAccess
+// / requireWorkspaceQueryParam before invoking the service, and internal trigger
+// paths run after the originating action was authorized. The bare anon client has
+// no user JWT, so RLS policies written `TO authenticated` deny every operation.
 export class WebhookService {
   async getChannelWorkspaceId(channelId: string): Promise<string | null> {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { data } = await supabase
       .from("channels")
       .select("workspace_id")
@@ -101,7 +106,7 @@ export class WebhookService {
   }
 
   async listByWorkspace(workspaceId: string): Promise<WebhookEndpoint[]> {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { data } = await supabase
       .from("webhook_endpoints")
       .select("*")
@@ -111,7 +116,7 @@ export class WebhookService {
   }
 
   async getById(id: string): Promise<WebhookEndpoint | null> {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { data } = await supabase.from("webhook_endpoints").select("*").eq("id", id).single();
     return data as WebhookEndpoint | null;
   }
@@ -132,7 +137,7 @@ export class WebhookService {
 
     const encryptedSecret = encryptSecret(input.secret);
 
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .insert({
@@ -157,7 +162,7 @@ export class WebhookService {
     if (updateData.secret) {
       updateData.secret = encryptSecret(updateData.secret);
     }
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .update(updateData)
@@ -169,13 +174,13 @@ export class WebhookService {
   }
 
   async remove(id: string): Promise<boolean> {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("webhook_endpoints").delete().eq("id", id);
     return !error;
   }
 
   async triggerEvent(event: string, workspaceId: string, payload: Record<string, unknown>) {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { data: endpoints } = await supabase
       .from("webhook_endpoints")
       .select("*")
@@ -398,7 +403,7 @@ export class WebhookService {
     webhookId: string,
     options: { limit?: number; offset?: number } = {},
   ): Promise<{ deliveries: WebhookDelivery[]; total: number }> {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const limit = options.limit ?? 100;
     const offset = options.offset ?? 0;
     const { data, error, count } = await supabase
