@@ -315,8 +315,8 @@ jobs:
             # Stop and remove all containers first
             docker compose -f infra/docker/docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
 
-            # Remove all unused images, build cache, volumes, networks
-            docker system prune -af --volumes
+            # Remove unused images, build cache, and networks (NOT volumes; preserve named data volumes like redis-data)
+            docker system prune -af
             docker builder prune -af
             docker image prune -af --filter "until=24h"
 
@@ -421,7 +421,7 @@ jobs:
 
             docker compose -f infra/docker/docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
 
-            docker system prune -af --volumes
+            docker system prune -af
             docker builder prune -af
             docker image prune -af --filter "until=24h"
 
