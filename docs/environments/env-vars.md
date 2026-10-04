@@ -1,6 +1,10 @@
 # Environment Variables
 
-All services validate environment variables via Zod schemas in `packages/config/env-schema.ts`. The root `.env.example` file at the repo root documents all variables; service-specific `.env.example` files in `apps/<service>/` show only what each service needs.
+All services validate environment variables via Zod schemas. The **source of truth** is the code:
+`packages/config/env-schema.ts` (base schema, shared by API and Worker) and
+`apps/api/src/config/env.ts` (API additions). The tracked `*.env*.example` templates are **not**
+authoritative and are currently incomplete/inconsistent — see
+[Canonical schema and example consistency](#canonical-schema-and-example-consistency).
 
 ## Validation Schema
 
@@ -40,6 +44,9 @@ Base schema (`packages/config/env-schema.ts`) is shared by API and Worker. Each 
 | `RATE_LIMIT_MAX_REQUESTS`   | No       | `100`                   | Max requests per window                  |
 | `MAX_FILE_SIZE_MB`          | No       | `50`                    | Max upload file size in MB               |
 | `UPLOAD_TTL_SECONDS`        | No       | `3600`                  | Signed upload URL TTL                    |
+| `WEBHOOK_ENCRYPTION_KEY`    | **Yes**  | —                       | Webhook secret AES-256-GCM key (min 32)  |
+| `SHOW_STACK_TRACES`         | No       | `false`                 | Include stack traces in error responses  |
+| `EMAIL_FROM`                | No       | —                       | Sender address alias for `SMTP_FROM`     |
 
 ### Web (`apps/web/.env.example`)
 
@@ -72,6 +79,27 @@ Base schema (`packages/config/env-schema.ts`) is shared by API and Worker. Each 
 | `SMTP_USER`                 | No       | —       | SMTP username                       |
 | `SMTP_PASS`                 | No       | —       | SMTP password                       |
 | `SMTP_FROM`                 | No       | —       | Sender email                        |
+
+## Canonical schema and example consistency
+
+The authoritative definitions are the Zod schemas referenced above. The tracked example
+templates are **incomplete and inconsistent** and must not be relied on as the schema:
+
+- The root `.env.example` does **not** document `WEBHOOK_ENCRYPTION_KEY`,
+  `SHOW_STACK_TRACES`, or `EMAIL_FROM`.
+- `apps/api/.env.example` omits `JWT_SECRET`, `WEBHOOK_ENCRYPTION_KEY`,
+  `SHOW_STACK_TRACES`, `LIVEKIT_*`, and `REDIS_TLS`.
+- `infra/docker/.env.devremote.example` and `infra/docker/.env.prod.example` omit
+  `WEBHOOK_ENCRYPTION_KEY` and `JWT_SECRET`. `docker-compose.prod.yml` likewise does not pass
+  `WEBHOOK_ENCRYPTION_KEY` to the API service.
+- `WEBHOOK_ENCRYPTION_KEY` is **required for webhook secret encryption**:
+  `apps/api/src/modules/webhooks/service.ts:22` throws
+  `WEBHOOK_ENCRYPTION_KEY must be set for webhook secret encryption` when it is unset, so a
+  Docker/prod deployment that omits it fails at the first webhook secret operation.
+
+Operators deploying from the Docker templates must add `WEBHOOK_ENCRYPTION_KEY` (and, if custom
+JWT signing is used, `JWT_SECRET`) out of band. Generating the templates from the canonical
+schema is tracked as a follow-up; this document is the reference until then.
 
 ## Infrastructure Variables
 
