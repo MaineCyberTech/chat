@@ -53,13 +53,10 @@ function decryptSecret(encrypted: string): string {
 const WEBHOOK_SECRET_MIN_LENGTH = 16;
 
 function validateSecret(secret: string | undefined): { valid: boolean; error?: string } {
-  if (!secret || secret.length === 0) {
-    return { valid: true };
-  }
-  if (secret.length < WEBHOOK_SECRET_MIN_LENGTH) {
+  if (!secret || secret.length < WEBHOOK_SECRET_MIN_LENGTH) {
     return {
       valid: false,
-      error: `Webhook secret must be at least ${WEBHOOK_SECRET_MIN_LENGTH} characters`,
+      error: `Webhook secret is required and must be at least ${WEBHOOK_SECRET_MIN_LENGTH} characters`,
     };
   }
   return { valid: true };
@@ -122,7 +119,7 @@ export class WebhookService {
     workspace_id: string;
     name: string;
     url: string;
-    secret?: string;
+    secret: string;
     events: string[];
     created_by: string;
   }): Promise<WebhookEndpoint | null> {
@@ -132,7 +129,7 @@ export class WebhookService {
       throw new Error(validation.error);
     }
 
-    const encryptedSecret = input.secret ? encryptSecret(input.secret) : "";
+    const encryptedSecret = encryptSecret(input.secret);
 
     const supabase = getSupabase();
     const { data, error } = await supabase

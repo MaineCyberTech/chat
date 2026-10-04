@@ -24,6 +24,20 @@ function parseTokenFromBody(req: Request): string | undefined {
   return undefined;
 }
 
+/**
+ * Constant-time string comparison that never throws.
+ * `crypto.timingSafeEqual` throws a RangeError when the buffers differ in length;
+ * compare lengths first so a crafted token yields a 403 instead of an unhandled 500.
+ */
+function safeEqual(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a);
+  const bBuf = Buffer.from(b);
+  if (aBuf.length !== bBuf.length) {
+    return false;
+  }
+  return timingSafeEqual(aBuf, bBuf);
+}
+
 export function csrfProtection(
   options: {
     cookie?: boolean;
@@ -47,7 +61,7 @@ export function csrfProtection(
 
     const expectedToken = cookie ? req.cookies?.[CSRF_COOKIE_NAME] : undefined;
 
-    if (!expectedToken || !timingSafeEqual(Buffer.from(token), Buffer.from(expectedToken))) {
+    if (!expectedToken || !safeEqual(token, expectedToken)) {
       return res.status(403).json({
         error: { code: "CSRF_INVALID", message: "Invalid CSRF token" },
       });
@@ -96,11 +110,7 @@ export function doubleSubmitCookieCsrf(req: CSRFRequest, res: Response, next: Ne
   const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
   const headerToken = req.headers["x-csrf-token"] as string | undefined;
 
-  if (
-    !cookieToken ||
-    !headerToken ||
-    !timingSafeEqual(Buffer.from(cookieToken), Buffer.from(headerToken))
-  ) {
+  if (!cookieToken || !headerToken || !safeEqual(cookieToken, headerToken)) {
     return res.status(403).json({
       error: { code: "CSRF_INVALID", message: "Invalid CSRF token" },
     });

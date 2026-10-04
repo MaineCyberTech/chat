@@ -40,14 +40,14 @@ const createWebhookSchema = z.object({
   workspace_id: z.string().uuid(),
   name: z.string().min(1).max(100),
   url: z.string().url().startsWith("https://"),
-  secret: z.string().max(255).optional(),
+  secret: z.string().min(16).max(255),
   events: z.array(z.string()).min(1),
 });
 
 const updateWebhookSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   url: z.string().url().startsWith("https://").optional(),
-  secret: z.string().max(255).optional(),
+  secret: z.string().min(16).max(255).optional(),
   events: z.array(z.string()).min(1).optional(),
   is_active: z.boolean().optional(),
 });
