@@ -193,19 +193,127 @@ describe("admin routes", () => {
 
     it("quotes filter syntax in admin user search so it cannot alter the filter", async () => {
       const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
-      const chain = createChain({ data: [], count: 0, error: null });
-      (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
+      const membersChain = createChain({ data: [{ user_id: "u1" }], error: null });
+      const usersChain = createChain({ data: [], count: 0, error: null });
+      const from = vi.fn().mockReturnValueOnce(membersChain).mockReturnValueOnce(usersChain);
+      (getSupabaseAdmin as any).mockReturnValue({ from });
 
       const handler = findHandler("get", "/users");
-      const req = mockReq({ query: { search: "a,b(c)" } });
+      const req = mockReq({ adminWorkspaceIds: ["ws-1"], query: { search: "a,b(c)" } });
       const res = mockRes();
       const next = vi.fn();
 
       await handler(req, res, next);
 
-      expect(chain.or).toHaveBeenCalledWith(
+      expect(usersChain.or).toHaveBeenCalledWith(
         'email.ilike."%a,b(c)%",display_name.ilike."%a,b(c)%"',
       );
+    });
+
+    it("scopes the directory to members of the caller's admin workspaces", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const membersChain = createChain({ data: [{ user_id: "u1" }, { user_id: "u2" }], error: null });
+      const usersChain = createChain({
+        data: [{ id: "u1", email: "a@b.com", display_name: "Alice" }],
+        count: 1,
+        error: null,
+      });
+      const from = vi.fn().mockReturnValueOnce(membersChain).mockReturnValueOnce(usersChain);
+      (getSupabaseAdmin as any).mockReturnValue({ from });
+
+      const handler = findHandler("get", "/users");
+      const req = mockReq({ adminWorkspaceIds: ["ws-1"] });
+      const res = mockRes();
+      await handler(req, res, vi.fn());
+
+      expect(membersChain.in).toHaveBeenCalledWith("workspace_id", ["ws-1"]);
+      expect(usersChain.in).toHaveBeenCalledWith("id", ["u1", "u2"]);
+    });
+
+    it("returns an empty directory when the caller has no admin workspaces", async () => {
+      const handler = findHandler("get", "/users");
+      const req = mockReq({ adminWorkspaceIds: [] });
+      const res = mockRes();
+      await handler(req, res, vi.fn());
+
+      expect(res.json).toHaveBeenCalledWith({ users: [], total: 0, page: 0, limit: 20 });
+    });
+  });
+
+  describe("GET /audit-logs", () => {
+    it("rejects requests without a workspaceId", async () => {
+      const handler = findHandler("get", "/audit-logs");
+      const req = mockReq({ adminWorkspaceIds: ["ws-1"] });
+      const res = mockRes();
+      await handler(req, res, vi.fn());
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: expect.objectContaining({ code: "BAD_REQUEST" }) }),
+      );
+    });
+
+    it("rejects a workspace the caller does not administer", async () => {
+      const handler = findHandler("get", "/audit-logs");
+      const req = mockReq({ adminWorkspaceIds: ["ws-1"], query: { workspaceId: "ws-2" } });
+      const res = mockRes();
+      const next = vi.fn();
+      await handler(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 403 }));
+    });
+
+    it("scopes logs to the requested administered workspace", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const chain = createChain({ data: [], count: 0, error: null });
+      (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
+
+      const handler = findHandler("get", "/audit-logs");
+      const req = mockReq({ adminWorkspaceIds: ["ws-1"], query: { workspaceId: "ws-1" } });
+      const res = mockRes();
+      await handler(req, res, vi.fn());
+
+      expect(chain.eq).toHaveBeenCalledWith("organization_id", "ws-1");
+    });
+  });
+
+  describe("GET /exports", () => {
+    it("scopes compliance exports to the caller's admin workspaces", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const chain = createChain({ data: [], error: null });
+      (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
+
+      const handler = findHandler("get", "/exports");
+      const req = mockReq({ adminWorkspaceIds: ["ws-1"] });
+      const res = mockRes();
+      await handler(req, res, vi.fn());
+
+      expect(chain.in).toHaveBeenCalledWith("workspace_id", ["ws-1"]);
+    });
+  });
+
+  describe("GET /exports/:id/download", () => {
+    it("scopes the download lookup to the caller's admin workspaces", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const chain = createChain({
+        data: {
+          csv_content: "a,b",
+          type: "messages",
+          date_from: "2026-01-01",
+          date_to: "2026-01-02",
+          status: "completed",
+        },
+        error: null,
+      });
+      (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
+
+      const handler = findHandler("get", "/exports/:id/download");
+      const req = mockReq({ adminWorkspaceIds: ["ws-1"], params: { id: "exp-2" } });
+      const res = mockRes();
+      await handler(req, res, vi.fn());
+
+      expect(chain.eq).toHaveBeenCalledWith("id", "exp-2");
+      expect(chain.in).toHaveBeenCalledWith("workspace_id", ["ws-1"]);
     });
   });
 
