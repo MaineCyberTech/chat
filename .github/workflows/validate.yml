@@ -93,8 +93,7 @@ jobs:
         with:
           name: diff-coverage
           path: coverage/
-      - name: Check diff coverage thresholds
-        continue-on-error: true
+      - name: Check diff coverage thresholds (blocking)
         run: |
           node -e "
           const fs = require('fs');
