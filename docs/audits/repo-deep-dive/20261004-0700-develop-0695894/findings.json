@@ -1,0 +1,427 @@
+{
+  "run": "20261004-0700-develop-0695894",
+  "generated": "2026-10-04T07:09:44Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 22,
+    "bySeverity": {
+      "P1": 2,
+      "P2": 10,
+      "P3": 10
+    },
+    "byArea": {
+      "SEC": 4,
+      "CI": 7,
+      "AUTH": 1,
+      "SUPPLY": 5,
+      "DEP": 2,
+      "PORT": 1,
+      "CONF": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "SEC-P1-001",
+      "severity": "P1",
+      "title": "Seed workflow can re-open global user RLS (USING true) in production and seed shared-password accounts",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 4,
+      "area": "SEC",
+      "evidence": [
+        ".github/workflows/seed-database.yml:4-13 workflow_dispatch with environment choice development|production",
+        ".github/workflows/seed-database.yml:85 CREATE POLICY users_select ON public.users FOR SELECT TO authenticated USING (true)",
+        "supabase/migrations/20260724000006_fix_database_p1_findings.sql:134-143 current policy scopes users to self + workspace co-members",
+        "supabase/migrations/20260625000001_create_users.sql:10 email TEXT NOT NULL (PII)",
+        ".github/workflows/seed-database.yml:71 sets shared bcrypt hash for %@seed.test users",
+        "apps/web/lib/supabase/client.ts:18-20 browser uses anon key + user JWT, so PostgREST is reachable"
+      ],
+      "impact": "Regresses tenant isolation on public.users so any authenticated user can read every tenant's emails, and can inject predictable-credential accounts into production.",
+      "recommendation": "Remove RLS DDL from seed-database.yml; apply policies only via migrations. Block production seeding or require a protected environment. Never embed a shared password hash in CI.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "CI-P1-001",
+      "severity": "P1",
+      "title": "Production provision job runs destructive Terraform with no environment approval",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 16,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/deploy-production.yml:16-17 triggers on push to main",
+        ".github/workflows/deploy-production.yml:53-143 provision job",
+        ".github/workflows/deploy-production.yml:95-127 deletes droplets, firewalls, DNS records",
+        ".github/workflows/deploy-production.yml:140 terraform apply -auto-approve",
+        ".github/workflows/deploy-production.yml:236-241 only the deploy job has environment: production",
+        ".github/workflows/deploy-production.yml:19-22 grants id-token: write without OIDC use"
+      ],
+      "impact": "Any push to main can delete/recreate production infrastructure before any human approval runs.",
+      "recommendation": "Attach a protected production environment to provision/build-images, require plan+approval before apply, and drop unused id-token: write.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "AUTH-P2-001",
+      "severity": "P2",
+      "title": "IDOR: admin dead-letter retry is not tenant-scoped",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 354,
+      "area": "AUTH",
+      "evidence": [
+        "apps/api/src/modules/admin/routes.ts:354-364 POST /webhooks/dead-letters/:id/retry with no workspace check",
+        "apps/api/src/modules/admin/routes.ts:25-37 getAdminWorkspaceIds used by sibling routes but not here",
+        "apps/api/src/modules/webhooks/service.ts:461-494 loads dead letter by raw id and re-delivers"
+      ],
+      "impact": "Any workspace admin can retry/trigger delivery of another workspace's webhook dead letter (cross-tenant action and existence probe).",
+      "recommendation": "Resolve the dead letter to its workspace and require it be within req.adminWorkspaceIds before calling retryDeadLetter.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "Cross-tenant user directory via auth service (service-role, unscoped)",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 44,
+      "area": "SEC",
+      "evidence": [
+        "apps/api/src/modules/auth/service.ts:44-53 searchUsers uses getSupabaseAdmin and ilike over all users",
+        "apps/api/src/modules/auth/service.ts:55-64 getProfiles uses admin client for arbitrary IDs",
+        "apps/api/src/modules/auth/routes.ts:80-90 exposes POST /auth/profiles",
+        "apps/api/src/modules/auth/routes.ts:93-105 exposes GET /auth/search"
+      ],
+      "impact": "Any authenticated user can enumerate/search profiles and fetch arbitrary user ids across tenants (id, display_name, avatar_url); enables enumeration for phishing.",
+      "recommendation": "Scope these queries to the caller's workspace co-members or use the user-scoped Supabase client instead of the service-role client.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "infra-development destroys infra on every push to develop with weak controls",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 4,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/infra-development.yml:4-8 triggers on push to develop for infra/**",
+        ".github/workflows/infra-development.yml:32-41 deletes duplicate droplets",
+        ".github/workflows/infra-development.yml:93-105 deletes DNS records",
+        ".github/workflows/infra-development.yml:126 terraform apply -auto-approve",
+        ".github/workflows/infra-development.yml:135-138 writes CI SSH key to /tmp and uses StrictHostKeyChecking=no",
+        ".github/workflows/infra-development.yml lacks permissions: and environment:"
+      ],
+      "impact": "Destructive infra changes auto-apply without approval or least-privilege token scoping; disabled host-key checking allows MITM of deploy SSH.",
+      "recommendation": "Add permissions: contents: read, gate with a protected development environment, pin known_hosts, separate plan from apply.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "workflow_dispatch inputs interpolated directly into run: (script injection)",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 17,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/hardening-automation-runner.yml:17-19 --run-id \"${{ inputs.run_id }}\"",
+        ".github/workflows/environment-promotion-audit.yml:24 --source-branch \"${{ inputs.source_branch }}\"",
+        ".github/workflows/audit-release-certification.yml:30,34 --run-id \"${{ inputs.run_id }}\""
+      ],
+      "impact": "A user able to dispatch can inject arbitrary shell commands into the runner, reaching the job token and secrets.",
+      "recommendation": "Pass inputs through env: and reference shell variables; validate run_id/source_branch with a strict regex.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P2-001",
+      "severity": "P2",
+      "title": "Production web container receives the Supabase service-role key",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 3,
+      "area": "SUPPLY",
+      "evidence": [
+        "infra/docker/docker-compose.prod.yml:3-7 x-common-env includes SUPABASE_SERVICE_ROLE_KEY",
+        "infra/docker/docker-compose.prod.yml:26-32 web merges *common-env",
+        "apps/api/src/lib/supabase.ts:148-175 service-role client bypasses RLS"
+      ],
+      "impact": "The internet-facing web tier holds full DB privileges; any web compromise/leak bypasses RLS.",
+      "recommendation": "Remove SUPABASE_SERVICE_ROLE_KEY from x-common-env and inject it only into api and worker.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "DEP-P2-001",
+      "severity": "P2",
+      "title": "33 HIGH/CRITICAL dependency advisories risk-accepted until 2026-11-03",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 227,
+      "area": "DEP",
+      "evidence": [
+        "validate.yml:227-254 blocking pnpm audit --prod with .pnpm-audit-exceptions.json (expiry 2026-11-03)",
+        "validate.yml:255-265 trivy fs severity HIGH,CRITICAL exit-code 1",
+        ".trivyignore:5,10 time-boxes findings to 2026-11-03",
+        "pnpm-lock.yaml contains next, qs@6.15.2, body-parser@1.20.5, postcss, socket.io-parser@4.2.6, engine.io@6.6.9, fast-uri@3.1.3, brace-expansion, nanoid@3.3.13"
+      ],
+      "impact": "Known-vulnerable runtime packages ship; both allowlists expire the same day, after which CI fails hard or teams widen the allowlist.",
+      "recommendation": "Land dependency upgrades before expiry; keep allowlist per-CVE with tracking issues; verify fixed versions against the trivy/audit DB.",
+      "deterministic_ref": "DET-P1-002",
+      "confidence": "medium",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-003",
+      "severity": "P2",
+      "title": "Auto-commit workflows hold contents: write and push to main",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 17,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/audit-ci-autocommit.yml:17-18 permissions: contents: write",
+        ".github/workflows/audit-ci-autocommit.yml:45-49 git-auto-commit-action pushes docs/audits/**",
+        ".github/workflows/audit-badges-autocommit.yml:10-11 permissions: contents: write",
+        ".github/workflows/audit-badges-autocommit.yml:23-26 auto-commit on push to main/development"
+      ],
+      "impact": "Self-modifying automation with write access to protected branches; generated commits can land without PR review and use [skip ci].",
+      "recommendation": "Use contents: read and open a PR, or restrict the bot with a narrowly scoped ruleset exception; do not skip CI on generated changes.",
+      "deterministic_ref": null,
+      "confidence": "medium",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-004",
+      "severity": "P2",
+      "title": "Branch-protection CI gate only validates main; develop (auto-deploy) unchecked",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 273,
+      "area": "CI",
+      "evidence": [
+        "validate.yml:273-323 branch-protection job hard-codes branch = 'main' and required rule types",
+        ".github/workflows/ci.yml:5 push runs on [main, develop]",
+        ".github/workflows/deploy-development.yml:6 auto-deploys develop",
+        ".github/CODEOWNERS:2 single catch-all owner"
+      ],
+      "impact": "False assurance: a misconfigured develop passes the gate; the rules endpoint may also fail under default token permissions.",
+      "recommendation": "Validate main, develop and release/**; declare explicit permissions for the check; map required status checks per branch.",
+      "deterministic_ref": null,
+      "confidence": "medium",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "Webhook SSRF protection does not constrain redirects/DNS rebinding",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 64,
+      "area": "SEC",
+      "evidence": [
+        "packages/config/webhook-utils.ts:64-83 validates scheme and resolved IPv4 against private ranges",
+        "apps/api/src/modules/webhooks/service.ts:245-253 fetch(endpoint.url) follows redirects by default and re-resolves at delivery"
+      ],
+      "impact": "A registered https URL can redirect/rebind to an internal address, causing SSRF from the API/worker network.",
+      "recommendation": "Reject 3xx with redirect: manual, pin the validated IP for the connection, and re-validate on every attempt.",
+      "deterministic_ref": null,
+      "confidence": "medium",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P2-003",
+      "severity": "P2",
+      "title": "WEBHOOK_ENCRYPTION_KEY not passed by production compose and not in .env.example",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 88,
+      "area": "SEC",
+      "evidence": [
+        "docs/environments/env-vars.md:88-94 documents the omission and that the key is required",
+        "apps/api/src/modules/webhooks/service.ts:22 throws when WEBHOOK_ENCRYPTION_KEY is unset",
+        "infra/docker/docker-compose.prod.yml:117-124 api env has no WEBHOOK_ENCRYPTION_KEY"
+      ],
+      "impact": "Webhook create/update/delivery breaks in production, or a weak/unmanaged key is used.",
+      "recommendation": "Add WEBHOOK_ENCRYPTION_KEY to docker-compose.prod.yml, .env.example, and the rotation guide.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-001",
+      "severity": "P3",
+      "title": "Container images pinned only by mutable tag",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 11,
+      "area": "SUPPLY",
+      "evidence": [
+        "infra/docker/docker-compose.prod.yml:11,27,47,68,84,113 caddy:2-alpine, */web:latest, livekit/livekit-server:latest, redis:7-alpine, */api:latest",
+        "infra/docker/docker-compose.dev.yml and devremote.yml use the same mutable-tag pattern",
+        "apps/api/Dockerfile:4,27 and apps/web/Dockerfile:4,46 and apps/worker/Dockerfile:1,17 node:*-alpine"
+      ],
+      "impact": "Non-reproducible, mutable deploys; tag retagging is a supply-chain vector.",
+      "recommendation": "Pin base and infra images by @sha256 digest and let Dependabot bump digests.",
+      "deterministic_ref": "DET-P3-008",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "DEP-P3-001",
+      "severity": "P3",
+      "title": "24 medium/low advisories are non-gating",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 255,
+      "area": "DEP",
+      "evidence": [
+        "validate.yml:255-265 trivy scans only HIGH,CRITICAL",
+        "DET-P2-003 and DET-P3-004 IDs are not present in .trivyignore"
+      ],
+      "impact": "Medium/low CVEs accumulate without prioritization or visibility.",
+      "recommendation": "Add a non-blocking medium SARIF report and a scheduled triage.",
+      "deterministic_ref": "DET-P2-003/DET-P3-004",
+      "confidence": "medium",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-002",
+      "severity": "P3",
+      "title": "Dockerfile lint: unpinned apk and shell-form HEALTHCHECK",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 53,
+      "area": "SUPPLY",
+      "evidence": [
+        "apps/web/Dockerfile:53,59 apk add --no-cache wget; shell-form HEALTHCHECK",
+        "apps/api/Dockerfile:46,50 same",
+        "apps/worker/Dockerfile:30,37 same; :35 EXPOSE 4001 while health uses 4100"
+      ],
+      "impact": "Lower build reproducibility and stale/incorrect image metadata.",
+      "recommendation": "Pin apk versions, use exec-form HEALTHCHECK, fix worker EXPOSE to 4100.",
+      "deterministic_ref": "DET-P3-009",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "No actionlint/shellcheck gate despite known workflow lint findings",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 40,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/build-push.yml:40 unquoted $GITHUB_ENV",
+        ".github/workflows/chaos-tests.yml:25,62 unquoted variables",
+        ".github/workflows/deploy-development.yml:37 unquoted $GITHUB_ENV",
+        "grep of .github/workflows/** finds zero actionlint references"
+      ],
+      "impact": "Workflow YAML/shell regressions ship silently and are not gated.",
+      "recommendation": "Add a pinned actionlint job to validate.yml.",
+      "deterministic_ref": "DET-P2-001",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "PORT-P3-001",
+      "severity": "P3",
+      "title": "Tracked shell scripts lack the exec bit",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 49,
+      "area": "PORT",
+      "evidence": [
+        "git ls-files -s shows mode 100644 for scripts/setup-dev.sh, scripts/test-db-rls.sh, scripts/check-sensitive-data.sh, scripts/hardening/run_all.sh, scripts/accessibility-audit.sh, scripts/audits/run_audit_cycle.sh, scripts/automation/run_full_pipeline.sh, scripts/teardown-dev.sh, tests/chaos/scenarios/api-crash.sh, tests/chaos/scenarios/redis-down.sh",
+        "package.json invokes bash scripts/test-db-rls.sh (mitigation)",
+        ".github/workflows/chaos-tests.yml:49,86 chmod +x before executing (mitigation)"
+      ],
+      "impact": "./script.sh fails on Linux/CI; Windows round-trips drop the bit.",
+      "recommendation": "git update-index --chmod=+x the intended executables.",
+      "deterministic_ref": "DET-P2-005",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "CONF-P3-001",
+      "severity": "P3",
+      "title": "Deployment policy contradicts the development deploy workflow (DB changes)",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 35,
+      "area": "CONF",
+      "evidence": [
+        "docs/operations/deployment-policy.md:35-37 schema/RLS/seed never applied from a deploy workflow",
+        ".github/workflows/deploy-development.yml:87-93 supabase link && supabase db push --include-all",
+        ".github/workflows/supabase-migrations.yml:3-8 auto-applies migrations on push to main/develop"
+      ],
+      "impact": "Documented control is not matched by code; schema changes can reach environments without the stated gate.",
+      "recommendation": "Reconcile the policy with the workflows or remove migrations from the deploy workflow.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "CONF-P3-002",
+      "severity": "P3",
+      "title": "Admin /stats returns global cross-tenant counts",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 59,
+      "area": "CONF",
+      "evidence": [
+        "apps/api/src/modules/admin/routes.ts:59-69 users and messages counted globally; only workspaces/channels scoped to workspaceIds"
+      ],
+      "impact": "A workspace admin learns platform-wide user/message totals (minor cross-tenant disclosure).",
+      "recommendation": "Scope all four counts to workspaceIds.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-002",
+      "severity": "P3",
+      "title": "Many workflows omit permissions: and rely on default token scope",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 1,
+      "area": "CI",
+      "evidence": [
+        "No permissions: in supabase-migrations.yml, audit-ci.yml, audit-release-certification.yml, hardening-automation-runner.yml, governance.yml, platform.yml, load-test.yml, infra-development.yml, environment-promotion-audit.yml"
+      ],
+      "impact": "Broader token than needed; increases impact of any script-injection or compromised dependency.",
+      "recommendation": "Set a repo default of read-only and add explicit least-privilege permissions block per workflow.",
+      "deterministic_ref": null,
+      "confidence": "medium",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-003",
+      "severity": "P3",
+      "title": "SBOMs generated but not signed/attested; no license or dependency-review gate",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 99,
+      "area": "SUPPLY",
+      "evidence": [
+        ".github/workflows/build-push.yml:99-133 anchore/sbom-action SPDX upload-artifact",
+        ".github/workflows/deploy-production.yml:205-234 SBOMs for pushed prod images",
+        "No actions/attest-build-provenance, cosign, dependency-review-action, or license allowlist found in any workflow"
+      ],
+      "impact": "No artifact provenance verification or license enforcement; SBOMs can be mutated after generation.",
+      "recommendation": "Add build provenance attestation, sign images/SBOMs, and a dependency-review/license gate.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-004",
+      "severity": "P3",
+      "title": "Containers lack runtime hardening beyond non-root",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 55,
+      "area": "SUPPLY",
+      "evidence": [
+        "infra/docker/docker-compose.prod.yml services define no read_only, cap_drop, security_opt no-new-privileges, or tmpfs",
+        "apps/api/Dockerfile:55-56, apps/web/Dockerfile:64-65, apps/worker/Dockerfile:32-33 run as non-root (good)"
+      ],
+      "impact": "Post-compromise/escape path is easier; larger container attack surface.",
+      "recommendation": "Add read_only, cap_drop: [ALL], security_opt: [no-new-privileges:true], and tmpfs for writable paths where compatible.",
+      "deterministic_ref": null,
+      "confidence": "medium",
+      "status": "open"
+    }
+  ]
+}
