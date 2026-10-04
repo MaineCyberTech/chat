@@ -10,6 +10,10 @@ vi.mock("../../../lib/logger.js", () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
+vi.mock("../../webhooks/service.js", () => ({
+  webhookService: { retryDeadLetter: vi.fn() },
+}));
+
 type MockChain = { [key: string]: any; then: (fn: (v: unknown) => unknown) => Promise<unknown> };
 
 function createChain(result: unknown): MockChain {
@@ -490,6 +494,72 @@ describe("admin routes", () => {
       expect(next).toHaveBeenCalledWith(
         expect.objectContaining({ statusCode: 500, code: "INTERNAL_SERVER_ERROR" }),
       );
+    });
+  });
+
+  describe("POST /webhooks/dead-letters/:id/retry", () => {
+    it("rejects a dead letter outside the caller's admin workspaces (chat-AUTH-001)", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const { webhookService } = await import("../../webhooks/service.js");
+      const endpointsChain = createChain({ data: [{ id: "wh-1" }], error: null });
+      const deadLetterChain = createChain({ data: null, error: null });
+      const from = vi.fn().mockReturnValueOnce(endpointsChain).mockReturnValueOnce(deadLetterChain);
+      (getSupabaseAdmin as any).mockReturnValue({ from });
+
+      const handler = findHandler("post", "/webhooks/dead-letters/:id/retry");
+      const req = mockReq({ adminWorkspaceIds: ["ws-1"], params: { id: "dl-2" } });
+      const res = mockRes();
+      const next = vi.fn();
+
+      await handler(req, res, next);
+
+      expect(endpointsChain.in).toHaveBeenCalledWith("workspace_id", ["ws-1"]);
+      expect(deadLetterChain.eq).toHaveBeenCalledWith("id", "dl-2");
+      expect(deadLetterChain.in).toHaveBeenCalledWith("webhook_id", ["wh-1"]);
+      expect(webhookService.retryDeadLetter).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }));
+    });
+
+    it("retries a dead letter within the caller's admin workspaces", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const { webhookService } = await import("../../webhooks/service.js");
+      (webhookService.retryDeadLetter as any).mockResolvedValue(true);
+      const endpointsChain = createChain({ data: [{ id: "wh-1" }], error: null });
+      const deadLetterChain = createChain({ data: { id: "dl-1" }, error: null });
+      const from = vi.fn().mockReturnValueOnce(endpointsChain).mockReturnValueOnce(deadLetterChain);
+      (getSupabaseAdmin as any).mockReturnValue({ from });
+
+      const handler = findHandler("post", "/webhooks/dead-letters/:id/retry");
+      const req = mockReq({ adminWorkspaceIds: ["ws-1"], params: { id: "dl-1" } });
+      const res = mockRes();
+      const next = vi.fn();
+
+      await handler(req, res, next);
+
+      expect(webhookService.retryDeadLetter).toHaveBeenCalledWith("dl-1");
+      expect(res.json).toHaveBeenCalledWith({ success: true });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it("returns 404 without querying dead letters when the caller administers no workspaces", async () => {
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      const { webhookService } = await import("../../webhooks/service.js");
+      const endpointsChain = createChain({ data: [], error: null });
+      const from = vi.fn(() => endpointsChain);
+      (getSupabaseAdmin as any).mockReturnValue({ from });
+
+      const handler = findHandler("post", "/webhooks/dead-letters/:id/retry");
+      const req = mockReq({ adminWorkspaceIds: [], params: { id: "dl-1" } });
+      const res = mockRes();
+      const next = vi.fn();
+
+      await handler(req, res, next);
+
+      // Only the endpoint-scope query runs; the dead-letter query is skipped.
+      expect(from).toHaveBeenCalledTimes(1);
+      expect(from).toHaveBeenCalledWith("webhook_endpoints");
+      expect(webhookService.retryDeadLetter).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }));
     });
   });
 });
