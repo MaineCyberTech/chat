@@ -1,0 +1,30 @@
+# gitleaks configuration for the chat repository (DET-P2-006, DET-P2-007).
+#
+# The full default ruleset is inherited. The allowlists below are deliberately
+# rule-scoped and value-level: each matches only a reviewed false-positive
+# value, so any other secret-shaped string (including a real key or JWT) is
+# still reported. There are no broad path allowlists.
+title = "chat gitleaks config"
+
+[extend]
+useDefault = true
+
+# DET-P2-006: generic-api-key matched the literal UI keybinding
+# `keys: "Ctrl+Shift+Down"` in the shortcuts component and in the audit doc
+# that quotes it. It is not a credential.
+[[allowlists]]
+description = "UI keybinding literal falsely matched as a generic API key (DET-P2-006)"
+rules = ["generic-api-key"]
+regexTarget = "match"
+regexes = ['''^keys: "Ctrl\+Shift\+Down"$''']
+
+# DET-P2-007: the well-known public Supabase local-dev demo JWTs
+# (`iss: supabase-demo`, `exp: 1983812996`) used by the local CLI and the
+# example env file. Production credentials use a different issuer/key and are
+# still detected. The anchored base64 prefix below is unique to those demo
+# tokens.
+[[allowlists]]
+description = "Supabase local-dev demo JWT (iss=supabase-demo) (DET-P2-007)"
+rules = ["jwt"]
+regexTarget = "secret"
+regexes = ['''^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1vI''']
