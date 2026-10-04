@@ -1,0 +1,41 @@
+# Trivy exception allowlist (CI-P1-003).
+#
+# The pipeline fails closed on HIGH/CRITICAL findings (validate.yml fs scan and
+# build-push.yml image scans both set exit-code: 1). Each entry below is a
+# pre-existing HIGH/CRITICAL finding observed at audit commit a72b8cc
+# (run 20261003-0018) and is time-boxed to 2026-11-03, when this list must be
+# renewed or the findings remediated. Remove an ID once it is fixed. Do not add
+# new IDs without a tracking issue and an expiry.
+#
+# exp:2026-11-03
+
+CVE-2026-102276
+CVE-2026-102278
+CVE-2026-102599
+CVE-2026-13149
+CVE-2026-13676
+CVE-2026-14257
+CVE-2026-16221
+CVE-2026-18446
+CVE-2026-45623
+CVE-2026-64641
+CVE-2026-64645
+CVE-2026-64649
+CVE-2026-67213
+CVE-2026-67214
+CVE-2026-69152
+CVE-2026-69185
+CVE-2026-73088
+CVE-2026-73089
+CVE-2026-73646
+CVE-2026-75604
+CVE-2026-75899
+CVE-2026-75975
+CVE-2026-76172
+CVE-2026-84292
+GHSA-2x7j-588g-ccc2
+GHSA-2xp9-vwfh-vxw4
+GHSA-f88m-g3jw-g9cj
+GHSA-j95f-988m-3j2f
+GHSA-rgj7-g3m4-5g8c
+GHSA-v53p-9fqp-m79j
