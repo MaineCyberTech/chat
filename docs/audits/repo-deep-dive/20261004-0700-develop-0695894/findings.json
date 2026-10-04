@@ -1,6 +1,6 @@
 {
   "run": "20261004-0700-develop-0695894",
-  "generated": "2026-10-04T07:09:44Z",
+  "generated": "2026-10-04T07:17:01Z",
   "sourceReports": 1,
   "counts": {
     "total": 22,
@@ -24,7 +24,7 @@
       "id": "SEC-P1-001",
       "severity": "P1",
       "title": "Seed workflow can re-open global user RLS (USING true) in production and seed shared-password accounts",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 4,
       "area": "SEC",
       "evidence": [
@@ -39,13 +39,14 @@
       "recommendation": "Remove RLS DDL from seed-database.yml; apply policies only via migrations. Block production seeding or require a protected environment. Never embed a shared password hash in CI.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged chat#88 @ 3115ab3"
     },
     {
       "id": "CI-P1-001",
       "severity": "P1",
       "title": "Production provision job runs destructive Terraform with no environment approval",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 16,
       "area": "CI",
       "evidence": [
@@ -60,13 +61,14 @@
       "recommendation": "Attach a protected production environment to provision/build-images, require plan+approval before apply, and drop unused id-token: write.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged chat#89 @ b32bd0f"
     },
     {
       "id": "AUTH-P2-001",
       "severity": "P2",
       "title": "IDOR: admin dead-letter retry is not tenant-scoped",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 354,
       "area": "AUTH",
       "evidence": [
@@ -78,13 +80,14 @@
       "recommendation": "Resolve the dead letter to its workspace and require it be within req.adminWorkspaceIds before calling retryDeadLetter.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged chat#90 @ e687345"
     },
     {
       "id": "SEC-P2-001",
       "severity": "P2",
       "title": "Cross-tenant user directory via auth service (service-role, unscoped)",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 44,
       "area": "SEC",
       "evidence": [
@@ -97,13 +100,14 @@
       "recommendation": "Scope these queries to the caller's workspace co-members or use the user-scoped Supabase client instead of the service-role client.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged chat#91 @ a70ebe1"
     },
     {
       "id": "CI-P2-001",
       "severity": "P2",
       "title": "infra-development destroys infra on every push to develop with weak controls",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 4,
       "area": "CI",
       "evidence": [
@@ -124,7 +128,7 @@
       "id": "CI-P2-002",
       "severity": "P2",
       "title": "workflow_dispatch inputs interpolated directly into run: (script injection)",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 17,
       "area": "CI",
       "evidence": [
@@ -142,7 +146,7 @@
       "id": "SUPPLY-P2-001",
       "severity": "P2",
       "title": "Production web container receives the Supabase service-role key",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 3,
       "area": "SUPPLY",
       "evidence": [
@@ -154,13 +158,14 @@
       "recommendation": "Remove SUPABASE_SERVICE_ROLE_KEY from x-common-env and inject it only into api and worker.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged chat#92 @ a498513"
     },
     {
       "id": "DEP-P2-001",
       "severity": "P2",
       "title": "33 HIGH/CRITICAL dependency advisories risk-accepted until 2026-11-03",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 227,
       "area": "DEP",
       "evidence": [
@@ -179,7 +184,7 @@
       "id": "CI-P2-003",
       "severity": "P2",
       "title": "Auto-commit workflows hold contents: write and push to main",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 17,
       "area": "CI",
       "evidence": [
@@ -198,7 +203,7 @@
       "id": "CI-P2-004",
       "severity": "P2",
       "title": "Branch-protection CI gate only validates main; develop (auto-deploy) unchecked",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 273,
       "area": "CI",
       "evidence": [
@@ -217,7 +222,7 @@
       "id": "SEC-P2-002",
       "severity": "P2",
       "title": "Webhook SSRF protection does not constrain redirects/DNS rebinding",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 64,
       "area": "SEC",
       "evidence": [
@@ -234,7 +239,7 @@
       "id": "SEC-P2-003",
       "severity": "P2",
       "title": "WEBHOOK_ENCRYPTION_KEY not passed by production compose and not in .env.example",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 88,
       "area": "SEC",
       "evidence": [
@@ -252,7 +257,7 @@
       "id": "SUPPLY-P3-001",
       "severity": "P3",
       "title": "Container images pinned only by mutable tag",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 11,
       "area": "SUPPLY",
       "evidence": [
@@ -270,7 +275,7 @@
       "id": "DEP-P3-001",
       "severity": "P3",
       "title": "24 medium/low advisories are non-gating",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 255,
       "area": "DEP",
       "evidence": [
@@ -287,7 +292,7 @@
       "id": "SUPPLY-P3-002",
       "severity": "P3",
       "title": "Dockerfile lint: unpinned apk and shell-form HEALTHCHECK",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 53,
       "area": "SUPPLY",
       "evidence": [
@@ -305,7 +310,7 @@
       "id": "CI-P3-001",
       "severity": "P3",
       "title": "No actionlint/shellcheck gate despite known workflow lint findings",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 40,
       "area": "CI",
       "evidence": [
@@ -324,7 +329,7 @@
       "id": "PORT-P3-001",
       "severity": "P3",
       "title": "Tracked shell scripts lack the exec bit",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 49,
       "area": "PORT",
       "evidence": [
@@ -342,7 +347,7 @@
       "id": "CONF-P3-001",
       "severity": "P3",
       "title": "Deployment policy contradicts the development deploy workflow (DB changes)",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 35,
       "area": "CONF",
       "evidence": [
@@ -360,7 +365,7 @@
       "id": "CONF-P3-002",
       "severity": "P3",
       "title": "Admin /stats returns global cross-tenant counts",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 59,
       "area": "CONF",
       "evidence": [
@@ -376,7 +381,7 @@
       "id": "CI-P3-002",
       "severity": "P3",
       "title": "Many workflows omit permissions: and rely on default token scope",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 1,
       "area": "CI",
       "evidence": [
@@ -392,7 +397,7 @@
       "id": "SUPPLY-P3-003",
       "severity": "P3",
       "title": "SBOMs generated but not signed/attested; no license or dependency-review gate",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 99,
       "area": "SUPPLY",
       "evidence": [
@@ -410,7 +415,7 @@
       "id": "SUPPLY-P3-004",
       "severity": "P3",
       "title": "Containers lack runtime hardening beyond non-root",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 55,
       "area": "SUPPLY",
       "evidence": [

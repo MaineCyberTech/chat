@@ -1,0 +1,383 @@
+{
+  "run": "chat-20261004-full-develop-0695894",
+  "generated": "2026-10-04T07:59:23Z",
+  "sourceReports": 14,
+  "counts": {
+    "bySeverity": {
+      "P1": 5,
+      "P2": 16,
+      "P3": 11
+    },
+    "byArea": {
+      "ARCH": 2,
+      "AUTH": 1,
+      "CI": 7,
+      "CONF": 2,
+      "DATA": 1,
+      "DEP": 2,
+      "EXEC": 2,
+      "FINAL": 2,
+      "INV": 1,
+      "OBS": 1,
+      "PORT": 1,
+      "SEC": 4,
+      "SUPPLY": 5,
+      "TEST": 1
+    },
+    "total": 32
+  },
+  "findings": [
+    {
+      "id": "CI-P1-001",
+      "severity": "P1",
+      "title": "Production `provision` job runs destructive Terraform with no environment approval",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 43,
+      "owner": "@release",
+      "target": "CI",
+      "status": "verified-fixed",
+      "note": "merged chat#89 @ b32bd0f"
+    },
+    {
+      "id": "EXEC-P1-001",
+      "severity": "P1",
+      "title": "Release gate must remain conditional pending P1 remediation",
+      "report": "23_executive_summary_release_gate.md",
+      "line": 34,
+      "owner": "@eng-lead",
+      "target": "EXEC",
+      "status": "open",
+      "note": "See `RELEASE_GATE.md`."
+    },
+    {
+      "id": "FINAL-P1-001",
+      "severity": "P1",
+      "title": "Manual seed workflow remains an out-of-band schema/RLS/data mutation channel",
+      "report": "22_final_risk_register_roadmap.md",
+      "line": 34,
+      "owner": "@release",
+      "target": "FINAL",
+      "status": "open",
+      "note": "Synthesises SEC-P1-001 + CONF-P3-001."
+    },
+    {
+      "id": "OBS-P1-001",
+      "severity": "P1",
+      "title": "No alerting is wired by default despite metrics and a tracked TODO",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 97,
+      "owner": "@ops",
+      "target": "OBS",
+      "status": "open",
+      "note": "`infra/terraform/variables.tf:45-49` default `alert_email = \"\"`; `main.tf:101-142` alerts count 0."
+    },
+    {
+      "id": "SEC-P1-001",
+      "severity": "P1",
+      "title": "Seed workflow can re-open global user RLS (`USING true`) and seed shared-password accounts in production",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 47,
+      "owner": "@security",
+      "target": "SEC",
+      "status": "verified-fixed",
+      "note": "merged chat#88 @ 3115ab3"
+    },
+    {
+      "id": "ARCH-P2-001",
+      "severity": "P2",
+      "title": "Single-node topology: one droplet hosts all services and local Redis",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 57,
+      "owner": "@infra",
+      "target": "ARCH",
+      "status": "open",
+      "note": "`infra/terraform/main.tf` one droplet; local Redis volume."
+    },
+    {
+      "id": "AUTH-P2-001",
+      "severity": "P2",
+      "title": "IDOR: admin dead-letter retry is not tenant-scoped",
+      "report": "25_multi_tenant_isolation_attack_simulation.md",
+      "line": 41,
+      "owner": "@api",
+      "target": "AUTH",
+      "status": "verified-fixed",
+      "note": "merged chat#90 @ e687345"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "`infra-development` destroys infra on every push to `develop` with weak controls",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 64,
+      "owner": "@ci",
+      "target": "CI",
+      "status": "open",
+      "note": "`.github/workflows/infra-development.yml`."
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "`workflow_dispatch` inputs interpolated directly into `run:` (script injection)",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 84,
+      "owner": "@ci",
+      "target": "CI",
+      "status": "open",
+      "note": "`hardening-automation-runner.yml:17-19`, `environment-promotion-audit.yml:24`."
+    },
+    {
+      "id": "CI-P2-003",
+      "severity": "P2",
+      "title": "Auto-commit workflows hold `contents: write` and push to `main`",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 104,
+      "owner": "@ci",
+      "target": "CI",
+      "status": "open",
+      "note": "`audit-ci-autocommit.yml`, `audit-badges-autocommit.yml`."
+    },
+    {
+      "id": "CI-P2-004",
+      "severity": "P2",
+      "title": "Branch-protection CI gate only validates `main`; `develop` (auto-deploy) unchecked",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 123,
+      "owner": "@ci",
+      "target": "CI",
+      "status": "open",
+      "note": "`validate.yml` branch-protection job hard-codes `main`."
+    },
+    {
+      "id": "DATA-P2-001",
+      "severity": "P2",
+      "title": "Duplicate `add_user_groups` migrations",
+      "report": "07_data_schema_migration_runtime_validation.md",
+      "line": 51,
+      "owner": "@db",
+      "target": "DATA",
+      "status": "open",
+      "note": "`supabase/migrations/20260704000007_add_user_groups.sql`, `20260705000003_add_user_groups.sql`."
+    },
+    {
+      "id": "DEP-P2-001",
+      "severity": "P2",
+      "title": "33 HIGH/CRITICAL dependency advisories risk-accepted until 2026-11-03",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 74,
+      "owner": "@security",
+      "target": "DEP",
+      "status": "open",
+      "note": "`.trivyignore` and `.pnpm-audit-exceptions.json` expire 2026-11-03."
+    },
+    {
+      "id": "EXEC-P2-002",
+      "severity": "P2",
+      "title": "Prior register self-consistency failure: `verified-fixed` statuses cite commits not in `develop`",
+      "report": "23_executive_summary_release_gate.md",
+      "line": 52,
+      "owner": "@audit-owner",
+      "target": "EXEC",
+      "status": "verified-fixed",
+      "note": "CORRECTED: stale clone at 0695894; all 5 merge commits are ancestors of develop 86bf76d - false positive"
+    },
+    {
+      "id": "FINAL-P2-002",
+      "severity": "P2",
+      "title": "Dependency security exceptions expire 2026-11-03, after which CI fails hard",
+      "report": "22_final_risk_register_roadmap.md",
+      "line": 54,
+      "owner": "@release",
+      "target": "FINAL",
+      "status": "open",
+      "note": "Synthesises DEP-P2-001."
+    },
+    {
+      "id": "INV-P2-001",
+      "severity": "P2",
+      "title": "Stale generated reconciliation artifacts remain tracked at the repository root",
+      "report": "01_repository_inventory.md",
+      "line": 46,
+      "owner": "@maintainer",
+      "target": "INV",
+      "status": "open",
+      "note": "`COMMIT_MSG.txt`, `temp_layout.txt`, `tmp_migrations_list.txt`, `FINAL_RECONCIL*`."
+    },
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "Cross-tenant user directory via auth service (service-role, unscoped)",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 71,
+      "owner": "@security",
+      "target": "SEC",
+      "status": "verified-fixed",
+      "note": "merged chat#91 @ a70ebe1"
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "Webhook SSRF protection does not constrain redirects or DNS rebinding",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 91,
+      "owner": "@security",
+      "target": "SEC",
+      "status": "open",
+      "note": "`apps/api/src/modules/webhooks/service.ts:245-253`."
+    },
+    {
+      "id": "SEC-P2-003",
+      "severity": "P2",
+      "title": "`WEBHOOK_ENCRYPTION_KEY` not passed by production compose and not in `.env.example`",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 110,
+      "owner": "@security",
+      "target": "SEC",
+      "status": "open",
+      "note": "`infra/docker/docker-compose.prod.yml`."
+    },
+    {
+      "id": "SUPPLY-P2-001",
+      "severity": "P2",
+      "title": "Production web container receives the Supabase service-role key",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 54,
+      "owner": "@supply",
+      "target": "SUPPLY",
+      "status": "verified-fixed",
+      "note": "merged chat#92 @ a498513"
+    },
+    {
+      "id": "TEST-P2-001",
+      "severity": "P2",
+      "title": "RLS tenant-isolation SQL test exists but is not run by CI",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 51,
+      "owner": "@qa",
+      "target": "TEST",
+      "status": "open",
+      "note": "`supabase/tests/rls_tenant_isolation.sql`; only `scripts/test-db-rls.sh` reads it and no workflow/package script invokes it."
+    },
+    {
+      "id": "ARCH-P3-002",
+      "severity": "P3",
+      "title": "Divergent admin authorization helpers (platform vs workspace scope)",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 77,
+      "owner": "@api",
+      "target": "ARCH",
+      "status": "open",
+      "note": "`apps/api/src/middleware/require-admin.ts:12`, `apps/api/src/modules/workspaces/routes.ts:169`."
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "No actionlint/shellcheck gate despite known workflow lint findings",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 143,
+      "owner": "@ci",
+      "target": "CI",
+      "status": "open",
+      "note": "`validate.yml` has no workflow-lint job."
+    },
+    {
+      "id": "CI-P3-002",
+      "severity": "P3",
+      "title": "Many workflows omit `permissions:` (default token scope)",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 162,
+      "owner": "@ci",
+      "target": "CI",
+      "status": "open",
+      "note": "Multiple `.github/workflows/*.yml` lack explicit permissions."
+    },
+    {
+      "id": "CONF-P3-001",
+      "severity": "P3",
+      "title": "Deployment policy contradicts the development deploy workflow (DB changes)",
+      "report": "07_data_schema_migration_runtime_validation.md",
+      "line": 70,
+      "owner": "@release",
+      "target": "CONF",
+      "status": "open",
+      "note": "`docs/operations/deployment-policy.md:35-37` vs `deploy-development.yml`."
+    },
+    {
+      "id": "CONF-P3-002",
+      "severity": "P3",
+      "title": "Admin `/stats` returns global cross-tenant counts",
+      "report": "25_multi_tenant_isolation_attack_simulation.md",
+      "line": 62,
+      "owner": "@api",
+      "target": "CONF",
+      "status": "open",
+      "note": "`apps/api/src/modules/admin/routes.ts`."
+    },
+    {
+      "id": "DEP-P3-001",
+      "severity": "P3",
+      "title": "Medium/low advisories are non-gating",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 170,
+      "owner": "@security",
+      "target": "DEP",
+      "status": "open",
+      "note": "CI scans HIGH/CRITICAL only."
+    },
+    {
+      "id": "PORT-P3-001",
+      "severity": "P3",
+      "title": "Tracked shell scripts lack the exec bit",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 41,
+      "owner": "@maintainer",
+      "target": "PORT",
+      "status": "open",
+      "note": "`git ls-files -s` shows mode 100644 for intended executables."
+    },
+    {
+      "id": "SUPPLY-P3-001",
+      "severity": "P3",
+      "title": "Container images pinned only by mutable tag",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 94,
+      "owner": "@supply",
+      "target": "SUPPLY",
+      "status": "open",
+      "note": "`infra/docker/*.yml`, `apps/*/Dockerfile`."
+    },
+    {
+      "id": "SUPPLY-P3-002",
+      "severity": "P3",
+      "title": "Dockerfile lint: unpinned apk and shell-form HEALTHCHECK",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 113,
+      "owner": "@supply",
+      "target": "SUPPLY",
+      "status": "open",
+      "note": "`apps/{web,api,worker}/Dockerfile`."
+    },
+    {
+      "id": "SUPPLY-P3-003",
+      "severity": "P3",
+      "title": "SBOMs generated but not signed/attested; no license or dependency-review gate",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 132,
+      "owner": "@supply",
+      "target": "SUPPLY",
+      "status": "open",
+      "note": "`.github/workflows/build-push.yml`."
+    },
+    {
+      "id": "SUPPLY-P3-004",
+      "severity": "P3",
+      "title": "Containers lack runtime hardening beyond non-root",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 151,
+      "owner": "@supply",
+      "target": "SUPPLY",
+      "status": "open",
+      "note": "`infra/docker/docker-compose.prod.yml`."
+    }
+  ]
+}

@@ -4,7 +4,7 @@
   "profile": "focused-security-supply-chain-ci",
   "outputRoot": "docs/audits/{name}/{run}/",
   "run": "20261004-0700-develop-0695894",
-  "scaffolded_at": "2026-10-04T07:09:44Z",
+  "scaffolded_at": "2026-10-04T07:17:01Z",
   "scaffolded_by": "tools/publish_audit.py",
   "promptCount": 4,
   "prompts": [
@@ -19,9 +19,9 @@
     "branch": "develop",
     "commit": "06958941dcc669f1e4174c4477bd4ae9a69bad26",
     "shortCommit": "0695894",
-    "generatedAt": "2026-10-04T07:09:44Z",
+    "generatedAt": "2026-10-04T07:17:01Z",
     "reports": [
-      "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md"
+      "lens_focused_security_supply_chain_ci.md"
     ]
   },
   "findings": {
