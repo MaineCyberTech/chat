@@ -1,0 +1,24 @@
+# Roadmap
+
+- SEC-P1-001 (P1) - Seed workflow can re-open global user RLS (USING true) in production and seed shared-password accounts
+- CI-P1-001 (P1) - Production provision job runs destructive Terraform with no environment approval
+- AUTH-P2-001 (P2) - IDOR: admin dead-letter retry is not tenant-scoped
+- SEC-P2-001 (P2) - Cross-tenant user directory via auth service (service-role, unscoped)
+- CI-P2-001 (P2) - infra-development destroys infra on every push to develop with weak controls
+- CI-P2-002 (P2) - workflow_dispatch inputs interpolated directly into run: (script injection)
+- SUPPLY-P2-001 (P2) - Production web container receives the Supabase service-role key
+- DEP-P2-001 (P2) - 33 HIGH/CRITICAL dependency advisories risk-accepted until 2026-11-03
+- CI-P2-003 (P2) - Auto-commit workflows hold contents: write and push to main
+- CI-P2-004 (P2) - Branch-protection CI gate only validates main; develop (auto-deploy) unchecked
+- SEC-P2-002 (P2) - Webhook SSRF protection does not constrain redirects/DNS rebinding
+- SEC-P2-003 (P2) - WEBHOOK_ENCRYPTION_KEY not passed by production compose and not in .env.example
+- SUPPLY-P3-001 (P3) - Container images pinned only by mutable tag
+- DEP-P3-001 (P3) - 24 medium/low advisories are non-gating
+- SUPPLY-P3-002 (P3) - Dockerfile lint: unpinned apk and shell-form HEALTHCHECK
+- CI-P3-001 (P3) - No actionlint/shellcheck gate despite known workflow lint findings
+- PORT-P3-001 (P3) - Tracked shell scripts lack the exec bit
+- CONF-P3-001 (P3) - Deployment policy contradicts the development deploy workflow (DB changes)
+- CONF-P3-002 (P3) - Admin /stats returns global cross-tenant counts
+- CI-P3-002 (P3) - Many workflows omit permissions: and rely on default token scope
+- SUPPLY-P3-003 (P3) - SBOMs generated but not signed/attested; no license or dependency-review gate
+- SUPPLY-P3-004 (P3) - Containers lack runtime hardening beyond non-root
