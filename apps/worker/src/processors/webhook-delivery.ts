@@ -2,11 +2,11 @@ import { Worker, Job, Queue } from "bullmq";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 import { createSupabaseClient } from "../lib/supabase.js";
-import { randomUUID } from "node:crypto";
 import {
   validateWebhookUrl,
   computeHmacSignature,
   buildWebhookPayload,
+  decryptWebhookSecret,
   MAX_RETRIES,
   BASE_DELAY_MS,
 } from "@chat/config/webhook-utils.js";
@@ -17,6 +17,7 @@ export interface WebhookDeliveryJobData {
   payload: Record<string, unknown>;
   retryCount?: number;
   deliveryId?: string;
+  idempotencyKey?: string;
 }
 
 export const webhookQueue = new Queue<WebhookDeliveryJobData>("webhook-delivery", {
@@ -29,12 +30,31 @@ export const webhookQueue = new Queue<WebhookDeliveryJobData>("webhook-delivery"
   },
 });
 
+/**
+ * Endpoint secrets are stored encrypted by the API (AES-256-GCM). Decrypt with
+ * the shared key before signing. Fall back to the raw value only when no key is
+ * configured, preserving delivery for installations without encryption.
+ */
+function resolveSigningSecret(encrypted: string): string {
+  const encryptionKey = process.env.WEBHOOK_ENCRYPTION_KEY;
+  if (!encryptionKey) {
+    return encrypted;
+  }
+  try {
+    return decryptWebhookSecret(encrypted, encryptionKey);
+  } catch (err) {
+    logger.error({ error: String(err) }, "Failed to decrypt webhook secret for signing");
+    return encrypted;
+  }
+}
+
 async function performWebhookDelivery(
   supabase: ReturnType<typeof createSupabaseClient>,
   webhookId: string,
   event: string,
   payload: Record<string, unknown>,
   retryCount: number,
+  idempotencyKey: string,
 ): Promise<{ status: string; statusCode: number | null; permanent: boolean }> {
   const { data: endpoint } = await supabase
     .from("webhook_endpoints")
@@ -67,11 +87,14 @@ async function performWebhookDelivery(
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (endpoint.secret) {
-      headers["X-Webhook-Signature"] = computeHmacSignature(endpoint.secret, payload, event);
+      headers["X-Webhook-Signature"] = computeHmacSignature(
+        resolveSigningSecret(endpoint.secret),
+        payload,
+        event,
+      );
     }
 
     const body = buildWebhookPayload(event, payload);
-    const idempotencyKey = randomUUID();
 
     const response = await fetch(endpoint.url, {
       method: "POST",
@@ -154,10 +177,20 @@ export function registerWebhookProcessor() {
     "webhook-delivery",
     async (job: Job<WebhookDeliveryJobData>) => {
       const { webhookId, event, payload } = job.data;
-      const retryCount = job.attemptsMade;
+      // Jobs enqueued by the API carry the cumulative retry number reached by
+      // its inline first attempt; BullMQ's own attempts extend it from there.
+      const retryCount = (job.data.retryCount ?? 0) + job.attemptsMade;
+      const idempotencyKey = job.data.idempotencyKey ?? `job:${job.id}`;
       logger.info({ webhookId, event, retryCount }, "Processing webhook delivery");
 
-      const result = await performWebhookDelivery(supabase, webhookId, event, payload, retryCount);
+      const result = await performWebhookDelivery(
+        supabase,
+        webhookId,
+        event,
+        payload,
+        retryCount,
+        idempotencyKey,
+      );
 
       if (result.status === "failed" && !result.permanent && retryCount < MAX_RETRIES) {
         throw new Error(`Webhook delivery failed (attempt ${retryCount + 1}), will retry`);
