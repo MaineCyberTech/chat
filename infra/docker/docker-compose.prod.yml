@@ -4,7 +4,9 @@ x-common-env: &common-env
   NODE_ENV: production
   SUPABASE_URL: ${SUPABASE_URL}
   SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+  # SUPABASE_SERVICE_ROLE_KEY is intentionally NOT part of the shared env: the
+  # internet-facing web tier must not hold full DB privileges. It is injected
+  # only into api/worker below (chat-SUPPLY-001).
 
 services:
   caddy:
@@ -50,6 +52,7 @@ services:
     mem_limit: 128m
     environment:
       <<: *common-env
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       REDIS_URL: redis://redis:6379
       METRICS_TOKEN: ${METRICS_TOKEN}
     healthcheck:
@@ -116,6 +119,7 @@ services:
     mem_limit: 192m
     environment:
       <<: *common-env
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       PORT: 4000
       REDIS_URL: redis://redis:6379
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
