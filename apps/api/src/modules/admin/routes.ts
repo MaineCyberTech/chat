@@ -356,6 +356,29 @@ router.post(
   authenticate,
   requireAdmin,
   asyncHandler(async (req: Request, res: Response) => {
+    const admin = getSupabaseAdmin();
+    const workspaceIds = await getAdminWorkspaceIds(req);
+
+    // Tenant-scope the lookup before retrying: only dead letters whose webhook
+    // belongs to one of the caller's admin workspaces are retryable
+    // (chat-AUTH-001). Returning 404 for out-of-scope ids avoids existence
+    // probing across tenants.
+    const endpointIds =
+      (
+        await admin.from("webhook_endpoints").select("id").in("workspace_id", workspaceIds)
+      ).data?.map((e: { id: string }) => e.id) ?? [];
+    if (endpointIds.length === 0) {
+      throw new NotFoundError("Dead letter not found or webhook inactive");
+    }
+
+    const { data: deadLetter } = await admin
+      .from("webhook_dead_letters")
+      .select("id")
+      .eq("id", req.params.id as string)
+      .in("webhook_id", endpointIds)
+      .single();
+    if (!deadLetter) throw new NotFoundError("Dead letter not found or webhook inactive");
+
     const { webhookService } = await import("../../modules/webhooks/service.js");
     const success = await webhookService.retryDeadLetter(req.params.id as string);
     if (!success) throw new NotFoundError("Dead letter not found or webhook inactive");
