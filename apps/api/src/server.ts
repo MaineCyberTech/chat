@@ -8,7 +8,7 @@ import { logger } from "./lib/logger.js";
 import { initializeCache, shutdownCache } from "./middleware/cache.js";
 import type { Socket } from "node:net";
 
-// TODO: Configure alerting channels:
+// TODO(OBS-P1-001): Configure alerting channels:
 //   - Prometheus / Alertmanager rules (see metrics.ts)
 //   - Sentry (initialized below via initSentry())
 //   - DO monitoring alerts (CPU > 80 %, memory > 80 %)

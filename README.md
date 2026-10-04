@@ -4,7 +4,7 @@
 
 Real-time workspace communication platform (Slack/Discord inspired) built with Next.js, Express, Socket.io, and Supabase.
 
-**Status: Implemented** â€” Auth, workspaces, channels, real-time messaging, file uploads, search, CI/CD, and infrastructure are built. See [AGENTS.md](AGENTS.md) for architecture and remaining work.
+**Status: Implemented** — Auth, workspaces, channels, real-time messaging, file uploads, search, CI/CD, and infrastructure are built. See [AGENTS.md](AGENTS.md) for architecture and remaining work.
 
 ## Quickstart
 
@@ -24,7 +24,7 @@ Opens `localhost:3000` (frontend) + `localhost:4000` (API) + `localhost:54323` (
 
 ## Deploy
 
-Push to `develop` â†’ [GitHub Actions](https://github.com/MaineCyberTech/chat/actions) deploys to `chat.mainecybertech.us`.
+Push to `develop` → [GitHub Actions](https://github.com/MaineCyberTech/chat/actions) deploys to `chat.mainecybertech.us`.
 
 ## Commands
 
@@ -60,7 +60,7 @@ Push to `develop` â†’ [GitHub Actions](https://github.com/MaineCyberTech/ch
 | Database   | Supabase (PostgreSQL), pgvector, pg_cron                                     |
 | Realtime   | Socket.io with Redis adapter, LiveKit WebRTC                                 |
 | Workers    | 4 BullMQ processors (webhooks, notifications, search, cleanup)               |
-| Auth       | Supabase Auth (magic link), JWT middleware, RBAC (18 permissions Ã— 3 roles) |
+| Auth       | Supabase Auth (magic link), JWT middleware, RBAC (18 permissions — 3 roles) |
 | Infra      | Docker Compose, Caddy (TLS), DigitalOcean, Terraform                         |
 | CI/CD      | GitHub Actions (19 workflows), Playwright E2E                                |
 | Monitoring | Sentry, k6 load testing, Playwright visual snapshots                         |
@@ -85,6 +85,6 @@ Push to `develop` â†’ [GitHub Actions](https://github.com/MaineCyberTech/ch
 
 See [docs/architecture/](docs/architecture/) for detailed architecture docs, runbooks, and audit reports.
 
-- CI/CD pipeline (validate â†’ build â†’ deploy â†’ health check)
+- CI/CD pipeline (validate → build → deploy → health check)
 - Terraform infrastructure provisioning
 - Local Supabase development environment

@@ -4,7 +4,7 @@
  * Prometheus metrics are exposed at GET /metrics (see server.ts).
  * For production alerting configure:
  *
- *   TODO: Configure alerting channels
+ *   TODO(OBS-P1-001): Configure alerting channels
  *   - Prometheus + Alertmanager rules for:
  *     - chat_http_requests_total{status_code=~"5.."} rate > threshold
  *     - chat_websocket_connections_active dropping near zero
