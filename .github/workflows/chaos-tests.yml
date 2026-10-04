@@ -31,7 +31,7 @@ jobs:
             echo "ERROR: No chat-development droplet found"
             exit 1
           fi
-          echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
+          echo "droplet_ip=$IP" >> "$GITHUB_OUTPUT"
           echo "Using droplet IP: $IP"
 
       - name: Run API crash chaos test
@@ -68,7 +68,7 @@ jobs:
             echo "ERROR: No chat-development droplet found"
             exit 1
           fi
-          echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
+          echo "droplet_ip=$IP" >> "$GITHUB_OUTPUT"
           echo "Using droplet IP: $IP"
 
       - name: Run Redis down chaos test

@@ -18,7 +18,7 @@ jobs:
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Get pnpm store directory
         id: pnpm-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
@@ -73,7 +73,7 @@ jobs:
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Get pnpm store directory
         id: pnpm-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
@@ -109,7 +109,7 @@ jobs:
           for (const [key, threshold] of Object.entries(required)) {
             const actual = total[key]?.pct ?? 0;
             if (actual < threshold) {
-              failures.push(`${key}: ${actual}% < ${threshold}%`);
+              failures.push(key + ': ' + actual + '% < ' + threshold + '%');
             }
           }
           if (failures.length > 0) {
@@ -127,7 +127,7 @@ jobs:
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Get pnpm store directory
         id: pnpm-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
@@ -150,7 +150,7 @@ jobs:
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Get pnpm store directory
         id: pnpm-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
@@ -212,7 +212,7 @@ jobs:
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Get pnpm store directory
         id: pnpm-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
@@ -359,7 +359,7 @@ jobs:
             exit 1
           fi
           # Compare filesystem order with the manifest.
-          actual=$(ls supabase/migrations/*.sql 2>/dev/null | xargs -n1 basename | sort | tr -d '\r')
+          actual=$(find supabase/migrations -maxdepth 1 -name '*.sql' -printf '%f\n' | sort | tr -d '\r')
           expected=$(sort "$MANIFEST" | tr -d '\r')
           if [ "$actual" != "$expected" ]; then
             echo "ERROR: Migration order mismatch"
@@ -442,7 +442,7 @@ jobs:
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Get pnpm store directory
         id: pnpm-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
@@ -476,7 +476,7 @@ jobs:
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Get pnpm store directory
         id: pnpm-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
