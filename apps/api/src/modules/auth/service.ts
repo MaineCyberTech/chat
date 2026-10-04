@@ -1,5 +1,6 @@
 import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
 import { containsPattern } from "../../lib/postgrest-filter.js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadEnv } from "../../config/env.js";
 import { logger } from "../../lib/logger.js";
 import type { User, UserProfile } from "@chat/db";
@@ -41,8 +42,10 @@ export class AuthService {
     return data as UserProfile;
   }
 
-  async searchUsers(query: string): Promise<UserProfile[]> {
-    const supabase = getSupabaseAdmin();
+  // Both directory methods take the caller's user-scoped Supabase client so the
+  // `users_select` RLS policy (self + workspace co-members) constrains results.
+  // Using the service-role client here leaked users across tenants (chat-SEC-002).
+  async searchUsers(query: string, supabase: SupabaseClient): Promise<UserProfile[]> {
     const { data } = await supabase
       .from("users")
       .select("id, display_name, avatar_url")
@@ -52,9 +55,8 @@ export class AuthService {
     return (data ?? []) as UserProfile[];
   }
 
-  async getProfiles(userIds: string[]): Promise<UserProfile[]> {
+  async getProfiles(userIds: string[], supabase: SupabaseClient): Promise<UserProfile[]> {
     if (userIds.length === 0) return [];
-    const supabase = getSupabaseAdmin();
     const { data } = await supabase
       .from("users")
       .select("id, display_name, avatar_url")

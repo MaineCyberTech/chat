@@ -122,10 +122,23 @@ function findHandler(method: string, path: string) {
   return null;
 }
 
+function mockUserScopedClient(
+  data: unknown[] = [{ id: "user-1", display_name: "Tester", avatar_url: null }],
+) {
+  return {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        ilike: vi.fn(() => ({ limit: vi.fn(() => ({ data })) })),
+        in: vi.fn(() => ({ data })),
+      })),
+    })),
+  };
+}
+
 function mockReq(overrides: Record<string, unknown> = {}) {
   return {
     userId: "user-1",
-    supabase: { from: vi.fn(), storage: { from: vi.fn() } },
+    supabase: { ...mockUserScopedClient(), storage: { from: vi.fn() } },
     body: {},
     query: {},
     ...overrides,
@@ -172,36 +185,64 @@ describe("AuthService", () => {
   });
 
   describe("searchUsers", () => {
-    it("returns matching users", async () => {
-      const users = await service.searchUsers("test");
+    it("returns matching users via the caller's user-scoped client", async () => {
+      const client = mockUserScopedClient([
+        { id: "user-1", email: "test@example.com", display_name: "Tester", avatar_url: null },
+      ]) as any;
+
+      const users = await service.searchUsers("test", client);
+
+      expect(client.from).toHaveBeenCalledWith("users");
       expect(users).toHaveLength(1);
       expect(users[0].email).toBe("test@example.com");
     });
 
     it("uses a structured ilike filter and passes filter syntax as a literal value", async () => {
-      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
       const limit = vi.fn(() => ({ data: [] }));
       const ilike = vi.fn((_column: string, _pattern: string) => ({ limit }));
       const select = vi.fn(() => ({ ilike }));
-      (getSupabaseAdmin as any).mockReturnValueOnce({ from: vi.fn(() => ({ select })) });
+      const client = { from: vi.fn(() => ({ select })) } as any;
 
-      await service.searchUsers("a,b(c).%");
+      await service.searchUsers("a,b(c).%", client);
 
       expect(select).toHaveBeenCalledWith("id, display_name, avatar_url");
       expect(ilike).toHaveBeenCalledWith("display_name", "%a,b(c).%%");
     });
 
     it("normalises whitespace and caps the search term length", async () => {
-      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
       const limit = vi.fn(() => ({ data: [] }));
       const ilike = vi.fn((_column: string, _pattern: string) => ({ limit }));
       const select = vi.fn(() => ({ ilike }));
-      (getSupabaseAdmin as any).mockReturnValueOnce({ from: vi.fn(() => ({ select })) });
+      const client = { from: vi.fn(() => ({ select })) } as any;
 
-      await service.searchUsers(`  ${"x".repeat(150)}  `);
+      await service.searchUsers(`  ${"x".repeat(150)}  `, client);
 
       const [, pattern] = ilike.mock.calls[0];
       expect(pattern).toBe(`%${"x".repeat(100)}%`);
+    });
+  });
+
+  describe("getProfiles", () => {
+    it("queries through the caller's user-scoped client", async () => {
+      const inFn = vi.fn(() => ({
+        data: [{ id: "user-2", display_name: "Other", avatar_url: null }],
+      }));
+      const select = vi.fn(() => ({ in: inFn }));
+      const from = vi.fn(() => ({ select }));
+      const client = { from } as any;
+
+      const profiles = await service.getProfiles(["user-2"], client);
+
+      expect(from).toHaveBeenCalledWith("users");
+      expect(inFn).toHaveBeenCalledWith("id", ["user-2"]);
+      expect(profiles).toEqual([{ id: "user-2", display_name: "Other", avatar_url: null }]);
+    });
+
+    it("returns [] without querying when no ids are provided", async () => {
+      const client = { from: vi.fn() } as any;
+
+      expect(await service.getProfiles([], client)).toEqual([]);
+      expect(client.from).not.toHaveBeenCalled();
     });
   });
 });
@@ -275,6 +316,23 @@ describe("Auth Routes", () => {
     const req = mockReq({ query: { q: "test" } });
     const res = mockRes();
     await handler(req, res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ profiles: expect.any(Array) }));
+  });
+
+  it("GET /search queries through the request's user-scoped client (RLS-scoped)", async () => {
+    const handler = findHandler("get", "/search");
+    const req = mockReq({ query: { q: "test" } });
+    const res = mockRes();
+    await handler(req, res);
+    expect(req.supabase.from).toHaveBeenCalledWith("users");
+  });
+
+  it("POST /profiles queries through the request's user-scoped client (RLS-scoped)", async () => {
+    const handler = findHandler("post", "/profiles");
+    const req = mockReq({ body: { userIds: ["00000000-0000-4000-8000-000000000002"] } });
+    const res = mockRes();
+    await handler(req, res);
+    expect(req.supabase.from).toHaveBeenCalledWith("users");
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ profiles: expect.any(Array) }));
   });
 
