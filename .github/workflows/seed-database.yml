@@ -150,10 +150,10 @@ jobs:
                 HTTP_CODE=$(echo "$RESP" | tail -1)
                 BODY=$(echo "$RESP" | head -n -1)
                 if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-                  echo "  $(basename $chunk_file): ${CHUNK_SIZE}B - OK"
+                  echo "  $(basename "$chunk_file"): ${CHUNK_SIZE}B - OK"
                   SENT=$((SENT + 1))
                 else
-                  echo "  $(basename $chunk_file): ${CHUNK_SIZE}B - FAIL ($HTTP_CODE)"
+                  echo "  $(basename "$chunk_file"): ${CHUNK_SIZE}B - FAIL ($HTTP_CODE)"
                   echo "  $(echo "$BODY" | head -1)"
                   FAILED=$((FAILED + 1))
                 fi

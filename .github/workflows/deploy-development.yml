@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set lowercase repo
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
       - name: Wait for CI to complete
         run: |
@@ -100,7 +100,7 @@ jobs:
           ALL_DROPLETS=$(curl -sf -H "Authorization: Bearer $DO_TOKEN" \
             "https://api.digitalocean.com/v2/droplets?page=1&per_page=200")
           echo "$ALL_DROPLETS" | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | .[:-1][] | .id' \
-            | while read OLD_ID; do
+            | while read -r OLD_ID; do
               echo "Destroying old droplet $OLD_ID"
               curl -sf -X DELETE -H "Authorization: Bearer $DO_TOKEN" \
                 "https://api.digitalocean.com/v2/droplets/$OLD_ID" || true
@@ -111,7 +111,7 @@ jobs:
             echo "$ALL_DROPLETS" | jq '[.droplets[] | {name, ip: .networks.v4[0].ip_address, created: .created_at}]'
             exit 1
           fi
-          echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
+          echo "droplet_ip=$IP" >> "$GITHUB_OUTPUT"
           echo "Using droplet IP: $IP"
 
       - name: Setup droplet

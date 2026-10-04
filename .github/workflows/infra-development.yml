@@ -34,7 +34,7 @@ jobs:
           curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
             "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
             | jq -r --arg name "chat-${ENVIRONMENT}" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | .[:-1][] | .id' \
-            | while read OLD_ID; do
+            | while read -r OLD_ID; do
               echo "Destroying old droplet $OLD_ID"
               curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
                 "https://api.digitalocean.com/v2/droplets/$OLD_ID"
@@ -97,7 +97,7 @@ jobs:
           for NAME in chat chat-api; do
             curl -s -H "Authorization: Bearer $TOKEN" \
               "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=${NAME}.${{ env.DOMAIN }}" \
-              | jq -r '.result[].id' | while read ID; do
+              | jq -r '.result[].id' | while read -r ID; do
                 echo "Deleting old DNS record $NAME (id=$ID)"
                 curl -s -X DELETE -H "Authorization: Bearer $TOKEN" \
                   "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$ID"
@@ -125,7 +125,7 @@ jobs:
         run: |
           terraform apply -auto-approve -input=false
           terraform output -raw droplet_ip > /tmp/droplet_ip
-          echo "droplet_ip=$(cat /tmp/droplet_ip)" >> $GITHUB_OUTPUT
+          echo "droplet_ip=$(cat /tmp/droplet_ip)" >> "$GITHUB_OUTPUT"
           echo "Droplet IP: $(cat /tmp/droplet_ip)"
 
       - name: Health check — wait for SSH

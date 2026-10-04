@@ -1,0 +1,7 @@
+# actionlint configuration (DET-P2-001).
+#
+# Declares the self-hosted runner labels used by this repository so actionlint
+# does not report them as unknown labels. Keep in sync with the labels on the
+# self-hosted runners referenced from .github/workflows/*.yml.
+self-hosted-runner:
+  labels: [lab, lab-ubuntu, lab-python, lab-sudo, lab-docker, lab-debian, ci-runner, edge-builder, lab-runner-2]

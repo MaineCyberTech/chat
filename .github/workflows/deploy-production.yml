@@ -91,8 +91,8 @@ jobs:
             terraform import digitalocean_droplet.chat "$DROPLET_ID" || true
             terraform import digitalocean_firewall.chat "$DROPLET_ID" || true
           fi
-          echo "exists=$([ -n "$DROPLET_ID" ] && echo true || echo false)" >> $GITHUB_OUTPUT
-          echo "droplet_id=$DROPLET_ID" >> $GITHUB_OUTPUT
+          echo "exists=$([ -n "$DROPLET_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "droplet_id=$DROPLET_ID" >> "$GITHUB_OUTPUT"
 
       - name: Destroy old extra droplets
         if: steps.import.outputs.exists == 'true'
@@ -100,7 +100,7 @@ jobs:
           curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
             "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
             | jq -r --arg name "chat-${ENVIRONMENT}" '.droplets[] | select(.name==$name and .id!="${{ steps.import.outputs.droplet_id }}") | .id' \
-            | while read OLD_ID; do
+            | while read -r OLD_ID; do
               echo "Deleting extra droplet $OLD_ID"
               curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
                 "https://api.digitalocean.com/v2/droplets/$OLD_ID"
@@ -108,7 +108,7 @@ jobs:
           curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
             "https://api.digitalocean.com/v2/firewalls?page=1&per_page=200" \
             | jq -r --arg prefix "chat-${ENVIRONMENT}" '.firewalls[] | select(.name | startswith($prefix)) | .id' \
-            | while read FW_ID; do
+            | while read -r FW_ID; do
               echo "Deleting old firewall $FW_ID"
               curl -s -X DELETE -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
                 "https://api.digitalocean.com/v2/firewalls/$FW_ID"
@@ -121,7 +121,7 @@ jobs:
           for NAME in chat chat-api; do
             curl -s -H "Authorization: Bearer $TOKEN" \
               "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=${NAME}.${{ env.DOMAIN }}" \
-              | jq -r '.result[]?.id' | while read ID; do
+              | jq -r '.result[]?.id' | while read -r ID; do
                 echo "Deleting old DNS record $NAME (id=$ID)"
                 curl -s -X DELETE -H "Authorization: Bearer $TOKEN" \
                   "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$ID"
@@ -140,9 +140,11 @@ jobs:
           TF_VAR_ssh_allowed_ips: ${{ secrets.SSH_ALLOWED_IPS }}
         run: |
           terraform apply -auto-approve -input=false
-          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
-          echo "frontend_url=https://chat.${{ env.DOMAIN }}" >> $GITHUB_OUTPUT
-          echo "api_url=https://chat-api.${{ env.DOMAIN }}" >> $GITHUB_OUTPUT
+          {
+            echo "droplet_ip=$(terraform output -raw droplet_ip)"
+            echo "frontend_url=https://chat.${{ env.DOMAIN }}"
+            echo "api_url=https://chat-api.${{ env.DOMAIN }}"
+          } >> "$GITHUB_OUTPUT"
 
   build-images:
     name: Build and Push Images
@@ -154,8 +156,10 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Set lowercase repo
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+      - name: Set lowercase repo and build time
+        run: |
+          echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+          echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
@@ -199,7 +203,7 @@ jobs:
             NEXT_PUBLIC_APP_URL=https://chat.mainecybertech.com
             NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}-${{ github.run_number }}
             NEXT_PUBLIC_GIT_SHA=${{ github.sha }}
-            NEXT_PUBLIC_BUILD_TIME=${{ github.run_started_at }}
+            NEXT_PUBLIC_BUILD_TIME=${{ env.BUILD_TIME }}
           tags: |
             ghcr.io/${{ env.REPO_LC }}/web:latest
             ghcr.io/${{ env.REPO_LC }}/web:${{ github.sha }}
@@ -247,7 +251,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set lowercase repo
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
       - name: Setup droplet
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
@@ -386,7 +390,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set lowercase repo
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
       - name: Rollback to SHA
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
