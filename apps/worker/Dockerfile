@@ -27,14 +27,14 @@ COPY --from=base /app/packages/config ./packages/config
 
 RUN pnpm install --frozen-lockfile --filter ./apps/worker --prod --ignore-scripts
 
-RUN apk add --no-cache wget
-
+# wget is provided by the BusyBox applet in the Alpine base image; no extra
+# package is needed for the healthcheck below.
 RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 appuser
 USER appuser
 
 EXPOSE 4001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget -q --spider http://localhost:4100/healthz || exit 1
+  CMD ["wget", "-q", "--spider", "http://localhost:4100/healthz"]
 
 CMD ["node", "apps/worker/dist/main.js"]
