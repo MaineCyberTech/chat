@@ -20,6 +20,7 @@ docs/
 - [Local Bootstrap & Validation](runbooks/local-bootstrap-validation.md)
 - [Development Deploy Overview](runbooks/development-deploy-overview.md)
 - [Production Deploy Overview](runbooks/production-deploy-overview.md)
+- [Database Change & Deploy Governance](operations/database-change-governance.md)
 - [Local Development Setup](contributing/local-development.md)
 - [Scripts & Tooling](contributing/scripts-and-tooling.md)
 - [Release Readiness Status](operations/release-readiness-status.md)
