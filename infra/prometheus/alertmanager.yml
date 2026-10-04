@@ -1,47 +1,54 @@
-# Alertmanager routing for the Chat platform (OBS-P1-001).
+# Alertmanager configuration TEMPLATE for the Chat platform (OBS-P1-001).
 #
-# Pair with rules/chat.rules.yml. Receiver endpoints are supplied by the
-# environment and expanded by Alertmanager (run with --config.expand-env):
+# This file is a ${CHAT_NTFY_*} template, NOT a directly loadable Alertmanager
+# config. The alertmanager compose service renders it at container start (the
+# image has no envsubst, so the entrypoint uses awk; see
+# infra/docker/docker-compose.prod.yml and docker-compose.dev.yml). Real secrets
+# are supplied by the environment and are never committed here.
 #
-#   ALERT_EMAIL        Destination address for the default (email) receiver.
-#   ALERT_WEBHOOK_URL  PagerDuty / OpsGenie / Slack-compatible webhook for
-#                      critical alerts.
+# Receiver: the self-hosted ntfy instance (https://ntfy.mainecybertech.us).
+# Alertmanager posts its webhook payload to the chat topic; ntfy turns the body
+# into the notification text. Basic auth uses a chat-specific, write-only user.
 #
-# Validate with: amtool check-config infra/prometheus/alertmanager.yml
-# Deploy:        see infra/prometheus/README.md.
+# Required/optional env (see infra/docker/.env.prod.example):
+#   CHAT_NTFY_URL   Full ntfy publish URL for the chat alerts topic.
+#                   Default: https://ntfy.mainecybertech.us/chat-alerts
+#   CHAT_NTFY_USER  ntfy user with write-only access to that topic.
+#                   Default: chat-relay
+#   CHAT_NTFY_PASS  Password for CHAT_NTFY_USER (secret; no default).
+#
+# Validate after rendering with:
+#   amtool check-config <rendered>/alertmanager.yml
 route:
-  receiver: default
+  receiver: chat-ntfy
   group_by: ["alertname", "service", "severity"]
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
   routes:
-    # P0/P1 escalations go to the on-call webhook immediately; everything else
-    # falls through to the default email receiver.
+    # P0/P1 escalations go out immediately and re-notify hourly; everything
+    # else uses the default cadence above.
     - matchers:
-        - severity="critical"
-      receiver: oncall-webhook
+        - severity = "critical"
+      receiver: chat-ntfy
       group_wait: 10s
       repeat_interval: 1h
 
 receivers:
-  - name: default
-    email_configs:
-      - to: ${ALERT_EMAIL}
-        send_resolved: true
-        headers:
-          subject: "[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} (chat)"
-
-  - name: oncall-webhook
+  - name: chat-ntfy
     webhook_configs:
-      - url: ${ALERT_WEBHOOK_URL}
+      - url: "${CHAT_NTFY_URL}"
         send_resolved: true
+        http_config:
+          basic_auth:
+            username: "${CHAT_NTFY_USER}"
+            password: "${CHAT_NTFY_PASS}"
 
 # Do not page on warning-level symptoms while a critical alert for the same
 # service/alert family is already firing.
 inhibit_rules:
   - source_matchers:
-      - severity="critical"
+      - severity = "critical"
     target_matchers:
-      - severity="warning"
+      - severity = "warning"
     equal: ["alertname", "service"]

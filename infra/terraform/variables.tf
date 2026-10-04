@@ -43,9 +43,9 @@ variable "cloudflare_api_token" {
 }
 
 variable "alert_email" {
-  description = "Email address for DigitalOcean monitoring alerts"
+  description = "Email address for DigitalOcean monitoring alerts (CPU/memory/disk)"
   type        = string
-  default     = ""
+  default     = "ops@mainecybertech.us"
 }
 
 variable "ci_public_key" {

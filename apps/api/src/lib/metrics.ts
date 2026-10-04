@@ -1,18 +1,19 @@
 /**
- * Alerting setup:
+ * Observability / alerting:
  *
- * Prometheus metrics are exposed at GET /metrics (see server.ts).
- * For production alerting configure:
+ * Prometheus metrics are exposed at GET /metrics (see app.ts) and gated by
+ * requireMetricsAccess with the shared METRICS_TOKEN.
  *
- *   TODO(OBS-P1-001): Configure alerting channels
- *   - Prometheus + Alertmanager rules for:
- *     - chat_http_requests_total{status_code=~"5.."} rate > threshold
- *     - chat_websocket_connections_active dropping near zero
- *     - chat_circuit_breaker_status > 0 (open / half-open)
- *     - Node / process metrics (high CPU, memory, FD count)
- *   - Sentry (initSentry() in server.ts) captures unhandled errors
- *   - PagerDuty / OpsGenie webhook for P0/P1 escalations
- *   - Health check endpoint consumed by DO monitoring (port 3000 TCP)
+ * Alerting is wired by default (OBS-P1-001):
+ *   - Prometheus + Alertmanager run in infra/docker/docker-compose.{dev,prod}.yml
+ *   - Rules:   infra/prometheus/rules/chat.rules.yml
+ *     (5xx rate, p95 latency, circuit breaker, API up; worker queue rules are
+ *      inert until the worker JSON exporter publishes chat_worker_queue_*.)
+ *   - Routing: infra/prometheus/alertmanager.yml -> ntfy
+ *              (https://ntfy.mainecybertech.us/chat-alerts)
+ *   - Runbook: docs/runbooks/alerting.md
+ *
+ * Sentry (initSentry() in server.ts) captures unhandled errors.
  */
 import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from "prom-client";
 

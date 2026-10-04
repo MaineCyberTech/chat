@@ -108,7 +108,11 @@ All environment variables are organized by domain. Required variables are noted;
 | `CF_ORIGIN_CERT`        | Infra    | —       | Cloudflare origin certificate (PEM) |
 | `CF_ORIGIN_KEY`         | Infra    | —       | Cloudflare origin key (PEM)         |
 | `SSH_ALLOWED_IPS`       | Infra    | —       | Comma-separated allowed SSH IPs     |
-| `ALERT_EMAIL`           | Infra    | —       | Email for infra alerts              |
+| `ALERT_EMAIL`           | Infra    | `ops@mainecybertech.us` | Email for DigitalOcean monitor alerts |
+| `METRICS_TOKEN`         | Prod     | —       | Token gating `GET /metrics` (Prometheus scrape) |
+| `CHAT_NTFY_URL`         | Prod     | `https://ntfy.mainecybertech.us/chat-alerts` | Alertmanager ntfy publish URL |
+| `CHAT_NTFY_USER`        | Prod     | `chat-relay` | Alertmanager ntfy write-only user |
+| `CHAT_NTFY_PASS`        | Prod     | —       | Alertmanager ntfy password (secret) |
 | `AWS_ACCESS_KEY_ID`     | Infra    | —       | AWS access key (Terraform state)    |
 | `AWS_SECRET_ACCESS_KEY` | Infra    | —       | AWS secret key (Terraform state)    |
 

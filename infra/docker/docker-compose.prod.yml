@@ -135,6 +135,78 @@ services:
       retries: 5
       start_period: 20s
 
+  # Prometheus scrapes the API's token-gated /metrics and evaluates the checked-in
+  # rules (OBS-P1-001). No published ports: Prometheus only talks to the
+  # Alertmanager service and the API over the compose network.
+  prometheus:
+    image: prom/prometheus:v3.5.1
+    container_name: chat-prometheus-prod
+    restart: unless-stopped
+    mem_limit: 256m
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    environment:
+      # Prometheus has no ${VAR} expansion for scrape credentials. Write the
+      # bearer token to a file before starting so prometheus.yml can read it via
+      # credentials_file (never embedded in the config or the command line).
+      METRICS_TOKEN: ${METRICS_TOKEN}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        printf '%s' "$${METRICS_TOKEN}" > /tmp/metrics_token
+        && chmod 600 /tmp/metrics_token
+        && exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml
+        --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=30d
+        --web.enable-lifecycle
+    expose:
+      - "9090"
+    networks:
+      - chat-prod
+    depends_on:
+      alertmanager:
+        condition: service_healthy
+
+  # Alertmanager routes firing Prometheus alerts to the self-hosted ntfy topic
+  # (OBS-P1-001). The config is a ${CHAT_NTFY_*} template rendered at startup;
+  # the ntfy password comes from the environment and is never committed.
+  # Defaults keep the receiver pointed at https://ntfy.mainecybertech.us/chat-alerts.
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: chat-alertmanager-prod
+    restart: unless-stopped
+    mem_limit: 128m
+    volumes:
+      - ../prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    environment:
+      CHAT_NTFY_URL: ${CHAT_NTFY_URL:-https://ntfy.mainecybertech.us/chat-alerts}
+      CHAT_NTFY_USER: ${CHAT_NTFY_USER:-chat-relay}
+      CHAT_NTFY_PASS: ${CHAT_NTFY_PASS:-}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        awk '{
+          gsub(/\$\{CHAT_NTFY_URL\}/, ENVIRON["CHAT_NTFY_URL"]);
+          gsub(/\$\{CHAT_NTFY_USER\}/, ENVIRON["CHAT_NTFY_USER"]);
+          gsub(/\$\{CHAT_NTFY_PASS\}/, ENVIRON["CHAT_NTFY_PASS"]);
+          print
+        }' /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.yml
+        && ! grep -E '\$\{CHAT_NTFY' /tmp/alertmanager.yml | grep -vE '^[[:space:]]*#' | grep -q .
+        && exec /bin/alertmanager --config.file=/tmp/alertmanager.yml
+        --storage.path=/alertmanager --log.level=info
+    expose:
+      - "9093"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - chat-prod
+
 networks:
   chat-prod:
     driver: bridge
@@ -143,3 +215,5 @@ volumes:
   caddy-data:
   caddy-config:
   redis-data:
+  prometheus-data:
+  alertmanager-data:
