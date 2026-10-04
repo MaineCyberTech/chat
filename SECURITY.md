@@ -27,3 +27,11 @@ Particular care should be taken when reviewing or changing:
 - Never publish user data in issues, PRs, or screenshots
 - Avoid posting raw production logs containing sensitive values
 - Treat migration and RLS policy changes as security-sensitive changes
+
+## Test credential files
+
+`test-signin.json` holds local E2E credentials and must never be committed.
+Copy `test-signin.example.json` to `test-signin.json` locally; the file is
+gitignored. If a credential is ever committed, treat it as compromised:
+remove it from the tracked tree, rotate the underlying password out-of-band,
+and purge it from history (for example with `git filter-repo`) if required.
