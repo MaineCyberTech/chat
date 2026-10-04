@@ -1,11 +1,18 @@
 # AGENTS.md — Architecture & Implementation Status
 
+> **Release status (commit-stamped): GO WITH CONDITIONS.** An independent repo-deep-dive
+> audit at `a72b8cc` (run `20261003-0018`) found **1 P0 / 24 P1**; broad release is blocked
+> until those are remediated and re-verified. See
+> [Release Readiness Status](docs/operations/release-readiness-status.md). The
+> "0 P0, 0 P1" / "ALL CLEAN" claims in this file are historical — they describe earlier
+> pipelines, not the audited commit.
+
 ## Current State (July 18, 2026)
 
 - **Seed workflow fixed**: GoTrue auth crash from NULL `confirmation_token` resolved via Management SQL UPDATE. Identities missing after DB reset fixed via `auth.identities` INSERT with `provider_id` column. Wrong bcrypt hash for `password123` corrected to `$2a$10$wsjrPx00aIP/IL6cbV.mM.VYl48iAag810ODhtAonKalkWBCxSf1C`. Missing `public.users` profiles (needed by `users!inner` JOIN for member queries) fixed via INSERT...ON CONFLICT. psql data seeding replaced with Management API chunked approach in all 3 workflow files (psql is unreliable from GitHub Actions — IPv6, pooler auth errors). Bookmarks collapsible added. Scroll-to-bottom on page load fixed: ResizeObserver + 300ms poller with `atBottomRef` prevents async content (reactions/profiles) from pushing viewport up. See [Seed Workflow](#seed-workflow-auth--data-seeding) section below.
 
 - **New UI/UX Deep Audit (July 16, 2026)**: Full principal-level re-audit executed — 8 P1, 24 P2, 14 P3 findings identified (0 P0). See `docs/audits/ux-audit/20260716/` for full 14-file report pack. Overall verdict: **Production Ready With Minor Issues** (7.1/10). Not yet Enterprise Ready — blocked by mobile admin navigation, i18n coverage crater (7/8 surfaces), no automated a11y regression, and 33% component test coverage. 56 findings across 24 audit categories. 17 quick wins identified (~3 dev-days).
-- **All P0/P1 findings resolved** — 0 P0, 0 P1 across all audit/hardening pipelines
+- **Earlier pipelines reported 0 P0/0 P1** — but this is **not a current release gate**: the repo-deep-dive audit at `a72b8cc` (run `20261003-0018`) found 1 P0 / 24 P1. See [Release Readiness Status](docs/operations/release-readiness-status.md).
 - **P2/P3 findings**: ~130 total (original), all resolved. 46 new findings from July 16 audit (8 P1, 24 P2, 14 P3)
 - **Phases 6-8 of Mattermost comparative audit**: Complete — Change Plan (Phase 6) revised, Patch Sets (Phase 7) redesigned, Final Reconciliation (Phase 8) updated with current SSOT
 - **All Mattermost-aligned features verified present**: Full 8-phase comparative audit confirmed all 35+ features implemented. See `docs/audits/compare/full_comparative_repo_audit.md`.
@@ -157,7 +164,7 @@ Full report: `docs/audits/ux-audit/20260716/`
 
 - **All 50 findings from UI/UX deep audit resolved** (1 P0, 16 P1, 22 P2, 11 P3)
 - **Strategic items gated**: full TipTap expansion, desktop app — require post-launch analytics to justify
-- **Deployment**: Development at chat.mainecybertech.us, Production at chat.mainecybertech.com — both healthy
+- **Deployment**: Development at chat.mainecybertech.us, Production at chat.mainecybertech.com — hostnames documented, but runtime health is **unverified from the repository** (audit run `20261003-0018`; see [Release Readiness Status](docs/operations/release-readiness-status.md))
 - **Recent major changes**: Full comparative audit, 105+ P2/P3 fixes, security hardening, test expansion, production readiness, API performance optimization, Phase 6-8 reconciliation, full Mattermost feature comparison documented
 
 ## Architecture Overview
@@ -218,7 +225,7 @@ All features from the Mattermost comparative audit (July 4, 2026) have been impl
 - **CI/CD**: 19 GitHub Actions workflows, E2E tests, diff coverage, pre-commit hook, dependabot, SBOM generation, image vulnerability scanning
 - **Security**: All CSP/HSTS/metrics auth/SECURITY DEFINER/CSRF/rate limiter/query timeout/resilience hardening items resolved
 
-All P0/P1/P2/P3 findings from the audit pipeline have been resolved (0 pending across all severities as of July 6, 2026).
+The July 6, 2026 audit pipeline reported 0 pending findings. That result is **superseded** by the repo-deep-dive audit run `20261003-0018` at `a72b8cc`, which found 1 P0 / 24 P1 — see [Release Readiness Status](docs/operations/release-readiness-status.md).
 
 ## Feature Verification Status (July 8, 2026)
 
@@ -262,7 +269,7 @@ All P0/P1/P2/P3 findings from the audit pipeline have been resolved (0 pending a
 
 ### Audits Executed (July 1-6, 2026)
 
-Full audit pipeline executed across 8 batches (58 prompts, 624 initial findings). All findings resolved — final pipeline result: **0 P0, 0 P1, 0 P2, 0 P3 — ALL CLEAN**.
+Full audit pipeline executed across 8 batches (58 prompts, 624 initial findings). That pipeline's final result was **0 P0, 0 P1, 0 P2, 0 P3 — ALL CLEAN** for the July 1-6, 2026 codebase. This is a historical result, **not** a statement about the current commit: the repo-deep-dive audit run `20261003-0018` at `a72b8cc` found 1 P0 / 24 P1 (see [Release Readiness Status](docs/operations/release-readiness-status.md)).
 
 ### Known Issues
 

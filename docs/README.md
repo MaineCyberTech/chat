@@ -22,3 +22,4 @@ docs/
 - [Production Deploy Overview](runbooks/production-deploy-overview.md)
 - [Local Development Setup](contributing/local-development.md)
 - [Scripts & Tooling](contributing/scripts-and-tooling.md)
+- [Release Readiness Status](operations/release-readiness-status.md)
