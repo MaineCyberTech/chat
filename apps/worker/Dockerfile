@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS base
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
@@ -14,7 +14,7 @@ COPY apps/worker/src ./apps/worker/src
 
 RUN pnpm turbo build --filter @chat/worker
 
-FROM node:22-alpine AS runtime
+FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS runtime
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate

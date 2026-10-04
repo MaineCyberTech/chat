@@ -8,7 +8,7 @@ x-common-env: &common-env
 
 services:
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2-alpine@sha256:881bbc60f9986d5ab8e7cfd6cf7e4ef3c9c0439fef2429d035d065577882f028
     container_name: chat-caddy-dev
     restart: unless-stopped
     mem_limit: 64m
@@ -117,7 +117,7 @@ services:
     command: ["pnpm", "--filter", "@chat/worker", "dev"]
 
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
     container_name: chat-redis-dev
     restart: unless-stopped
     mem_limit: 64m
@@ -135,7 +135,7 @@ services:
       - redis-data:/data
 
   livekit:
-    image: livekit/livekit-server:latest
+    image: livekit/livekit-server:latest@sha256:6fd3b7088874c4d119160dd688798dfec852bc014786d392caad15f6f63912a3
     container_name: chat-livekit-dev
     restart: unless-stopped
     mem_limit: 256m
@@ -164,7 +164,7 @@ services:
   # API defaults to a local METRICS_TOKEN so the scrape is enabled without extra
   # setup. No published ports.
   prometheus:
-    image: prom/prometheus:v3.5.1
+    image: prom/prometheus:v3.5.1@sha256:38c3b05c3bc744ff1b0b7b4eb82196026442845e62a1e2073795565da506d7a2
     container_name: chat-prometheus-dev
     restart: unless-stopped
     mem_limit: 256m
@@ -191,7 +191,7 @@ services:
         condition: service_healthy
 
   alertmanager:
-    image: prom/alertmanager:v0.28.1
+    image: prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba
     container_name: chat-alertmanager-dev
     restart: unless-stopped
     mem_limit: 128m
