@@ -1,0 +1,30 @@
+{
+  "pack": "repo-deep-dive-full-hardening-audit-pack",
+  "version": "1.5.0",
+  "profile": "focused-security-supply-chain-ci",
+  "outputRoot": "docs/audits/{name}/{run}/",
+  "run": "20261004-0700-develop-0695894",
+  "scaffolded_at": "2026-10-04T07:09:44Z",
+  "scaffolded_by": "tools/publish_audit.py",
+  "promptCount": 4,
+  "prompts": [
+    "06_security_authz_tenancy_audit.md",
+    "10_github_actions_cicd_governance.md",
+    "11_supply_chain_dependency_secrets.md",
+    "36_container_runtime_security.md"
+  ],
+  "scope": {
+    "repo": "chat",
+    "repoName": "chat",
+    "branch": "develop",
+    "commit": "06958941dcc669f1e4174c4477bd4ae9a69bad26",
+    "shortCommit": "0695894",
+    "generatedAt": "2026-10-04T07:09:44Z",
+    "reports": [
+      "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md"
+    ]
+  },
+  "findings": {
+    "total": 22
+  }
+}
