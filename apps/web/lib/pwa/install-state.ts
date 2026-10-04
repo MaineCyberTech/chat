@@ -15,6 +15,25 @@ interface WindowWithMSStream extends Window {
   MSStream?: unknown;
 }
 
+export type InstallPlatform = "ios" | "android" | "macos" | "windows" | "linux" | "unknown";
+
+/**
+ * Detect the current platform from the user agent.
+ *
+ * SSR-safe: Next.js prerenders client components in the Node build environment where
+ * `navigator` is undefined, so guard it and fall back to `"unknown"`.
+ */
+export function detectPlatform(): InstallPlatform {
+  if (typeof navigator === "undefined") return "unknown";
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua) && !(window as WindowWithMSStream).MSStream) return "ios";
+  if (/Android/.test(ua)) return "android";
+  if (/Mac/.test(ua)) return "macos";
+  if (/Windows/.test(ua)) return "windows";
+  if (/Linux/.test(ua)) return "linux";
+  return "unknown";
+}
+
 export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
@@ -63,18 +82,10 @@ export function useInstallPrompt() {
     return false;
   }, [deferredPrompt]);
 
-  const getPlatform = useCallback(() => {
-    const ua = navigator.userAgent;
-    if (/iPad|iPhone|iPod/.test(ua) && !(window as WindowWithMSStream).MSStream) return "ios";
-    if (/Android/.test(ua)) return "android";
-    if (/Mac/.test(ua)) return "macos";
-    if (/Windows/.test(ua)) return "windows";
-    if (/Linux/.test(ua)) return "linux";
-    return "unknown";
-  }, []);
+  const getPlatform = useCallback((): InstallPlatform => detectPlatform(), []);
 
-  const getInstallInstructions = useCallback(() => {
-    const platform = getPlatform();
+  const getInstallInstructions = useCallback((platformOverride?: InstallPlatform) => {
+    const platform = platformOverride ?? getPlatform();
 
     switch (platform) {
       case "ios":
