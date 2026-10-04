@@ -85,7 +85,7 @@ router.post(
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.issues[0].message);
     }
-    const profiles = await authService.getProfiles(parsed.data.userIds);
+    const profiles = await authService.getProfiles(parsed.data.userIds, req.supabase!);
     res.json({ profiles });
   }),
 );
@@ -100,7 +100,7 @@ router.get(
     if (!rawQuery || rawQuery.length > 100 || query.length < 2) {
       throw new BadRequestError("Query must be between 2 and 100 characters");
     }
-    const profiles = await authService.searchUsers(query);
+    const profiles = await authService.searchUsers(query, req.supabase!);
     res.json({ profiles });
   }),
 );
