@@ -51,6 +51,7 @@ services:
     environment:
       <<: *common-env
       REDIS_URL: redis://redis:6379
+      METRICS_TOKEN: ${METRICS_TOKEN}
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:4100/healthz"]
       interval: 10s
@@ -120,6 +121,7 @@ services:
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       LIVEKIT_HOST: http://livekit:7880
+      METRICS_TOKEN: ${METRICS_TOKEN}
     networks:
       - chat-prod
     healthcheck:

@@ -60,11 +60,10 @@ describe("worker health server", () => {
     await expect(res.json()).resolves.toMatchObject({ status: "degraded" });
   });
 
-  it("serves /metrics without auth when no token is configured", async () => {
+  it("hides /metrics (404) when no token is configured", async () => {
     const { port } = await start({ metricsToken: "" });
     const res = await fetch(`http://127.0.0.1:${port}/metrics`);
-    expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toMatchObject({ webhook: { waiting: 0 } });
+    expect(res.status).toBe(404);
   });
 
   it("requires the configured token for /metrics", async () => {
@@ -85,21 +84,24 @@ describe("worker health server", () => {
     await expect(authorized.json()).resolves.toMatchObject({ webhook: { waiting: 0 } });
   });
 
-  it("accepts the X-Health-Token header", async () => {
+  it("accepts the X-Metrics-Token header", async () => {
     const { port } = await start({ metricsToken: "abc" });
     const res = await fetch(`http://127.0.0.1:${port}/metrics`, {
-      headers: { "X-Health-Token": "abc" },
+      headers: { "X-Metrics-Token": "abc" },
     });
     expect(res.status).toBe(200);
   });
 
   it("returns 500 when metric collection fails", async () => {
     const { port } = await start({
+      metricsToken: "s3cret",
       gatherMetrics: async () => {
         throw new Error("redis down");
       },
     });
-    const res = await fetch(`http://127.0.0.1:${port}/metrics`);
+    const res = await fetch(`http://127.0.0.1:${port}/metrics`, {
+      headers: { Authorization: "Bearer s3cret" },
+    });
     expect(res.status).toBe(500);
   });
 });

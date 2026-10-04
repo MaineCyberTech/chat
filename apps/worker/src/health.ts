@@ -1,5 +1,6 @@
-import { createServer, type IncomingMessage, type Server } from "node:http";
+import { createServer, type Server } from "node:http";
 import { logger } from "@chat/config/logger.js";
+import { checkMetricsAccess } from "./lib/metrics-auth.js";
 
 /**
  * Default bind address for the worker health/metrics server.
@@ -18,8 +19,9 @@ export interface HealthServerOptions {
   /** Bind address. Defaults to `HEALTH_HOST`, then loopback. Never `0.0.0.0` by default. */
   host?: string;
   /**
-   * When non-empty, `/metrics` requires `Authorization: Bearer <token>` (or an
-   * `X-Health-Token` header). Defaults to `HEALTH_TOKEN`.
+   * Token required for `/metrics`. Defaults to the shared `METRICS_TOKEN`
+   * scraper token. The endpoint fails closed: when no token is configured it
+   * responds 404, and a missing/incorrect token gets 401.
    */
   metricsToken?: string;
   /** Reports whether Redis is ready (drives `/healthz` status). */
@@ -28,28 +30,20 @@ export interface HealthServerOptions {
   gatherMetrics: () => Promise<unknown>;
 }
 
-function presentedToken(req: IncomingMessage): string {
-  const auth = req.headers.authorization;
-  if (auth?.startsWith("Bearer ")) {
-    return auth.slice("Bearer ".length).trim();
-  }
-  const header = req.headers["x-health-token"];
-  return (Array.isArray(header) ? header[0] : header) ?? "";
-}
-
 /**
  * Creates (and starts listening on) the worker health/metrics HTTP server.
  *
  * Routes:
  * - `GET /healthz`, `GET /health` — liveness/readiness; always unauthenticated (used by the
  *   container healthcheck), loopback-bound.
- * - `GET /metrics` — queue metrics; requires a token when `HEALTH_TOKEN` is set.
+ * - `GET /metrics` — queue metrics; requires the shared `METRICS_TOKEN` scraper token
+ *   (`X-Metrics-Token` header or `Authorization: Bearer`). Fails closed when unset.
  */
 export function createHealthServer(options: HealthServerOptions): Server {
   const {
     port,
     host = process.env.HEALTH_HOST || DEFAULT_HEALTH_HOST,
-    metricsToken = process.env.HEALTH_TOKEN || "",
+    metricsToken = process.env.METRICS_TOKEN || "",
     isRedisReady,
     gatherMetrics,
   } = options;
@@ -67,9 +61,17 @@ export function createHealthServer(options: HealthServerOptions): Server {
       res.writeHead(redisOk ? 200 : 503, { "Content-Type": "application/json" });
       res.end(body);
     } else if (req.url === "/metrics") {
-      if (metricsToken && presentedToken(req) !== metricsToken) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "unauthorized" }));
+      const access = checkMetricsAccess(req, metricsToken);
+      if (!access.ok) {
+        res.writeHead(access.status, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: {
+              code: access.status === 404 ? "NOT_FOUND" : "UNAUTHORIZED",
+              message: access.status === 404 ? "Not found" : "Invalid metrics token",
+            },
+          }),
+        );
         return;
       }
       try {
