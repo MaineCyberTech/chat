@@ -6,7 +6,7 @@ Counts: P0 x0, P1 x2, P2 x10, P3 x10
 
 | File | Contents |
 |---|---|
-| FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md | Full findings write-up |
+| lens_focused_security_supply_chain_ci.md | Full findings write-up |
 | findings.json | Machine-readable findings |
 | EXECUTIVE_SUMMARY.md | Summary |
 | risk_register.md / follow_up_register.md | Findings register |

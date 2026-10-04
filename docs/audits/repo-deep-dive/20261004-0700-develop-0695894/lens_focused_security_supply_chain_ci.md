@@ -1,3 +1,34 @@
+# Focused security / supply-chain / CI deep-dive - chat
+
+## Findings
+
+| ID | Severity | Title | Report |
+|---|---|---|---|
+| SEC-P1-001 | P1 | Seed workflow can re-open global user RLS (USING true) in production and seed shared-password accounts | lens_focused_security_supply_chain_ci.md |
+| CI-P1-001 | P1 | Production provision job runs destructive Terraform with no environment approval | lens_focused_security_supply_chain_ci.md |
+| AUTH-P2-001 | P2 | IDOR: admin dead-letter retry is not tenant-scoped | lens_focused_security_supply_chain_ci.md |
+| SEC-P2-001 | P2 | Cross-tenant user directory via auth service (service-role, unscoped) | lens_focused_security_supply_chain_ci.md |
+| CI-P2-001 | P2 | infra-development destroys infra on every push to develop with weak controls | lens_focused_security_supply_chain_ci.md |
+| CI-P2-002 | P2 | workflow_dispatch inputs interpolated directly into run: (script injection) | lens_focused_security_supply_chain_ci.md |
+| SUPPLY-P2-001 | P2 | Production web container receives the Supabase service-role key | lens_focused_security_supply_chain_ci.md |
+| DEP-P2-001 | P2 | 33 HIGH/CRITICAL dependency advisories risk-accepted until 2026-11-03 | lens_focused_security_supply_chain_ci.md |
+| CI-P2-003 | P2 | Auto-commit workflows hold contents: write and push to main | lens_focused_security_supply_chain_ci.md |
+| CI-P2-004 | P2 | Branch-protection CI gate only validates main; develop (auto-deploy) unchecked | lens_focused_security_supply_chain_ci.md |
+| SEC-P2-002 | P2 | Webhook SSRF protection does not constrain redirects/DNS rebinding | lens_focused_security_supply_chain_ci.md |
+| SEC-P2-003 | P2 | WEBHOOK_ENCRYPTION_KEY not passed by production compose and not in .env.example | lens_focused_security_supply_chain_ci.md |
+| SUPPLY-P3-001 | P3 | Container images pinned only by mutable tag | lens_focused_security_supply_chain_ci.md |
+| DEP-P3-001 | P3 | 24 medium/low advisories are non-gating | lens_focused_security_supply_chain_ci.md |
+| SUPPLY-P3-002 | P3 | Dockerfile lint: unpinned apk and shell-form HEALTHCHECK | lens_focused_security_supply_chain_ci.md |
+| CI-P3-001 | P3 | No actionlint/shellcheck gate despite known workflow lint findings | lens_focused_security_supply_chain_ci.md |
+| PORT-P3-001 | P3 | Tracked shell scripts lack the exec bit | lens_focused_security_supply_chain_ci.md |
+| CONF-P3-001 | P3 | Deployment policy contradicts the development deploy workflow (DB changes) | lens_focused_security_supply_chain_ci.md |
+| CONF-P3-002 | P3 | Admin /stats returns global cross-tenant counts | lens_focused_security_supply_chain_ci.md |
+| CI-P3-002 | P3 | Many workflows omit permissions: and rely on default token scope | lens_focused_security_supply_chain_ci.md |
+| SUPPLY-P3-003 | P3 | SBOMs generated but not signed/attested; no license or dependency-review gate | lens_focused_security_supply_chain_ci.md |
+| SUPPLY-P3-004 | P3 | Containers lack runtime hardening beyond non-root | lens_focused_security_supply_chain_ci.md |
+
+---
+
 # Repo Deep-Dive — Security / Supply-Chain / CI (repo: chat)
 
 ## Audit Metadata
