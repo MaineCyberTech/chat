@@ -19,7 +19,6 @@ on:
 permissions:
   contents: read
   packages: write
-  id-token: write
 
 concurrency:
   group: deploy-prod-${{ github.ref }}
@@ -54,6 +53,9 @@ jobs:
     name: Provision Infrastructure
     needs: validate
     runs-on: ubuntu-latest
+    # Protected environment (required reviewers) so destructive
+    # terraform apply cannot run before a human approves it.
+    environment: production
     timeout-minutes: 10
     outputs:
       droplet_ip: ${{ steps.terraform.outputs.droplet_ip }}
@@ -146,6 +148,8 @@ jobs:
     name: Build and Push Images
     needs: provision
     runs-on: ubuntu-latest
+    # Gate image publication behind the same protected production environment.
+    environment: production
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
