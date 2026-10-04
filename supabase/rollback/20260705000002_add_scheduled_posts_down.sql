@@ -3,9 +3,9 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.scheduled_posts CASCADE;
+DROP POLICY IF EXISTS "Users manage their own scheduled posts" ON public.scheduled_posts;
+ALTER TABLE IF EXISTS public.scheduled_posts DISABLE ROW LEVEL SECURITY;
 DROP INDEX IF EXISTS idx_scheduled_posts_due;
-ALTER TABLE public.scheduled_posts DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users;
+DROP TABLE IF EXISTS public.scheduled_posts CASCADE;
 
 COMMIT;

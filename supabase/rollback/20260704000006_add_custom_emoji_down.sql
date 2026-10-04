@@ -3,11 +3,11 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.custom_emoji CASCADE;
+DROP POLICY IF EXISTS "Admins can delete custom emoji" ON public.custom_emoji;
+DROP POLICY IF EXISTS "Admins can manage custom emoji" ON public.custom_emoji;
+DROP POLICY IF EXISTS "Workspace members can view custom emoji" ON public.custom_emoji;
+ALTER TABLE IF EXISTS public.custom_emoji DISABLE ROW LEVEL SECURITY;
 DROP INDEX IF EXISTS idx_custom_emoji_workspace;
-ALTER TABLE public.custom_emoji DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Workspace;
-DROP POLICY IF EXISTS "Admins;
-DROP POLICY IF EXISTS "Admins;
+DROP TABLE IF EXISTS public.custom_emoji CASCADE;
 
 COMMIT;

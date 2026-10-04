@@ -3,10 +3,10 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.message_reminders CASCADE;
-DROP INDEX IF EXISTS idx_message_reminders_due;
+DROP POLICY IF EXISTS "Users manage their own reminders" ON public.message_reminders;
+ALTER TABLE IF EXISTS public.message_reminders DISABLE ROW LEVEL SECURITY;
 DROP INDEX IF EXISTS idx_message_reminders_user;
-ALTER TABLE public.message_reminders DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users;
+DROP INDEX IF EXISTS idx_message_reminders_due;
+DROP TABLE IF EXISTS public.message_reminders CASCADE;
 
 COMMIT;

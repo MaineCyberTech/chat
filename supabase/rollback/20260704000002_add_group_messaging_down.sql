@@ -3,11 +3,11 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.dm_members CASCADE;
-DROP INDEX IF EXISTS idx_dm_members_channel;
+DROP POLICY IF EXISTS "Users can join DMs they're part of" ON public.dm_members;
+DROP POLICY IF EXISTS "Users can view their own DM memberships" ON public.dm_members;
+ALTER TABLE IF EXISTS public.dm_members DISABLE ROW LEVEL SECURITY;
 DROP INDEX IF EXISTS idx_dm_members_user;
-ALTER TABLE public.dm_members DISABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users;
-DROP POLICY IF EXISTS "Users;
+DROP INDEX IF EXISTS idx_dm_members_channel;
+DROP TABLE IF EXISTS public.dm_members CASCADE;
 
 COMMIT;

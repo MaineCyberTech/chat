@@ -3,7 +3,7 @@
 
 BEGIN;
 
-DROP POLICY IF EXISTS channels_select_member;
-DROP POLICY IF EXISTS messages_select_member;
+DROP POLICY IF EXISTS messages_select_member ON public.messages;
+DROP POLICY IF EXISTS channels_select_member ON public.channels;
 
 COMMIT;

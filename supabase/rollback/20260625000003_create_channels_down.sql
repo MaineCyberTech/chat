@@ -3,13 +3,12 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.channels CASCADE;
+DROP TRIGGER IF EXISTS channels_updated_at ON public.channels;
+DROP TRIGGER IF EXISTS on_channel_created ON public.channels;
+DROP FUNCTION IF EXISTS public.handle_new_channel CASCADE;
+ALTER TABLE IF EXISTS public.channel_members DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.channels DISABLE ROW LEVEL SECURITY;
 DROP TABLE IF EXISTS public.channel_members CASCADE;
-ALTER TABLE public.channels DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.channel_members DISABLE ROW LEVEL SECURITY;
-DROP FUNCTION IF EXISTS public.handle_new_channel();
-DROP TRIGGER IF EXISTS on_channel_created;
-DROP TRIGGER IF EXISTS channels_updated_at;
--- Manual rollback needed: UPDATE on ON
+DROP TABLE IF EXISTS public.channels CASCADE;
 
 COMMIT;

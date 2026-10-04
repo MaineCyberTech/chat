@@ -3,14 +3,13 @@
 
 BEGIN;
 
-DROP TABLE IF EXISTS public.workspaces CASCADE;
+DROP TRIGGER IF EXISTS workspaces_updated_at ON public.workspaces;
+DROP FUNCTION IF EXISTS public.generate_slug CASCADE;
+DROP TRIGGER IF EXISTS on_workspace_created ON public.workspaces;
+DROP FUNCTION IF EXISTS public.handle_new_workspace CASCADE;
+ALTER TABLE IF EXISTS public.workspace_members DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.workspaces DISABLE ROW LEVEL SECURITY;
 DROP TABLE IF EXISTS public.workspace_members CASCADE;
-ALTER TABLE public.workspaces DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.workspace_members DISABLE ROW LEVEL SECURITY;
-DROP FUNCTION IF EXISTS public.handle_new_workspace();
-DROP TRIGGER IF EXISTS on_workspace_created;
-DROP FUNCTION IF EXISTS public.generate_slug(name;
-DROP TRIGGER IF EXISTS workspaces_updated_at;
--- Manual rollback needed: UPDATE on ON
+DROP TABLE IF EXISTS public.workspaces CASCADE;
 
 COMMIT;

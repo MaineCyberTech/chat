@@ -3,7 +3,7 @@
 
 BEGIN;
 
-DROP FUNCTION IF EXISTS public.handle_new_user();
-DROP TRIGGER IF EXISTS on_auth_user_created;
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user CASCADE;
 
 COMMIT;

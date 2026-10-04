@@ -3,6 +3,6 @@
 
 BEGIN;
 
-DROP FUNCTION IF EXISTS public.search_messages(;
+DROP FUNCTION IF EXISTS public.search_messages CASCADE;
 
 COMMIT;
