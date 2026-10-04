@@ -21,7 +21,8 @@
 
 - Endpoint: `GET /metrics` (authenticated)
 - Metrics exposed: HTTP request count/duration, WebSocket connections, DB query duration, circuit breaker status, webhook deliveries, auth attempts
-- Intended for Prometheus + Alertmanager (not yet deployed)
+- Intended for Prometheus + Alertmanager; rules and routing are checked in
+  under `infra/prometheus/` (the stack itself is not yet deployed)
 
 ### Sentry
 
@@ -54,19 +55,18 @@
 3. Set: `count() > 10` in `1h` for `level:error`
 4. Action: Send to Slack/Email/PagerDuty
 
-### Prometheus / Alertmanager (future)
+### Prometheus / Alertmanager
 
-Once deployed, configure ruleset in `infra/prometheus/rules/`:
+Rules and routing are checked in under `infra/prometheus/`:
 
-```yaml
-groups:
-  - name: chat
-    rules:
-      - alert: HighErrorRate
-        expr: rate(chat_http_requests_total{status_code=~"5.."}[5m]) > 0.01
-        for: 5m
-        labels: { severity: critical }
-```
+- `rules/chat.rules.yml` — API availability, 5xx rate, p95 latency, circuit
+  breaker, health-check, and worker-queue alerts.
+- `alertmanager.yml` — email default receiver plus a webhook receiver for
+  critical alerts.
+
+Deployment steps, required env (`METRICS_TOKEN`, `ALERT_EMAIL`,
+`ALERT_WEBHOOK_URL`), and validation commands are in
+[`infra/prometheus/README.md`](../../infra/prometheus/README.md).
 
 ## Runbook Links
 

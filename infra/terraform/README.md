@@ -9,15 +9,19 @@ In CI, this runs automatically before deploy. Locally, it can also be run manual
 
 ## Variables
 
-| Variable               | Description                   | Example             |
-| ---------------------- | ----------------------------- | ------------------- |
-| `do_token`             | DigitalOcean API token        | `dop_v1_...`        |
-| `environment`          | `development` or `production` | `development`       |
-| `region`               | DO region                     | `nyc3`              |
-| `droplet_size`         | Droplet size                  | `s-2vcpu-2gb`       |
-| `domain`               | Base domain                   | `mainecybertech.us` |
-| `cloudflare_zone_id`   | Cloudflare Zone ID            | `abc123...`         |
-| `cloudflare_api_token` | Cloudflare API token          | `abc...`            |
+| Variable               | Description                    | Example                 |
+| ---------------------- | ------------------------------ | ----------------------- |
+| `do_token`             | DigitalOcean API token         | `dop_v1_...`            |
+| `environment`          | `development` or `production`  | `development`           |
+| `region`               | DO region                      | `nyc3`                  |
+| `droplet_size`         | Droplet size                   | `s-2vcpu-2gb`           |
+| `domain`               | Base domain                    | `mainecybertech.us`     |
+| `cloudflare_zone_id`   | Cloudflare Zone ID             | `abc123...`             |
+| `cloudflare_api_token` | Cloudflare API token           | `abc...`                |
+| `alert_email`          | Email for DO monitoring alerts | `ops@mainecybertech.us` |
+
+> DigitalOcean CPU/memory/disk alerts are only created when `alert_email` is
+> set (`infra/terraform/main.tf`). Leave it empty and those alerts are skipped.
 
 ## Usage (Local)
 

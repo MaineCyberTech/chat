@@ -12,6 +12,7 @@ const envSchema = z.object({
   API_BASE_URL: z.string().url().default("http://localhost:4000"),
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
   SENTRY_DSN: z.string().optional(),
+  ERROR_LOG_FILE: z.string().optional(),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
   SMTP_USER: z.string().optional(),

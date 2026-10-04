@@ -1,0 +1,109 @@
+# Prometheus alerting rules for the Chat platform (OBS-P1-001).
+#
+# These rules cover the signals named in apps/api/src/lib/metrics.ts and
+# docs/runbooks/alerting.md. Expected scrape jobs:
+#
+#   chat-api      Prometheus exposition of GET /metrics on the API
+#                 (labels: status_code, route, method, ...).
+#   chat-worker   The worker health server exposes JSON, not Prometheus text
+#                 (apps/worker/src/main.ts), so it needs a JSON exporter.
+#                 chat_worker_queue_waiting_jobs below is the contract that
+#                 exporter must produce; the rule is inert until it exists.
+#   chat-blackbox Optional blackbox exporter probing /healthz on api/worker.
+#
+# Validate with: promtool check rules infra/prometheus/rules/chat.rules.yml
+# Deploy with:   infra/prometheus/alertmanager.yml (see README.md).
+groups:
+  - name: chat.availability
+    rules:
+      - alert: ChatApiDown
+        expr: up{job="chat-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Chat API target is down"
+          description: "The chat-api Prometheus target has been unreachable (up == 0) for 2 minutes."
+          runbook_url: "https://github.com/MaineCyberTech/chat/blob/develop/docs/runbooks/alerting.md"
+
+      - alert: ChatHealthcheckFailing
+        expr: probe_success{job="chat-blackbox"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: "{{ $labels.instance }}"
+        annotations:
+          summary: "Health check failing for {{ $labels.instance }}"
+          description: "The blackbox probe against {{ $labels.instance }} has failed for 2 minutes."
+          runbook_url: "https://github.com/MaineCyberTech/chat/blob/develop/docs/runbooks/alerting.md"
+
+  - name: chat.api
+    rules:
+      - alert: ChatApiHighErrorRate
+        expr: |
+          sum(rate(chat_http_requests_total{status_code=~"5.."}[5m]))
+            /
+          clamp_min(sum(rate(chat_http_requests_total[5m])), 1)
+            > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "API 5xx error rate above 1%"
+          description: "{{ $value | humanizePercentage }} of API requests have returned 5xx over the last 5 minutes."
+          runbook_url: "https://github.com/MaineCyberTech/chat/blob/develop/docs/runbooks/alerting.md"
+
+      - alert: ChatApiHighLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(chat_http_request_duration_seconds_bucket[10m])) by (le)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "API p95 latency above 2s"
+          description: "The p95 API request duration is {{ $value }}s over the last 10 minutes."
+          runbook_url: "https://github.com/MaineCyberTech/chat/blob/develop/docs/runbooks/alerting.md"
+
+      - alert: ChatCircuitBreakerOpen
+        expr: max by (name) (chat_circuit_breaker_status) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Circuit breaker {{ $labels.name }} is not closed"
+          description: "chat_circuit_breaker_status is {{ $value }} (1=half-open, 2=open) for {{ $labels.name }}."
+          runbook_url: "https://github.com/MaineCyberTech/chat/blob/develop/docs/runbooks/alerting.md"
+
+  - name: chat.worker
+    rules:
+      - alert: ChatWorkerQueueBacklog
+        # Requires the worker JSON exporter (see header). Inert until that
+        # exporter publishes chat_worker_queue_waiting_jobs.
+        expr: sum by (queue) (chat_worker_queue_waiting_jobs) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: worker
+        annotations:
+          summary: "Worker queue {{ $labels.queue }} backlog above 1000"
+          description: "Queue {{ $labels.queue }} has had more than 1000 waiting jobs for 5 minutes."
+          runbook_url: "https://github.com/MaineCyberTech/chat/blob/develop/docs/runbooks/alerting.md"
+
+      - alert: ChatWorkerQueueFailures
+        # Requires the worker JSON exporter (see header).
+        expr: sum by (queue) (increase(chat_worker_queue_failed_total[15m])) > 25
+        for: 5m
+        labels:
+          severity: warning
+          service: worker
+        annotations:
+          summary: "Worker queue {{ $labels.queue }} failure spike"
+          description: "Queue {{ $labels.queue }} recorded more than 25 failed jobs in the last 15 minutes."
+          runbook_url: "https://github.com/MaineCyberTech/chat/blob/develop/docs/runbooks/alerting.md"
