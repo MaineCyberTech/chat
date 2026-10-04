@@ -51,7 +51,11 @@ jobs:
         with:
           context: .
           file: apps/api/Dockerfile
-          push: true
+          # CI-P2-006: pull requests must never publish images. PRs build only and
+          # load the result locally so the Trivy image scan inspects the PR build;
+          # only trusted branch pushes / manual dispatch publish to GHCR.
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
           tags: |
             ghcr.io/${{ env.REPO_LC }}/api:dev
             ghcr.io/${{ env.REPO_LC }}/api:${{ github.sha }}
@@ -62,7 +66,9 @@ jobs:
         with:
           context: .
           file: apps/worker/Dockerfile
-          push: true
+          # CI-P2-006: build-only on pull requests (see the API image step above).
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
           tags: |
             ghcr.io/${{ env.REPO_LC }}/worker:dev
             ghcr.io/${{ env.REPO_LC }}/worker:${{ github.sha }}
@@ -73,7 +79,9 @@ jobs:
         with:
           context: .
           file: apps/web/Dockerfile
-          push: true
+          # CI-P2-006: build-only on pull requests (see the API image step above).
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
           build-args: |
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
