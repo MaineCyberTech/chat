@@ -15,6 +15,7 @@ import {
   updateProfileSchema,
   batchProfilesSchema,
   uploadAvatarSchema,
+  updatePresenceStatusSchema,
 } from "../../config/validators.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
@@ -188,10 +189,11 @@ router.patch(
   "/status",
   authenticate,
   asyncHandler(async (req, res) => {
-    const { status, customStatus } = req.body;
-    if (status && !["online", "away", "dnd"].includes(status)) {
-      throw new BadRequestError("Invalid status");
+    const parsed = updatePresenceStatusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new BadRequestError(parsed.error.issues[0].message);
     }
+    const { status, customStatus } = parsed.data;
     const { error } = await req.supabase!.from("user_presence").upsert(
       {
         user_id: req.userId!,

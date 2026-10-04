@@ -9,7 +9,7 @@ export { createChannelSchema, updateChannelSchema, addChannelMemberSchema } from
 
 export { createMessageSchema, updateMessageSchema, searchQuerySchema } from "./message.js";
 
-export { updateProfileSchema, batchProfilesSchema } from "./auth.js";
+export { updateProfileSchema, batchProfilesSchema, updatePresenceStatusSchema } from "./auth.js";
 
 export { uploadRequestSchema, uploadAvatarSchema } from "./upload.js";
 

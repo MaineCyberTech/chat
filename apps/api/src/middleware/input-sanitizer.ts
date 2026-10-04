@@ -14,22 +14,11 @@ const DANGEROUS_PATTERNS = [
   /-->/,
 ];
 
-const SQL_INJECTION_PATTERNS = [
-  /(\b(union|select|insert|update|delete|drop|alter|create|exec|execute|xp_|sp_|0x)\b)/i,
-  /(--|;|\/\*|\*\/|@@|char|nchar|varchar|nvarchar|alter|begin|cast|create|cursor|declare|exec|execute|fetch|kill|\bsys\b|sysobjects|syscolumns)/i,
-  /('(\s|%20)*(or|and)(\s|%20)')/i,
-];
-
 const EXEMPT_FIELDS = new Set(["content", "notification_prefs"]);
 
 function containsDangerousContent(value: unknown): boolean {
   if (typeof value !== "string") return false;
   return DANGEROUS_PATTERNS.some((pattern) => pattern.test(value));
-}
-
-function containsSqlInjection(value: unknown): boolean {
-  if (typeof value !== "string") return false;
-  return SQL_INJECTION_PATTERNS.some((pattern) => pattern.test(value));
 }
 
 export function inputSanitizer(req: Request, _res: Response, next: NextFunction) {
@@ -40,10 +29,6 @@ export function inputSanitizer(req: Request, _res: Response, next: NextFunction)
       if (containsDangerousContent(value)) {
         logger.warn("Blocked XSS attempt", { key, ip: req.ip, path: req.path });
         throw new AppError("Input contains potentially dangerous content", 400, "VALIDATION");
-      }
-      if (containsSqlInjection(value)) {
-        logger.warn("Blocked SQL injection attempt", { key, ip: req.ip, path: req.path });
-        throw new AppError("Input contains invalid characters", 400, "VALIDATION");
       }
 
       if (typeof value === "object" && value !== null) {
@@ -78,10 +63,6 @@ function checkNested(obj: Record<string, unknown>, parentKey: string) {
     if (containsDangerousContent(value)) {
       logger.warn("Blocked XSS in nested field", { key: fullKey });
       throw new AppError("Input contains potentially dangerous content", 400, "VALIDATION");
-    }
-    if (containsSqlInjection(value)) {
-      logger.warn("Blocked SQL injection in nested field", { key: fullKey });
-      throw new AppError("Input contains invalid characters", 400, "VALIDATION");
     }
 
     if (typeof value === "object" && value !== null) {
