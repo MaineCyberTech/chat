@@ -1,13 +1,30 @@
-# Trivy exception allowlist (CI-P1-003).
+# Trivy exception allowlist — dated risk acceptance (CI-P1-003).
 #
 # The pipeline fails closed on HIGH/CRITICAL findings (validate.yml fs scan and
 # build-push.yml image scans both set exit-code: 1). Each entry below is a
-# pre-existing HIGH/CRITICAL finding observed at audit commit a72b8cc
-# (run 20261003-0018) and is time-boxed to 2026-11-03, when this list must be
-# renewed or the findings remediated. Remove an ID once it is fixed. Do not add
-# new IDs without a tracking issue and an expiry.
+# pre-existing finding re-reviewed on 2026-10-04; no new IDs were added.
 #
-# exp:2026-11-03
+# Risk acceptance record:
+#   docs/security/risk-acceptances/2026-10-04-trivy-dependency-cves.md
+# Tracking:
+#   deterministic audit run `chat` 2026-10-04 (DET-P1-002 / DET-P2-003 /
+#   DET-P3-004). Remove an ID once a re-scan confirms it is fixed. Do not add
+#   new IDs without a tracking reference and an expiry.
+# Reviewed: 2026-10-04
+# Expiry:   2027-01-04 (renew with a new dated acceptance or remediate first)
+#
+# Same-major patch/minor bumps applied 2026-10-04 via pnpm.overrides; the IDs
+# for these packages are retained until a Trivy re-scan confirms them gone:
+#   brace-expansion -> 1.1.21 / 2.1.7 / 5.0.12
+#   engine.io -> 6.6.11, socket.io-parser -> 4.2.7, qs -> 6.16.0
+#   postcss -> 8.4.49 / 8.5.28, nanoid -> 3.3.19
+#   dompurify -> 3.4.16, nodemailer -> 9.1.1, body-parser -> 1.20.8
+# Residual (needs a breaking major, next 15.5.19 -> 16.x):
+#   CVE-2026-64641 CVE-2026-64643 CVE-2026-64644 CVE-2026-64645
+#   CVE-2026-64646 CVE-2026-64647 CVE-2026-64648 CVE-2026-64649
+#   CVE-2026-75604
+#
+# exp:2027-01-04
 
 CVE-2026-102276
 CVE-2026-102278
