@@ -7,6 +7,7 @@ import {
   computeHmacSignature,
   buildWebhookPayload,
   decryptWebhookSecret,
+  WEBHOOK_REDIRECT_MODE,
   MAX_RETRIES,
   BASE_DELAY_MS,
 } from "@chat/config/webhook-utils.js";
@@ -100,6 +101,7 @@ async function performWebhookDelivery(
       method: "POST",
       headers: { ...headers, "X-Idempotency-Key": idempotencyKey },
       body,
+      redirect: WEBHOOK_REDIRECT_MODE,
       signal: AbortSignal.timeout(10000),
     });
 

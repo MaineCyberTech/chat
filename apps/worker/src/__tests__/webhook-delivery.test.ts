@@ -41,6 +41,7 @@ vi.mock("@chat/config/env-schema.js", () => ({
 vi.mock("@chat/config/webhook-utils.js", () => ({
   MAX_RETRIES: 5,
   BASE_DELAY_MS: 60_000,
+  WEBHOOK_REDIRECT_MODE: "manual",
   validateWebhookUrl: vi.fn(async () => ({ valid: true })),
   computeHmacSignature: hmac,
   buildWebhookPayload: (event: string, payload: Record<string, unknown>) =>
@@ -96,8 +97,13 @@ describe("webhook-delivery processor (durable retries)", () => {
     ).catch(() => undefined);
 
     expect(hmac).toHaveBeenCalledWith("decrypted:enc-secret", expect.anything(), "message.created");
-    const [, options] = fetchMock.mock.calls[0] as [string, { headers: Record<string, string> }];
+    const [, options] = fetchMock.mock.calls[0] as [
+      string,
+      { headers: Record<string, string>; redirect: string },
+    ];
     expect(options.headers["X-Idempotency-Key"]).toBe("idem-stable-1");
+    // SEC-P2-002 / WH-P2-002: redirects are not followed.
+    expect(options.redirect).toBe("manual");
   });
 
   it("throws for a retryable failure before the final attempt so BullMQ retries durably", async () => {
@@ -142,5 +148,37 @@ describe("webhook-delivery processor (durable retries)", () => {
     expect(deliveryInsert?.retry_count).toBe(5);
     const deadLetterInsert = inserts.find((row) => "attempt_count" in row);
     expect(deadLetterInsert).toBeTruthy();
+  });
+
+  it("does not follow redirects when dispatching a webhook (SSRF)", async () => {
+    const handler = await getHandler();
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    // A validated public URL answers 302 -> internal metadata address.
+    fetchMock.mockResolvedValueOnce(
+      new Response("", {
+        status: 302,
+        headers: { location: "http://169.254.169.254/latest/meta-data/" },
+      }),
+    );
+
+    const result = await handler(
+      job(
+        {
+          webhookId: "wh-1",
+          event: "message.created",
+          payload: {},
+          retryCount: 5,
+          deliveryId: "d-1",
+          idempotencyKey: "idem-1",
+        },
+        0,
+      ),
+    );
+
+    expect((result as { status: string }).status).toBe("failed");
+    const [, options] = fetchMock.mock.calls[0] as [string, { redirect: string }];
+    expect(options.redirect).toBe("manual");
+    // The redirect was not followed: exactly one request was made.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

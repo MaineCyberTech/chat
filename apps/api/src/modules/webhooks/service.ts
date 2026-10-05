@@ -7,6 +7,7 @@ import {
   validateWebhookUrl,
   computeHmacSignature,
   buildWebhookPayload,
+  WEBHOOK_REDIRECT_MODE,
   MAX_RETRIES,
   BASE_DELAY_MS,
 } from "@chat/config/webhook-utils.js";
@@ -249,6 +250,7 @@ export class WebhookService {
               "X-Idempotency-Key": idempotencyKey,
             },
             body,
+            redirect: WEBHOOK_REDIRECT_MODE,
             signal: AbortSignal.timeout(10000),
           });
           return response;
