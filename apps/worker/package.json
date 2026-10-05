@@ -18,7 +18,7 @@
     "@chat/sdk": "workspace:*",
     "@sentry/node": "^10.75.0",
     "@supabase/supabase-js": "^2.116.0",
-    "bullmq": "^5.79.1",
+    "bullmq": "^6.3.8",
     "ioredis": "5.10.1",
     "nodemailer": "^9.0.1",
     "pino": "^10.3.1",
