@@ -21,11 +21,7 @@ export function decryptWebhookSecret(encrypted: string, encryptionKey: string): 
     throw new Error("Invalid encrypted secret format");
   }
   const [ivHex, authTagHex, encryptedData] = parts;
-  const decipher = createDecipheriv(
-    WEBHOOK_ENCRYPTION_ALGORITHM,
-    key,
-    Buffer.from(ivHex, "hex"),
-  );
+  const decipher = createDecipheriv(WEBHOOK_ENCRYPTION_ALGORITHM, key, Buffer.from(ivHex, "hex"));
   decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
   let plaintext = decipher.update(encryptedData, "hex", "utf8");
   plaintext += decipher.final("utf8");
@@ -67,6 +63,9 @@ export async function validateWebhookUrl(url: string): Promise<{ valid: boolean;
     if (parsed.protocol !== "https:") {
       return { valid: false, error: "Only HTTPS URLs are allowed" };
     }
+    if (parsed.username || parsed.password) {
+      return { valid: false, error: "Webhook URLs cannot contain credentials" };
+    }
     if (isPrivateIp(parsed.hostname)) {
       return { valid: false, error: "Webhook URLs cannot point to private/internal IP addresses" };
     }
@@ -81,6 +80,16 @@ export async function validateWebhookUrl(url: string): Promise<{ valid: boolean;
     return { valid: false, error: "Invalid webhook URL" };
   }
 }
+
+/**
+ * Redirect policy for webhook dispatch. SEC-P2-002 / WH-P2-002: a validated
+ * public URL must never be silently redirected to an unvalidated destination
+ * (e.g. an internal/metadata address), because `validateWebhookUrl` only checks
+ * the URL that is dispatched, not the hop a redirect points at. With
+ * `redirect: "manual"` the runtime returns the 3xx response instead of
+ * following it, and callers treat any non-2xx as a delivery failure.
+ */
+export const WEBHOOK_REDIRECT_MODE = "manual" as const;
 
 export function computeHmacSignature(
   secret: string,

@@ -271,4 +271,9 @@ describe("validateWebhookUrl", () => {
     const result = await validateWebhookUrl("not-a-url");
     expect(result.valid).toBe(false);
   });
+
+  it("rejects URLs with embedded credentials", async () => {
+    const result = await validateWebhookUrl("https://user:pass@example.com/hook");
+    expect(result.valid).toBe(false);
+  });
 });
