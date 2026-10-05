@@ -55,6 +55,9 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       REDIS_URL: redis://redis:6379
       METRICS_TOKEN: ${METRICS_TOKEN}
+      # Shared symmetric key for webhook signing-secret encryption/decryption
+      # (SEC-P2-001). Must match the API's value or retries cannot be signed.
+      WEBHOOK_ENCRYPTION_KEY: ${WEBHOOK_ENCRYPTION_KEY}
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:4100/healthz"]
       interval: 10s
@@ -126,6 +129,9 @@ services:
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       LIVEKIT_HOST: http://livekit:7880
       METRICS_TOKEN: ${METRICS_TOKEN}
+      # Shared symmetric key for webhook signing-secret encryption/decryption
+      # (SEC-P2-001). Must match the worker's value.
+      WEBHOOK_ENCRYPTION_KEY: ${WEBHOOK_ENCRYPTION_KEY}
     networks:
       - chat-prod
     healthcheck:
