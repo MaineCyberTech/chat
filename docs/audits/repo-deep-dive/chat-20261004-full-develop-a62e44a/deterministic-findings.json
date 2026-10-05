@@ -1,0 +1,62 @@
+{
+  "run": "chat-20261004-full-develop-a62e44a",
+  "generated": "2026-10-05T03:54:36Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 3
+  },
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "DEP",
+      "title": "[DEP] trivy not installed (dependency vuln scan skipped)",
+      "report": "lens_deterministic.md",
+      "line": 15,
+      "detail": "Install trivy to enable the --deep dependency vulnerability scan.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "id": "DET-P3-002",
+      "severity": "P3",
+      "subcode": "SUPPLY",
+      "title": "[SUPPLY] 9 container image(s) without a digest pin",
+      "report": "lens_deterministic.md",
+      "line": 19,
+      "detail": "Pin images by digest (`image@sha256:...`) for reproducible, tamper-evident deploys.",
+      "evidence": [
+        "infra/docker/docker-compose.prod.yml:29 ${WEB_IMAGE:-ghcr.io/mainecybertech/chat/web:latest}",
+        "infra/docker/docker-compose.prod.yml:49 ${WORKER_IMAGE:-ghcr.io/mainecybertech/chat/worker:latest}",
+        "infra/docker/docker-compose.prod.yml:116 ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:latest}",
+        "infra/docker/docker-compose.devremote.yml:26 ${WEB_IMAGE:-ghcr.io/mainecybertech/chat/web:dev}",
+        "infra/docker/docker-compose.devremote.yml:69 ${WORKER_IMAGE:-ghcr.io/mainecybertech/chat/worker:dev}",
+        "infra/docker/docker-compose.devremote.yml:106 ${API_IMAGE:-ghcr.io/mainecybertech/chat/api:dev}",
+        "infra/docker/docker-compose.dev.yml:29 chat-web:dev",
+        "infra/docker/docker-compose.dev.yml:61 chat-api:dev",
+        "infra/docker/docker-compose.dev.yml:99 chat-worker:dev"
+      ],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "id": "DET-P3-003",
+      "severity": "P3",
+      "subcode": "SUPPLY",
+      "title": "[SUPPLY] hadolint not installed (Dockerfile lint skipped)",
+      "report": "lens_deterministic.md",
+      "line": 35,
+      "detail": "Install hadolint to lint Dockerfiles in --deep mode.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    }
+  ]
+}

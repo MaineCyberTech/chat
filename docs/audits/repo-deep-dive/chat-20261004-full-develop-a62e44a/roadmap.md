@@ -1,101 +1,101 @@
 # Roadmap
 
-- SEC-P0-001 (P0) - Production deploy created `users_select USING (true)` exposing all users (fixed)
-- API-P1-001 (P1) - `/metrics` readable by any authenticated user (fixed)
-- CI-P1-001 (P1) - Production provision/deploy ran destructive Terraform with no approval (fixed)
-- CI-P1-002 (P1) - Security scans were non-blocking (fixed)
-- EXEC-P1-001 (P1) - Release gate must remain conditional pending P1/P2 remediation
-- FEAT-P1-001 (P1) - `/v1/auth/magic-link` did not send a magic link (fixed)
-- FEAT-P1-002 (P1) - Webhook retries were in-process setTimeout, not durable (fixed)
-- FINAL-P1-001 (P1) - Release gate must remain conditional pending P2 remediation
-- OBS-P1-001 (P1) - No alerting wired despite metrics and a tracked TODO (fixed)
-- RLS-P1-001 (P1) - Global `users_select USING (true)` policy (fixed)
-- SC-P1-001 (P1) - Credential committed to the repository (fixed)
-- SEC-P1-001 (P1) - Seed workflow could re-open global user RLS / seed shared-password accounts (fixed)
-- SEC-P1-002 (P1) - Tracked credential file `test-signin.json` (fixed)
-- SEC-P1-003 (P1) - Admin user directory / audit logs / compliance exports were not tenant-scoped (fixed)
-- SEC-P1-004 (P1) - SSH was open to the internet by default (fixed)
-- TEST-P1-001 (P1) - E2E tests skipped without `test-signin.json` and were non-blocking (fixed)
-- WH-P1-001 (P1) - Webhook retries were not durable (fixed)
-- ACM-P2-001 (P2) - RBAC matrix is enforced per-route but not documented as a single ARtifact
-- ADMIN-P2-001 (P2) - Bulk import / compliance export operated globally (fixed)
-- AI-P2-001 (P2) - AI endpoint is a stub with no tenancy/data-governance or rate-limit contract
-- API-P2-001 (P2) - User input interpolated into PostgREST `.or(...)` filters (fixed)
-- API-P2-002 (P2) - `PATCH /v1/auth/status` accepted unvalidated customStatus (fixed)
-- API-P2-003 (P2) - Inconsistent error response shapes (fixed)
-- ARCH-P2-001 (P2) - Single-node topology: one droplet hosts all services and local Redis
-- ARCH-P2-002 (P2) - Webhook service used an anonymous Supabase client (fixed)
-- BP-P2-001 (P2) - In-repo branch-protection gate covers only `main`, not `develop`
-- CHAIN-P2-001 (P2) - Webhook SSRF + missing encryption key form a plausible internal-reach chain
-- CI-P2-001 (P2) - `infra-development` destroys infra on every push to `develop`
-- CI-P2-002 (P2) - Auto-commit workflows hold `contents: write` and push to main/develop
-- CI-P2-003 (P2) - `develop` (auto-deploy target) is not covered by the branch-protection gate
-- CI-P2-004 (P2) - `workflow_dispatch` inputs interpolated into `run:` (script injection) (fixed)
-- DATA-P2-001 (P2) - Duplicate `add_user_groups` migrations
-- DATA-P2-002 (P2) - `gdpr_delete_user` is a hard multi-table delete with partial coverage
-- DATA-P2-003 (P2) - Deploy workflows seeded production with test users (fixed)
-- DATA-P2-004 (P2) - Rollback scripts were only proven to exist (fixed)
-- EXEC-P2-001 (P2) - Prior pilot register self-consistency (stale-base false positive) corrected
-- FEAT-P2-001 (P2) - Webhook idempotency key was regenerated per attempt (fixed)
-- FEAT-P2-002 (P2) - Naive input sanitizer blocked legitimate content (fixed)
-- FILE-P2-001 (P2) - Uploads return a public URL from `chat-uploads` and trust client-declared content type
-- FINAL-P2-001 (P2) - Dependency risk-acceptances expire 2027-01-04
-- INFRA-P2-001 (P2) - Single-droplet infrastructure has no environment isolation
-- INV-P2-001 (P2) - Stale generated reconciliation artifacts remain tracked at the repository root
-- MT-P2-001 (P2) - IDOR: admin dead-letter retry was not tenant-scoped (fixed)
-- MT-P2-002 (P2) - Cross-tenant user directory via auth service (fixed)
-- NOTIF-P2-001 (P2) - Notifications are delivered only via Web Push; no durable multi-channel delivery/retry
-- OBS-P2-001 (P2) - No distributed tracing / correlation to a collector
-- PRIV-P2-001 (P2) - GDPR erasure path is a hard multi-table delete with partial coverage
-- RES-P2-001 (P2) - Single-node failure domains: API, worker, Redis and DB proxy co-resident
-- RLS-P2-001 (P2) - RLS policy test exists but is not executed by CI
-- SC-P2-001 (P2) - Production web container received the Supabase service-role key (fixed)
-- SC-P2-002 (P2) - GitHub Actions were not pinned to commit SHAs (fixed)
-- SC-P2-003 (P2) - Dependency vulnerability scanning was advisory-only (fixed)
-- SC-P2-004 (P2) - Dependency risk-acceptances expire 2027-01-04
-- SEC-P2-001 (P2) - `WEBHOOK_ENCRYPTION_KEY` is not delivered by the production compose stack
-- SEC-P2-002 (P2) - Webhook SSRF validation does not constrain redirects or DNS rebinding
-- TEST-P2-001 (P2) - Low coverage thresholds / non-blocking diff coverage (fixed)
-- TEST-P2-002 (P2) - RLS tenant-isolation SQL test exists but is not run by CI
-- TEST-P2-003 (P2) - Migration rollback was validated by file existence only (fixed)
-- WH-P2-001 (P2) - Replay/idempotency key was regenerated per attempt (fixed)
-- WH-P2-002 (P2) - Webhook delivery follows redirects / does not pin the validated IP (SSRF)
-- ACM-P3-001 (P3) - Admin `/stats` leaks global cross-tenant counters
-- ADMIN-P3-001 (P3) - Admin error buffer is in-memory only (lost on restart)
-- ARCH-P3-001 (P3) - Worker health/metrics bind loopback but rely on a shared token
-- BP-P3-001 (P3) - Server-side environment/ruleset configuration is not verifiable from source
-- CHAIN-P3-001 (P3) - Public upload URL + client-declared content type is a stored-content risk
-- CI-P3-001 (P3) - 13 workflows omit an explicit `permissions:` block
-- CTR-P3-001 (P3) - Containers lack runtime hardening beyond non-root and digest pinning
-- CTR-P3-002 (P3) - First-party images are referenced by mutable tag (`:latest`/`:dev`)
-- DET-P3-001 (P3) - [DEP] trivy not installed (dependency vuln scan skipped)
-- DET-P3-002 (P3) - [SUPPLY] 9 container image(s) without a digest pin
-- DET-P3-003 (P3) - [SUPPLY] hadolint not installed (Dockerfile lint skipped)
-- DOC-P3-001 (P3) - Deployment policy contradicts the development deploy workflow (DB changes)
-- DOC-P3-002 (P3) - Stale one-off reconciliation docs remain in the tree
-- DR-P3-001 (P3) - No evidence of an executed restore drill / RPO-RTO validation
-- EVOL-P3-001 (P3) - No extension/plugin contract or versioned public API surface
-- FILE-P3-001 (P3) - No per-tenant/user quota or total-storage cap on uploads
-- HYGIENE-P3-001 (P3) - Tracked shell scripts lacked the exec bit (fixed)
-- HYGIENE-P3-002 (P3) - Duplicated logic/schema and one-off scripts remain
-- HYGIENE-P3-003 (P3) - Unresolved operational-metrics TODO (fixed)
-- INFRA-P3-001 (P3) - Terraform state/backend and provider versions exist but drift checks are absent
-- INV-P3-001 (P3) - Committed audit/hardening bundles inflate the repository tree
-- INV-P3-002 (P3) - Character-encoding (mojibake) artifacts remain in workflow/log text
-- IR-P3-001 (P3) - No evidence of a conducted incident tabletop exercise
-- MOB-P3-001 (P3) - Service worker offline strategy is not covered by tests or a documented cache policy
-- MT-P3-001 (P3) - Admin `/stats` returns global cross-tenant counts (residual)
-- NOTIF-P3-001 (P3) - Push subscription lifecycle (revocation/expiry) is not monitored
-- OBS-P3-001 (P3) - Error tracking (Sentry) is optional and admin error buffer is in-memory
-- PERF-P3-001 (P3) - No performance budget / regression gate in CI
-- PRIV-P3-001 (P3) - No automated data-retention enforcement
-- REL-P3-001 (P3) - CHANGELOG has no generator/CI gate
-- RES-P3-001 (P3) - Chaos and load tests are not part of a scheduled pipeline
-- SBOM-P3-001 (P3) - SBOMs are generated but not signed or attested
-- SBOM-P3-002 (P3) - No license policy / dependency-review gate
-- SC-P3-001 (P3) - Large binary archives committed to the repository
-- SEARCH-P3-001 (P3) - No documented search data-flow / retention statement
-- SECRET-P3-001 (P3) - Secret rotation is documented but not scheduled or monitored
-- SECRET-P3-002 (P3) - `.env` example files diverge between environments
-- USE-P3-001 (P3) - No end-to-end onboarding assertion for the invitation/membership flow
-- UX-P3-001 (P3) - Accessibility is audited by an ad-hoc script, not a CI gate
+- SEC-P0-001 (P0) — Production deploy created `users_select USING (true)` exposing all users (fixed)
+- API-P1-001 (P1) — `/metrics` readable by any authenticated user (fixed)
+- CI-P1-001 (P1) — Production provision/deploy ran destructive Terraform with no approval (fixed)
+- CI-P1-002 (P1) — Security scans were non-blocking (fixed)
+- EXEC-P1-001 (P1) — Release gate must remain conditional pending P1/P2 remediation
+- FEAT-P1-001 (P1) — `/v1/auth/magic-link` did not send a magic link (fixed)
+- FEAT-P1-002 (P1) — Webhook retries were in-process setTimeout, not durable (fixed)
+- FINAL-P1-001 (P1) — Release gate must remain conditional pending P2 remediation
+- OBS-P1-001 (P1) — No alerting wired despite metrics and a tracked TODO (fixed)
+- RLS-P1-001 (P1) — Global `users_select USING (true)` policy (fixed)
+- SC-P1-001 (P1) — Credential committed to the repository (fixed)
+- SEC-P1-001 (P1) — Seed workflow could re-open global user RLS / seed shared-password accounts (fixed)
+- SEC-P1-002 (P1) — Tracked credential file `test-signin.json` (fixed)
+- SEC-P1-003 (P1) — Admin user directory / audit logs / compliance exports were not tenant-scoped (fixed)
+- SEC-P1-004 (P1) — SSH was open to the internet by default (fixed)
+- TEST-P1-001 (P1) — E2E tests skipped without `test-signin.json` and were non-blocking (fixed)
+- WH-P1-001 (P1) — Webhook retries were not durable (fixed)
+- ACM-P2-001 (P2) — RBAC matrix is enforced per-route but not documented as a single ARtifact
+- ADMIN-P2-001 (P2) — Bulk import / compliance export operated globally (fixed)
+- AI-P2-001 (P2) — AI endpoint is a stub with no tenancy/data-governance or rate-limit contract
+- API-P2-001 (P2) — User input interpolated into PostgREST `.or(...)` filters (fixed)
+- API-P2-002 (P2) — `PATCH /v1/auth/status` accepted unvalidated customStatus (fixed)
+- API-P2-003 (P2) — Inconsistent error response shapes (fixed)
+- ARCH-P2-001 (P2) — Single-node topology: one droplet hosts all services and local Redis
+- ARCH-P2-002 (P2) — Webhook service used an anonymous Supabase client (fixed)
+- BP-P2-001 (P2) — In-repo branch-protection gate covers only `main`, not `develop`
+- CHAIN-P2-001 (P2) — Webhook SSRF + missing encryption key form a plausible internal-reach chain
+- CI-P2-001 (P2) — `infra-development` destroys infra on every push to `develop`
+- CI-P2-002 (P2) — Auto-commit workflows hold `contents: write` and push to main/develop
+- CI-P2-003 (P2) — `develop` (auto-deploy target) is not covered by the branch-protection gate
+- CI-P2-004 (P2) — `workflow_dispatch` inputs interpolated into `run:` (script injection) (fixed)
+- DATA-P2-001 (P2) — Duplicate `add_user_groups` migrations
+- DATA-P2-002 (P2) — `gdpr_delete_user` is a hard multi-table delete with partial coverage
+- DATA-P2-003 (P2) — Deploy workflows seeded production with test users (fixed)
+- DATA-P2-004 (P2) — Rollback scripts were only proven to exist (fixed)
+- EXEC-P2-001 (P2) — Prior pilot register self-consistency (stale-base false positive) corrected
+- FEAT-P2-001 (P2) — Webhook idempotency key was regenerated per attempt (fixed)
+- FEAT-P2-002 (P2) — Naive input sanitizer blocked legitimate content (fixed)
+- FILE-P2-001 (P2) — Uploads return a public URL from `chat-uploads` and trust client-declared content type
+- FINAL-P2-001 (P2) — Dependency risk-acceptances expire 2027-01-04
+- INFRA-P2-001 (P2) — Single-droplet infrastructure has no environment isolation
+- INV-P2-001 (P2) — Stale generated reconciliation artifacts remain tracked at the repository root
+- MT-P2-001 (P2) — IDOR: admin dead-letter retry was not tenant-scoped (fixed)
+- MT-P2-002 (P2) — Cross-tenant user directory via auth service (fixed)
+- NOTIF-P2-001 (P2) — Notifications are delivered only via Web Push; no durable multi-channel delivery/retry
+- OBS-P2-001 (P2) — No distributed tracing / correlation to a collector
+- PRIV-P2-001 (P2) — GDPR erasure path is a hard multi-table delete with partial coverage
+- RES-P2-001 (P2) — Single-node failure domains: API, worker, Redis and DB proxy co-resident
+- RLS-P2-001 (P2) — RLS policy test exists but is not executed by CI
+- SC-P2-001 (P2) — Production web container received the Supabase service-role key (fixed)
+- SC-P2-002 (P2) — GitHub Actions were not pinned to commit SHAs (fixed)
+- SC-P2-003 (P2) — Dependency vulnerability scanning was advisory-only (fixed)
+- SC-P2-004 (P2) — Dependency risk-acceptances expire 2027-01-04
+- SEC-P2-001 (P2) — `WEBHOOK_ENCRYPTION_KEY` is not delivered by the production compose stack
+- SEC-P2-002 (P2) — Webhook SSRF validation does not constrain redirects or DNS rebinding
+- TEST-P2-001 (P2) — Low coverage thresholds / non-blocking diff coverage (fixed)
+- TEST-P2-002 (P2) — RLS tenant-isolation SQL test exists but is not run by CI
+- TEST-P2-003 (P2) — Migration rollback was validated by file existence only (fixed)
+- WH-P2-001 (P2) — Replay/idempotency key was regenerated per attempt (fixed)
+- WH-P2-002 (P2) — Webhook delivery follows redirects / does not pin the validated IP (SSRF)
+- ACM-P3-001 (P3) — Admin `/stats` leaks global cross-tenant counters
+- ADMIN-P3-001 (P3) — Admin error buffer is in-memory only (lost on restart)
+- ARCH-P3-001 (P3) — Worker health/metrics bind loopback but rely on a shared token
+- BP-P3-001 (P3) — Server-side environment/ruleset configuration is not verifiable from source
+- CHAIN-P3-001 (P3) — Public upload URL + client-declared content type is a stored-content risk
+- CI-P3-001 (P3) — 13 workflows omit an explicit `permissions:` block
+- CTR-P3-001 (P3) — Containers lack runtime hardening beyond non-root and digest pinning
+- CTR-P3-002 (P3) — First-party images are referenced by mutable tag (`:latest`/`:dev`)
+- DET-P3-001 (P3) — [DEP] trivy not installed (dependency vuln scan skipped)
+- DET-P3-002 (P3) — [SUPPLY] 9 container image(s) without a digest pin
+- DET-P3-003 (P3) — [SUPPLY] hadolint not installed (Dockerfile lint skipped)
+- DOC-P3-001 (P3) — Deployment policy contradicts the development deploy workflow (DB changes)
+- DOC-P3-002 (P3) — Stale one-off reconciliation docs remain in the tree
+- DR-P3-001 (P3) — No evidence of an executed restore drill / RPO-RTO validation
+- EVOL-P3-001 (P3) — No extension/plugin contract or versioned public API surface
+- FILE-P3-001 (P3) — No per-tenant/user quota or total-storage cap on uploads
+- HYGIENE-P3-001 (P3) — Tracked shell scripts lacked the exec bit (fixed)
+- HYGIENE-P3-002 (P3) — Duplicated logic/schema and one-off scripts remain
+- HYGIENE-P3-003 (P3) — Unresolved operational-metrics TODO (fixed)
+- INFRA-P3-001 (P3) — Terraform state/backend and provider versions exist but drift checks are absent
+- INV-P3-001 (P3) — Committed audit/hardening bundles inflate the repository tree
+- INV-P3-002 (P3) — Character-encoding (mojibake) artifacts remain in workflow/log text
+- IR-P3-001 (P3) — No evidence of a conducted incident tabletop exercise
+- MOB-P3-001 (P3) — Service worker offline strategy is not covered by tests or a documented cache policy
+- MT-P3-001 (P3) — Admin `/stats` returns global cross-tenant counts (residual)
+- NOTIF-P3-001 (P3) — Push subscription lifecycle (revocation/expiry) is not monitored
+- OBS-P3-001 (P3) — Error tracking (Sentry) is optional and admin error buffer is in-memory
+- PERF-P3-001 (P3) — No performance budget / regression gate in CI
+- PRIV-P3-001 (P3) — No automated data-retention enforcement
+- REL-P3-001 (P3) — CHANGELOG has no generator/CI gate
+- RES-P3-001 (P3) — Chaos and load tests are not part of a scheduled pipeline
+- SBOM-P3-001 (P3) — SBOMs are generated but not signed or attested
+- SBOM-P3-002 (P3) — No license policy / dependency-review gate
+- SC-P3-001 (P3) — Large binary archives committed to the repository
+- SEARCH-P3-001 (P3) — No documented search data-flow / retention statement
+- SECRET-P3-001 (P3) — Secret rotation is documented but not scheduled or monitored
+- SECRET-P3-002 (P3) — `.env` example files diverge between environments
+- USE-P3-001 (P3) — No end-to-end onboarding assertion for the invitation/membership flow
+- UX-P3-001 (P3) — Accessibility is audited by an ad-hoc script, not a CI gate
