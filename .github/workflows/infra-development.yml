@@ -1,15 +1,21 @@
 name: Infra — Development
 
+# CI-P2-001: this workflow applies/destroys development infrastructure and was
+# previously triggered on every push to `develop`. It is now manual-only and
+# defaults to a read-only plan; destructive steps require the explicit `apply`
+# dispatch input *and* the protected `development` environment gate.
 on:
-  push:
-    branches: [develop]
-    paths:
-      - "infra/**"
   workflow_dispatch:
+    inputs:
+      apply:
+        description: "Apply/destroy development infrastructure. Leave false for a plan-only run."
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: infra-dev-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   ENVIRONMENT: development
@@ -20,6 +26,9 @@ jobs:
     name: Provision Infrastructure
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Requires the `development` environment (configure required reviewers there)
+    # before any dispatch reaches the destructive steps below.
+    environment: development
     outputs:
       droplet_ip: ${{ steps.terraform.outputs.droplet_ip }}
     steps:
@@ -30,6 +39,7 @@ jobs:
           terraform_version: "~1.10"
 
       - name: Cleanup duplicate droplets
+        if: ${{ inputs.apply }}
         run: |
           curl -s -H "Authorization: Bearer ${{ secrets.DO_API_TOKEN }}" \
             "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
@@ -91,6 +101,7 @@ jobs:
           done
 
       - name: Cleanup duplicate DNS records
+        if: ${{ inputs.apply }}
         run: |
           ZONE_ID="${{ secrets.CF_ZONE_ID }}"
           TOKEN="${{ secrets.CF_API_TOKEN }}"
@@ -104,8 +115,25 @@ jobs:
               done
           done
 
+      - name: Terraform Plan (read-only)
+        working-directory: infra/terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
+          TF_VAR_domain: ${{ env.DOMAIN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CF_ZONE_ID }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_TOKEN }}
+          TF_VAR_ci_public_key: ${{ secrets.CI_SSH_PUBLIC_KEY }}
+          TF_VAR_ci_ssh_key_fingerprint: ${{ secrets.CI_SSH_FINGERPRINT || '' }}
+          TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL || '' }}
+          TF_VAR_ssh_allowed_ips: ${{ secrets.SSH_ALLOWED_IPS }}
+        run: terraform plan -input=false -no-color
+
       - name: Terraform Apply
         id: terraform
+        if: ${{ inputs.apply }}
         timeout-minutes: 5
         working-directory: infra/terraform
         env:
@@ -129,6 +157,7 @@ jobs:
           echo "Droplet IP: $(cat /tmp/droplet_ip)"
 
       - name: Health check — wait for SSH
+        if: ${{ inputs.apply }}
         run: |
           IP="${{ steps.terraform.outputs.droplet_ip }}"
           echo "Waiting for SSH on $IP..."
@@ -148,7 +177,7 @@ jobs:
           exit 1
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: always()
+        if: ${{ inputs.apply }}
         with:
           name: droplet-ip
           path: /tmp/droplet_ip
