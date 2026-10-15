@@ -28,3 +28,4 @@
 
 # Lock file
 pnpm-lock.yaml -diff
+*.sh text eol=lf
