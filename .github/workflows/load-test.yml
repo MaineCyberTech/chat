@@ -1,4 +1,4 @@
-name: Load Test
+﻿name: Load Test
 
 on:
   workflow_call:
@@ -9,7 +9,7 @@ on:
 jobs:
   k6-smoke-test:
     name: k6 Smoke Test
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-docker]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

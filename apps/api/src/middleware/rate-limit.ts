@@ -30,7 +30,9 @@ export const apiLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 10,
+  // Configurable so test/dev environments can exercise the auth flow without
+  // tripping the limiter. Production default is unchanged (10).
+  max: Number(process.env.RATE_LIMIT_AUTH_MAX ?? 10),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: "RATE_LIMITED", message: "Too many auth attempts" } },

@@ -21,6 +21,11 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters").optional(),
+  // Which auth implementation verifies tokens and handles sign-in.
+  //   "supabase" (default) - hosted GoTrue, unchanged behaviour
+  //   "local"              - the self-hosted service in lib/local-auth.ts
+  // Defaults to "supabase" so existing deployments are unaffected.
+  AUTH_PROVIDER: z.enum(["supabase", "local"]).default("supabase"),
   SHOW_STACK_TRACES: z.enum(["true", "false"]).default("false"),
   WEBHOOK_ENCRYPTION_KEY: z.string().min(32).optional(),
   METRICS_TOKEN: z.string().min(16, "METRICS_TOKEN must be at least 16 characters").optional(),

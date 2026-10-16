@@ -75,13 +75,23 @@ async function main() {
   });
 
   // Register processors (they create their own queues internally)
-  registerWebhookProcessor();
-  registerNotificationProcessor();
-  registerSearchIndexer();
-  registerCleanupProcessor();
-  registerDataRetentionProcessor();
-  registerComplianceExportProcessor();
-  registerReminderProcessor();
+  const webhookWorker = registerWebhookProcessor();
+  const notificationWorker = registerNotificationProcessor();
+  const searchWorker = registerSearchIndexer();
+  const cleanupWorker = registerCleanupProcessor();
+  const dataRetentionWorker = registerDataRetentionProcessor();
+  const complianceExportWorker = registerComplianceExportProcessor();
+  const reminderWorker = registerReminderProcessor();
+
+  const workers = [
+    webhookWorker,
+    notificationWorker,
+    searchWorker,
+    cleanupWorker,
+    dataRetentionWorker,
+    complianceExportWorker,
+    reminderWorker,
+  ];
 
   const queues = [
     webhookQueue,
@@ -95,15 +105,29 @@ async function main() {
 
   startScheduler();
 
-  const forceExit = setTimeout(() => {
-    logger.error("Worker forced shutdown after timeout");
-    process.exit(1);
-  }, 30_000).unref();
-
   const shutdown = async (signal: string) => {
-    clearTimeout(forceExit);
     logger.info({ signal }, "Shutting down worker");
+
+    // The forced-exit guard is armed HERE, not at startup. Previously it was
+    // created during boot and only cleared by a signal, so it fired 30 seconds
+    // into a perfectly healthy run and killed the worker — the cause of the
+    // endless restart loop (21+ restarts here, 13,675 on the previous host).
+    // If shutdown finishes first, process.exit(0) below ends the process before
+    // this can fire.
+    setTimeout(() => {
+      logger.error("Worker forced shutdown after timeout");
+      process.exit(1);
+    }, 30_000).unref();
+
     await new Promise<void>((resolve) => healthServer.close(() => resolve()));
+
+    for (const worker of workers) {
+      try {
+        await worker.close();
+      } catch (err) {
+        logger.error({ worker: worker.name, error: String(err) }, "Failed to close worker");
+      }
+    }
 
     for (const q of queues) {
       try {

@@ -1,17 +1,23 @@
 import { createHmac, randomUUID } from "node:crypto";
 
 // Expected env vars: LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_HOST (optional, default localhost:7880)
-if (!process.env.LIVEKIT_API_KEY) {
-  throw new Error("LIVEKIT_API_KEY environment variable is required for LiveKit token generation");
+//
+// Configuration is read lazily instead of at import time. This module is
+// reachable from the route registry, so throwing here would stop the entire API
+// from booting when LiveKit is not configured. Callers use `isConfigured()` and
+// degrade instead.
+
+function getApiKey(): string | undefined {
+  return process.env.LIVEKIT_API_KEY;
 }
-if (!process.env.LIVEKIT_API_SECRET) {
-  throw new Error(
-    "LIVEKIT_API_SECRET environment variable is required for LiveKit token generation",
-  );
+
+function getApiSecret(): string | undefined {
+  return process.env.LIVEKIT_API_SECRET;
 }
-const API_KEY = process.env.LIVEKIT_API_KEY;
-const API_SECRET = process.env.LIVEKIT_API_SECRET;
-const LIVEKIT_HOST = process.env.LIVEKIT_HOST ?? "http://localhost:7880";
+
+function getHost(): string {
+  return process.env.LIVEKIT_HOST ?? "http://localhost:7880";
+}
 
 function base64UrlEncode(data: string): string {
   return Buffer.from(data).toString("base64url").replace(/=+$/, "");
@@ -56,16 +62,23 @@ function generateLiveKitToken(
 
 export class LiveKitService {
   generateToken(roomName: string, identity: string, name?: string): string {
-    return generateLiveKitToken(API_KEY, API_SECRET, identity, roomName, name);
+    const apiKey = getApiKey();
+    const apiSecret = getApiSecret();
+    if (!apiKey || !apiSecret) {
+      throw new Error(
+        "LIVEKIT_API_KEY and LIVEKIT_API_SECRET are required for LiveKit token generation",
+      );
+    }
+    return generateLiveKitToken(apiKey, apiSecret, identity, roomName, name);
   }
 
   getWsUrl(): string {
-    const hostUrl = LIVEKIT_HOST.replace("http://", "ws://").replace("https://", "wss://");
+    const hostUrl = getHost().replace("http://", "ws://").replace("https://", "wss://");
     return hostUrl;
   }
 
   isConfigured(): boolean {
-    return !!(API_KEY && API_SECRET);
+    return !!(getApiKey() && getApiSecret());
   }
 }
 

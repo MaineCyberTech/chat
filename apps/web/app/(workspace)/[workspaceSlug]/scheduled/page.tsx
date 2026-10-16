@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth/auth-context";
 import { EmptyState } from "@chat/ui";
@@ -22,6 +23,7 @@ interface ChannelInfo {
 }
 
 export default function ScheduledPostsPage() {
+  const params = useParams<{ workspaceSlug: string }>();
   const { user } = useAuth();
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [channels, setChannels] = useState<Map<string, ChannelInfo>>(new Map());
@@ -122,7 +124,7 @@ export default function ScheduledPostsPage() {
                   >
                     {ch ? (
                       <Link
-                        href={`/${ch.slug}`}
+                        href={`/${params.workspaceSlug}/${ch.slug}`}
                         className="flex items-center gap-1 hover:underline"
                         style={{ color: "var(--button-bg)" }}
                       >

@@ -1,4 +1,4 @@
-name: Chaos Tests
+﻿name: Chaos Tests
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ concurrency:
 jobs:
   chaos-api-crash:
     name: API Crash Recovery
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-docker]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -52,7 +52,7 @@ jobs:
   chaos-redis-down:
     name: Redis Failure Recovery
     needs: chaos-api-crash
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-docker]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

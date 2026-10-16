@@ -17,8 +17,8 @@ function renderLoginForm(overrides?: {
         loading: false,
         signIn: mockSignIn,
         signUp: async () => ({ error: "not implemented" }),
-        signInWithGoogle: async () => {},
-        signInWithGithub: async () => {},
+        signInWithGoogle: async () => ({}),
+        signInWithGithub: async () => ({}),
         signOut: async () => {},
       }}
     >

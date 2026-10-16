@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSession, verifyMagicLink } from "@/lib/auth/client";
 
 export const dynamic = "force-dynamic";
 
@@ -12,49 +12,34 @@ function AuthCallbackContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const code = searchParams.get("code");
-    const supabase = getSupabaseBrowserClient();
+    const token = searchParams.get("token");
+    const linkError = searchParams.get("error");
 
     async function handleAuth() {
-      // Try PKCE code exchange first
-      if (code) {
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError) {
-          setError(exchangeError.message);
-          return;
-        }
-        if (data?.session) {
-          router.push("/");
-          return;
-        }
-      }
-
-      // Try hash-based session (implicit flow fallback)
-      const hash = window.location.hash;
-      if (hash) {
-        const params = new URLSearchParams(hash.replace("#", ""));
-        const accessToken = params.get("access_token");
-        const refreshToken = params.get("refresh_token");
-        if (accessToken && refreshToken) {
-          await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          router.push("/");
-          return;
-        }
-      }
-
-      // Check if session already exists
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-      if (sessionError || !session) {
+      if (linkError) {
         setError("Authentication failed. Please try signing in again.");
-      } else {
-        router.push("/");
+        return;
       }
+
+      // Magic-link landing: exchange the single-use token for a session.
+      if (token) {
+        const result = await verifyMagicLink(token);
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
+        router.push("/");
+        return;
+      }
+
+      // No token: this may be a redirect after sign-in that already established
+      // a session, or a bare visit.
+      if (getSession()) {
+        router.push("/");
+        return;
+      }
+
+      setError("Authentication failed. Please try signing in again.");
     }
 
     handleAuth().catch(() => {

@@ -2,6 +2,7 @@ import { Worker, Job, Queue } from "bullmq";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 import { createSupabaseClient } from "../lib/supabase.js";
+import { isStorageConfigured, listObjectsOlderThan, deleteObjects } from "../lib/storage.js";
 
 export interface CleanupJobData {
   type:
@@ -152,62 +153,51 @@ async function cleanupMessageEditHistory(
   return ids.length;
 }
 
-async function cleanupStaleUploads(
-  supabase: ReturnType<typeof createSupabaseClient>,
-  olderThanDays: number,
-) {
+async function cleanupStaleUploads(olderThanDays: number) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - olderThanDays);
 
-  const { data: objects, error: listError } = await supabase
-    .schema("storage")
-    .from("objects")
-    .select("name")
-    .eq("bucket_id", "chat-uploads")
-    .lt("created_at", cutoff.toISOString())
-    .limit(200)
-    .abortSignal(AbortSignal.timeout(15000));
-
-  if (listError) {
-    logger.error({ error: listError }, "Failed to list stale uploads from storage");
+  if (!isStorageConfigured()) {
+    logger.warn("Object storage is not configured, skipping stale uploads cleanup");
     return 0;
   }
 
-  if (!objects || objects.length === 0) return 0;
+  try {
+    const keys = await listObjectsOlderThan(cutoff, 1000);
 
-  const names: string[] = (objects as { name: string }[]).map((o) => o.name);
-  const { error: delError } = await supabase.storage.from("chat-uploads").remove(names);
+    if (keys.length === 0) return 0;
 
-  if (delError) {
-    logger.error({ error: delError }, "Failed to delete stale uploads from storage");
+    await deleteObjects(keys);
+
+    logger.info({ count: keys.length, olderThanDays }, "Cleaned up stale uploads");
+    return keys.length;
+  } catch (err) {
+    logger.error({ error: String(err) }, "Failed to clean up stale uploads");
     return 0;
   }
-
-  logger.info({ count: names.length, olderThanDays }, "Cleaned up stale uploads");
-  return names.length;
 }
 
 async function cleanupExpiredTokens(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
 ) {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - olderThanDays);
+  // The `auth` schema is deliberately not exposed to PostgREST (it holds
+  // password hashes), so the previous `.schema("auth").from("refresh_tokens")`
+  // query could never succeed. Use the SECURITY DEFINER function created in
+  // supabase/bootstrap/10_auth_api.sql, which purges magic links and refresh
+  // tokens in one call.
+  const { data, error } = await supabase.rpc("auth_purge_expired_tokens", {
+    p_older_than_days: olderThanDays,
+  });
 
-  const { error: delError } = await supabase
-    .schema("auth")
-    .from("refresh_tokens")
-    .delete({ count: "exact" })
-    .lt("updated_at", cutoff.toISOString())
-    .abortSignal(AbortSignal.timeout(15000));
-
-  if (delError) {
-    logger.error({ error: delError }, "Failed to clean up expired tokens");
+  if (error) {
+    logger.error({ error: error.message }, "Failed to clean up expired tokens");
     return 0;
   }
 
-  logger.info({ olderThanDays }, "Cleaned up expired auth tokens");
-  return 1;
+  const removed = Number(data ?? 0);
+  logger.info({ olderThanDays, removed }, "Cleaned up expired auth tokens");
+  return removed;
 }
 
 export function registerCleanupProcessor() {
@@ -245,7 +235,7 @@ export function registerCleanupProcessor() {
             logger.info({ type }, "Stale session cleanup handled by Supabase auth hooks");
             break;
           case "expired_uploads":
-            cleaned = await cleanupStaleUploads(supabase, olderThanDays);
+            cleaned = await cleanupStaleUploads(olderThanDays);
             break;
           case "expired_tokens":
             cleaned = await cleanupExpiredTokens(supabase, olderThanDays);

@@ -70,7 +70,9 @@ describe("Dialog", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog).toBeDefined();
     expect(dialog.getAttribute("aria-modal")).toBe("true");
-    expect(dialog.getAttribute("aria-labelledby")).toBe("dialog-title");
+    const labelledBy = dialog.getAttribute("aria-labelledby");
+    expect(labelledBy).toBeTruthy();
+    expect(document.getElementById(labelledBy ?? "")?.textContent).toBe("Accessible Dialog");
   });
 
   it("has close button with aria-label", () => {

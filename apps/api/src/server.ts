@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { createApp } from "./app.js";
 import { loadEnv, logEnvStatus } from "./config/env.js";
 import { initSupabase } from "./lib/supabase.js";
+import { ensureBucket } from "./lib/storage.js";
 import { initSocket, shutdownSocket } from "./lib/socket.js";
 import { initSentry } from "./lib/sentry.js";
 import { initErrorLog } from "./modules/admin/error-buffer.js";
@@ -26,6 +27,9 @@ if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
 } else {
   logger.warn("SUPABASE_URL or SUPABASE_ANON_KEY not set; running without database");
 }
+
+// Best-effort bucket bootstrap (no-op when S3_* is unset); mirrors minio-init.
+void ensureBucket();
 
 // Set validated FRONTEND_URL so createApp() can use it for CORS
 process.env.FRONTEND_URL = env.FRONTEND_URL;

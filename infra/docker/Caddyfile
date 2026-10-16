@@ -1,5 +1,15 @@
 chat.mainecybertech.us {
     tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+    # Self-hosted PostgREST. `handle_path` strips the /rest/v1 prefix, which is
+    # exactly the base path the Supabase JS client appends to SUPABASE_URL.
+    handle_path /rest/v1/* {
+        reverse_proxy postgrest:3000
+    }
+    # Self-hosted object storage (S3-compatible). `handle_path` strips the
+    # /storage/v1 prefix, matching the object URLs the API returns.
+    handle_path /storage/v1/* {
+        reverse_proxy minio:9000
+    }
     handle /health* {
         reverse_proxy api:4000
     }
@@ -37,6 +47,14 @@ chat.mainecybertech.us {
 
 chat-api.mainecybertech.us {
     tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+    # Self-hosted PostgREST — see the main site block for details.
+    handle_path /rest/v1/* {
+        reverse_proxy postgrest:3000
+    }
+    # Self-hosted object storage — see the main site block for details.
+    handle_path /storage/v1/* {
+        reverse_proxy minio:9000
+    }
     reverse_proxy api:4000
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -45,4 +63,14 @@ chat-api.mainecybertech.us {
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
     }
+}
+
+# Dedicated storage host. This must map 1:1 to MinIO with NO path prefix:
+# presigned URLs are signed over the Host header and request path (SigV4), so a
+# prefix-stripping route such as /storage/v1 would invalidate the signature.
+# Browsers upload directly to presigned URLs generated against this host
+# (S3_PRESIGN_ENDPOINT). Requires a DNS record for this name.
+chat-storage.mainecybertech.us {
+    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+    reverse_proxy minio:9000
 }

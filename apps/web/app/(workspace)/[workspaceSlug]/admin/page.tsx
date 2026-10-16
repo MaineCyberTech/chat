@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import React, { Component, useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getAccessToken } from "@/lib/auth/client";
 import { EmptyState, Skeleton, useToast } from "@chat/ui";
 import { t } from "@/lib/i18n";
 import { PaginationBar } from "@/components/shared/pagination-bar";
@@ -262,11 +262,7 @@ export default function AdminPage() {
 
   async function downloadExport(path: string) {
     try {
-      const supabase = getSupabaseBrowserClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const accessToken = session?.access_token;
+      const accessToken = await getAccessToken();
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
       const res = await fetch(`${API_BASE}/v1${path}?format=${exportFormat}`, {
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},

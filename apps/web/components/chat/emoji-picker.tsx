@@ -235,7 +235,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
           }}
           title="Default"
         >
-          ðŸ‘‹
+          👋
         </button>
         {SKIN_TONES.map((t, i) => (
           <button
@@ -273,7 +273,7 @@ export function EmojiPicker({ onSelect, onClose, anchorEl }: Props) {
           title="All"
           aria-label="All"
         >
-          ðŸ—‚ï¸
+          🗂️
         </button>
         {EMOJI_CATEGORIES.map((cat) => (
           <button

@@ -125,16 +125,29 @@ export function initSocket(
     try {
       // Dynamic import to avoid circular dependency at module init
       const { getSupabase, getSupabaseForUser } = await import("./supabase.js");
-      const supabase = getSupabase();
-      const { data, error } = await supabase.auth.getUser(token);
+      const { isLocalAuthEnabled, verifyAccessToken } = await import("./local-auth.js");
 
-      if (error || !data.user) {
+      // Provider switch mirrors middleware/authenticate.ts: with local auth the
+      // token is verified in-process, otherwise GoTrue verifies it.
+      let userId: string | undefined;
+      if (isLocalAuthEnabled()) {
+        const claims = verifyAccessToken(token);
+        userId = claims?.sub;
+      } else {
+        const supabase = getSupabase();
+        const { data, error } = await supabase.auth.getUser(token);
+        if (!error && data.user) {
+          userId = data.user.id;
+        }
+      }
+
+      if (!userId) {
         clearTimeout(authTimer);
         return next(new Error("Invalid token"));
       }
 
       clearTimeout(authTimer);
-      socket.userId = data.user.id;
+      socket.userId = userId;
       // Build a user-scoped client so downstream queries run as `authenticated`
       // with auth.uid() set; the bare anon client is denied by RLS.
       socket.supabase = getSupabaseForUser(token);
@@ -150,6 +163,12 @@ export function initSocket(
     const userId = socket.userId;
     logger.info("Socket connected", { userId });
     incrementWebsocketConnections(1);
+
+    // Personal room so `emitToUser` reaches every open socket/tab for a user.
+    // Previously nothing joined this room, so user-targeted emits were silent no-ops.
+    if (userId) {
+      socket.join(`user:${userId}`);
+    }
 
     // Update user presence to online
     (async () => {

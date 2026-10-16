@@ -161,17 +161,27 @@ export class MessageService {
     try {
       const { data: ch } = await client
         .from("channels")
-        .select("channel_type, name")
+        .select("channel_type, name, workspace_id")
         .eq("id", input.channel_id)
         .single();
       if (ch?.channel_type === "dm") {
-        const otherUserId = ch.name.replace(/^dm-/, "");
-        if (otherUserId !== input.user_id) {
+        // DM channel names are `dm-<sender8>-<target8>` (see
+        // channelService.createDm), so they cannot be parsed back into a user
+        // id. Resolve the recipient from dm_members instead.
+        const { data: dmMembers } = await client
+          .from("dm_members")
+          .select("user_id")
+          .eq("channel_id", input.channel_id);
+        const otherUserId = (dmMembers ?? [])
+          .map((m) => m.user_id as string)
+          .find((id) => id !== input.user_id);
+        if (otherUserId) {
           const { data: responder } = await client
             .from("auto_responders")
             .select("message, enabled, trigger_status")
             .eq("user_id", otherUserId)
-            .single();
+            .eq("workspace_id", ch.workspace_id)
+            .maybeSingle();
           if (responder?.enabled) {
             const { data: presence } = await client
               .from("user_presence")

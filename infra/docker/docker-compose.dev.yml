@@ -120,8 +120,10 @@ services:
     image: redis:7-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
     container_name: chat-redis-dev
     restart: unless-stopped
-    mem_limit: 64m
-    command: redis-server --appendonly yes
+    mem_limit: 192m
+    # See docker-compose.devremote.yml: bound Redis below the container limit and
+    # keep BullMQ's required noeviction policy.
+    command: redis-server --appendonly yes --maxmemory 160mb --maxmemory-policy noeviction
     ports:
       - "6379:6379"
     networks:

@@ -19,7 +19,17 @@ import {
 } from "../../config/validators.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { normalizeSearchTerm } from "../../lib/postgrest-filter.js";
-import { BadRequestError, NotFoundError, InternalServerError } from "../../lib/app-error.js";
+import {
+  BadRequestError,
+  NotFoundError,
+  InternalServerError,
+  ServiceUnavailableError,
+} from "../../lib/app-error.js";
+import {
+  isStorageConfigured,
+  createPresignedUpload,
+  createPresignedDownload,
+} from "../../lib/storage.js";
 
 const emailSchema = z.object({
   email: z.string().email("Invalid email format").max(254),
@@ -37,7 +47,20 @@ router.post(
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.issues[0].message);
     }
-    await authService.sendMagicLink(parsed.data.email);
+    const result = await authService.sendMagicLink(parsed.data.email);
+
+    if (result === "unavailable") {
+      // A deployment-wide capability gap, not an account-specific signal.
+      res.status(501).json({
+        error: {
+          code: "NOT_IMPLEMENTED",
+          message:
+            "Magic-link sign-in is not available on this deployment yet. Please sign in with your password.",
+        },
+      });
+      return;
+    }
+
     res.json({ success: true, message: "Magic link sent if account exists" });
   }),
 );
@@ -114,35 +137,24 @@ router.post(
       throw new BadRequestError(parsed.error.issues[0].message);
     }
 
-    if (!req.supabase) {
-      throw new InternalServerError("Auth context missing");
+    if (!isStorageConfigured()) {
+      throw new ServiceUnavailableError("Object storage is not configured");
     }
+
     const fileExt = parsed.data.contentType.split("/")[1] ?? "png";
     const filePath = `avatars/${req.userId}.${fileExt}`;
 
-    const { data: uploadData, error: uploadError } = await req.supabase.storage
-      .from("chat-uploads")
-      .createSignedUploadUrl(filePath);
-
-    if (uploadError || !uploadData) {
-      throw new InternalServerError(uploadError?.message ?? "Could not create upload URL");
-    }
+    const uploadUrl = await createPresignedUpload(filePath, parsed.data.contentType);
 
     // Use signed URL for avatar access (expires in 1 hour, refreshed on demand)
-    const { data: signedUrlData } = await req.supabase.storage
-      .from("chat-uploads")
-      .createSignedUrl(filePath, 3600);
-
-    const avatarUrl =
-      signedUrlData?.signedUrl ??
-      req.supabase.storage.from("chat-uploads").getPublicUrl(filePath).data.publicUrl;
+    const avatarUrl = await createPresignedDownload(filePath, 3600);
 
     const profile = await authService.updateProfile(req.userId!, { avatar_url: avatarUrl });
     if (!profile) {
       throw new InternalServerError("Could not update profile");
     }
 
-    res.json({ uploadUrl: uploadData.signedUrl, avatarUrl, profile });
+    res.json({ uploadUrl, avatarUrl, profile });
   }),
 );
 
@@ -150,21 +162,16 @@ router.get(
   "/avatar/:userId",
   authenticate,
   asyncHandler(async (req, res) => {
-    if (!req.supabase) {
-      throw new InternalServerError("Auth context missing");
-    }
     const { userId } = req.params;
     const filePath = `avatars/${userId}.png`;
 
-    const { data: signedUrlData, error } = await req.supabase.storage
-      .from("chat-uploads")
-      .createSignedUrl(filePath, 3600);
-
-    if (error || !signedUrlData?.signedUrl) {
-      throw new NotFoundError("Avatar not found");
+    if (!isStorageConfigured()) {
+      throw new ServiceUnavailableError("Object storage is not configured");
     }
 
-    res.json({ avatarUrl: signedUrlData.signedUrl });
+    const avatarUrl = await createPresignedDownload(filePath, 3600);
+
+    res.json({ avatarUrl });
   }),
 );
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useCallback, useRef, useId } from "react";
 
 export interface DialogProps {
   open: boolean;
@@ -57,6 +57,7 @@ function useFocusTrap(containerRef: React.RefObject<HTMLDivElement | null>, isAc
 export function Dialog({ open, onClose, title, children }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -86,7 +87,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
       className="fixed inset-0 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="dialog-title"
+      aria-labelledby={title ? titleId : undefined}
     >
       <div className="fixed inset-0 bg-[var(--color-dialog-overlay)]" onClick={onClose} />
       <div
@@ -96,7 +97,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
         {title && (
           <div className="mb-4 flex items-center justify-between">
             <h2
-              id="dialog-title"
+              id={titleId}
               className="text-lg font-semibold text-[var(--color-foreground-primary)]"
             >
               {title}

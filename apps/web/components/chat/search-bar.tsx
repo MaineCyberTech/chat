@@ -237,7 +237,7 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
         setLoadingMore(false);
       }
     },
-    [workspaceId, dateFrom, dateTo, authorFilter, currentOffset],
+    [workspaceId, dateFrom, dateTo, authorFilter, currentOffset, searchType],
   );
 
   const handleKeyDown = useCallback(
@@ -587,7 +587,6 @@ export function SearchBar({ workspaceId, workspaceSlug }: Props) {
               <div className="space-y-0.5">
                 {[
                   t("search.operatorFrom"),
-                  t("search.operatorIn"),
                   t("search.operatorIn"),
                   t("search.operatorOn").replace("YYYY-MM-DD", `${new Date().getFullYear()}-01-15`),
                   t("search.operatorHas"),

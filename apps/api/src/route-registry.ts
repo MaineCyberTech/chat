@@ -1,6 +1,7 @@
 import { type Router } from "express";
 import healthRoutes from "./modules/health/routes.js";
 import authRoutes from "./modules/auth/routes.js";
+import localAuthRoutes from "./modules/auth/local-routes.js";
 import workspaceRoutes from "./modules/workspaces/routes.js";
 import channelRoutes from "./modules/channels/routes.js";
 import messageRoutes from "./modules/messages/routes.js";
@@ -49,6 +50,43 @@ export const routeRegistry: RouteEntry[] = [
     router: healthRoutes,
     description: "Health check + root endpoint",
     endpoints: [{ method: "GET", path: "/health", middleware: [], description: "Readiness check" }],
+  },
+  {
+    path: "/v1/auth",
+    router: localAuthRoutes,
+    description: "Self-hosted auth (password, signup, token rotation, magic link)",
+    endpoints: [
+      {
+        method: "POST",
+        path: "/v1/auth/password",
+        middleware: ["rate-limit"],
+        description: "Sign in with email + password (AUTH_PROVIDER=local)",
+      },
+      {
+        method: "POST",
+        path: "/v1/auth/signup",
+        middleware: ["rate-limit"],
+        description: "Create an account (AUTH_PROVIDER=local)",
+      },
+      {
+        method: "POST",
+        path: "/v1/auth/token",
+        middleware: ["rate-limit"],
+        description: "Rotate a refresh token",
+      },
+      {
+        method: "POST",
+        path: "/v1/auth/signout",
+        middleware: ["rate-limit"],
+        description: "Revoke a refresh token",
+      },
+      {
+        method: "POST",
+        path: "/v1/auth/magic-link/verify",
+        middleware: ["rate-limit"],
+        description: "Exchange a magic-link token for a session",
+      },
+    ],
   },
   {
     path: "/v1/auth",

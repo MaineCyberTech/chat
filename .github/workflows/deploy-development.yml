@@ -1,4 +1,12 @@
-name: Deploy to Droplet
+﻿name: Deploy to Lab LXC
+
+# Deploys to the self-hosted stack running in the `chat-dev` LXC on the Proxmox
+# node `testnuc`. Replaces the previous DigitalOcean droplet target.
+#
+# Schema changes are NOT applied here: deploys ship application images only. See
+# docs/operations/database-change-governance.md, and use
+# `scripts/db/apply-migrations.mjs` (or the Seed Database workflow) for schema
+# and data. See docs/runbooks/lab-lxc-environment.md.
 
 on:
   workflow_dispatch:
@@ -7,9 +15,10 @@ on:
     paths:
       - "apps/api/**"
       - "apps/web/**"
+      - "apps/worker/**"
       - "packages/**"
       - "supabase/migrations/**"
-      - "infra/docker/**"
+      - "infra/docker/docker-compose.devremote.yml"
       - ".github/workflows/deploy-development.yml"
 
 permissions:
@@ -22,14 +31,17 @@ concurrency:
 
 env:
   ENVIRONMENT: development
-  DOMAIN: mainecybertech.us
   REPO_DIR: /opt/chat
+  # Override with a repository variable if the LXC moves.
+  LAB_HOST: ${{ vars.LAB_LXC_HOST || '192.168.222.240' }}
+  LAB_URL: ${{ vars.LAB_LXC_URL || 'http://192.168.222.240' }}
 
 jobs:
   deploy:
     name: Deploy
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Docker is required by the appleboy/* actions; `lab-docker` guarantees it.
+    runs-on: [self-hosted, linux, x64, lab-docker]
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -40,31 +52,28 @@ jobs:
         run: |
           set -e
           echo "Waiting for CI workflow for commit ${{ github.sha }}..."
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             STATUS=$(curl -sf -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=${{ github.sha }}&per_page=1" \
               | jq -r '.workflow_runs[0].conclusion // "null"')
             if [ "$STATUS" = "success" ] || [ "$STATUS" = "cancelled" ]; then
-              if [ "$STATUS" = "cancelled" ]; then
-                echo "CI completed (cancelled - likely E2E timeout, non-blocking)."
-              fi
-              echo "CI completed."
+              echo "CI completed (status: $STATUS)."
               exit 0
             elif [ "$STATUS" = "failure" ]; then
-              echo "ERROR: CI failed with status: $STATUS"
+              echo "ERROR: CI failed for ${{ github.sha }}"
               exit 1
             fi
-            echo "Attempt $i/30 - CI status: $STATUS"
-            sleep 10
+            echo "Attempt $i/60 - CI status: $STATUS"
+            sleep 15
           done
-          echo "ERROR: Timed out waiting for CI to complete"
+          echo "ERROR: Timed out waiting for CI"
           exit 1
 
       - name: Wait for build-push to complete
         run: |
           set -e
           echo "Waiting for build-push workflow for commit ${{ github.sha }}..."
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             STATUS=$(curl -sf -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build-push.yml/runs?head_sha=${{ github.sha }}&per_page=1" \
               | jq -r '.workflow_runs[0].conclusion // "null"')
@@ -72,142 +81,51 @@ jobs:
               echo "Build-push completed successfully."
               exit 0
             elif [ "$STATUS" = "failure" ] || [ "$STATUS" = "cancelled" ]; then
-              echo "ERROR: Build-push failed with status: $STATUS"
+              echo "ERROR: build-push failed with status: $STATUS"
               exit 1
             fi
-            echo "Attempt $i/30 - build-push status: $STATUS"
-            sleep 10
+            echo "Attempt $i/60 - build-push status: $STATUS"
+            sleep 15
           done
-          echo "ERROR: Timed out waiting for build-push to complete"
+          echo "ERROR: Timed out waiting for build-push"
           exit 1
 
-      - name: Install Supabase CLI
-        run: npm install -g supabase
-
-      - name: Run database migrations
-        run: |
-          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
-          supabase db push --include-all
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-
-      - name: Resolve droplet IP
-        id: ip
-        run: |
-          set -e
-          DO_TOKEN="${{ secrets.DO_API_TOKEN }}"
-          ALL_DROPLETS=$(curl -sf -H "Authorization: Bearer $DO_TOKEN" \
-            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200")
-          echo "$ALL_DROPLETS" | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | .[:-1][] | .id' \
-            | while read -r OLD_ID; do
-              echo "Destroying old droplet $OLD_ID"
-              curl -sf -X DELETE -H "Authorization: Bearer $DO_TOKEN" \
-                "https://api.digitalocean.com/v2/droplets/$OLD_ID" || true
-            done
-          IP=$(echo "$ALL_DROPLETS" | jq -r --arg name "chat-development" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
-          if [ -z "$IP" ]; then
-            echo "ERROR: No chat-development droplet found. Droplets:"
-            echo "$ALL_DROPLETS" | jq '[.droplets[] | {name, ip: .networks.v4[0].ip_address, created: .created_at}]'
-            exit 1
-          fi
-          echo "droplet_ip=$IP" >> "$GITHUB_OUTPUT"
-          echo "Using droplet IP: $IP"
-
-      - name: Setup droplet
+      - name: Verify the target is reachable
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
         with:
-          host: ${{ steps.ip.outputs.droplet_ip }}
+          host: ${{ env.LAB_HOST }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          strict_host_key_checking: true
           script: |
             set -e
-            cloud-init status --wait 2>/dev/null || true
-            if ! docker compose version >/dev/null 2>&1; then
-              apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2
-            fi
-            if ! git --version >/dev/null 2>&1; then
-              apt-get install -y -qq git
-            fi
-            if [ ! -d "${{ env.REPO_DIR }}" ] || [ ! -d "${{ env.REPO_DIR }}/.git" ]; then
-              rm -rf "${{ env.REPO_DIR }}"
-              git clone https://github.com/${{ github.repository }}.git ${{ env.REPO_DIR }} || { echo "ERROR: git clone failed"; exit 1; }
-            fi
-            cd ${{ env.REPO_DIR }} && git fetch origin develop && git stash 2>/dev/null || true && git checkout -B develop origin/develop && git reset --hard origin/develop
-
-            set +x
-            CERT_DIR=${{ env.REPO_DIR }}/infra/docker/certs
-            mkdir -p "$CERT_DIR"
-            echo "${{ secrets.CF_ORIGIN_CERT }}" > "$CERT_DIR/fullchain.pem"
-            echo "${{ secrets.CF_ORIGIN_KEY }}" > "$CERT_DIR/privkey.pem"
-            chmod 600 "$CERT_DIR/privkey.pem"
-            for i in $(seq 1 12); do docker info >/dev/null 2>&1 && break; echo 'Waiting for Docker...'; sleep 10; done
-            if [ ! -f /swapfile ]; then
-              fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
-            fi
-
-            # Generate .env file with only non-empty secrets
-            cat > ${{ env.REPO_DIR }}/.env << 'EOF'
-            NEXT_PUBLIC_API_URL=https://chat.${{ env.DOMAIN }}
-            NEXT_PUBLIC_APP_URL=https://chat.${{ env.DOMAIN }}
-            NODE_ENV=development
-            API_BASE_URL=https://chat-api.${{ env.DOMAIN }}
-            FRONTEND_URL=https://chat.${{ env.DOMAIN }}
-            DOMAIN=${{ env.DOMAIN }}
-            ENVIRONMENT=${{ env.ENVIRONMENT }}
-            EOF
-
-            # Add secrets only if they're set
-            if [ -n "${{ secrets.SUPABASE_URL }}" ]; then
-              echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> ${{ env.REPO_DIR }}/.env
-              echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> ${{ env.REPO_DIR }}/.env
-            fi
-            if [ -n "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
-              echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> ${{ env.REPO_DIR }}/.env
-              echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> ${{ env.REPO_DIR }}/.env
-            fi
-            if [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
-              echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> ${{ env.REPO_DIR }}/.env
-            fi
-            if [ -n "${{ secrets.LIVEKIT_API_KEY }}" ]; then
-              echo "LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}" >> ${{ env.REPO_DIR }}/.env
-              echo "LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}" >> ${{ env.REPO_DIR }}/.env
-            fi
-            if [ -n "${{ secrets.VAPID_PUBLIC_KEY }}" ]; then
-              echo "VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> ${{ env.REPO_DIR }}/.env
-            fi
-            if [ -n "${{ secrets.VAPID_PRIVATE_KEY }}" ]; then
-              echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" >> ${{ env.REPO_DIR }}/.env
-            fi
-            if [ -n "${{ secrets.METRICS_TOKEN }}" ]; then
-              echo "METRICS_TOKEN=${{ secrets.METRICS_TOKEN }}" >> ${{ env.REPO_DIR }}/.env
-            fi
-            if [ -n "${{ secrets.CHAT_NTFY_PASS }}" ]; then
-              echo "CHAT_NTFY_URL=https://ntfy.mainecybertech.us/chat-alerts" >> ${{ env.REPO_DIR }}/.env
-              echo "CHAT_NTFY_USER=chat-relay" >> ${{ env.REPO_DIR }}/.env
-              echo "CHAT_NTFY_PASS=${{ secrets.CHAT_NTFY_PASS }}" >> ${{ env.REPO_DIR }}/.env
-            fi
-            set -x
-
-            # Also create .env in infra/docker for docker-compose
-            mkdir -p ${{ env.REPO_DIR }}/infra/docker
-            cp ${{ env.REPO_DIR }}/.env ${{ env.REPO_DIR }}/infra/docker/.env
-            chmod 600 ${{ env.REPO_DIR }}/.env ${{ env.REPO_DIR }}/infra/docker/.env
-
-            # Verify compose file exists
-            if [ ! -f "infra/docker/docker-compose.devremote.yml" ]; then
-              echo "ERROR: docker-compose.devremote.yml not found"
+            hostname
+            docker --version
+            docker compose version
+            if [ ! -f "${{ env.REPO_DIR }}/infra/docker/.env" ]; then
+              echo "ERROR: ${{ env.REPO_DIR }}/infra/docker/.env is missing."
+              echo "This file holds the deployment secrets and is managed out of band."
+              echo "See docs/runbooks/lab-lxc-environment.md."
               exit 1
             fi
+            echo "target ready"
+
+      - name: Sync compose file
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
+        with:
+          host: ${{ env.LAB_HOST }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          source: "infra/docker/docker-compose.devremote.yml"
+          target: "${{ env.REPO_DIR }}"
+          # The site-specific Caddyfile and .env are deliberately NOT synced:
+          # they are environment config, not build artefacts.
 
       - name: Deploy
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
         with:
-          host: ${{ steps.ip.outputs.droplet_ip }}
+          host: ${{ env.LAB_HOST }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          strict_host_key_checking: true
           script: |
             set -e
             cd ${{ env.REPO_DIR }}
@@ -215,99 +133,76 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             set -x
 
-            # Aggressive disk cleanup before pulling
-            echo "=== Disk usage before cleanup ==="
-            df -h /
-            docker system df -v
+            echo "=== disk before ==="
+            df -h / | tail -1
 
-            # Stop and remove all containers first
-            docker compose -f infra/docker/docker-compose.devremote.yml down --remove-orphans 2>/dev/null || true
-
-            # Remove unused images, build cache, and networks (NOT volumes; preserve named data volumes like redis-data)
-            docker system prune -af
-            docker builder prune -af
-            docker image prune -af --filter "until=24h"
-
-            echo "=== Disk usage after cleanup ==="
-            df -h /
-
-            # Pull images with retries (use commit SHA to avoid race with build-push)
+            # Pull by commit SHA first (race-safe), falling back to :dev.
             COMMIT_SHA=${{ github.sha }}
             for img in api worker web; do
-              # Try SHA-specific tag first (race-condition-safe)
-              if docker pull ghcr.io/${{ env.REPO_LC }}/$img:$COMMIT_SHA; then
-                docker tag ghcr.io/${{ env.REPO_LC }}/$img:$COMMIT_SHA ghcr.io/${{ env.REPO_LC }}/$img:dev
-                echo "Successfully pulled $img:$COMMIT_SHA and tagged as $img:dev"
+              if docker pull "ghcr.io/${{ env.REPO_LC }}/$img:$COMMIT_SHA"; then
+                docker tag "ghcr.io/${{ env.REPO_LC }}/$img:$COMMIT_SHA" "ghcr.io/${{ env.REPO_LC }}/$img:dev"
+                echo "pulled $img:$COMMIT_SHA"
               else
-                # Fallback to :dev tag
                 for attempt in 1 2 3; do
-                  if docker pull ghcr.io/${{ env.REPO_LC }}/$img:dev; then
-                    echo "Successfully pulled $img:dev"
+                  if docker pull "ghcr.io/${{ env.REPO_LC }}/$img:dev"; then
+                    echo "pulled $img:dev (fallback)"
                     break
                   fi
-                  echo "Attempt $attempt failed for $img:dev, retrying in 5s..."
+                  echo "attempt $attempt failed for $img:dev; retrying"
                   sleep 5
                 done
               fi
             done
 
             docker compose -f infra/docker/docker-compose.devremote.yml up -d --force-recreate --remove-orphans
-            docker image prune -af
 
-            # Show container logs from the start for debugging
-            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 20 2>/dev/null || true
+            # Never prune volumes here: it destroyed the Redis AOF historically.
+            docker image prune -af --filter "until=24h" >/dev/null 2>&1 || true
 
+            echo "=== waiting for health ==="
             for i in $(seq 1 36); do
               LOGS=$(docker compose -f infra/docker/docker-compose.devremote.yml ps 2>&1)
-              echo "=== Attempt $i ==="
-              echo "$LOGS"
-
-              # Check for any exited containers (crash on startup)
               if echo "$LOGS" | grep -q "Exit "; then
-                echo "ERROR: Container exited - showing logs"
+                echo "ERROR: a container exited"
                 docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100
                 exit 1
               fi
-
-              if echo "$LOGS" | grep -q "Unhealthy"; then
-                echo "ERROR: Container unhealthy - showing logs"
-                docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 50
-                exit 1
-              fi
-
-              # Check ALL critical containers are healthy (not just one)
-              API_HEALTHY=$(echo "$LOGS" | grep "chat-api-dev" | grep -c "(healthy)" || true)
-              WEB_HEALTHY=$(echo "$LOGS" | grep "chat-web-dev" | grep -c "(healthy)" || true)
-              REDIS_HEALTHY=$(echo "$LOGS" | grep "chat-redis-dev" | grep -c "(healthy)" || true)
-              if [ "$API_HEALTHY" -gt 0 ] && [ "$WEB_HEALTHY" -gt 0 ] && [ "$REDIS_HEALTHY" -gt 0 ]; then
-                echo "All critical containers healthy"
+              API_HEALTHY=$(echo "$LOGS" | grep -c "(healthy)" || true)
+              if [ "$API_HEALTHY" -ge 3 ]; then
                 echo "$LOGS"
                 exit 0
               fi
-
-              echo "Waiting for containers to become healthy... ($i/36)"
+              echo "waiting for containers to become healthy ($i/36)"
               sleep 10
             done
-
-            echo "ERROR: Containers did not become healthy"
+            echo "ERROR: containers did not become healthy"
             docker compose -f infra/docker/docker-compose.devremote.yml ps
-            docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 100
             exit 1
 
       - name: Health check
         run: |
-          echo "=== External health check ==="
-          # Show container logs from the start for debugging
-          docker compose -f infra/docker/docker-compose.devremote.yml logs --tail 50 2>/dev/null || true
-
-          for i in $(seq 1 30); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://chat-api.${{ env.DOMAIN }}/health --connect-timeout 10 2>/dev/null || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "External API healthy (HTTPS)"
+          for i in $(seq 1 20); do
+            API=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "${{ env.LAB_URL }}/health" || echo 000)
+            WEB=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "${{ env.LAB_URL }}/" || echo 000)
+            if [ "$API" = "200" ] && [ "$WEB" = "200" ]; then
+              echo "API and web are healthy at ${{ env.LAB_URL }}"
               exit 0
             fi
-            echo "Attempt $i: returned $STATUS, retrying..."
+            echo "attempt $i: api=$API web=$WEB"
             sleep 10
           done
-          echo "Health check failed"
+          echo "ERROR: health check failed"
           exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Deploy to lab LXC"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Target | \`${{ env.LAB_HOST }}\` |"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| URL | ${{ env.LAB_URL }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

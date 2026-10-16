@@ -1,4 +1,5 @@
 import { Worker, Job, Queue } from "bullmq";
+import webPush from "web-push";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
 import { createSupabaseClient } from "../lib/supabase.js";
@@ -63,6 +64,19 @@ async function deliverInApp(
   return true;
 }
 
+let vapidConfigured = false;
+
+// Configure VAPID details once; the call is skipped when keys are absent.
+function ensureVapidDetails(env: ReturnType<typeof loadEnv>): void {
+  if (vapidConfigured || !env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) return;
+  webPush.setVapidDetails(
+    env.VAPID_SUBJECT ?? "mailto:ops@mainecybertech.us",
+    env.VAPID_PUBLIC_KEY,
+    env.VAPID_PRIVATE_KEY,
+  );
+  vapidConfigured = true;
+}
+
 async function deliverPush(
   supabase: ReturnType<typeof createSupabaseClient>,
   data: NotificationJobData,
@@ -72,6 +86,7 @@ async function deliverPush(
     logger.warn("VAPID keys not configured, skipping push notification");
     return false;
   }
+  ensureVapidDetails(env);
 
   const { data: subscriptions } = await supabase
     .from("push_subscriptions")
@@ -92,25 +107,23 @@ async function deliverPush(
         data: { url: data.link ?? "/", ...data.data },
       });
 
-      const response = await fetch(sub.endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "TTH-TTTP-Public-Key": env.VAPID_PUBLIC_KEY!,
-          Authorization: `WebPush ${env.VAPID_PRIVATE_KEY}`,
+      await webPush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth },
         },
-        body: payload,
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (response.status === 410) {
+        payload,
+        { timeout: 5000 },
+      );
+      sentCount++;
+    } catch (err) {
+      const statusCode = (err as { statusCode?: number }).statusCode;
+      if (statusCode === 410) {
         await supabase.from("push_subscriptions").delete().eq("id", sub.id);
         logger.info({ userId: data.userId }, "Removed expired push subscription");
-      } else if (response.ok) {
-        sentCount++;
+      } else {
+        logger.warn({ userId: data.userId, error: String(err) }, "Push delivery failed");
       }
-    } catch (err) {
-      logger.warn({ userId: data.userId, error: String(err) }, "Push delivery failed");
     }
   }
 

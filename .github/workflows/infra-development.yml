@@ -1,4 +1,4 @@
-name: Infra — Development
+﻿name: Infra â€” Development
 
 # CI-P2-001: this workflow applies/destroys development infrastructure and was
 # previously triggered on every push to `develop`. It is now manual-only and
@@ -24,7 +24,7 @@ env:
 jobs:
   provision:
     name: Provision Infrastructure
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     timeout-minutes: 15
     # Requires the `development` environment (configure required reviewers there)
     # before any dispatch reaches the destructive steps below.
@@ -156,7 +156,7 @@ jobs:
           echo "droplet_ip=$(cat /tmp/droplet_ip)" >> "$GITHUB_OUTPUT"
           echo "Droplet IP: $(cat /tmp/droplet_ip)"
 
-      - name: Health check — wait for SSH
+      - name: Health check â€” wait for SSH
         if: ${{ inputs.apply }}
         run: |
           IP="${{ steps.terraform.outputs.droplet_ip }}"

@@ -32,7 +32,7 @@ async function retainMessages(
   const { data: messages, error: selectError } = await supabase
     .from("messages")
     .select("id")
-    .neq("deleted_at", null)
+    .not("deleted_at", "is", null)
     .lt("deleted_at", cutoff.toISOString())
     .limit(1000);
 
@@ -102,7 +102,7 @@ async function retainSoftDeletedChannels(
   const { data: channels, error: selectError } = await supabase
     .from("channels")
     .select("id")
-    .neq("deleted_at", null)
+    .not("deleted_at", "is", null)
     .lt("deleted_at", cutoff.toISOString())
     .limit(500);
 
@@ -206,7 +206,7 @@ async function retainSoftDeletedWorkspaces(
   const { data: workspaces, error: selectError } = await supabase
     .from("workspaces")
     .select("id")
-    .neq("deleted_at", null)
+    .not("deleted_at", "is", null)
     .lt("deleted_at", cutoff.toISOString())
     .limit(500);
 

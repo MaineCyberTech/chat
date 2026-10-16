@@ -1,17 +1,27 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  getSession,
+  subscribe,
+  signInWithPassword,
+  signUp as signUpRequest,
+  sendMagicLink,
+  signInWithOAuth,
+  signOut as signOutRequest,
+  type AuthUser,
+} from "@/lib/auth/client";
 import { getSocket, disconnectSocket } from "@/lib/socket";
-import type { User } from "@supabase/supabase-js";
+
+export type { AuthUser };
 
 interface AuthState {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
   signIn: (email: string, password?: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error?: string }>;
-  signInWithGoogle: () => Promise<void>;
-  signInWithGithub: () => Promise<void>;
+  signInWithGoogle: () => Promise<{ error?: string }>;
+  signInWithGithub: () => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
 }
 
@@ -20,8 +30,8 @@ export const AuthContext = createContext<AuthState>({
   loading: true,
   signIn: async () => ({ error: "AuthProvider not mounted" }),
   signUp: async () => ({ error: "AuthProvider not mounted" }),
-  signInWithGoogle: async () => {},
-  signInWithGithub: async () => {},
+  signInWithGoogle: async () => ({ error: "AuthProvider not mounted" }),
+  signInWithGithub: async () => ({ error: "AuthProvider not mounted" }),
   signOut: async () => {},
 });
 
@@ -30,95 +40,53 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
+    // The client hydrates synchronously from localStorage, so there is no
+    // initial network round trip.
+    const initial = getSession();
+    setUser(initial?.user ?? null);
+    setLoading(false);
+    if (initial?.user) {
+      getSocket().catch(() => {});
+    }
 
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-        if (session?.user) {
-          getSocket().catch(() => {});
-        }
-      })
-      .catch(() => {
-        setUser(null);
-        setLoading(false);
-      });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    const unsubscribe = subscribe((session) => {
       setUser(session?.user ?? null);
-      if (event === "SIGNED_IN" && session?.user) {
+      if (session?.user) {
         getSocket().catch(() => {});
-      } else if (event === "SIGNED_OUT") {
+      } else {
         disconnectSocket();
       }
     });
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    return unsubscribe;
   }, []);
 
   const signIn = useCallback(async (email: string, password?: string) => {
-    const supabase = getSupabaseBrowserClient();
     if (password) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) return { error: error.message };
-    } else {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) return { error: error.message };
+      return signInWithPassword(email, password);
     }
-    return {};
+    return sendMagicLink(email);
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
-    const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { display_name: displayName ?? email.split("@")[0] },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) return { error: error.message };
-    return {};
+    return signUpRequest(email, password, displayName);
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    return signInWithOAuth("google");
   }, []);
 
   const signInWithGithub = useCallback(async () => {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    return signInWithOAuth("github");
   }, []);
 
   const signOut = useCallback(async () => {
-    const supabase = getSupabaseBrowserClient();
     disconnectSocket();
-    await supabase.auth.signOut();
+    await signOutRequest();
     setUser(null);
   }, []);
 

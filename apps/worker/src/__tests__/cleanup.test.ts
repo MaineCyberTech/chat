@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-const { mockLogger, MockWorker, MockQueue, mockSupabaseClient } = vi.hoisted(() => {
+const { mockLogger, MockWorker, MockQueue, mockSupabaseClient, mockStorage } = vi.hoisted(() => {
   const mockLogger = {
     info: vi.fn(),
     warn: vi.fn(),
@@ -26,13 +26,15 @@ const { mockLogger, MockWorker, MockQueue, mockSupabaseClient } = vi.hoisted(() 
   const mockSupabaseClient = {
     from: vi.fn().mockReturnValue(chain),
     schema: vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue(chain) }),
-    storage: {
-      from: vi.fn().mockReturnValue({ remove: vi.fn().mockResolvedValue({ error: null }) }),
-    },
     rpc: vi.fn().mockResolvedValue({}),
   };
+  const mockStorage = {
+    isStorageConfigured: vi.fn(() => true),
+    listObjectsOlderThan: vi.fn(async () => [] as string[]),
+    deleteObjects: vi.fn(async () => undefined),
+  };
 
-  return { mockLogger, MockWorker, MockQueue, mockSupabaseClient };
+  return { mockLogger, MockWorker, MockQueue, mockSupabaseClient, mockStorage };
 });
 
 vi.mock("@chat/config/logger.js", () => ({ logger: mockLogger }));
@@ -49,6 +51,8 @@ vi.mock("../lib/supabase.js", () => ({
   createSupabaseClient: () => mockSupabaseClient,
   executeWithCircuitBreaker: vi.fn(),
 }));
+
+vi.mock("../lib/storage.js", () => mockStorage);
 
 vi.mock("bullmq", () => ({
   Queue: MockQueue,
@@ -91,5 +95,42 @@ describe("cleanup processor", () => {
       id: "job-1",
     });
     expect(result).toBeDefined();
+  });
+
+  it("deletes stale uploads through the S3 adapter", async () => {
+    mockStorage.listObjectsOlderThan.mockResolvedValueOnce(["u1/old.png", "u2/old.pdf"]);
+    const { registerCleanupProcessor } = await import("../processors/cleanup.js");
+    registerCleanupProcessor();
+    const handler = (
+      MockWorker.mock.calls[0] as unknown as [
+        unknown,
+        (job: unknown) => Promise<{ cleaned: number }>,
+      ]
+    )?.[1];
+    const result = await handler!({
+      data: { type: "expired_uploads", olderThanDays: 30 },
+      id: "job-2",
+    });
+    expect(mockStorage.listObjectsOlderThan).toHaveBeenCalledWith(expect.any(Date), 1000);
+    expect(mockStorage.deleteObjects).toHaveBeenCalledWith(["u1/old.png", "u2/old.pdf"]);
+    expect(result.cleaned).toBe(2);
+  });
+
+  it("skips stale uploads when object storage is not configured", async () => {
+    mockStorage.isStorageConfigured.mockReturnValueOnce(false);
+    const { registerCleanupProcessor } = await import("../processors/cleanup.js");
+    registerCleanupProcessor();
+    const handler = (
+      MockWorker.mock.calls[0] as unknown as [
+        unknown,
+        (job: unknown) => Promise<{ cleaned: number }>,
+      ]
+    )?.[1];
+    const result = await handler!({
+      data: { type: "expired_uploads", olderThanDays: 30 },
+      id: "job-3",
+    });
+    expect(mockStorage.listObjectsOlderThan).not.toHaveBeenCalled();
+    expect(result.cleaned).toBe(0);
   });
 });

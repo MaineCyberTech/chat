@@ -3,7 +3,10 @@
 
 FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS base
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9 --activate
+# Install pnpm directly. Corepack is no longer bundled with Node.js 25+, so
+# `corepack enable` fails with exit 127 on current node:* base images.
+# Keep in sync with package.json#packageManager.
+RUN npm install -g pnpm@9.15.4
 
 # Install deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./
@@ -20,6 +23,9 @@ COPY apps/web/components ./apps/web/components
 COPY apps/web/lib ./apps/web/lib
 COPY apps/web/public ./apps/web/public
 COPY apps/web/scripts ./apps/web/scripts
+# middleware.ts injects the CSP/HSTS/nosniff/referrer/permissions headers. It was
+# missing from this list, so production images shipped without those headers.
+COPY apps/web/middleware.ts ./apps/web/middleware.ts
 
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_SUPABASE_URL
@@ -57,7 +63,7 @@ COPY --from=base /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=base /app/apps/web/public ./apps/web/public
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD ["wget", "-qO-", "http://localhost:3000"]
+  CMD ["wget", "-qO-", "http://127.0.0.1:3000"]
 
 EXPOSE 3000
 

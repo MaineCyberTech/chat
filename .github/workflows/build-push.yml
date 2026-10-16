@@ -1,4 +1,4 @@
-name: Build and Push Images
+﻿name: Build and Push Images
 
 on:
   workflow_dispatch:
@@ -31,7 +31,7 @@ env:
 jobs:
   build-images:
     name: Build and Push
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-docker]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

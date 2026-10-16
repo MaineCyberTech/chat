@@ -1,5 +1,5 @@
 import { io, Socket, ManagerOptions, SocketOptions } from "socket.io-client";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getAccessToken } from "@/lib/auth/client";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -67,9 +67,7 @@ export function getSocket(): Promise<Socket> {
   reconnectAttempts = 0;
 
   pendingSocket = (async () => {
-    const supabase = getSupabaseBrowserClient();
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
+    const token = await getAccessToken();
 
     if (!token) throw new Error("Not authenticated");
 
