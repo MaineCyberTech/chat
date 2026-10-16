@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
-import { requireChannelAccess } from "../../middleware/require-membership.js";
+import { requireMessageAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
 import { threadService } from "./service.js";
 import { asyncHandler } from "../../lib/async-handler.js";
@@ -29,7 +29,7 @@ router.get(
 router.get(
   "/messages/:id/thread",
   validateUuidParam("id"),
-  requireChannelAccess("id"),
+  requireMessageAccess("id"),
   asyncHandler(async (req: Request, res: Response) => {
     const thread = await threadService.getThread(req.params.id as string, req.supabase!);
     if (!thread) {

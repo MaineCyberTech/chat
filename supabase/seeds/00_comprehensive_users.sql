@@ -2,7 +2,7 @@
 -- 21 test users across 3 organizations with diverse roles + 1 super admin.
 -- Super admin (Alex Admin) has owner-level access to ALL workspaces.
 -- Password for all users: password123
--- Bcrypt hash: $2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W
+-- Bcrypt hash: $2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri
 
 begin;
 
@@ -45,7 +45,7 @@ INSERT INTO auth.users (
 -- 1. Marcus Chen - Workspace Owner, Engineering Director
 ('00000000-0000-0000-0000-000000000000', 'a0000001-0000-4000-8000-000000000001',
  'authenticated', 'authenticated', 'marcus@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-07-18 09:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Marcus Chen"}'::jsonb,
  '2025-07-18 09:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -53,7 +53,7 @@ INSERT INTO auth.users (
 -- 2. Sarah Patel - Workspace Owner, Product Lead
 ('00000000-0000-0000-0000-000000000000', 'a0000002-0000-4000-8000-000000000002',
  'authenticated', 'authenticated', 'sarah@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-07-18 09:05:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Sarah Patel"}'::jsonb,
  '2025-07-18 09:05:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -61,7 +61,7 @@ INSERT INTO auth.users (
 -- 3. Jake Morrison - Workspace Admin, Senior Engineer
 ('00000000-0000-0000-0000-000000000000', 'a0000003-0000-4000-8000-000000000003',
  'authenticated', 'authenticated', 'jake@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-07-19 10:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Jake Morrison"}'::jsonb,
  '2025-07-19 10:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -69,7 +69,7 @@ INSERT INTO auth.users (
 -- 4. Elena Volkov - Workspace Member, Backend Engineer
 ('00000000-0000-0000-0000-000000000000', 'a0000004-0000-4000-8000-000000000004',
  'authenticated', 'authenticated', 'elena@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-07-20 08:30:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Elena Volkov"}'::jsonb,
  '2025-07-20 08:30:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -77,7 +77,7 @@ INSERT INTO auth.users (
 -- 5. Tyler Brooks - Workspace Member, Frontend Engineer
 ('00000000-0000-0000-0000-000000000000', 'a0000005-0000-4000-8000-000000000005',
  'authenticated', 'authenticated', 'tyler@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-07-22 11:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Tyler Brooks"}'::jsonb,
  '2025-07-22 11:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -85,7 +85,7 @@ INSERT INTO auth.users (
 -- 6. Priya Sharma - Workspace Member, QA Engineer
 ('00000000-0000-0000-0000-000000000000', 'a0000006-0000-4000-8000-000000000006',
  'authenticated', 'authenticated', 'priya@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-08-01 09:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Priya Sharma"}'::jsonb,
  '2025-08-01 09:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -93,7 +93,7 @@ INSERT INTO auth.users (
 -- 7. Carlos Rivera - Workspace Member, DevOps
 ('00000000-0000-0000-0000-000000000000', 'a0000007-0000-4000-8000-000000000007',
  'authenticated', 'authenticated', 'carlos@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-08-05 14:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Carlos Rivera"}'::jsonb,
  '2025-08-05 14:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -101,7 +101,7 @@ INSERT INTO auth.users (
 -- 8. Aisha Johnson - Workspace Admin, Design Lead
 ('00000000-0000-0000-0000-000000000000', 'a0000008-0000-4000-8000-000000000008',
  'authenticated', 'authenticated', 'aisha@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-08-10 09:30:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Aisha Johnson"}'::jsonb,
  '2025-08-10 09:30:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -109,7 +109,7 @@ INSERT INTO auth.users (
 -- 9. Liam O'Brien - Workspace Member, Junior Engineer
 ('00000000-0000-0000-0000-000000000000', 'a0000009-0000-4000-8000-000000000009',
  'authenticated', 'authenticated', 'liam@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-08-15 10:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Liam O''Brien"}'::jsonb,
  '2025-08-15 10:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -117,7 +117,7 @@ INSERT INTO auth.users (
 -- 10. Mei Lin - Workspace Member, Data Analyst
 ('00000000-0000-0000-0000-000000000000', 'a0000010-0000-4000-8000-000000000010',
  'authenticated', 'authenticated', 'mei@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-09-01 08:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Mei Lin"}'::jsonb,
  '2025-09-01 08:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -125,7 +125,7 @@ INSERT INTO auth.users (
 -- 11. Dmitri Petrov - Workspace Member, Security Engineer
 ('00000000-0000-0000-0000-000000000000', 'a0000011-0000-4000-8000-000000000011',
  'authenticated', 'authenticated', 'dmitri@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-09-10 09:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Dmitri Petrov"}'::jsonb,
  '2025-09-10 09:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -133,7 +133,7 @@ INSERT INTO auth.users (
 -- 12. Nkechi Adeyemi - Workspace Owner, CEO
 ('00000000-0000-0000-0000-000000000000', 'a0000012-0000-4000-8000-000000000012',
  'authenticated', 'authenticated', 'nkechi@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-07-18 08:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Nkechi Adeyemi"}'::jsonb,
  '2025-07-18 08:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -141,7 +141,7 @@ INSERT INTO auth.users (
 -- 13. Raj Gupta - Workspace Member, Full Stack
 ('00000000-0000-0000-0000-000000000000', 'a0000013-0000-4000-8000-000000000013',
  'authenticated', 'authenticated', 'raj@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-07-25 10:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Raj Gupta"}'::jsonb,
  '2025-07-25 10:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -149,7 +149,7 @@ INSERT INTO auth.users (
 -- 14. Fatima Al-Rashid - Workspace Member, Technical Writer
 ('00000000-0000-0000-0000-000000000000', 'a0000014-0000-4000-8000-000000000014',
  'authenticated', 'authenticated', 'fatima@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-09-15 09:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Fatima Al-Rashid"}'::jsonb,
  '2025-09-15 09:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -157,7 +157,7 @@ INSERT INTO auth.users (
 -- 15. Tom Nguyen - Workspace Member, Intern
 ('00000000-0000-0000-0000-000000000000', 'a0000015-0000-4000-8000-000000000015',
  'authenticated', 'authenticated', 'tom@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-10-01 09:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Tom Nguyen"}'::jsonb,
  '2025-10-01 09:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -165,7 +165,7 @@ INSERT INTO auth.users (
 -- 16. Alex Admin - Super Admin, Platform Administrator (access to ALL workspaces)
 ('00000000-0000-0000-0000-000000000000', 'a0000016-0000-4000-8000-000000000016',
  'authenticated', 'authenticated', 'admin@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2025-07-15 08:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Alex Admin","role":"super_admin"}'::jsonb,
  '2025-07-15 08:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -173,7 +173,7 @@ INSERT INTO auth.users (
 -- 17. Olivia Foster - Staff Engineer, Acme Corp (joined Feb 2026)
 ('00000000-0000-0000-0000-000000000000', 'a0000017-0000-4000-8000-000000000017',
  'authenticated', 'authenticated', 'olivia@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2026-02-01 09:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Olivia Foster"}'::jsonb,
  '2026-02-01 09:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -181,7 +181,7 @@ INSERT INTO auth.users (
 -- 18. Jamal Williams - Intern, TechStart (joined Mar 2026)
 ('00000000-0000-0000-0000-000000000000', 'a0000018-0000-4000-8000-000000000018',
  'authenticated', 'authenticated', 'jamal@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2026-03-01 09:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Jamal Williams"}'::jsonb,
  '2026-03-01 09:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -189,7 +189,7 @@ INSERT INTO auth.users (
 -- 19. Chen Wei - Product Manager, DesignHub (joined Jan 2026)
 ('00000000-0000-0000-0000-000000000000', 'a0000019-0000-4000-8000-000000000019',
  'authenticated', 'authenticated', 'chen@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2026-01-01 09:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Chen Wei"}'::jsonb,
  '2026-01-01 09:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -197,7 +197,7 @@ INSERT INTO auth.users (
 -- 20. Sofia Rodriguez - Designer, Acme Corp (joined Apr 2026)
 ('00000000-0000-0000-0000-000000000000', 'a0000020-0000-4000-8000-000000000020',
  'authenticated', 'authenticated', 'sofia@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2026-04-01 09:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Sofia Rodriguez"}'::jsonb,
  '2026-04-01 09:00:00+00', '2026-01-18 09:00:00+00', false, false),
@@ -205,7 +205,7 @@ INSERT INTO auth.users (
 -- 21. Ethan Kowalski - Sales Engineer, TechStart (joined May 2026)
 ('00000000-0000-0000-0000-000000000000', 'a0000021-0000-4000-8000-000000000021',
  'authenticated', 'authenticated', 'ethan@seed.test',
- '$2a$10$v6eIqtfdO8MPMAg6HEJUU.eHvG1iZ9bIl/apu.boe3WW5wvr2Lr2W',
+ '$2a$10$lTjTUSH5WDU6gHvxio3g2.W4e8O2cb51f.ca3Bg421MKmtZ1gCCri',
  '2026-05-01 09:00:00+00', '{"provider":"email","providers":["email"]}'::jsonb,
  '{"email_verified":true,"display_name":"Ethan Kowalski"}'::jsonb,
  '2026-05-01 09:00:00+00', '2026-01-18 09:00:00+00', false, false)

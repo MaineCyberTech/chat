@@ -100,12 +100,13 @@ router.post(
       return;
     }
     const supabase = req.supabase!;
+    // A status is active when it never expires (NULL) or has not expired yet.
+    // PostgREST ANDs chained filters, so this must be a single `or()` expression.
     const { data } = await supabase
       .from("user_statuses")
       .select("*")
       .in("user_id", userIds)
-      .is("expires_at", null)
-      .or(`expires_at.gt.${new Date().toISOString()}`);
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
     const map: Record<string, { emoji: string; text: string }> = {};
     if (data) {
       for (const row of data) {

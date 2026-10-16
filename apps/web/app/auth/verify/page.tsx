@@ -2,7 +2,7 @@
 
 import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { sendMagicLink } from "@/lib/auth/client";
 
 function VerifyContent() {
   const router = useRouter();
@@ -17,16 +17,12 @@ function VerifyContent() {
     setResending(true);
     setError(null);
     try {
-      const supabase = getSupabaseBrowserClient();
-      const { error: resendError } = await supabase.auth.resend({
-        type: "signup",
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (resendError) {
-        setError(resendError.message);
+      // The self-hosted auth provider confirms accounts at sign-up, so there is
+      // no verification email to resend. Send a fresh sign-in link instead,
+      // which is what a user on this page actually needs.
+      const result = await sendMagicLink(email);
+      if (result.error) {
+        setError(result.error);
       } else {
         setResent(true);
       }

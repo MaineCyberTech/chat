@@ -1,4 +1,4 @@
-name: Validate
+﻿name: Validate
 
 on:
   workflow_call:
@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -45,7 +45,7 @@ jobs:
           if [ -f test-results/junit.xml ]; then
             FLAKY=$(grep -c 'flaky="true"' test-results/junit.xml 2>/dev/null || true)
             if [ "$FLAKY" -gt 0 ]; then
-              echo "⚠️ $FLAKY flaky test(s) detected. Review test-results/junit.xml for details."
+              echo "âš ï¸ $FLAKY flaky test(s) detected. Review test-results/junit.xml for details."
             fi
           fi
       - name: Upload test results (JUnit)
@@ -62,7 +62,7 @@ jobs:
           path: coverage/
 
   diff-coverage:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     timeout-minutes: 10
     needs: test
     if: github.event_name == 'pull_request'
@@ -120,7 +120,7 @@ jobs:
           "
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -143,7 +143,7 @@ jobs:
       - run: pnpm lint
 
   typecheck:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -165,7 +165,7 @@ jobs:
       - run: pnpm typecheck
 
   openapi-validate:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -205,7 +205,7 @@ jobs:
           "
 
   security-audit:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-docker]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -272,7 +272,7 @@ jobs:
 
   branch-protection:
     name: Check Branch Protection
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     timeout-minutes: 5
     # Blocking, not advisory. `main` must carry active rules requiring PR review,
     # passing status checks, and no force pushes. This is the in-repo gate for the
@@ -324,7 +324,7 @@ jobs:
 
   migration-test:
     name: Test Database Migrations
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-docker]
     timeout-minutes: 15
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -366,7 +366,7 @@ jobs:
             diff <(echo "$expected") <(echo "$actual") || true
             exit 1
           fi
-          echo "✅ Migration order matches manifest"
+          echo "âœ… Migration order matches manifest"
 
       - name: Run SQL lint
         run: |
@@ -410,7 +410,7 @@ jobs:
               exit 1
             fi
           done
-          echo "✅ All migrations have matching rollback scripts"
+          echo "âœ… All migrations have matching rollback scripts"
 
           # 2. Actually execute the down scripts in reverse order.
           failures=0
@@ -431,10 +431,10 @@ jobs:
 
           # 3. Re-apply all migrations to prove the up/down/up round-trip.
           supabase db reset
-          echo "✅ Migration up/down/up round-trip succeeded"
+          echo "âœ… Migration up/down/up round-trip succeeded"
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     timeout-minutes: 10
     needs: [lint, typecheck, test, security-audit, migration-test, openapi-validate]
     steps:
@@ -464,7 +464,7 @@ jobs:
       - run: pnpm build
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-docker]
     timeout-minutes: 20
     needs: [build]
     env:

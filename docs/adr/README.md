@@ -16,9 +16,10 @@ Each ADR follows this structure:
 
 ## Index
 
-| Number                              | Title                                                           | Status   |
-| ----------------------------------- | --------------------------------------------------------------- | -------- |
-| [0001](./0001-supabase-auth-rls.md) | Use Supabase Auth + RLS for authentication and tenant isolation | Accepted |
+| Number                                           | Title                                                           | Status   |
+| ------------------------------------------------ | --------------------------------------------------------------- | -------- |
+| [0001](./0001-supabase-auth-rls.md)              | Use Supabase Auth + RLS for authentication and tenant isolation | Accepted |
+| [0002](./0002-postgres-postgrest-custom-auth.md) | Self-hosted Postgres + PostgREST with custom auth               | Proposed |
 
 ## Creating a New ADR
 

@@ -648,7 +648,7 @@ export function MessageList({
               {unreadCount}
             </span>
           )}
-          Jump to present \u2193
+          Jump to present ↓
         </button>
       )}
 

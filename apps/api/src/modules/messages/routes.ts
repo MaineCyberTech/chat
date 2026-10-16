@@ -12,6 +12,7 @@ import {
   ConflictError,
   InternalServerError,
   ForbiddenError,
+  ServiceUnavailableError,
 } from "../../lib/app-error.js";
 import {
   createMessageSchema,
@@ -21,6 +22,7 @@ import {
 } from "../../config/validators.js";
 import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
 import { responseCache } from "../../middleware/cache.js";
+import { isStorageConfigured, createPresignedUpload, publicUrl } from "../../lib/storage.js";
 import DOMPurify from "dompurify";
 import { JSDOM } from "jsdom";
 
@@ -479,25 +481,19 @@ router.post(
       throw new BadRequestError(parsed.error.issues[0].message);
     }
 
-    if (!req.supabase) {
-      throw new InternalServerError("Auth context missing");
+    if (!isStorageConfigured()) {
+      throw new ServiceUnavailableError("Object storage is not configured");
     }
 
     const safeFileName = parsed.data.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const filePath = `${req.userId}/${Date.now()}-${safeFileName}`;
 
-    const { data, error } = await req.supabase.storage
-      .from("chat-uploads")
-      .createSignedUploadUrl(filePath);
-
-    if (error || !data) {
-      throw new InternalServerError(error?.message ?? "Could not create upload URL");
-    }
+    const uploadUrl = await createPresignedUpload(filePath, parsed.data.contentType);
 
     res.json({
-      uploadUrl: data.signedUrl,
+      uploadUrl,
       filePath,
-      publicUrl: req.supabase.storage.from("chat-uploads").getPublicUrl(filePath).data.publicUrl,
+      publicUrl: publicUrl(filePath),
     });
   }),
 );

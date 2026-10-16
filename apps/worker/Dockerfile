@@ -1,7 +1,10 @@
 FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS base
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
+# Install pnpm directly. Corepack is no longer bundled with Node.js 25+, so
+# `corepack enable` fails with exit 127 on current node:* base images.
+# Keep in sync with package.json#packageManager.
+RUN npm install -g pnpm@9.15.4
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./
 
@@ -17,7 +20,10 @@ RUN pnpm turbo build --filter @chat/worker
 FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS runtime
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
+# Install pnpm directly. Corepack is no longer bundled with Node.js 25+, so
+# `corepack enable` fails with exit 127 on current node:* base images.
+# Keep in sync with package.json#packageManager.
+RUN npm install -g pnpm@9.15.4
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/worker/package.json ./apps/worker/package.json
@@ -32,9 +38,9 @@ RUN pnpm install --frozen-lockfile --filter ./apps/worker --prod --ignore-script
 RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 appuser
 USER appuser
 
-EXPOSE 4001
+EXPOSE 4100
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD ["wget", "-q", "--spider", "http://localhost:4100/healthz"]
+  CMD ["wget", "-q", "--spider", "http://127.0.0.1:4100/healthz"]
 
 CMD ["node", "apps/worker/dist/main.js"]

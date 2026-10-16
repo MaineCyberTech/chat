@@ -1,4 +1,4 @@
-name: Stale Issues and PRs
+﻿name: Stale Issues and PRs
 
 on:
   schedule:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   stale:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     timeout-minutes: 5
     steps:
       - uses: actions/stale@5bef64f19d7facfb25b37b414482c7164d639639 # v9

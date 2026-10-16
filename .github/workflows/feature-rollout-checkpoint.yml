@@ -1,4 +1,4 @@
-name: feature-rollout-checkpoint
+﻿name: feature-rollout-checkpoint
 on:
   workflow_dispatch:
     inputs:
@@ -15,7 +15,7 @@ on:
           - wave_5_verification_release
 jobs:
   feature-rollout:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Echo operator next step

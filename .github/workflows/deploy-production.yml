@@ -1,4 +1,4 @@
-name: Provision + Deploy — Production
+﻿name: Provision + Deploy â€” Production
 # HOTFIX PROCESS:
 # 1. Create branch from main
 # 2. Apply minimal fix, get PR review
@@ -32,7 +32,7 @@ env:
 jobs:
   validate:
     name: Validate
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -52,7 +52,7 @@ jobs:
   provision:
     name: Provision Infrastructure
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab]
     # Protected environment (required reviewers) so destructive
     # terraform apply cannot run before a human approves it.
     environment: production
@@ -149,7 +149,7 @@ jobs:
   build-images:
     name: Build and Push Images
     needs: provision
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-docker]
     # Gate image publication behind the same protected production environment.
     environment: production
     timeout-minutes: 20
@@ -244,7 +244,7 @@ jobs:
   deploy:
     name: Deploy to Production
     needs: [build-images, provision]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-docker]
     timeout-minutes: 15
     environment: production
     steps:
@@ -383,7 +383,7 @@ jobs:
     name: Rollback to Previous Version
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback_sha != ''
     needs: [provision]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-docker]
     timeout-minutes: 10
     environment: production
     steps:

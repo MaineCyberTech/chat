@@ -113,7 +113,7 @@ export default function SearchPage() {
         setLoadingMore(false);
       }
     },
-    [workspaceId, dateFrom, dateTo, currentOffset],
+    [workspaceId, dateFrom, dateTo, currentOffset, searchType],
   );
 
   return (

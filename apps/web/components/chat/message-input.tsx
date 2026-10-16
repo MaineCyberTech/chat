@@ -432,8 +432,8 @@ export function MessageInput({
       setSending(false);
     }
   }, [
-    content,
     files,
+    priority,
     onSend,
     onFileUpload,
     onTypingStop,

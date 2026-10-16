@@ -3,5 +3,22 @@
 # Declares the self-hosted runner labels used by this repository so actionlint
 # does not report them as unknown labels. Keep in sync with the labels on the
 # self-hosted runners referenced from .github/workflows/*.yml.
+#
+# Every job runs on the org's self-hosted lab runners (three LXC containers on
+# the Proxmox node testnuc). GitHub-hosted minutes are billing-blocked for this
+# org, so `ubuntu-latest` is not a usable target.
+#
+# Runner capabilities:
+#   ci-runner      lab, lab-debian, lab-docker           16 GiB  docker jobs
+#   edge-builder   lab, lab-ubuntu, lab-python, lab-sudo  24 GiB  python + large builds
+#   lab-runner-2   lab, lab-debian, lab-docker           12 GiB  docker jobs
+#
+# Job selection:
+#   [self-hosted, linux, x64, lab]         default - any lab runner
+#   [self-hosted, linux, x64, lab-docker]  jobs that need Docker on the runner
+#                                          (appleboy/ssh-action, aquasecurity/trivy-action,
+#                                           docker/build-push-action, grafana/k6-action,
+#                                           or `supabase start`)
+#   [self-hosted, linux, x64, lab-python]  Python-centric jobs (pip installs)
 self-hosted-runner:
   labels: [lab, lab-ubuntu, lab-python, lab-sudo, lab-docker, lab-debian, ci-runner, edge-builder, lab-runner-2]

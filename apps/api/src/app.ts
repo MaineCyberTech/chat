@@ -26,10 +26,14 @@ import { healthService } from "./modules/health/service.js";
 
 function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = process.hrtime.bigint();
-  const route = req.route?.path ?? req.path;
 
   res.on("finish", () => {
     const duration = Number(process.hrtime.bigint() - start) / 1e9;
+    // `req.route` is only populated once a route has matched, so the label must
+    // be resolved here rather than at middleware time. Labelling with the raw
+    // path (e.g. /v1/messages/<uuid>) would make Prometheus cardinality unbounded.
+    const routePath = req.route?.path;
+    const route = routePath ? `${req.baseUrl ?? ""}${String(routePath)}` : "unmatched";
     httpRequestsTotal.inc({ method: req.method, route, status_code: res.statusCode });
     httpRequestDuration.observe(
       { method: req.method, route, status_code: res.statusCode },
@@ -89,6 +93,17 @@ export function createApp(frontendUrl: string): Express {
   app.use(metricsMiddleware);
   app.use(deprecationMiddleware);
   app.use(requestTimeout(30000));
+
+  // Issues the double-submit CSRF cookie.
+  //
+  // The web client must not bootstrap this from `/`: in every deployed topology
+  // `/` is served by the Next.js app, not by this API (Caddy sends only /v1*,
+  // /health* and /rest/v1 here), so no cookie was ever set and every mutating
+  // request failed with 403. This endpoint is behind the CSRF middleware above,
+  // which sets the cookie on GET.
+  app.get("/v1/csrf-token", (_req: Request, res: Response) => {
+    res.status(204).end();
+  });
 
   for (const { path, router } of routeRegistry) {
     app.use(path, router);

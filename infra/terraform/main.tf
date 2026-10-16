@@ -159,3 +159,14 @@ resource "cloudflare_dns_record" "api" {
   ttl     = 1
   proxied = true
 }
+
+# Object storage. Proxied so browsers reach presigned URLs over TLS through
+# Caddy, which forwards the original Host header (SigV4 signs it).
+resource "cloudflare_dns_record" "storage" {
+  zone_id = var.cloudflare_zone_id
+  name    = split(".", local.domain_names.storage)[0]
+  content = digitalocean_droplet.chat.ipv4_address
+  type    = "A"
+  ttl     = 1
+  proxied = true
+}

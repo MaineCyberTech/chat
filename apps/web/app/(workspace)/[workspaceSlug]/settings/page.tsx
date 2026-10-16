@@ -88,7 +88,7 @@ export default function SettingsPage() {
     try {
       await api.delete("/auth/account");
       addToast({ title: t("settings.accountDeleted"), variant: "success", duration: 3000 });
-      setTimeout(() => (window.location.href = "/sign-in"), 1500);
+      setTimeout(() => (window.location.href = "/login"), 1500);
     } catch {
       addToast({
         title: t("common.error"),

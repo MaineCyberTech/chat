@@ -3,6 +3,7 @@ import { containsPattern } from "../../lib/postgrest-filter.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadEnv } from "../../config/env.js";
 import { logger } from "../../lib/logger.js";
+import { isLocalAuthEnabled } from "../../lib/local-auth.js";
 import type { User, UserProfile } from "@chat/db";
 
 export class AuthService {
@@ -66,14 +67,25 @@ export class AuthService {
   }
 
   /**
-   * Sends a Supabase magic-link (email OTP) server-side.
+   * Dispatches a sign-in link.
    *
-   * The endpoint previously only validated the address and always reported
-   * success without sending anything. Delivery failures and unknown-account
-   * errors are logged but never surfaced, so the route stays neutral and cannot
-   * be used to enumerate accounts.
+   * Returns "unavailable" when the deployment cannot deliver email, so the route
+   * can report the capability honestly. That is a global property of the
+   * deployment, not of the account, so it cannot be used to enumerate users.
+   *
+   * Delivery failures and unknown-account errors are logged but never surfaced,
+   * so the route stays neutral for per-account outcomes.
    */
-  async sendMagicLink(email: string): Promise<void> {
+  async sendMagicLink(email: string): Promise<"sent" | "unavailable"> {
+    // The self-hosted provider issues and consumes magic links, but outbound
+    // email is not wired yet (see the migration plan, WS-C).
+    if (isLocalAuthEnabled()) {
+      logger.warn("Magic link requested but the local auth provider cannot deliver email yet", {
+        hint: "wire SMTP delivery or use password sign-in",
+      });
+      return "unavailable";
+    }
+
     const env = loadEnv();
     const supabase = getSupabase();
     const { error } = await supabase.auth.signInWithOtp({
@@ -87,6 +99,7 @@ export class AuthService {
     if (error) {
       logger.warn("Magic link dispatch failed", { error: error.message });
     }
+    return "sent";
   }
 }
 

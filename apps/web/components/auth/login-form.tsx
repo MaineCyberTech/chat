@@ -93,7 +93,11 @@ export function LoginForm() {
 
   async function handleGoogleSignIn() {
     setStatus("loading");
-    await signInWithGoogle();
+    const result = await signInWithGoogle();
+    if (result?.error) {
+      setStatus("error");
+      setMessage(userSafeError(result.error));
+    }
   }
 
   if (status === "sent" || status === "signedup") {
@@ -293,9 +297,13 @@ export function LoginForm() {
       <Button
         variant="secondary"
         className="w-full"
-        onClick={() => {
+        onClick={async () => {
           setStatus("loading");
-          signInWithGithub();
+          const result = await signInWithGithub();
+          if (result?.error) {
+            setStatus("error");
+            setMessage(userSafeError(result.error));
+          }
         }}
         disabled={status === "loading"}
       >

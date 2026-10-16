@@ -112,6 +112,19 @@ vi.mock("../../../lib/socket.js", () => ({
   getOnlineUsers: vi.fn(() => ["user-1"]),
 }));
 
+const { mockStorage } = vi.hoisted(() => ({
+  mockStorage: {
+    isStorageConfigured: vi.fn(() => true),
+    createPresignedUpload: vi.fn(async () => "https://minio.example/upload?sig=1"),
+    createPresignedDownload: vi.fn(
+      async (key: string) => `https://minio.example/download/${key}?sig=1`,
+    ),
+    publicUrl: vi.fn((key: string) => `https://chat.example/storage/v1/chat-uploads/${key}`),
+  },
+}));
+
+vi.mock("../../../lib/storage.js", () => mockStorage);
+
 function findHandler(method: string, path: string) {
   const m = method.toLowerCase();
   for (const layer of (authRouter as any).stack) {
@@ -345,5 +358,47 @@ describe("Auth Routes", () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ user: expect.objectContaining({ display_name: "Updated" }) }),
     );
+  });
+
+  it("POST /avatar returns uploadUrl, avatarUrl and profile (shape preserved)", async () => {
+    const handler = findHandler("post", "/avatar");
+    expect(handler).toBeTruthy();
+    const req = mockReq({ body: { contentType: "image/png" } });
+    const res = mockRes();
+    await handler(req, res, vi.fn());
+
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.uploadUrl).toBe("https://minio.example/upload?sig=1");
+    expect(payload.avatarUrl).toBe("https://minio.example/download/avatars/user-1.png?sig=1");
+    expect(payload.profile).toBeTruthy();
+    expect(mockStorage.createPresignedUpload).toHaveBeenCalledWith(
+      "avatars/user-1.png",
+      "image/png",
+    );
+    expect(mockStorage.createPresignedDownload).toHaveBeenCalledWith("avatars/user-1.png", 3600);
+  });
+
+  it("POST /avatar fails with a clear 503 when storage is not configured", async () => {
+    mockStorage.isStorageConfigured.mockReturnValueOnce(false);
+    const handler = findHandler("post", "/avatar");
+    const req = mockReq({ body: { contentType: "image/png" } });
+    const res = mockRes();
+    const next = vi.fn();
+    await handler(req, res, next);
+
+    expect(mockStorage.createPresignedUpload).not.toHaveBeenCalled();
+    expect(next.mock.calls[0][0].statusCode).toBe(503);
+  });
+
+  it("GET /avatar/:userId returns a signed avatarUrl", async () => {
+    const handler = findHandler("get", "/avatar/:userId");
+    expect(handler).toBeTruthy();
+    const req = mockReq({ params: { userId: "user-2" } });
+    const res = mockRes();
+    await handler(req, res, vi.fn());
+
+    expect(res.json).toHaveBeenCalledWith({
+      avatarUrl: "https://minio.example/download/avatars/user-2.png?sig=1",
+    });
   });
 });

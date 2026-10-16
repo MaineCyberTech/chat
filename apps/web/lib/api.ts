@@ -16,36 +16,16 @@
  * Next.js-specific adapter.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
-const CSRF_COOKIE_NAME = "csrf_token";
-
-let csrfPromise: Promise<void> | null = null;
-
-function getCsrfToken(): string | undefined {
-  if (typeof document === "undefined") return undefined;
-  const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_COOKIE_NAME}=([^;]*)`));
-  return match?.[1] ? decodeURIComponent(match[1]) : undefined;
-}
-
-async function ensureCsrfToken(): Promise<void> {
-  if (typeof document === "undefined") return;
-  if (getCsrfToken()) return;
-  try {
-    await fetch(`${API_BASE}/`, { method: "GET", credentials: "include" });
-  } catch {
-    csrfPromise = null;
-    throw new Error("Failed to obtain CSRF token");
-  }
-}
+const API_BASE = getApiBaseUrl();
 
 import * as Sentry from "@sentry/nextjs";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { applyCsrfHeader } from "@/lib/csrf";
+import { getAccessToken, signOut as authSignOut } from "@/lib/auth/client";
+import { getApiBaseUrl } from "@/lib/auth/config";
 
 async function getToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
-  const supabase = getSupabaseBrowserClient();
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token ?? null;
+  return getAccessToken();
 }
 
 function apiPath(path: string): string {
@@ -63,15 +43,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  if (options.method && options.method !== "GET" && options.method !== "HEAD") {
-    if (!csrfPromise || !getCsrfToken())
-      csrfPromise = ensureCsrfToken().catch(() => {
-        csrfPromise = null;
-      });
-    await csrfPromise;
-    const csrfToken = getCsrfToken();
-    if (csrfToken) headers["x-csrf-token"] = csrfToken;
-  }
+
+  // Attaches x-csrf-token for mutating methods (bootstraps the cookie if needed).
+  await applyCsrfHeader(options.method, headers);
 
   const res = await fetch(`${API_BASE}${apiPath(path)}`, {
     ...options,
@@ -80,8 +54,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (res.status === 401) {
-    const supabase = getSupabaseBrowserClient();
-    supabase.auth.signOut().catch(() => {});
+    authSignOut().catch(() => {});
     throw new Error("Session expired. Please sign in again.");
   }
 

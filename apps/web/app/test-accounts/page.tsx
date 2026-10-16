@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSession, signInWithPassword } from "@/lib/auth/client";
 import Link from "next/link";
 
 const ACCOUNTS = [
@@ -186,22 +187,21 @@ export default function TestAccountsPage() {
     setError(null);
 
     try {
-      const supabase = getSupabaseBrowserClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password: "password123",
-      });
+      const result = await signInWithPassword(email, "password123");
 
-      if (authError) {
-        setError(authError.message);
+      if (result.error) {
+        setError(result.error);
         setLoading(null);
         return;
       }
 
+      // Data access still goes through the Supabase JS client (PostgREST); only
+      // auth moved to the self-hosted service.
+      const supabase = getSupabaseBrowserClient();
       const { data: workspaces } = await supabase
         .from("workspace_members" as never)
         .select("workspace:workspaces!inner(slug)" as never)
-        .eq("user_id", (await supabase.auth.getUser()).data.user?.id || "")
+        .eq("user_id", getSession()?.user.id || "")
         .limit(1);
 
       const slug =

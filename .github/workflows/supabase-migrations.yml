@@ -1,38 +1,36 @@
-name: supabase-migrations
+﻿name: Apply Migrations
+
+# Applies pending migrations to the self-hosted PostgreSQL in the lab LXC.
+#
+# Previously this ran `supabase link` + `supabase db push --include-all` against
+# the hosted project. Schema now lives on our own Postgres, so this delegates to
+# the same self-hosted path the Seed Database workflow uses (schema only; pass
+# seeds explicitly from that workflow).
+#
+# Migrations are tracked in `public.schema_migrations`, so this is a no-op when
+# nothing is pending.
 
 on:
   push:
-    branches: [develop, main]
+    branches: [main, develop]
     paths:
       - "supabase/migrations/**"
+      - "supabase/bootstrap/**"
       - ".github/workflows/supabase-migrations.yml"
-  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apply-migrations-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  migrate:
-    runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: 22
-
-      - name: Install Supabase CLI
-        run: npm install -g supabase
-
-      - name: Link project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
-        env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-
-      - name: Run migrations
-        run: supabase db push --include-all
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+  apply:
+    name: Apply
+    uses: ./.github/workflows/seed-database.yml
+    secrets: inherit
+    with:
+      include_seeds: false
+      reset: false

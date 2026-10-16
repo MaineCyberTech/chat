@@ -1,4 +1,4 @@
-name: audit-release-certification
+﻿name: audit-release-certification
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   release-certification:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, lab-python]
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

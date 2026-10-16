@@ -37,7 +37,11 @@ self.addEventListener("fetch", (event) => {
   }
 
   // API routes - network first, no caching
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/socket.io/")) {
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/v1/") ||
+    url.pathname.startsWith("/socket.io/")
+  ) {
     event.respondWith(fetch(request).catch(() => new Response("Offline", { status: 503 })));
     return;
   }

@@ -1,180 +1,132 @@
-name: Seed Database
+﻿name: Seed Database
+
+# Seeds the self-hosted PostgreSQL inside the lab LXC.
+#
+# Replaces the previous implementation, which drove the hosted Supabase
+# Management API (`POST /v1/projects/{ref}/database/query`) with a payload
+# chunker to work around its 36 KB limit. That path only worked against a hosted
+# project; schema and data now live on our own Postgres and are applied with
+# scripts/db/apply-migrations.mjs.
+#
+# Safe to re-run: migrations are tracked in `public.schema_migrations` and
+# skipped once applied. Seeds are fixtures and are re-applied in order.
 
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Target environment (production seeding is intentionally disabled)"
-        required: true
-        default: "development"
-        type: choice
-        options:
-          - development
+      include_seeds:
+        description: "Load demo seed data (uncheck to apply schema only)"
+        type: boolean
+        default: true
+      reset:
+        description: "DESTRUCTIVE: drop the public and auth schemas first"
+        type: boolean
+        default: false
+  # Called by supabase-migrations.yml when migrations land on main/develop.
+  workflow_call:
+    inputs:
+      include_seeds:
+        type: boolean
+        default: false
+      reset:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
+concurrency:
+  group: seed-database
+  cancel-in-progress: false
+
 env:
-  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+  REPO_DIR: /opt/chat
+  LAB_HOST: ${{ vars.LAB_LXC_HOST || '192.168.222.240' }}
 
 jobs:
   seed:
-    name: Seed ${{ github.event.inputs.environment }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    name: Seed
+    runs-on: [self-hosted, linux, x64, lab-docker]
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Fix NULL tokens + insert identities + seed auth
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: |
-          set -e
-          PROJECT_REF="${{ env.SUPABASE_PROJECT_REF }}"
-          MGMT_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
+      - name: Sync schema, seeds and tooling to the target
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
+        with:
+          host: ${{ env.LAB_HOST }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          source: "supabase,scripts/db,infra/docker/docker-compose.devremote.yml"
+          target: "${{ env.REPO_DIR }}"
 
-          mgmt_query() {
-            RESP=$(curl -s -w "\n%{http_code}" -X POST "$MGMT_URL" \
-              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data-raw "$(jq -n --arg sql "$1" '{"query": $sql}')" 2>&1)
-            HTTP_CODE=$(echo "$RESP" | tail -1)
-            BODY=$(echo "$RESP" | head -n -1)
-            echo "$BODY"
-            if [ "$HTTP_CODE" -ge 400 ] 2>/dev/null; then
-              echo "MGMT_ERROR($HTTP_CODE)" >&2
+      - name: Apply schema and seeds
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
+        with:
+          host: ${{ env.LAB_HOST }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd ${{ env.REPO_DIR }}
+
+            if [ ! -f infra/docker/.env ]; then
+              echo "ERROR: infra/docker/.env is missing; see docs/runbooks/lab-lxc-environment.md"
+              exit 1
             fi
-          }
+            set -a; . infra/docker/.env; set +a
 
-          echo "=== Step 0: Fix NULL string columns in auth.users ==="
-          echo "GoTrue crashes on NULL confirmation_token. Fix all string columns."
-          mgmt_query "
-            UPDATE auth.users SET
-              confirmation_token = COALESCE(confirmation_token, ''),
-              recovery_token = COALESCE(recovery_token, ''),
-              email_change_token_new = COALESCE(email_change_token_new, ''),
-              email_change_token_current = COALESCE(email_change_token_current, ''),
-              email_change = COALESCE(email_change, ''),
-              phone_change = COALESCE(phone_change, ''),
-              phone_change_token = COALESCE(phone_change_token, '')
-            WHERE confirmation_token IS NULL
-               OR recovery_token IS NULL
-               OR email_change_token_new IS NULL
-               OR email_change_token_current IS NULL;
-          " || true
+            if [ "${{ inputs.reset }}" = "true" ]; then
+              echo "=== RESET requested: dropping public + auth schemas ==="
+              docker exec chat-postgres-dev psql -U postgres -d chat -q -c \
+                "drop schema if exists public cascade; drop schema if exists auth cascade; create schema public;"
+            fi
 
-          echo ""
-          echo "=== Step 1: Insert missing identities ==="
-          echo "Auth.identities are missing — GoTrue can't authenticate without them."
-          mgmt_query "INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at) SELECT gen_random_uuid(), u.id, ('{\"email\":\"' || u.email || '\",\"sub\":\"' || u.id::text || '\",\"email_verified\":true}')::jsonb, 'email', ('email:' || u.id::text), now(), now(), now() FROM auth.users u WHERE u.email LIKE '%@seed.test' AND NOT EXISTS (SELECT 1 FROM auth.identities i WHERE i.user_id = u.id AND i.provider = 'email')" || true
-          echo ""
-          echo "=== Step 2: Upsert public.users profiles with display names ==="
-          echo "Upserts with ON CONFLICT to ensure display_name is always set (fixes NULL names from old trigger)."
-          mgmt_query "INSERT INTO public.users (id, email, display_name) SELECT u.id, u.email, COALESCE(u.raw_user_meta_data->>'display_name', split_part(u.email, '@', 1)) FROM auth.users u WHERE u.email LIKE '%@seed.test' ON CONFLICT (id) DO UPDATE SET display_name = EXCLUDED.display_name" || true
-          echo ""
-          echo "=== Step 3: Verify seed rows (RLS policies are applied only via migrations) ==="
-          mgmt_query "SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'identities', count(*) FROM auth.identities WHERE provider = 'email' AND user_id IN (SELECT id FROM auth.users WHERE email LIKE '%@seed.test') UNION ALL SELECT 'public_users', count(*) FROM public.users WHERE email LIKE '%@seed.test'" || true
+            echo "=== migration status before ==="
+            node scripts/db/apply-migrations.mjs --docker chat-postgres-dev --status || true
 
-      - name: Write chunk splitter script
+            SEED_FLAG=""
+            if [ "${{ inputs.include_seeds }}" = "true" ]; then SEED_FLAG="--seed"; fi
+            node scripts/db/apply-migrations.mjs --docker chat-postgres-dev $SEED_FLAG
+
+            echo
+            echo "=== migration status after ==="
+            node scripts/db/apply-migrations.mjs --docker chat-postgres-dev --status
+
+            echo
+            echo "=== data verification ==="
+            docker exec chat-postgres-dev psql -U postgres -d chat -t -A -F'|' -c "
+            select 'auth_users', count(*) from auth.users where email like '%@seed.test'
+            union all select 'identities', count(*) from auth.identities
+            union all select 'public_users', count(*) from public.users
+            union all select 'workspaces', count(*) from public.workspaces
+            union all select 'channels', count(*) from public.channels
+            union all select 'messages', count(*) from public.messages
+            union all select 'thread_replies', count(*) from public.messages where parent_id is not null
+            union all select 'reactions', count(*) from public.reactions
+            union all select 'rls_tables', count(*) from pg_tables where schemaname='public' and rowsecurity;"
+
+            echo
+            echo "=== seed logins usable (bcrypt) ==="
+            docker exec chat-postgres-dev psql -U postgres -d chat -t -A -c "
+            select case when public.auth_verify_password('marcus@seed.test','password123') is not null
+                        then 'marcus@seed.test / password123  OK'
+                        else 'marcus@seed.test / password123  FAILED' end;"
+
+            echo
+            echo "=== RLS conformance ==="
+            docker exec -i chat-postgres-dev psql -U postgres -d chat -v ON_ERROR_STOP=1 -q -f - \
+              < supabase/tests/rls_tenant_isolation.sql | tail -2
+
+      - name: Summary
+        if: always()
         run: |
-          cat > /tmp/split_seed.py << 'PYEOF'
-          import sys, os
-          filepath = sys.argv[1]
-          target_kb = int(sys.argv[2]) if len(sys.argv) > 2 else 20
-          target_bytes = target_kb * 1024
-
-          with open(filepath) as f:
-              content = f.read()
-
-          lines = content.split("\n")
-          chunks = []
-          current = []
-          current_size = 0
-
-          for line in lines:
-              current.append(line)
-              current_size += len(line) + 1
-              if line.strip().endswith(";") and current_size >= target_bytes:
-                  chunks.append("\n".join(current))
-                  current = []
-                  current_size = 0
-
-          if current:
-              chunks.append("\n".join(current))
-
-          for i, chunk in enumerate(chunks):
-              outpath = f"/tmp/seed_chunk_{i:03d}.sql"
-              with open(outpath, "w") as out:
-                  out.write(chunk)
-
-          print(len(chunks))
-          PYEOF
-          echo "Script written."
-
-      - name: Seed data tables via Management API
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: |
-          set -e
-          PROJECT_REF="${{ env.SUPABASE_PROJECT_REF }}"
-          MGMT_URL="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
-
-          mgmt_send() {
-            curl -s -w "\n%{http_code}" -X POST "$MGMT_URL" \
-              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data-raw "$(jq -n --arg sql "$1" '{"query": $sql}')" 2>&1
-          }
-
-          echo "=== Running seed files 01-05 ==="
-          for f in supabase/seeds/0{1,2,3,4,5}*.sql; do
-            [ -f "$f" ] || continue
+          {
+            echo "### Seed database (lab LXC)"
             echo ""
-            echo "Seeding $f..."
-            SQL_SIZE=$(wc -c < "$f")
-            echo "File size: ${SQL_SIZE} bytes"
-
-            if [ "$SQL_SIZE" -gt 20000 ]; then
-              echo "Splitting into chunks..."
-              rm -f /tmp/seed_chunk_*.sql
-              NUM_CHUNKS=$(python3 /tmp/split_seed.py "$f" 20)
-              echo "Split into $NUM_CHUNKS chunks"
-
-              SENT=0
-              FAILED=0
-              for chunk_file in /tmp/seed_chunk_*.sql; do
-                [ -f "$chunk_file" ] || continue
-                CHUNK_SQL=$(cat "$chunk_file")
-                CHUNK_SIZE=${#CHUNK_SQL}
-                RESP=$(mgmt_send "$CHUNK_SQL")
-                HTTP_CODE=$(echo "$RESP" | tail -1)
-                BODY=$(echo "$RESP" | head -n -1)
-                if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-                  echo "  $(basename "$chunk_file"): ${CHUNK_SIZE}B - OK"
-                  SENT=$((SENT + 1))
-                else
-                  echo "  $(basename "$chunk_file"): ${CHUNK_SIZE}B - FAIL ($HTTP_CODE)"
-                  echo "  $(echo "$BODY" | head -1)"
-                  FAILED=$((FAILED + 1))
-                fi
-              done
-              rm -f /tmp/seed_chunk_*.sql
-              echo "Result: $SENT OK, $FAILED failed"
-            else
-              RESP=$(mgmt_send "$(cat "$f")")
-              HTTP_CODE=$(echo "$RESP" | tail -1)
-              BODY=$(echo "$RESP" | head -n -1)
-              if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-                echo "OK ($HTTP_CODE)"
-              else
-                echo "FAIL ($HTTP_CODE): $(echo "$BODY" | head -3)"
-              fi
-            fi
-          done
-
-          echo ""
-          echo "=== Final verification ==="
-          RESP=$(mgmt_send "SELECT 'auth_users' as tbl, count(*) FROM auth.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'public_users', count(*) FROM public.users WHERE email LIKE '%@seed.test' UNION ALL SELECT 'workspaces', count(*) FROM workspaces UNION ALL SELECT 'workspace_members', count(*) FROM workspace_members UNION ALL SELECT 'channels', count(*) FROM channels UNION ALL SELECT 'channel_members', count(*) FROM channel_members UNION ALL SELECT 'messages', count(*) FROM messages UNION ALL SELECT 'thread_replies', count(*) FROM messages WHERE parent_id IS NOT NULL UNION ALL SELECT 'reactions', count(*) FROM reactions")
-          echo "$RESP" | head -n -1
-          echo ""
-          echo "=== Seeding complete ==="
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Target | \`${{ env.LAB_HOST }}\` |"
+            echo "| Seeds | ${{ inputs.include_seeds }} |"
+            echo "| Reset | ${{ inputs.reset }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
