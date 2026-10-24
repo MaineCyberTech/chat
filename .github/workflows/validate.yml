@@ -274,53 +274,88 @@ jobs:
     name: Check Branch Protection
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Blocking, not advisory. `main` must carry active rules requiring PR review,
-    # passing status checks, and no force pushes. This is the in-repo gate for the
-    # governance findings CI-P1-001 / CI-P2-007: a misconfigured `main` fails CI
-    # instead of silently reporting a false sense of protection.
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    # Blocking, not advisory. Every long-lived branch that receives merges must
+    # carry active rules requiring PR review, passing status checks, and no force
+    # pushes. BP-P2-001 / CI-P2-003: this repo's default branch is `develop`
+    # (there is no `main`), and the gate previously hard-coded `main` — so it
+    # never evaluated the branch that actually receives merges. It now checks
+    # the repository's default branch plus `develop`/`main` when they exist, and
+    # fails closed if those rules are missing.
+    #
+    # Enabling the server-side ruleset is an owner action (repo settings cannot
+    # be set from code); until then this gate intentionally fails.
     steps:
-      - name: Check branch rules on main
+      - name: Check branch rules
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const { owner, repo } = context.repo;
-            const branch = 'main';
 
             // GET /repos/{owner}/{repo}/rules/branches/{branch} returns every active
             // rule applying to the branch, whether configured as a repository ruleset
             // or as a classic branch protection rule. The legacy getBranchProtection
             // endpoint 404s when protection is expressed as a ruleset and misreports
             // the optional `restrictions` field, so it is not used here.
-            let rules;
-            try {
-              rules = await github.paginate('GET /repos/{owner}/{repo}/rules/branches/{branch}', {
-                owner,
-                repo,
-                branch,
-                per_page: 100
-              });
-            } catch (error) {
-              core.setFailed(`Unable to read branch rules for '${branch}': ${error.message}`);
-              return;
-            }
-
-            const types = new Set(rules.map(rule => rule.type));
             const required = {
               pull_request: 'require pull request reviews before merging',
               required_status_checks: 'require status checks to pass before merging',
               non_fast_forward: 'block force pushes'
             };
 
-            const missing = Object.entries(required)
-              .filter(([type]) => !types.has(type))
-              .map(([, description]) => description);
-
-            if (missing.length > 0) {
-              core.setFailed(`Branch rules for '${branch}' are incomplete. Missing: ${missing.join('; ')}`);
+            const candidates = new Set(['develop', 'main']);
+            try {
+              const { data } = await github.rest.repos.get({ owner, repo });
+              candidates.add(data.default_branch);
+            } catch (error) {
+              core.setFailed(`Unable to read repository metadata: ${error.message}`);
               return;
             }
-            core.info(`Branch rules for '${branch}' satisfy the required gates: ${[...types].sort().join(', ')}`);
+
+            let failed = false;
+            for (const branch of candidates) {
+              // Skip branches that do not exist (e.g. this repo has no `main`).
+              try {
+                await github.rest.repos.getBranch({ owner, repo, branch });
+              } catch (error) {
+                if (error.status === 404) {
+                  core.info(`Branch '${branch}' does not exist; skipping.`);
+                  continue;
+                }
+                core.setFailed(`Unable to read branch '${branch}': ${error.message}`);
+                failed = true;
+                continue;
+              }
+
+              let rules;
+              try {
+                rules = await github.paginate('GET /repos/{owner}/{repo}/rules/branches/{branch}', {
+                  owner,
+                  repo,
+                  branch,
+                  per_page: 100
+                });
+              } catch (error) {
+                core.setFailed(`Unable to read branch rules for '${branch}': ${error.message}`);
+                failed = true;
+                continue;
+              }
+
+              const types = new Set(rules.map(rule => rule.type));
+              const missing = Object.entries(required)
+                .filter(([type]) => !types.has(type))
+                .map(([, description]) => description);
+
+              if (missing.length > 0) {
+                core.setFailed(`Branch rules for '${branch}' are incomplete. Missing: ${missing.join('; ')}`);
+                failed = true;
+              } else {
+                core.info(`Branch rules for '${branch}' satisfy the required gates: ${[...types].sort().join(', ')}`);
+              }
+            }
+
+            if (failed) {
+              core.setFailed('One or more protected branches failed the branch-rules gate.');
+            }
 
   migration-test:
     name: Test Database Migrations
