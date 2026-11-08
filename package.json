@@ -90,7 +90,8 @@
       "body-parser@1": "1.20.9",
       "sharp": "0.35.5",
       "@sentry/nextjs": "10.75.2",
-      "next": "15.5.28"
+      "next": "15.5.28",
+      "proxy-addr@2": "2.0.8"
     }
   }
 }
