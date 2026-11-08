@@ -10,26 +10,26 @@ GitHub Actions secrets or the runtime environment until the owner migrates them.
 
 ## Inventory — credentials
 
-| Credential | Class | Current declaration / consumer | Proposed Vault path |
-|---|---|---|---|
-| `SUPABASE_SERVICE_ROLE_KEY` | runtime | `.env.example`, `infra/docker/.env*.example`, API/worker; deploy workflows | `secret/chat/prod/SUPABASE_SERVICE_ROLE_KEY` |
-| `SUPABASE_ACCESS_TOKEN` | CI | `supabase-migrations.yml`, `seed-database.yml`, `validate.yml` | `secret/chat/ci/SUPABASE_ACCESS_TOKEN` |
-| `SUPABASE_DB_PASSWORD` | CI | `supabase-migrations.yml`, `validate.yml` | `secret/chat/ci/SUPABASE_DB_PASSWORD` |
-| `LIVEKIT_API_KEY` | runtime + deploy | `.env.example`, Docker env templates, deploy workflows | `secret/chat/prod/LIVEKIT_API_KEY` |
-| `LIVEKIT_API_SECRET` | runtime + deploy | `.env.example`, Docker env templates, deploy workflows | `secret/chat/prod/LIVEKIT_API_SECRET` |
-| `VAPID_PRIVATE_KEY` | runtime + deploy | `.env.example`, Docker env templates, deploy workflows | `secret/chat/prod/VAPID_PRIVATE_KEY` |
-| `WEBHOOK_ENCRYPTION_KEY` | runtime | `.env.example`, `infra/docker/.env.prod.example` | `secret/chat/prod/WEBHOOK_ENCRYPTION_KEY` |
-| `JWT_SECRET` | runtime | `.env.example` | `secret/chat/prod/JWT_SECRET` |
-| `SMTP_PASS` | runtime | `.env.example`, API/worker SMTP config | `secret/chat/prod/SMTP_PASS` |
-| `METRICS_TOKEN` | runtime + deploy | `.env.example`, Docker env templates, deploy workflows | `secret/chat/prod/METRICS_TOKEN` |
-| `CHAT_NTFY_PASS` | runtime + deploy | `.env.example`, Docker env templates, deploy workflows | `secret/chat/prod/CHAT_NTFY_PASS` |
-| `CF_ORIGIN_KEY` | runtime TLS | `.env.example`, Caddy origin config, deploy workflows | `secret/chat/prod/CF_ORIGIN_KEY` |
-| `CF_API_TOKEN` | CI | `deploy-production.yml`, `infra-development.yml` | `secret/chat/ci/CF_API_TOKEN` |
-| `DO_API_TOKEN` | CI | `chaos-tests.yml`, deploy/infra workflows | `secret/chat/ci/DO_API_TOKEN` |
-| `DO_SSH_PRIVATE_KEY` | CI | `deploy-production.yml` | `secret/chat/ci/DO_SSH_PRIVATE_KEY` |
-| `DO_SSH_PASSPHRASE` | CI | `deploy-production.yml` | `secret/chat/ci/DO_SSH_PASSPHRASE` |
-| `CI_SSH_PRIVATE_KEY` | CI | deploy, infra and chaos workflows | `secret/chat/ci/CI_SSH_PRIVATE_KEY` |
-| `AWS_SECRET_ACCESS_KEY` | CI | `infra-development.yml` (Terraform state backend) | `secret/chat/ci/AWS_SECRET_ACCESS_KEY` |
+| Credential                  | Class            | Current declaration / consumer                                             | Proposed Vault path                          |
+| --------------------------- | ---------------- | -------------------------------------------------------------------------- | -------------------------------------------- |
+| `SUPABASE_SERVICE_ROLE_KEY` | runtime          | `.env.example`, `infra/docker/.env*.example`, API/worker; deploy workflows | `secret/chat/prod/SUPABASE_SERVICE_ROLE_KEY` |
+| `SUPABASE_ACCESS_TOKEN`     | CI               | `supabase-migrations.yml`, `seed-database.yml`, `validate.yml`             | `secret/chat/ci/SUPABASE_ACCESS_TOKEN`       |
+| `SUPABASE_DB_PASSWORD`      | CI               | `supabase-migrations.yml`, `validate.yml`                                  | `secret/chat/ci/SUPABASE_DB_PASSWORD`        |
+| `LIVEKIT_API_KEY`           | runtime + deploy | `.env.example`, Docker env templates, deploy workflows                     | `secret/chat/prod/LIVEKIT_API_KEY`           |
+| `LIVEKIT_API_SECRET`        | runtime + deploy | `.env.example`, Docker env templates, deploy workflows                     | `secret/chat/prod/LIVEKIT_API_SECRET`        |
+| `VAPID_PRIVATE_KEY`         | runtime + deploy | `.env.example`, Docker env templates, deploy workflows                     | `secret/chat/prod/VAPID_PRIVATE_KEY`         |
+| `WEBHOOK_ENCRYPTION_KEY`    | runtime          | `.env.example`, `infra/docker/.env.prod.example`                           | `secret/chat/prod/WEBHOOK_ENCRYPTION_KEY`    |
+| `JWT_SECRET`                | runtime          | `.env.example`                                                             | `secret/chat/prod/JWT_SECRET`                |
+| `SMTP_PASS`                 | runtime          | `.env.example`, API/worker SMTP config                                     | `secret/chat/prod/SMTP_PASS`                 |
+| `METRICS_TOKEN`             | runtime + deploy | `.env.example`, Docker env templates, deploy workflows                     | `secret/chat/prod/METRICS_TOKEN`             |
+| `CHAT_NTFY_PASS`            | runtime + deploy | `.env.example`, Docker env templates, deploy workflows                     | `secret/chat/prod/CHAT_NTFY_PASS`            |
+| `CF_ORIGIN_KEY`             | runtime TLS      | `.env.example`, Caddy origin config, deploy workflows                      | `secret/chat/prod/CF_ORIGIN_KEY`             |
+| `CF_API_TOKEN`              | CI               | `deploy-production.yml`, `infra-development.yml`                           | `secret/chat/ci/CF_API_TOKEN`                |
+| `DO_API_TOKEN`              | CI               | `chaos-tests.yml`, deploy/infra workflows                                  | `secret/chat/ci/DO_API_TOKEN`                |
+| `DO_SSH_PRIVATE_KEY`        | CI               | `deploy-production.yml`                                                    | `secret/chat/ci/DO_SSH_PRIVATE_KEY`          |
+| `DO_SSH_PASSPHRASE`         | CI               | `deploy-production.yml`                                                    | `secret/chat/ci/DO_SSH_PASSPHRASE`           |
+| `CI_SSH_PRIVATE_KEY`        | CI               | deploy, infra and chaos workflows                                          | `secret/chat/ci/CI_SSH_PRIVATE_KEY`          |
+| `AWS_SECRET_ACCESS_KEY`     | CI               | `infra-development.yml` (Terraform state backend)                          | `secret/chat/ci/AWS_SECRET_ACCESS_KEY`       |
 
 `GITHUB_TOKEN` is issued automatically by GitHub Actions and has no Vault path.
 
