@@ -43,10 +43,10 @@ The `migration-test` job in `.github/workflows/validate.yml` runs every
 
 ## Test Structure
 
-| Test File                            | Endpoints / Behavior Tested                  | Dependencies         |
-| ------------------------------------ | -------------------------------------------- | -------------------- |
-| `health.test.ts`                     | `GET /health`, `GET /healthz`                | API server, database |
-| `supabase/tests/rls_tenant_isolation.sql` | Cross-tenant reads denied by RLS       | Local Supabase DB    |
+| Test File                                 | Endpoints / Behavior Tested      | Dependencies         |
+| ----------------------------------------- | -------------------------------- | -------------------- |
+| `health.test.ts`                          | `GET /health`, `GET /healthz`    | API server, database |
+| `supabase/tests/rls_tenant_isolation.sql` | Cross-tenant reads denied by RLS | Local Supabase DB    |
 
 ## Adding Tests
 

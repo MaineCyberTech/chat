@@ -28,9 +28,7 @@ describe("trace-context", () => {
     });
 
     it("honours the not-sampled flag", () => {
-      const ctx = parseTraceparent(
-        "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00",
-      );
+      const ctx = parseTraceparent("00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00");
       expect(ctx?.sampled).toBe(false);
     });
 
@@ -40,9 +38,7 @@ describe("trace-context", () => {
     });
 
     it("accepts forward-compatible future versions", () => {
-      const ctx = parseTraceparent(
-        "01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
-      );
+      const ctx = parseTraceparent("01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
       expect(ctx?.traceId).toBe("4bf92f3577b34da6a3ce929d0e0e4736");
     });
 

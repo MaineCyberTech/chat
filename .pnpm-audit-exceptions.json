@@ -1,6 +1,6 @@
 {
   "expires": "2027-01-04",
-  "note": "Dated risk acceptance (issued 2026-10-04, expires 2027-01-04). See docs/security/risk-acceptances/2026-10-04-trivy-dependency-cves.md and DET-P1-002 / DET-P2-003 / DET-P3-004. Same-major patch/minor bumps were applied via pnpm.overrides; the advisories below are retained until a re-scan confirms them fixed, and until the breaking next@16 migration lands. The CI audit gate fails on any HIGH/CRITICAL advisory NOT listed here, and on the whole list after the expiry date.",
+  "note": "Dated risk acceptance (issued 2026-10-04, expires 2027-01-04). See docs/security/risk-acceptances/2026-10-04-trivy-dependency-cves.md and DET-P1-002 / DET-P2-003 / DET-P3-004. Same-major patch/minor bumps were applied via pnpm.overrides; the advisories below are retained until a re-scan confirms them fixed, and until the breaking next@16 migration lands. The CI audit gate fails on any HIGH/CRITICAL advisory NOT listed here, and on the whole list after the expiry date. Added GHSA-mrhx-c7xc-m3w5 (zod): no 3.x fix; the zod 4 migration must land before the expiry.",
   "ignoreGhsas": [
     "GHSA-28wg-ghj8-5hjv",
     "GHSA-2gc4-cqfq-p2gv",
@@ -31,6 +31,7 @@
     "GHSA-rgj7-g3m4-5g8c",
     "GHSA-rgw5-rvv9-x895",
     "GHSA-v2hh-gcrm-f6hx",
-    "GHSA-v53p-9fqp-m79j"
+    "GHSA-v53p-9fqp-m79j",
+    "GHSA-mrhx-c7xc-m3w5"
   ]
 }

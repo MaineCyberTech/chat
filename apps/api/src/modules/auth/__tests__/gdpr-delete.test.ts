@@ -52,8 +52,14 @@ describe("DELETE /account (GDPR erasure)", () => {
     mockAdminClient.rpc.mockReset();
     mockAdminClient.auth.signInWithPassword.mockReset();
     mockAdminClient.auth.admin.deleteUser.mockReset();
-    mockAdminClient.auth.signInWithPassword.mockResolvedValue({ data: { user: { id: "user-1" } }, error: null });
-    mockAdminClient.rpc.mockResolvedValue({ data: { success: true, user_id: "user-1" }, error: null });
+    mockAdminClient.auth.signInWithPassword.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+      error: null,
+    });
+    mockAdminClient.rpc.mockResolvedValue({
+      data: { success: true, user_id: "user-1" },
+      error: null,
+    });
   });
 
   it("erases via a single atomic RPC and never calls auth.admin.deleteUser", async () => {
@@ -65,7 +71,9 @@ describe("DELETE /account (GDPR erasure)", () => {
     await handler(req, res, next);
 
     expect(mockAdminClient.rpc).toHaveBeenCalledTimes(1);
-    expect(mockAdminClient.rpc).toHaveBeenCalledWith("gdpr_delete_user", { target_user_id: "user-1" });
+    expect(mockAdminClient.rpc).toHaveBeenCalledWith("gdpr_delete_user", {
+      target_user_id: "user-1",
+    });
     expect(mockAdminClient.auth.admin.deleteUser).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(204);
     expect(res.send).toHaveBeenCalledTimes(1);

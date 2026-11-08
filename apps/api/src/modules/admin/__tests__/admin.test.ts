@@ -216,7 +216,10 @@ describe("admin routes", () => {
 
     it("scopes the directory to members of the caller's admin workspaces", async () => {
       const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
-      const membersChain = createChain({ data: [{ user_id: "u1" }, { user_id: "u2" }], error: null });
+      const membersChain = createChain({
+        data: [{ user_id: "u1" }, { user_id: "u2" }],
+        error: null,
+      });
       const usersChain = createChain({
         data: [{ id: "u1", email: "a@b.com", display_name: "Alice" }],
         count: 1,

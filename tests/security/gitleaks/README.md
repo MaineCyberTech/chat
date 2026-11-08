@@ -16,7 +16,7 @@ the allowlist honest.
   1. a repository scan with `.gitleaks.toml` is clean (allowlisted false
      positives suppressed), and
   2. gitleaks still fires `jwt` and `generic-api-key` on the assembled
-     *different-valued* fixtures.
+     _different-valued_ fixtures.
 
 ## Run
 

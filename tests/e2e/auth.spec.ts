@@ -13,7 +13,7 @@ test.describe("Auth Flow", () => {
   test("renders login form with email input and submit button", async ({ page }) => {
     await expect(page.locator("#email")).toBeVisible({ timeout: 15000 });
     await expect(page.locator('button[type="submit"]')).toBeVisible();
-    await expect(page.locator("text=Sign in with magic link")).toBeVisible();
+    await expect(page.locator("text=Send magic link")).toBeVisible();
   });
 
   test("shows error for invalid email format", async ({ page }) => {

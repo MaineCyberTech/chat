@@ -30,6 +30,11 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Development deployments run under the `development` GitHub Environment so
+    # environment-scoped secrets and protection rules apply (CI-P2-006).
+    environment:
+      name: development
+      url: https://chat.${{ env.DOMAIN }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -44,14 +49,13 @@ jobs:
             STATUS=$(curl -sf -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=${{ github.sha }}&per_page=1" \
               | jq -r '.workflow_runs[0].conclusion // "null"')
-            if [ "$STATUS" = "success" ] || [ "$STATUS" = "cancelled" ]; then
-              if [ "$STATUS" = "cancelled" ]; then
-                echo "CI completed (cancelled - likely E2E timeout, non-blocking)."
-              fi
-              echo "CI completed."
+            if [ "$STATUS" = "success" ]; then
+              echo "CI completed successfully."
               exit 0
-            elif [ "$STATUS" = "failure" ]; then
-              echo "ERROR: CI failed with status: $STATUS"
+            elif [ "$STATUS" != "null" ] && [ -n "$STATUS" ]; then
+              # Fail closed: only a completed `success` may deploy. A cancelled,
+              # skipped, neutral or failed CI run must never unlock a deploy.
+              echo "ERROR: CI completed with non-success status: $STATUS"
               exit 1
             fi
             echo "Attempt $i/30 - CI status: $STATUS"
@@ -81,17 +85,9 @@ jobs:
           echo "ERROR: Timed out waiting for build-push to complete"
           exit 1
 
-      - name: Install Supabase CLI
-        run: npm install -g supabase
-
-      - name: Run database migrations
-        run: |
-          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
-          supabase db push --include-all
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-
+      # Database migrations are applied exactly once, by supabase-migrations.yml.
+      # Do not re-add `supabase db push` here: two appliers race on develop
+      # (CI-P2-008).
       - name: Resolve droplet IP
         id: ip
         run: |

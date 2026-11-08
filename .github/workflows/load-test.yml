@@ -6,9 +6,16 @@ on:
   schedule:
     - cron: "0 6 * * 1" # Every Monday at 6am UTC
 
+permissions:
+  contents: read
+
 jobs:
   k6-smoke-test:
     name: k6 Smoke Test
+    # The smoke test only runs when an API origin is configured. This avoids a
+    # permanently red scheduled job pointed at a decommissioned placeholder
+    # hostname, and makes the skip explicit in the run summary.
+    if: ${{ vars.SMOKE_BASE_URL != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -19,4 +26,5 @@ jobs:
           filename: tests/k6/smoke-test.js
           flags: --vus 10 --duration 30s
         env:
-          BASE_URL: https://chat.mainecybertech.com
+          BASE_URL: ${{ vars.SMOKE_BASE_URL }}
+          HEALTH_PATH: ${{ vars.SMOKE_HEALTH_PATH || '/health' }}

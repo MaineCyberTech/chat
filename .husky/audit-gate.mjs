@@ -15,7 +15,9 @@ import { readFileSync } from "node:fs";
 const [, , auditPath, exceptionsPath = ".pnpm-audit-exceptions.json"] = process.argv;
 
 if (!auditPath) {
-  console.error("audit-gate: usage: node .husky/audit-gate.mjs <pnpm-audit.json> [exceptions.json]");
+  console.error(
+    "audit-gate: usage: node .husky/audit-gate.mjs <pnpm-audit.json> [exceptions.json]",
+  );
   process.exit(2);
 }
 

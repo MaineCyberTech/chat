@@ -7,11 +7,11 @@ Alertmanager now run as services in the app's compose files.
 
 ## Contents
 
-| File                      | Purpose                                                                                                        |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `prometheus.yml`          | Scrape config: `chat-api` `/metrics` (bearer `METRICS_TOKEN`) + self-scrape; forwards alerts to Alertmanager.   |
-| `rules/chat.rules.yml`    | Prometheus alert rules: API availability, 5xx rate, p95 latency, circuit breakers, and (inert) worker queue.    |
-| `alertmanager.yml`        | Alertmanager routing template. `${CHAT_NTFY_*}` placeholders are rendered at container start; secrets stay in env. |
+| File                   | Purpose                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `prometheus.yml`       | Scrape config: `chat-api` `/metrics` (bearer `METRICS_TOKEN`) + self-scrape; forwards alerts to Alertmanager.      |
+| `rules/chat.rules.yml` | Prometheus alert rules: API availability, 5xx rate, p95 latency, circuit breakers, and (inert) worker queue.       |
+| `alertmanager.yml`     | Alertmanager routing template. `${CHAT_NTFY_*}` placeholders are rendered at container start; secrets stay in env. |
 
 ## How it runs
 
@@ -38,12 +38,12 @@ A blackbox exporter probing `/healthz` (job `chat-blackbox`) enables
 
 Set these in `infra/docker/.env` (see `infra/docker/.env.prod.example`):
 
-| Variable         | Used by       | Notes                                                        |
-| ---------------- | ------------- | ------------------------------------------------------------ |
-| `METRICS_TOKEN`  | scrape config | Shared token for `GET /metrics` (min 16 chars). Unset disables `/metrics`. |
+| Variable         | Used by       | Notes                                                                       |
+| ---------------- | ------------- | --------------------------------------------------------------------------- |
+| `METRICS_TOKEN`  | scrape config | Shared token for `GET /metrics` (min 16 chars). Unset disables `/metrics`.  |
 | `CHAT_NTFY_URL`  | Alertmanager  | ntfy publish URL. Defaults to `https://ntfy.mainecybertech.us/chat-alerts`. |
-| `CHAT_NTFY_USER` | Alertmanager  | ntfy user with write-only access to the topic. Defaults to `chat-relay`. |
-| `CHAT_NTFY_PASS` | Alertmanager  | Password for `CHAT_NTFY_USER` (secret; no committed default). |
+| `CHAT_NTFY_USER` | Alertmanager  | ntfy user with write-only access to the topic. Defaults to `chat-relay`.    |
+| `CHAT_NTFY_PASS` | Alertmanager  | Password for `CHAT_NTFY_USER` (secret; no committed default).               |
 
 The production deploy workflow (`deploy-production.yml`) writes `.env` from the
 `METRICS_TOKEN` and `CHAT_NTFY_PASS` GitHub secrets.
