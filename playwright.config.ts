@@ -22,10 +22,11 @@ export default defineConfig({
   webServer: process.env.CI
     ? [
         {
-          // E2E runs against a production build: `next dev` compiles pages on
-          // demand and the full suite exhausts the job timeout before it
-          // finishes. The workflow builds @chat/web first.
-          command: "pnpm --filter @chat/web start",
+          // E2E runs against the standalone production build. `next start` does
+          // not serve output:standalone, so prepare the static/public assets and
+          // launch the generated server directly (same layout as the Dockerfile).
+          command:
+            "rm -rf apps/web/.next/standalone/apps/web/.next/static apps/web/.next/standalone/apps/web/public && cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static && cp -r apps/web/public apps/web/.next/standalone/apps/web/public && node apps/web/.next/standalone/apps/web/server.js",
           port: 3000,
           reuseExistingServer: true,
           timeout: 120000,
