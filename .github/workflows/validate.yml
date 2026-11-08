@@ -87,7 +87,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Run diff coverage
         run: |
-          pnpm test -- --changed --coverage --reporter=json --coverage.reporter=json-summary
+          # Vitest's --changed needs a base branch that exists (this repo's
+          # default is develop, not main). Run the full unit suite instead and
+          # apply the same coverage-summary thresholds below.
+          pnpm vitest run --config vitest.config.ts --coverage --coverage.reporter=json-summary
       - name: Upload diff coverage report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -263,6 +266,10 @@ jobs:
           format: "sarif"
           output: "trivy-results.sarif"
           severity: "HIGH,CRITICAL"
+          # Without this the action unsets the severity filter for SARIF and
+          # exits non-zero on LOW/MEDIUM findings too. Keep the gate aligned
+          # with the repository policy: HIGH/CRITICAL only.
+          limit-severities-for-sarif: true
           # Blocking: exit non-zero on HIGH/CRITICAL findings. Time-boxed exceptions belong
           # in .trivyignore at the repo root.
           exit-code: "1"
