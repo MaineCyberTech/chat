@@ -559,7 +559,9 @@ jobs:
         # Blocking E2E needs a launchable browser: install Chromium plus its OS libraries.
         run: pnpm exec playwright install --with-deps chromium
       - name: Install Supabase CLI
-        run: npm install -g supabase
+        # Pin the CLI: newer majors reject the repository's existing
+        # [inbucket] config before the E2E suite can run.
+        run: npm install -g supabase@2.108.0
       - name: Start Supabase local
         run: supabase start
       - name: Run migrations and seed data (blocking)

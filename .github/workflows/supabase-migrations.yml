@@ -32,7 +32,7 @@ jobs:
           node-version: 22
 
       - name: Install Supabase CLI
-        run: npm install -g supabase
+        run: npm install -g supabase@2.108.0
 
       - name: Link project
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
