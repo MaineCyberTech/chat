@@ -538,8 +538,6 @@ jobs:
       PLAYWRIGHT_BASE_URL: http://localhost:3000
       NEXT_PUBLIC_API_URL: http://localhost:4000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
-      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -557,10 +555,6 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build web app for E2E
-        # Production build: `next start` serves precompiled pages, avoiding the
-        # per-test dev compilation that timed out the suite.
-        run: pnpm turbo build --filter @chat/web
       - name: Install Playwright browsers
         # Blocking E2E needs a launchable browser: install Chromium plus its OS libraries.
         run: pnpm exec playwright install --with-deps chromium
@@ -570,11 +564,32 @@ jobs:
         run: npm install -g supabase@2.108.0
       - name: Start Supabase local
         run: supabase start
+      - name: Export local Supabase credentials
+        # Use the local stack's anon key, not the hosted-project secret: the
+        # hosted key is signed by a different JWT secret.
+        run: |
+          set -euo pipefail
+          status="$(supabase status -o env)"
+          api_url="$(printf '%s\n' "$status" | sed -n 's/^API_URL="\(.*\)"$/\1/p')"
+          anon_key="$(printf '%s\n' "$status" | sed -n 's/^ANON_KEY="\(.*\)"$/\1/p')"
+          if [ -z "$api_url" ] || [ -z "$anon_key" ]; then
+            echo "ERROR: could not read local Supabase URL/anon key from supabase status"
+            exit 1
+          fi
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$api_url"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$anon_key"
+          } >> "$GITHUB_ENV"
       - name: Run migrations and seed data (blocking)
         # `supabase db reset` applies the migrations and then [db.seed].sql_paths
         # (supabase/seeds/*.sql) from config.toml. The previous separate seed step
         # referenced a non-existent supabase/seeds/seed.sql and silently did nothing.
         run: supabase db reset
+      - name: Build web app for E2E
+        # Production build: `next start` serves precompiled pages, avoiding the
+        # per-test dev compilation that timed out the suite. Runs after the
+        # local Supabase credentials are exported so they are embedded.
+        run: pnpm turbo build --filter @chat/web
       - name: Provision E2E credentials
         # Blocking + self-provisioning: generate the test-signin.json the suite reads from
         # the local seed user below, instead of depending on a committed credential file.
