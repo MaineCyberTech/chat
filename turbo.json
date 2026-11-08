@@ -1,6 +1,21 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
+  "globalEnv": [
+    "NEXT_PUBLIC_API_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_APP_VERSION",
+    "NEXT_PUBLIC_GIT_SHA",
+    "NEXT_PUBLIC_BUILD_TIME",
+    "NEXT_PUBLIC_SENTRY_DSN",
+    "NEXT_TELEMETRY_DISABLED",
+    "ANALYZE",
+    "SENTRY_AUTH_TOKEN",
+    "SENTRY_ORG",
+    "SENTRY_PROJECT"
+  ],
   "tasks": {
     "build": {
       "description": "Compile all packages and apps (Next.js, tsc, bundlers). Depends on upstream ^build.",
