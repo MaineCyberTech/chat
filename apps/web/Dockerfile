@@ -1,7 +1,7 @@
 # apps/web/Dockerfile
 # Multi-stage production build for Next.js with standalone output.
 
-FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS base
+FROM node:22-alpine@sha256:947e5454e08bfe0b8ddda604915ad76275276c774f47da90d0137252c793a778 AS base
 WORKDIR /app
 RUN npm install -g pnpm@9.15.4 --no-fund --no-audit
 
@@ -43,7 +43,7 @@ ENV STANDALONE=1
 RUN pnpm turbo build --filter @chat/web
 
 # Runtime
-FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS runtime
+FROM node:22-alpine@sha256:947e5454e08bfe0b8ddda604915ad76275276c774f47da90d0137252c793a778 AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -55,6 +55,11 @@ ENV HOSTNAME=0.0.0.0
 COPY --from=base /app/apps/web/.next/standalone ./
 COPY --from=base /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=base /app/apps/web/public ./apps/web/public
+
+# The standalone server does not need npm/corepack at runtime; removing them
+# also removes their bundled dependency trees from the image scan surface.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["wget", "-qO-", "http://localhost:3000"]
