@@ -75,3 +75,4 @@
 20260724000006_fix_database_p1_findings.sql
 20260725000001_make_gdpr_delete_atomic.sql
 20260726000001_add_user_groups_workspace_write_rls.sql
+20261108000001_grant_api_role_privileges.sql

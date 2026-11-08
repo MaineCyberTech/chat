@@ -4,10 +4,13 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   schedule:
     - cron: "0 7 * * 1-5"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -16,11 +19,18 @@ concurrency:
 jobs:
   validate:
     name: Lint, Typecheck, Test, Build
+    # Keep the reusable workflow read-only except for the SARIF upload in
+    # security-audit. The called workflow requests the same scopes at job level.
+    permissions:
+      contents: read
+      security-events: write
     uses: ./.github/workflows/validate.yml
     secrets: inherit
 
   k6-smoke:
     name: k6 Smoke Test
-    if: github.event_name == 'schedule'
+    # Skip rather than hammer a placeholder hostname: set the repository variable
+    # SMOKE_BASE_URL (for example https://chat-api.example.com) to enable this.
+    if: github.event_name == 'schedule' && vars.SMOKE_BASE_URL != ''
     uses: ./.github/workflows/load-test.yml
     secrets: inherit

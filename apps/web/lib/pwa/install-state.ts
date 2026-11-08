@@ -84,54 +84,57 @@ export function useInstallPrompt() {
 
   const getPlatform = useCallback((): InstallPlatform => detectPlatform(), []);
 
-  const getInstallInstructions = useCallback((platformOverride?: InstallPlatform) => {
-    const platform = platformOverride ?? getPlatform();
+  const getInstallInstructions = useCallback(
+    (platformOverride?: InstallPlatform) => {
+      const platform = platformOverride ?? getPlatform();
 
-    switch (platform) {
-      case "ios":
-        return {
-          title: "Install on iOS",
-          steps: [
-            "Tap the Share button (square with arrow up)",
-            'Scroll down and tap "Add to Home Screen"',
-            'Tap "Add" in the top right corner',
-          ],
-          showButton: false,
-        };
-      case "android":
-        return {
-          title: "Install on Android",
-          steps: [
-            "Tap the menu (three dots) in Chrome",
-            'Select "Install app" or "Add to Home screen"',
-            'Tap "Install" to confirm',
-          ],
-          showButton: true,
-        };
-      case "macos":
-      case "windows":
-      case "linux":
-        return {
-          title: `Install on ${platform.charAt(0).toUpperCase() + platform.slice(1)}`,
-          steps: [
-            "Click the install icon in the address bar",
-            'Or use the menu → "Install MaineCyberTech Chat"',
-            "Confirm the installation",
-          ],
-          showButton: true,
-        };
-      default:
-        return {
-          title: "Install App",
-          steps: [
-            "Use your browser's install option",
-            "Look for an install icon in the address bar",
-            'Or check the browser menu for "Install"',
-          ],
-          showButton: true,
-        };
-    }
-  }, [getPlatform]);
+      switch (platform) {
+        case "ios":
+          return {
+            title: "Install on iOS",
+            steps: [
+              "Tap the Share button (square with arrow up)",
+              'Scroll down and tap "Add to Home Screen"',
+              'Tap "Add" in the top right corner',
+            ],
+            showButton: false,
+          };
+        case "android":
+          return {
+            title: "Install on Android",
+            steps: [
+              "Tap the menu (three dots) in Chrome",
+              'Select "Install app" or "Add to Home screen"',
+              'Tap "Install" to confirm',
+            ],
+            showButton: true,
+          };
+        case "macos":
+        case "windows":
+        case "linux":
+          return {
+            title: `Install on ${platform.charAt(0).toUpperCase() + platform.slice(1)}`,
+            steps: [
+              "Click the install icon in the address bar",
+              'Or use the menu → "Install MaineCyberTech Chat"',
+              "Confirm the installation",
+            ],
+            showButton: true,
+          };
+        default:
+          return {
+            title: "Install App",
+            steps: [
+              "Use your browser's install option",
+              "Look for an install icon in the address bar",
+              'Or check the browser menu for "Install"',
+            ],
+            showButton: true,
+          };
+      }
+    },
+    [getPlatform],
+  );
 
   return {
     deferredPrompt,

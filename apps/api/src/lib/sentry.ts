@@ -65,4 +65,7 @@ export function initSentry() {
   setupGlobalHandlers();
 }
 
-export const sentryErrorMiddleware = Sentry.expressErrorHandler();
+// Explicit annotation keeps the inferred type portable across the hoisted
+// node_modules layout (TS2742 after the @sentry/node 10.75.2 patch upgrade).
+export const sentryErrorMiddleware: ReturnType<typeof Sentry.expressErrorHandler> =
+  Sentry.expressErrorHandler();

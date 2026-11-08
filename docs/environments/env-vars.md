@@ -105,26 +105,26 @@ schema is tracked as a follow-up; this document is the reference until then.
 
 These are only needed for CI/CD and Terraform, not for local development:
 
-| Variable                | Purpose                                |
-| ----------------------- | -------------------------------------- |
-| `DO_API_TOKEN`          | DigitalOcean API token                 |
-| `CF_API_TOKEN`          | Cloudflare API token                   |
-| `CF_ZONE_ID`            | Cloudflare DNS zone ID                 |
-| `CF_ORIGIN_CERT`        | Cloudflare origin cert (PEM)           |
-| `CF_ORIGIN_KEY`         | Cloudflare origin key (PEM)            |
-| `SSH_ALLOWED_IPS`       | Comma-separated allowed SSH IPs        |
-| `ALERT_EMAIL`           | Email for DigitalOcean monitor alerts  |
+| Variable                | Purpose                                 |
+| ----------------------- | --------------------------------------- |
+| `DO_API_TOKEN`          | DigitalOcean API token                  |
+| `CF_API_TOKEN`          | Cloudflare API token                    |
+| `CF_ZONE_ID`            | Cloudflare DNS zone ID                  |
+| `CF_ORIGIN_CERT`        | Cloudflare origin cert (PEM)            |
+| `CF_ORIGIN_KEY`         | Cloudflare origin key (PEM)             |
+| `SSH_ALLOWED_IPS`       | Comma-separated allowed SSH IPs         |
+| `ALERT_EMAIL`           | Email for DigitalOcean monitor alerts   |
 | `METRICS_TOKEN`         | Prometheus scraper token for `/metrics` |
-| `CHAT_NTFY_URL`         | Alertmanager ntfy publish URL          |
-| `CHAT_NTFY_USER`        | Alertmanager ntfy write-only user      |
-| `CHAT_NTFY_PASS`        | Alertmanager ntfy password (secret)    |
-| `AWS_ACCESS_KEY_ID`     | AWS key for Terraform state backend    |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret for Terraform state backend |
-| `SUPABASE_PROJECT_REF`  | Supabase project ref ID (CI)           |
-| `SUPABASE_DB_PASSWORD`  | DB password for migrations (CI)        |
-| `SUPABASE_ACCESS_TOKEN` | Supabase access token (CI)             |
-| `CI_SSH_PUBLIC_KEY`     | Public key for CI SSH                  |
-| `CI_SSH_PRIVATE_KEY`    | Private key for CI SSH                 |
-| `CI_SSH_FINGERPRINT`    | SSH key fingerprint                    |
-| `DO_SSH_PRIVATE_KEY`    | Droplet SSH private key                |
-| `DO_SSH_PASSPHRASE`     | SSH key passphrase                     |
+| `CHAT_NTFY_URL`         | Alertmanager ntfy publish URL           |
+| `CHAT_NTFY_USER`        | Alertmanager ntfy write-only user       |
+| `CHAT_NTFY_PASS`        | Alertmanager ntfy password (secret)     |
+| `AWS_ACCESS_KEY_ID`     | AWS key for Terraform state backend     |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret for Terraform state backend  |
+| `SUPABASE_PROJECT_REF`  | Supabase project ref ID (CI)            |
+| `SUPABASE_DB_PASSWORD`  | DB password for migrations (CI)         |
+| `SUPABASE_ACCESS_TOKEN` | Supabase access token (CI)              |
+| `CI_SSH_PUBLIC_KEY`     | Public key for CI SSH                   |
+| `CI_SSH_PRIVATE_KEY`    | Private key for CI SSH                  |
+| `CI_SSH_FINGERPRINT`    | SSH key fingerprint                     |
+| `DO_SSH_PRIVATE_KEY`    | Droplet SSH private key                 |
+| `DO_SSH_PASSPHRASE`     | SSH key passphrase                      |

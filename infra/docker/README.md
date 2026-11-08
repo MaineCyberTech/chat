@@ -104,8 +104,8 @@ container.
   `X-Health-Token` header) on `/metrics`.
 - `GET /healthz` and `GET /health` stay unauthenticated for healthcheck use and remain
   loopback-bound.
-| Redis   | `redis-cli ping`                     | 5s       | 3s      |
-| LiveKit | None                                 | —        | —       |
+  | Redis | `redis-cli ping` | 5s | 3s |
+  | LiveKit | None | — | — |
 
 ## Volumes
 

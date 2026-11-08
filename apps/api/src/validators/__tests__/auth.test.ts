@@ -28,9 +28,9 @@ describe("updatePresenceStatusSchema (API-P2-004)", () => {
   });
 
   it("rejects control characters in the custom status", () => {
-    expect(
-      updatePresenceStatusSchema.safeParse({ customStatus: "bad\u0000status" }).success,
-    ).toBe(false);
+    expect(updatePresenceStatusSchema.safeParse({ customStatus: "bad\u0000status" }).success).toBe(
+      false,
+    );
   });
 
   it("accepts absent or null custom status", () => {

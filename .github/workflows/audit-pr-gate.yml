@@ -14,7 +14,15 @@ jobs:
           python-version: "3.12"
       - name: Evaluate audit gate policy
         run: |
-          python scripts/audits/evaluate_gate.py --repo-root . --policy-file docs/hardening_super_bundle/policies/gate-policy.dev.json
+          if find docs/audits/runs -name '*_summary.json' -print -quit 2>/dev/null | grep -q .; then
+            python scripts/audits/aggregate_runs.py
+            python scripts/audits/evaluate_gate.py --repo-root . --policy-file docs/hardening_super_bundle/policies/gate-policy.dev.json
+          else
+            echo "No audit run summaries are tracked; skipping the gate."
+            mkdir -p docs/hardening_super_bundle/examples/results
+            printf '# Audit Gate Result\n\n## Gate Status: SKIP\n\n- No audit run summaries are present in the repository.\n' \
+              > docs/hardening_super_bundle/examples/results/generated_gate_result.md
+          fi
       - name: Upload gate result
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -139,6 +139,7 @@ jobs:
           format: "sarif"
           output: "trivy-api.sarif"
           severity: "HIGH,CRITICAL"
+          limit-severities-for-sarif: true
           # Blocking: fail on HIGH/CRITICAL image findings (allowlist via .trivyignore).
           exit-code: "1"
 
@@ -149,6 +150,7 @@ jobs:
           format: "sarif"
           output: "trivy-web.sarif"
           severity: "HIGH,CRITICAL"
+          limit-severities-for-sarif: true
           # Blocking: fail on HIGH/CRITICAL image findings (allowlist via .trivyignore).
           exit-code: "1"
 
