@@ -8,15 +8,15 @@ v2 API (`Docker-Content-Digest` of the manifest list).
 
 ## Pinned images
 
-| Image | Digest (sha256) | Where |
-|---|---|---|
-| `caddy:2-alpine` | `881bbc60f9986d5ab8e7cfd6cf7e4ef3c9c0439fef2429d035d065577882f028` | dev / devremote / prod compose |
-| `redis:7-alpine` | `858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499` | dev / devremote / prod compose |
+| Image                           | Digest (sha256)                                                    | Where                          |
+| ------------------------------- | ------------------------------------------------------------------ | ------------------------------ |
+| `caddy:2-alpine`                | `881bbc60f9986d5ab8e7cfd6cf7e4ef3c9c0439fef2429d035d065577882f028` | dev / devremote / prod compose |
+| `redis:7-alpine`                | `858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499` | dev / devremote / prod compose |
 | `livekit/livekit-server:latest` | `6fd3b7088874c4d119160dd688798dfec852bc014786d392caad15f6f63912a3` | dev / devremote / prod compose |
-| `prom/prometheus:v3.5.1` | `38c3b05c3bc744ff1b0b7b4eb82196026442845e62a1e2073795565da506d7a2` | dev / devremote / prod compose |
-| `prom/alertmanager:v0.28.1` | `27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba` | dev / devremote / prod compose |
-| `node:22-alpine` | `0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402` | web / worker Dockerfiles |
-| `node:26-alpine` | `0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80` | api Dockerfile |
+| `prom/prometheus:v3.5.1`        | `38c3b05c3bc744ff1b0b7b4eb82196026442845e62a1e2073795565da506d7a2` | dev / devremote / prod compose |
+| `prom/alertmanager:v0.28.1`     | `27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba` | dev / devremote / prod compose |
+| `node:22-alpine`                | `0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402` | web / worker Dockerfiles       |
+| `node:26-alpine`                | `0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80` | api Dockerfile                 |
 
 ## Intentionally NOT digest-pinned
 

@@ -6,12 +6,12 @@ Targets for the current single-droplet topology (`infra/terraform/main.tf`,
 `infra/docker/docker-compose.prod.yml`). These are **targets**, not measured guarantees;
 the restore drill below must confirm them and this table updated with the observed numbers.
 
-| Failure                 | Data loss target (RPO)                              | Recovery target (RTO)              | Mechanism                                                              |
-| ----------------------- | --------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------- |
-| Supabase Postgres       | <= 24 h (Pro daily) / minutes (Team PITR)           | <= 1 h (dashboard restore)         | Supabase automated backups / PITR                                       |
-| Supabase Storage        | <= 24 h                                             | <= 1 h                             | Supabase backups                                                        |
-| Redis (queues/presence) | Acceptable loss (jobs are idempotent)               | <= 15 min                          | AOF + scheduler re-enqueue (`docs/runbooks/redis-recovery.md`)          |
-| Droplet / host          | Last successful off-host backup (see below)         | <= 2 h (CI redeploy + DB restore)  | Re-deploy via CI/CD, then restore Supabase                              |
+| Failure                 | Data loss target (RPO)                      | Recovery target (RTO)             | Mechanism                                                      |
+| ----------------------- | ------------------------------------------- | --------------------------------- | -------------------------------------------------------------- |
+| Supabase Postgres       | <= 24 h (Pro daily) / minutes (Team PITR)   | <= 1 h (dashboard restore)        | Supabase automated backups / PITR                              |
+| Supabase Storage        | <= 24 h                                     | <= 1 h                            | Supabase backups                                               |
+| Redis (queues/presence) | Acceptable loss (jobs are idempotent)       | <= 15 min                         | AOF + scheduler re-enqueue (`docs/runbooks/redis-recovery.md`) |
+| Droplet / host          | Last successful off-host backup (see below) | <= 2 h (CI redeploy + DB restore) | Re-deploy via CI/CD, then restore Supabase                     |
 
 ## Single-node risk and off-host backups
 

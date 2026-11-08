@@ -1,8 +1,7 @@
 const DEFAULT_TIMEOUT = 10000;
 
 type Thenable<T> =
-  | Promise<T>
-  | { then: (resolve: (value: T) => void, reject: (reason: unknown) => void) => void };
+  Promise<T> | { then: (resolve: (value: T) => void, reject: (reason: unknown) => void) => void };
 
 export async function queryWithTimeout<T>(
   thenable: Thenable<{ data: T | null; error: unknown }>,

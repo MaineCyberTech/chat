@@ -3,7 +3,7 @@
 
 FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS base
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN npm install -g pnpm@9.15.4 --no-fund --no-audit
 
 # Install deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./

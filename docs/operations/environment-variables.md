@@ -100,21 +100,21 @@ All environment variables are organized by domain. Required variables are noted;
 
 ## Infrastructure (Terraform / Cloudflare / DigitalOcean)
 
-| Variable                | Required | Default | Description                         |
-| ----------------------- | -------- | ------- | ----------------------------------- |
-| `DO_API_TOKEN`          | Infra    | —       | DigitalOcean API token              |
-| `CF_API_TOKEN`          | Infra    | —       | Cloudflare API token                |
-| `CF_ZONE_ID`            | Infra    | —       | Cloudflare zone ID                  |
-| `CF_ORIGIN_CERT`        | Infra    | —       | Cloudflare origin certificate (PEM) |
-| `CF_ORIGIN_KEY`         | Infra    | —       | Cloudflare origin key (PEM)         |
-| `SSH_ALLOWED_IPS`       | Infra    | —       | Comma-separated allowed SSH IPs     |
-| `ALERT_EMAIL`           | Infra    | `ops@mainecybertech.us` | Email for DigitalOcean monitor alerts |
-| `METRICS_TOKEN`         | Prod     | —       | Token gating `GET /metrics` (Prometheus scrape) |
-| `CHAT_NTFY_URL`         | Prod     | `https://ntfy.mainecybertech.us/chat-alerts` | Alertmanager ntfy publish URL |
-| `CHAT_NTFY_USER`        | Prod     | `chat-relay` | Alertmanager ntfy write-only user |
-| `CHAT_NTFY_PASS`        | Prod     | —       | Alertmanager ntfy password (secret) |
-| `AWS_ACCESS_KEY_ID`     | Infra    | —       | AWS access key (Terraform state)    |
-| `AWS_SECRET_ACCESS_KEY` | Infra    | —       | AWS secret key (Terraform state)    |
+| Variable                | Required | Default                                      | Description                                     |
+| ----------------------- | -------- | -------------------------------------------- | ----------------------------------------------- |
+| `DO_API_TOKEN`          | Infra    | —                                            | DigitalOcean API token                          |
+| `CF_API_TOKEN`          | Infra    | —                                            | Cloudflare API token                            |
+| `CF_ZONE_ID`            | Infra    | —                                            | Cloudflare zone ID                              |
+| `CF_ORIGIN_CERT`        | Infra    | —                                            | Cloudflare origin certificate (PEM)             |
+| `CF_ORIGIN_KEY`         | Infra    | —                                            | Cloudflare origin key (PEM)                     |
+| `SSH_ALLOWED_IPS`       | Infra    | —                                            | Comma-separated allowed SSH IPs                 |
+| `ALERT_EMAIL`           | Infra    | `ops@mainecybertech.us`                      | Email for DigitalOcean monitor alerts           |
+| `METRICS_TOKEN`         | Prod     | —                                            | Token gating `GET /metrics` (Prometheus scrape) |
+| `CHAT_NTFY_URL`         | Prod     | `https://ntfy.mainecybertech.us/chat-alerts` | Alertmanager ntfy publish URL                   |
+| `CHAT_NTFY_USER`        | Prod     | `chat-relay`                                 | Alertmanager ntfy write-only user               |
+| `CHAT_NTFY_PASS`        | Prod     | —                                            | Alertmanager ntfy password (secret)             |
+| `AWS_ACCESS_KEY_ID`     | Infra    | —                                            | AWS access key (Terraform state)                |
+| `AWS_SECRET_ACCESS_KEY` | Infra    | —                                            | AWS secret key (Terraform state)                |
 
 ## CI/CD — SSH Deploy Keys
 

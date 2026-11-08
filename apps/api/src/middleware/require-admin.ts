@@ -9,10 +9,7 @@ export interface RequireAdminOptions {
   attachWorkspaceIds?: boolean;
 }
 
-export function requireAdmin(
-  paramName: string | null = null,
-  options: RequireAdminOptions = {},
-) {
+export function requireAdmin(paramName: string | null = null, options: RequireAdminOptions = {}) {
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       const supabase = req.supabase;

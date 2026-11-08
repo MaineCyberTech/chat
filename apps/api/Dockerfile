@@ -5,7 +5,7 @@ FROM node:26-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2ee
 WORKDIR /app
 
 # pnpm
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN npm install -g pnpm@9.15.4 --no-fund --no-audit
 
 # Copy root workspace files
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json turbo.json .npmrc ./
@@ -27,7 +27,7 @@ RUN pnpm turbo build --filter @chat/api
 FROM node:26-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS runtime
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN npm install -g pnpm@9.15.4 --no-fund --no-audit
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/api/package.json ./apps/api/package.json

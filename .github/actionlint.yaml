@@ -4,4 +4,15 @@
 # does not report them as unknown labels. Keep in sync with the labels on the
 # self-hosted runners referenced from .github/workflows/*.yml.
 self-hosted-runner:
-  labels: [lab, lab-ubuntu, lab-python, lab-sudo, lab-docker, lab-debian, ci-runner, edge-builder, lab-runner-2]
+  labels:
+    [
+      lab,
+      lab-ubuntu,
+      lab-python,
+      lab-sudo,
+      lab-docker,
+      lab-debian,
+      ci-runner,
+      edge-builder,
+      lab-runner-2,
+    ]

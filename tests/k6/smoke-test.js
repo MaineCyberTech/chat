@@ -24,7 +24,9 @@ export const options = {
 
 export function setup() {
   if (!BASE_URL) {
-    console.warn("SKIP: BASE_URL is not configured; set it to the API origin to run the smoke test.");
+    console.warn(
+      "SKIP: BASE_URL is not configured; set it to the API origin to run the smoke test.",
+    );
     return { skip: true };
   }
   return { skip: false };

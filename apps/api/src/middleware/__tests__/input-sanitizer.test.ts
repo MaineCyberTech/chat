@@ -27,9 +27,7 @@ describe("inputSanitizer (FEAT-P2-004)", () => {
 
   it("accepts a query string containing SQL keywords", () => {
     const next = vi.fn();
-    expect(() =>
-      inputSanitizer(req({}, { q: "select team" }), {} as AnyObj, next),
-    ).not.toThrow();
+    expect(() => inputSanitizer(req({}, { q: "select team" }), {} as AnyObj, next)).not.toThrow();
     expect(next).toHaveBeenCalledWith();
   });
 
@@ -44,11 +42,7 @@ describe("inputSanitizer (FEAT-P2-004)", () => {
   it("still blocks script tags in nested fields", () => {
     const next = vi.fn();
     expect(() =>
-      inputSanitizer(
-        req({ prefs: { label: "<script>alert(1)</script>" } }),
-        {} as AnyObj,
-        next,
-      ),
+      inputSanitizer(req({ prefs: { label: "<script>alert(1)</script>" } }), {} as AnyObj, next),
     ).toThrow(AppError);
     expect(next).not.toHaveBeenCalled();
   });
