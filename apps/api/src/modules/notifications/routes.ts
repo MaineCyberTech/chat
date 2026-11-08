@@ -1,4 +1,5 @@
 import { Router, type Router as RouterType } from "express";
+import { z } from "zod";
 import { authenticate } from "../../middleware/authenticate.js";
 import { requireChannelAccess } from "../../middleware/require-membership.js";
 import { validateUuidParam } from "../../middleware/validate-uuid.js";
@@ -13,9 +14,17 @@ import {
 import { checkIdempotencyKey, storeIdempotencyKey } from "../../lib/idempotency.js";
 import { parsePaginationParams } from "../../lib/pagination.js";
 import { notificationService } from "./service.js";
+import { pushSubscriptionService } from "./push-subscription-service.js";
 
 const router: RouterType = Router();
 router.use(authenticate);
+
+const pushSubscriptionSchema = z.object({
+  endpoint: z.string().url().max(2048),
+  p256dh: z.string().min(1).max(512),
+  auth: z.string().min(1).max(512),
+  user_agent: z.string().max(512).optional(),
+});
 
 // List notifications with pagination
 router.get(
@@ -221,6 +230,61 @@ router.delete(
         throw new NotFoundError("Trigger word not found");
       }
       throw new InternalServerError(error.message);
+    }
+    res.status(204).send();
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Web Push subscriptions
+// ---------------------------------------------------------------------------
+
+router.get(
+  "/notifications/push-subscriptions/vapid-key",
+  asyncHandler(async (_req, res) => {
+    try {
+      res.json({ publicKey: pushSubscriptionService.getVapidPublicKey() });
+    } catch {
+      throw new InternalServerError("Push notifications are not configured");
+    }
+  }),
+);
+
+router.get(
+  "/notifications/push-subscriptions",
+  asyncHandler(async (req, res) => {
+    const subscriptions = await pushSubscriptionService.list(req.userId!);
+    res.json({ subscriptions });
+  }),
+);
+
+router.post(
+  "/notifications/push-subscriptions",
+  asyncHandler(async (req, res) => {
+    const parsed = pushSubscriptionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new BadRequestError(parsed.error.issues[0].message);
+    }
+
+    try {
+      const subscription = await pushSubscriptionService.create(req.userId!, parsed.data);
+      res.status(201).json({ subscription });
+    } catch (err) {
+      // The service validates the endpoint (HTTPS/public host) before storage.
+      throw new BadRequestError(
+        err instanceof Error ? err.message : "Invalid push subscription endpoint",
+      );
+    }
+  }),
+);
+
+router.delete(
+  "/notifications/push-subscriptions/:id",
+  validateUuidParam("id"),
+  asyncHandler(async (req, res) => {
+    const deleted = await pushSubscriptionService.delete(req.userId!, req.params.id as string);
+    if (!deleted) {
+      throw new NotFoundError("Push subscription not found");
     }
     res.status(204).send();
   }),

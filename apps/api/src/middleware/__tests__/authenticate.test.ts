@@ -105,4 +105,35 @@ describe("authenticate middleware", () => {
     expect(res.status).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();
   });
+
+  it("extracts the latest AMR timestamp for passwordless re-authentication", async () => {
+    const { getSupabase, getSupabaseForUser } = await import("../../lib/supabase.js");
+    const mockGetUser = vi.fn().mockResolvedValue({
+      data: { user: { id: "user-1", email: "test@example.com" } },
+      error: null,
+    });
+    (getSupabase as AnyObj).mockReturnValue({ auth: { getUser: mockGetUser } });
+    (getSupabaseForUser as AnyObj).mockReturnValue({});
+
+    const payload = Buffer.from(
+      JSON.stringify({
+        sub: "user-1",
+        iat: 1_700_000_000,
+        amr: [
+          { method: "password", timestamp: 1_700_000_100 },
+          { method: "otp", timestamp: 1_700_000_900 },
+        ],
+      }),
+    ).toString("base64url");
+    const token = `header.${payload}.signature`;
+
+    const req = mockReq({ authorization: `Bearer ${token}` });
+    const res = mockRes();
+    const next = vi.fn();
+
+    await authenticate(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(req.authenticatedAt).toBe(1_700_000_900 * 1000);
+  });
 });

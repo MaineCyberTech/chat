@@ -152,7 +152,84 @@ async function cleanupMessageEditHistory(
   return ids.length;
 }
 
-async function cleanupStaleUploads(
+const UPLOAD_BUCKET = "chat-uploads";
+const UPLOAD_PATH_MARKER = `/${UPLOAD_BUCKET}/`;
+const REFERENCE_PAGE_SIZE = 1000;
+const UPLOAD_CANDIDATE_LIMIT = 200;
+
+function decodeSafely(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/**
+ * Extract chat-upload object paths from a URL or free-form message body.
+ *
+ * Stored URLs can be public (`.../object/public/chat-uploads/a.png`), signed
+ * (`.../object/sign/chat-uploads/a.png?token=...`) or URL-encoded. Query strings
+ * and fragments are not part of the object name, so they are discarded.
+ */
+export function extractChatUploadPaths(value: string | null | undefined): string[] {
+  if (!value) return [];
+
+  const paths = new Set<string>();
+  for (const text of [value, decodeSafely(value)]) {
+    let searchFrom = 0;
+    while (searchFrom < text.length) {
+      const markerIndex = text.indexOf(UPLOAD_PATH_MARKER, searchFrom);
+      if (markerIndex === -1) break;
+
+      let candidate = text.slice(markerIndex + UPLOAD_PATH_MARKER.length);
+      const terminator = candidate.search(/[?#\s"'`<>]/);
+      if (terminator !== -1) candidate = candidate.slice(0, terminator);
+      candidate = decodeSafely(candidate)
+        .replace(/^\/+/, "")
+        .replace(/[),.;!]+$/, "");
+
+      if (candidate) paths.add(candidate);
+      searchFrom = markerIndex + UPLOAD_PATH_MARKER.length;
+    }
+  }
+  return [...paths];
+}
+
+async function loadReferenceValues(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  table: "users" | "messages",
+  column: "avatar_url" | "content",
+): Promise<string[]> {
+  const values: string[] = [];
+  let offset = 0;
+
+  while (true) {
+    let query = supabase.from(table).select(column).not(column, "is", null);
+    if (table === "messages") {
+      // Pre-filter in Postgres; a message without this marker cannot reference an upload.
+      query = query.ilike(column, "%chat-uploads%");
+    }
+
+    const { data, error } = await query
+      .range(offset, offset + REFERENCE_PAGE_SIZE - 1)
+      .abortSignal(AbortSignal.timeout(15000));
+
+    if (error) throw error;
+    const rows = (data ?? []) as Array<Record<string, string | null>>;
+    for (const row of rows) {
+      const value = row[column];
+      if (value) values.push(value);
+    }
+
+    if (rows.length < REFERENCE_PAGE_SIZE) break;
+    offset += rows.length;
+  }
+
+  return values;
+}
+
+export async function cleanupStaleUploads(
   supabase: ReturnType<typeof createSupabaseClient>,
   olderThanDays: number,
 ) {
@@ -163,9 +240,9 @@ async function cleanupStaleUploads(
     .schema("storage")
     .from("objects")
     .select("name")
-    .eq("bucket_id", "chat-uploads")
+    .eq("bucket_id", UPLOAD_BUCKET)
     .lt("created_at", cutoff.toISOString())
-    .limit(200)
+    .limit(UPLOAD_CANDIDATE_LIMIT)
     .abortSignal(AbortSignal.timeout(15000));
 
   if (listError) {
@@ -175,16 +252,56 @@ async function cleanupStaleUploads(
 
   if (!objects || objects.length === 0) return 0;
 
-  const names: string[] = (objects as { name: string }[]).map((o) => o.name);
-  const { error: delError } = await supabase.storage.from("chat-uploads").remove(names);
+  const names = (objects as { name: string }[])
+    .map((object) => decodeSafely(object.name).replace(/^\/+/, ""))
+    .filter(Boolean);
+  if (names.length === 0) return 0;
 
-  if (delError) {
-    logger.error({ error: delError }, "Failed to delete stale uploads from storage");
+  const candidateNames = new Set(names);
+
+  try {
+    // Fail closed: if either reference source cannot be read, skip deletion.
+    const [avatarUrls, messageContents] = await Promise.all([
+      loadReferenceValues(supabase, "users", "avatar_url"),
+      loadReferenceValues(supabase, "messages", "content"),
+    ]);
+
+    const referencedPaths = new Set<string>();
+    for (const value of [...avatarUrls, ...messageContents]) {
+      for (const path of extractChatUploadPaths(value)) referencedPaths.add(path);
+    }
+
+    // Conservative fallback for unusual/encoded URLs: keep an object when its
+    // exact stored name appears in any reference text.
+    for (const value of [...avatarUrls, ...messageContents]) {
+      const decoded = decodeSafely(value);
+      for (const name of candidateNames) {
+        if (value.includes(name) || decoded.includes(name)) referencedPaths.add(name);
+      }
+    }
+
+    const unreferenced = names.filter((name) => !referencedPaths.has(name));
+    if (unreferenced.length === 0) {
+      logger.info({ count: names.length, olderThanDays }, "All stale uploads are still referenced");
+      return 0;
+    }
+
+    const { error: delError } = await supabase.storage.from(UPLOAD_BUCKET).remove(unreferenced);
+
+    if (delError) {
+      logger.error({ error: delError }, "Failed to delete stale uploads from storage");
+      return 0;
+    }
+
+    logger.info(
+      { count: unreferenced.length, kept: names.length - unreferenced.length, olderThanDays },
+      "Cleaned up unreferenced stale uploads",
+    );
+    return unreferenced.length;
+  } catch (error) {
+    logger.error({ error }, "Skipping stale upload cleanup because references could not be read");
     return 0;
   }
-
-  logger.info({ count: names.length, olderThanDays }, "Cleaned up stale uploads");
-  return names.length;
 }
 
 async function cleanupExpiredTokens(

@@ -147,6 +147,34 @@ begin
   end if;
 end $$;
 
+-- DATA-P2-003: user_groups writes must be scoped to the caller's workspace.
+-- Elena can create a group in her own workspace (Acme), but a direct PostgREST
+-- INSERT into TechStart must be rejected by RLS even though she supplies her
+-- own created_by value.
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"a0000004-0000-4000-8000-000000000004","role":"authenticated"}';
+
+do $$
+begin
+  begin
+    insert into public.user_groups (workspace_id, name, display_name, created_by)
+    values ('b0000002-0000-4000-8000-000000000002',
+            'rls-cross-tenant-probe',
+            'RLS cross-tenant probe',
+            'a0000004-0000-4000-8000-000000000004');
+    raise exception 'TENANT LEAK: member inserted a user_group into a foreign workspace';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  insert into public.user_groups (workspace_id, name, display_name, created_by)
+  values ('b0000001-0000-4000-8000-000000000001',
+          'rls-own-workspace-probe',
+          'RLS own workspace probe',
+          'a0000004-0000-4000-8000-000000000004');
+end $$;
+
 -- Never mutate the database.
 reset role;
 rollback;

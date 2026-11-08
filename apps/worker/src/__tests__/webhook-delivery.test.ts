@@ -1,32 +1,47 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-const { mockLogger, MockWorker, MockQueue, mockSupabase, inserts, hmac } = vi.hoisted(() => {
-  const mockLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
-  const MockWorker = vi.fn(() => ({ on: vi.fn() }));
-  const MockQueue = vi.fn();
+const { mockLogger, MockWorker, MockQueue, mockSupabase, inserts, hmac, postToPinnedHttpsUrl } =
+  vi.hoisted(() => {
+    const mockLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
+    const MockWorker = vi.fn(() => ({ on: vi.fn() }));
+    const MockQueue = vi.fn();
 
-  const inserts: Array<Record<string, unknown>> = [];
-  const endpoint = {
-    id: "wh-1",
-    url: "https://example.com/hook",
-    secret: "enc-secret",
-    is_active: true,
-  };
+    const inserts: Array<Record<string, unknown>> = [];
+    const endpoint = {
+      id: "wh-1",
+      url: "https://example.com/hook",
+      secret: "enc-secret",
+      is_active: true,
+    };
 
-  const single = vi.fn().mockResolvedValue({ data: endpoint, error: null });
-  const eq = vi.fn(() => ({ eq, single }));
-  const select = vi.fn(() => ({ eq }));
-  const insert = vi.fn(async (row: Record<string, unknown>) => {
-    inserts.push(row);
-    return { error: null };
+    const single = vi.fn().mockResolvedValue({ data: endpoint, error: null });
+    const eq = vi.fn(() => ({ eq, single }));
+    const select = vi.fn(() => ({ eq }));
+    const insert = vi.fn(async (row: Record<string, unknown>) => {
+      inserts.push(row);
+      return { error: null };
+    });
+    const update = vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) }));
+    const mockSupabase = { from: vi.fn(() => ({ select, insert, update })) };
+
+    const hmac = vi.fn(() => "sig");
+    const postToPinnedHttpsUrl = vi.fn(async () => ({
+      status: 500,
+      headers: {},
+      body: "upstream error",
+      truncated: false,
+    }));
+
+    return {
+      mockLogger,
+      MockWorker,
+      MockQueue,
+      mockSupabase,
+      inserts,
+      hmac,
+      postToPinnedHttpsUrl,
+    };
   });
-  const update = vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) }));
-  const mockSupabase = { from: vi.fn(() => ({ select, insert, update })) };
-
-  const hmac = vi.fn(() => "sig");
-
-  return { mockLogger, MockWorker, MockQueue, mockSupabase, inserts, hmac };
-});
 
 vi.mock("@chat/config/logger.js", () => ({ logger: mockLogger }));
 
@@ -47,6 +62,7 @@ vi.mock("@chat/config/webhook-utils.js", () => ({
   buildWebhookPayload: (event: string, payload: Record<string, unknown>) =>
     JSON.stringify({ event, ...payload }),
   decryptWebhookSecret: vi.fn((encrypted: string) => `decrypted:${encrypted}`),
+  postToPinnedHttpsUrl,
 }));
 
 vi.mock("../lib/supabase.js", () => ({
@@ -72,15 +88,16 @@ describe("webhook-delivery processor (durable retries)", () => {
     vi.clearAllMocks();
     inserts.length = 0;
     process.env.WEBHOOK_ENCRYPTION_KEY = "unit-test-encryption-key-1234567890";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("upstream error", { status: 500 })),
-    );
+    postToPinnedHttpsUrl.mockResolvedValue({
+      status: 500,
+      headers: {},
+      body: "upstream error",
+      truncated: false,
+    });
   });
 
   it("signs with the decrypted secret and reuses the provided idempotency key", async () => {
     const handler = await getHandler();
-    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
 
     await handler(
       job(
@@ -97,13 +114,11 @@ describe("webhook-delivery processor (durable retries)", () => {
     ).catch(() => undefined);
 
     expect(hmac).toHaveBeenCalledWith("decrypted:enc-secret", expect.anything(), "message.created");
-    const [, options] = fetchMock.mock.calls[0] as [
+    const [, options] = postToPinnedHttpsUrl.mock.calls[0] as unknown as [
       string,
-      { headers: Record<string, string>; redirect: string },
+      { headers: Record<string, string> },
     ];
     expect(options.headers["X-Idempotency-Key"]).toBe("idem-stable-1");
-    // SEC-P2-002 / WH-P2-002: redirects are not followed.
-    expect(options.redirect).toBe("manual");
   });
 
   it("throws for a retryable failure before the final attempt so BullMQ retries durably", async () => {
@@ -152,14 +167,14 @@ describe("webhook-delivery processor (durable retries)", () => {
 
   it("does not follow redirects when dispatching a webhook (SSRF)", async () => {
     const handler = await getHandler();
-    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
-    // A validated public URL answers 302 -> internal metadata address.
-    fetchMock.mockResolvedValueOnce(
-      new Response("", {
-        status: 302,
-        headers: { location: "http://169.254.169.254/latest/meta-data/" },
-      }),
-    );
+    // A validated public URL answers 302 -> internal metadata address. The
+    // pinned request helper never follows it and the caller records a failure.
+    postToPinnedHttpsUrl.mockResolvedValueOnce({
+      status: 302,
+      headers: { location: "http://169.254.169.254/latest/meta-data/" },
+      body: "",
+      truncated: false,
+    });
 
     const result = await handler(
       job(
@@ -176,9 +191,7 @@ describe("webhook-delivery processor (durable retries)", () => {
     );
 
     expect((result as { status: string }).status).toBe("failed");
-    const [, options] = fetchMock.mock.calls[0] as [string, { redirect: string }];
-    expect(options.redirect).toBe("manual");
-    // The redirect was not followed: exactly one request was made.
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // The redirect was not followed: exactly one pinned request was made.
+    expect(postToPinnedHttpsUrl).toHaveBeenCalledTimes(1);
   });
 });

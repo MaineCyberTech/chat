@@ -36,18 +36,6 @@ async function getAdminWorkspaceIds(req: Request): Promise<string[]> {
   );
 }
 
-async function verifyWorkspaceMembership(req: Request, workspaceId: string): Promise<void> {
-  const supabase = req.supabase;
-  if (!supabase) throw new ForbiddenError("Auth context missing");
-  const { data } = await supabase
-    .from("workspace_members")
-    .select("role")
-    .eq("workspace_id", workspaceId)
-    .eq("user_id", req.userId)
-    .single();
-  if (!data) throw new ForbiddenError("Not a member of this workspace");
-}
-
 router.get(
   "/stats",
   authenticate,
@@ -523,7 +511,13 @@ router.get(
       throw new BadRequestError("workspace_id query param is required");
     }
 
-    await verifyWorkspaceMembership(req, workspaceId);
+    // The caller must administer the *target* workspace, not merely belong to
+    // it. `requireAdmin` already attached the workspaces where the caller is
+    // owner/admin; a member of workspace B must not export B while admin in A.
+    const adminWorkspaceIds = await getAdminWorkspaceIds(req);
+    if (!adminWorkspaceIds.includes(workspaceId)) {
+      throw new ForbiddenError("Not an admin of this workspace");
+    }
 
     async function fetchAll(
       query: PromiseLike<{ data: unknown; error: { message: string } | null }>,

@@ -19,6 +19,7 @@ import {
 } from "../../lib/app-error.js";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { hasPermission, type Permission, type WorkspaceRole } from "@chat/db";
 import { parsePaginationParams } from "../../lib/pagination.js";
 
 function enforceBodyLimit(req: Request, res: Response, next: NextFunction) {
@@ -52,7 +53,11 @@ const updateWebhookSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-async function requireWorkspaceAccess(workspaceId: string, req: Request): Promise<void> {
+async function requireWorkspaceAccess(
+  workspaceId: string,
+  req: Request,
+  permission?: Permission,
+): Promise<void> {
   const supabase = (req as unknown as { supabase?: SupabaseClient }).supabase;
   const userId = req.userId;
   if (!supabase || !userId) {
@@ -67,7 +72,12 @@ async function requireWorkspaceAccess(workspaceId: string, req: Request): Promis
   if (error || !data) {
     throw new ForbiddenError("Not a member of this workspace");
   }
-  (req as unknown as { workspaceRole?: string }).workspaceRole = data.role;
+
+  const role = data.role as WorkspaceRole;
+  if (permission && !hasPermission(role, permission)) {
+    throw new ForbiddenError(`Missing required permission: ${permission}`);
+  }
+  (req as unknown as { workspaceRole?: string }).workspaceRole = role;
 }
 
 function requireWorkspaceQueryParam(req: Request, res: Response, next: NextFunction) {
@@ -171,7 +181,7 @@ router.post(
     if (!parsed.success) {
       throw new BadRequestError(parsed.error.issues[0].message);
     }
-    await requireWorkspaceAccess(parsed.data.workspace_id, req);
+    await requireWorkspaceAccess(parsed.data.workspace_id, req, "webhook:create");
 
     // SSRF protection: validate webhook URL
     const urlValidation = await validateWebhookUrl(parsed.data.url);
@@ -214,7 +224,7 @@ router.patch(
     if (!existing) {
       throw new NotFoundError("Webhook not found");
     }
-    await requireWorkspaceAccess(existing.workspace_id, req);
+    await requireWorkspaceAccess(existing.workspace_id, req, "webhook:update");
 
     // SSRF protection: validate webhook URL if provided
     if (parsed.data.url) {
@@ -251,7 +261,7 @@ router.delete(
     if (!webhook) {
       throw new NotFoundError("Webhook not found");
     }
-    await requireWorkspaceAccess(webhook.workspace_id, req);
+    await requireWorkspaceAccess(webhook.workspace_id, req, "webhook:delete");
     logAuditEvent({
       actorUserId: req.userId,
       action: "webhook.delete",

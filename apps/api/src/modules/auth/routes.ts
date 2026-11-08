@@ -25,6 +25,11 @@ const emailSchema = z.object({
   email: z.string().email("Invalid email format").max(254),
 });
 
+// Account deletion is irreversible: password users must re-enter their password,
+// while magic-link/OAuth users can instead present a session that was
+// authenticated within this window (a fresh magic-link sign-in refreshes `amr`).
+const DELETE_REAUTH_WINDOW_MS = 10 * 60 * 1000;
+
 const router: RouterType = Router();
 router.use(authLimiter);
 
@@ -322,17 +327,29 @@ router.delete(
     const userId = req.userId!;
 
     const { password } = req.body ?? {};
-    if (!password || typeof password !== "string" || password.length === 0) {
-      throw new BadRequestError("Password is required to delete your account");
+    if (password !== undefined && (typeof password !== "string" || password.length === 0)) {
+      throw new BadRequestError("Password must be a non-empty string");
     }
 
-    const { error: verifyError } = await supabase.auth.signInWithPassword({
-      email: req.userEmail!,
-      password,
-    });
+    if (typeof password === "string") {
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: req.userEmail!,
+        password,
+      });
 
-    if (verifyError) {
-      throw new BadRequestError("Invalid password");
+      if (verifyError) {
+        throw new BadRequestError("Invalid password");
+      }
+    } else {
+      // Magic-link/OAuth accounts have no password. Accept a recent primary
+      // authentication instead, so the GDPR erasure flow is not impossible.
+      const authenticatedAt = req.authenticatedAt;
+      const age = authenticatedAt ? Date.now() - authenticatedAt : Number.POSITIVE_INFINITY;
+      if (!authenticatedAt || age < -60_000 || age > DELETE_REAUTH_WINDOW_MS) {
+        throw new BadRequestError(
+          "Re-authenticate first: enter your password, or sign in again with a magic link within 10 minutes",
+        );
+      }
     }
 
     // gdpr_delete_user atomically erases the public rows, the auth sessions/identities,

@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "../../lib/supabase.js";
 import webPush from "web-push";
 import { logger } from "../../lib/logger.js";
+import { createPinnedHttpsAgent, validatePushEndpointUrl } from "@chat/config/webhook-utils.js";
 
 export interface PushSubscription {
   id: string;
@@ -62,6 +63,13 @@ export class PushSubscriptionService {
   }
 
   async create(userId: string, input: PushSubscriptionInput): Promise<PushSubscription> {
+    // Push endpoints are attacker-controlled at subscription time; only store
+    // HTTPS public destinations. Dispatch re-validates and pins the address.
+    const validation = await validatePushEndpointUrl(input.endpoint);
+    if (!validation.valid) {
+      throw new Error(validation.error ?? "Invalid push subscription endpoint");
+    }
+
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from("push_subscriptions")
@@ -112,12 +120,32 @@ export class PushSubscriptionService {
     retryCount: number,
   ): Promise<void> {
     try {
-      await webPush.sendNotification(pushSubscription, JSON.stringify(payload));
+      // Re-validate at dispatch time (the stored endpoint may predate this
+      // check or DNS may have changed) and pin the validated address.
+      const validation = await validatePushEndpointUrl(pushSubscription.endpoint);
+      if (!validation.valid || !validation.pinnedAddress) {
+        throw Object.assign(new Error(validation.error ?? "Invalid push subscription endpoint"), {
+          statusCode: 400,
+        });
+      }
+
+      await webPush.sendNotification(pushSubscription, JSON.stringify(payload), {
+        agent: createPinnedHttpsAgent(validation.pinnedAddress),
+      });
     } catch (err: unknown) {
       const error = err as { statusCode?: number; message?: string };
 
-      // Don't retry on permanent failures (expired/invalid subscription)
-      if (error.statusCode === 410 || error.statusCode === 404) {
+      // Don't retry on permanent failures (expired/invalid subscription or an
+      // endpoint that no longer passes validation). Retry transient 5xx/timeouts.
+      if (
+        error.statusCode === 410 ||
+        error.statusCode === 404 ||
+        (error.statusCode !== undefined &&
+          error.statusCode >= 400 &&
+          error.statusCode < 500 &&
+          error.statusCode !== 408 &&
+          error.statusCode !== 429)
+      ) {
         throw err;
       }
 
