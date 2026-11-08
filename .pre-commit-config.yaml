@@ -30,6 +30,7 @@ repos:
       - id: no-large-binary-secrets
         name: no key/cert containers staged
         description: "Private keys and keystores do not belong in a repo, whatever the extension."
-        entry: bash -c 'for f in "$@"; do case "$f" in *.p12|*.pfx|*.jks|*.keystore|*.pem|*.key) if ! git check-ignore -q "$f"; then echo "refusing to stage key material: $f"; exit 1; fi;; esac; done' --
+        entry: >-
+          bash -c 'for f in "$@"; do case "$f" in *.p12|*.pfx|*.jks|*.keystore|*.pem|*.key) if ! git check-ignore -q "$f"; then echo "refusing to stage key material: $f"; exit 1; fi;; esac; done' --
         language: system
         files: '\.(p12|pfx|jks|keystore|pem|key)$'

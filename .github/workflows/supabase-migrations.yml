@@ -8,9 +8,19 @@ on:
       - ".github/workflows/supabase-migrations.yml"
   workflow_call:
 
+permissions:
+  contents: read
+
+# Serialise migration runs so two pushes cannot apply the same migration set
+# concurrently. Never cancel an in-flight database push.
+concurrency:
+  group: supabase-migrations-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   migrate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
     steps:

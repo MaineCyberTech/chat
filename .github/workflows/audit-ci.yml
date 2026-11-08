@@ -4,11 +4,13 @@ on:
   push:
     branches:
       - main
+      - develop
       - master
-      - development
-      - dev
       - release/**
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   audit-artifacts:

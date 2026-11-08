@@ -270,57 +270,114 @@ jobs:
           sarif_file: "trivy-results.sarif"
           category: "trivy"
 
+  secret-scan:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install gitleaks (pinned)
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+          GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+        run: |
+          set -euo pipefail
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/gitleaks.tgz
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tgz" | sha256sum -c -
+          tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
+          sudo install /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: Verify gitleaks allowlist controls
+        run: bash tests/security/gitleaks/verify-gitleaks-allowlist.sh
+      - name: Scan repository with .gitleaks.toml
+        # SC-P2-005: block on any secret-shaped value not covered by the
+        # value-scoped allowlists in .gitleaks.toml. The hook in .husky/pre-commit
+        # runs the same rules on staged changes locally.
+        run: gitleaks detect --no-git --source . --config .gitleaks.toml --redact --no-banner --exit-code 1
+
   branch-protection:
     name: Check Branch Protection
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Blocking, not advisory. `main` must carry active rules requiring PR review,
-    # passing status checks, and no force pushes. This is the in-repo gate for the
-    # governance findings CI-P1-001 / CI-P2-007: a misconfigured `main` fails CI
-    # instead of silently reporting a false sense of protection.
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    # Blocking, not advisory. Every long-lived branch that receives merges must
+    # carry active rules requiring PR review, passing status checks, and no force
+    # pushes. BP-P2-001 / CI-P2-003: this repo's default branch is `develop`
+    # (there is no `main`), and the gate previously hard-coded `main` — so it
+    # never evaluated the branch that actually receives merges. It now checks
+    # the repository's default branch plus `develop`/`main` when they exist, and
+    # fails closed if those rules are missing.
     steps:
-      - name: Check branch rules on main
+      - name: Check branch rules
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const { owner, repo } = context.repo;
-            const branch = 'main';
 
             // GET /repos/{owner}/{repo}/rules/branches/{branch} returns every active
             // rule applying to the branch, whether configured as a repository ruleset
             // or as a classic branch protection rule. The legacy getBranchProtection
             // endpoint 404s when protection is expressed as a ruleset and misreports
             // the optional `restrictions` field, so it is not used here.
-            let rules;
-            try {
-              rules = await github.paginate('GET /repos/{owner}/{repo}/rules/branches/{branch}', {
-                owner,
-                repo,
-                branch,
-                per_page: 100
-              });
-            } catch (error) {
-              core.setFailed(`Unable to read branch rules for '${branch}': ${error.message}`);
-              return;
-            }
-
-            const types = new Set(rules.map(rule => rule.type));
             const required = {
               pull_request: 'require pull request reviews before merging',
               required_status_checks: 'require status checks to pass before merging',
               non_fast_forward: 'block force pushes'
             };
 
-            const missing = Object.entries(required)
-              .filter(([type]) => !types.has(type))
-              .map(([, description]) => description);
-
-            if (missing.length > 0) {
-              core.setFailed(`Branch rules for '${branch}' are incomplete. Missing: ${missing.join('; ')}`);
+            const candidates = new Set(['develop', 'main']);
+            try {
+              const { data } = await github.rest.repos.get({ owner, repo });
+              candidates.add(data.default_branch);
+            } catch (error) {
+              core.setFailed(`Unable to read repository metadata: ${error.message}`);
               return;
             }
-            core.info(`Branch rules for '${branch}' satisfy the required gates: ${[...types].sort().join(', ')}`);
+
+            let failed = false;
+            for (const branch of candidates) {
+              // Skip branches that do not exist (e.g. this repo has no `main`).
+              try {
+                await github.rest.repos.getBranch({ owner, repo, branch });
+              } catch (error) {
+                if (error.status === 404) {
+                  core.info(`Branch '${branch}' does not exist; skipping.`);
+                  continue;
+                }
+                core.setFailed(`Unable to read branch '${branch}': ${error.message}`);
+                failed = true;
+                continue;
+              }
+
+              let rules;
+              try {
+                rules = await github.paginate('GET /repos/{owner}/{repo}/rules/branches/{branch}', {
+                  owner,
+                  repo,
+                  branch,
+                  per_page: 100
+                });
+              } catch (error) {
+                core.setFailed(`Unable to read branch rules for '${branch}': ${error.message}`);
+                failed = true;
+                continue;
+              }
+
+              const types = new Set(rules.map(rule => rule.type));
+              const missing = Object.entries(required)
+                .filter(([type]) => !types.has(type))
+                .map(([, description]) => description);
+
+              if (missing.length > 0) {
+                core.setFailed(`Branch rules for '${branch}' are incomplete. Missing: ${missing.join('; ')}`);
+                failed = true;
+                continue;
+              }
+              core.info(`Branch rules for '${branch}' satisfy the required gates: ${[...types].sort().join(', ')}`);
+            }
+
+            if (failed) {
+              return;
+            }
 
   migration-test:
     name: Test Database Migrations
@@ -436,7 +493,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [lint, typecheck, test, security-audit, migration-test, openapi-validate]
+    needs: [lint, typecheck, test, security-audit, secret-scan, migration-test, openapi-validate]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4

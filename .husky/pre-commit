@@ -17,6 +17,15 @@ fi
 
 npx lint-staged
 
+# Secret scan (SC-P2-005). Use the same config as CI when gitleaks is installed
+# locally; CI remains the enforcement point for commits made without hooks.
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "Scanning staged changes for secrets (gitleaks)..."
+  gitleaks protect --staged --no-banner --redact -c .gitleaks.toml
+else
+  echo "gitleaks not installed; skipping local secret scan (CI enforces .gitleaks.toml)."
+fi
+
 # Check for high/critical production vulnerabilities (SUPPLY-P2-003).
 # Blocking by default: fail on any HIGH/CRITICAL advisory not in the time-boxed
 # exception list shared with the CI audit gate (.pnpm-audit-exceptions.json).
