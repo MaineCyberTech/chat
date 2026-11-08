@@ -532,7 +532,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs: [build]
     env:
       PLAYWRIGHT_BASE_URL: http://localhost:3000
@@ -576,5 +576,7 @@ jobs:
         run: |
           printf '{\n  "email": "marcus@seed.test",\n  "password": "password123"\n}\n' > test-signin.json
       - name: Run E2E tests
-        timeout-minutes: 10
+        # The full 102-test suite takes ~13 minutes on a cold runner; the old
+        # 10-minute cap killed it mid-run after Supabase startup and install.
+        timeout-minutes: 20
         run: pnpm test:e2e 2>&1
