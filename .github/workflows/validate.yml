@@ -536,6 +536,8 @@ jobs:
     needs: [build]
     env:
       PLAYWRIGHT_BASE_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
     steps:
@@ -555,6 +557,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Build web app for E2E
+        # Production build: `next start` serves precompiled pages, avoiding the
+        # per-test dev compilation that timed out the suite.
+        run: pnpm turbo build --filter @chat/web
       - name: Install Playwright browsers
         # Blocking E2E needs a launchable browser: install Chromium plus its OS libraries.
         run: pnpm exec playwright install --with-deps chromium

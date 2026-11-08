@@ -22,10 +22,13 @@ export default defineConfig({
   webServer: process.env.CI
     ? [
         {
-          command: "pnpm --filter web dev",
+          // E2E runs against a production build: `next dev` compiles pages on
+          // demand and the full suite exhausts the job timeout before it
+          // finishes. The workflow builds @chat/web first.
+          command: "pnpm --filter @chat/web start",
           port: 3000,
           reuseExistingServer: true,
-          timeout: 60000,
+          timeout: 120000,
         },
       ]
     : undefined,
