@@ -19,6 +19,11 @@ concurrency:
 jobs:
   validate:
     name: Lint, Typecheck, Test, Build
+    # Keep the reusable workflow read-only except for the SARIF upload in
+    # security-audit. The called workflow requests the same scopes at job level.
+    permissions:
+      contents: read
+      security-events: write
     uses: ./.github/workflows/validate.yml
     secrets: inherit
 

@@ -86,12 +86,12 @@
       "engine.io@6": "6.6.11",
       "socket.io-parser@4": "4.2.7",
       "dompurify@3": "3.4.17",
-      "nodemailer@9": "9.1.1",
       "body-parser@1": "1.20.9",
+      "proxy-addr@2": "2.0.8",
       "sharp": "0.35.5",
       "@sentry/nextjs": "10.75.2",
       "next": "15.5.28",
-      "proxy-addr@2": "2.0.8"
+      "postcss": "8.5.18"
     }
   }
 }
