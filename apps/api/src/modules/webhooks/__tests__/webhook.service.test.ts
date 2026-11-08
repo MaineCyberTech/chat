@@ -1,11 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { WebhookService, validateWebhookUrl } from "../service.js";
+import { WebhookService } from "../service.js";
 
-const { enqueueWebhookRetry } = vi.hoisted(() => ({
+const { enqueueWebhookRetry, postToPinnedHttpsUrl } = vi.hoisted(() => ({
   enqueueWebhookRetry: vi.fn(async () => true),
+  postToPinnedHttpsUrl: vi.fn(async () => ({
+    status: 500,
+    headers: {},
+    body: "upstream error",
+    truncated: false,
+  })),
 }));
 
 vi.mock("../../../lib/webhook-queue.js", () => ({ enqueueWebhookRetry }));
+
+vi.mock("@chat/config/webhook-utils.js", () => ({
+  MAX_RETRIES: 5,
+  BASE_DELAY_MS: 60_000,
+  validateWebhookUrl: vi.fn(async () => ({ valid: true })),
+  computeHmacSignature: vi.fn(() => "sha256=test"),
+  buildWebhookPayload: (event: string, payload: Record<string, unknown>) =>
+    JSON.stringify({ event, ...payload }),
+  postToPinnedHttpsUrl,
+}));
 
 const mockClient = () => ({
   from: vi.fn(() => ({
@@ -17,7 +33,7 @@ const mockClient = () => ({
             workspace_id: "ws-1",
             name: "Test Webhook",
             url: "https://example.com/hook",
-            secret: "sec",
+            secret: "",
             events: ["message.created"],
             is_active: true,
             created_at: "2024-01-01",
@@ -32,7 +48,7 @@ const mockClient = () => ({
               workspace_id: "ws-1",
               name: "Test Webhook",
               url: "https://example.com/hook",
-              secret: "sec",
+              secret: "",
               events: ["message.created"],
               is_active: true,
               created_at: "2024-01-01",
@@ -48,7 +64,7 @@ const mockClient = () => ({
               workspace_id: "ws-1",
               name: "Test Webhook",
               url: "https://example.com/hook",
-              secret: "sec",
+              secret: "",
               events: ["message.created"],
               is_active: true,
               created_at: "2024-01-01",
@@ -65,7 +81,7 @@ const mockClient = () => ({
                 workspace_id: "ws-1",
                 name: "Test Webhook",
                 url: "https://example.com/hook",
-                secret: "sec",
+                secret: "",
                 events: ["message.created"],
                 is_active: true,
                 created_at: "2024-01-01",
@@ -110,7 +126,7 @@ const mockClient = () => ({
               workspace_id: "ws-1",
               name: "Updated",
               url: "https://example.com/hook",
-              secret: "sec",
+              secret: "",
               events: ["message.created"],
               is_active: true,
               created_at: "2024-01-01",
@@ -214,10 +230,12 @@ describe("WebhookService", () => {
   });
 
   it("enqueues a durable retry job when a delivery fails", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("upstream error", { status: 500 })),
-    );
+    postToPinnedHttpsUrl.mockResolvedValueOnce({
+      status: 500,
+      headers: {},
+      body: "upstream error",
+      truncated: false,
+    });
 
     await service.triggerEvent("message.created", "ws-1", { channel_id: "ch-2" });
 
@@ -241,39 +259,9 @@ describe("WebhookService", () => {
     expect(jobData.retryCount).toBe(1);
     expect(jobData.idempotencyKey).toBeTruthy();
     expect(delayMs).toBeGreaterThan(0);
-
-    vi.unstubAllGlobals();
-  });
-});
-
-describe("validateWebhookUrl", () => {
-  it("accepts valid HTTPS URLs", async () => {
-    const result = await validateWebhookUrl("https://example.com/hook");
-    expect(result.valid).toBe(true);
-  });
-
-  it("rejects non-HTTPS URLs", async () => {
-    const result = await validateWebhookUrl("http://example.com/hook");
-    expect(result.valid).toBe(false);
-  });
-
-  it("rejects localhost URLs", async () => {
-    const result = await validateWebhookUrl("https://127.0.0.1/hook");
-    expect(result.valid).toBe(false);
-  });
-
-  it("rejects private IP URLs", async () => {
-    const result = await validateWebhookUrl("https://10.0.0.1/hook");
-    expect(result.valid).toBe(false);
-  });
-
-  it("rejects invalid URLs", async () => {
-    const result = await validateWebhookUrl("not-a-url");
-    expect(result.valid).toBe(false);
-  });
-
-  it("rejects URLs with embedded credentials", async () => {
-    const result = await validateWebhookUrl("https://user:pass@example.com/hook");
-    expect(result.valid).toBe(false);
+    expect(postToPinnedHttpsUrl).toHaveBeenCalledWith(
+      "https://example.com/hook",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 });

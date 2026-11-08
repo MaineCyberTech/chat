@@ -69,6 +69,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security audit fixes: cross-tenant search leak, storage RLS scoping, audit log RLS
 - CI/CD improvements: coverage thresholds, build depends on test, E2E test job
 
+### Security
+
+- Stale-upload cleanup now deletes only unreferenced `chat-uploads` objects: avatars and message attachments are kept, and the job fails closed when references cannot be read (FILE-P1-001)
+- Webhook create/update/delete now requires workspace admin/owner via the shared permission matrix; members can no longer register endpoints that receive private-channel messages (WH-P2-003)
+- Admin compliance export now requires admin/owner in the target workspace, not mere membership (ADMIN-P2-002)
+- New forward migration constrains `user_groups` INSERT/UPDATE/DELETE to the caller's workspace, closing cross-tenant group creation via PostgREST (DATA-P2-003)
+- Webhook and push-subscription URLs now require HTTPS, reject loopback/private/link-local/ULA/IPv4-mapped/reserved addresses (including AAAA records), and pin the validated IP for dispatch; redirects remain unfollowed (SEC-P2-002, SEC-P2-003, WH-P2-002)
+- Account deletion now collects the password in the UI and supports a magic-link re-authentication path for passwordless accounts (PRIV-P2-002)
+
 ### Changed
 
 - Search function changed from `SECURITY DEFINER` to `SECURITY INVOKER` with workspace membership check

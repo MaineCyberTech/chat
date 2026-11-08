@@ -7,7 +7,7 @@ import {
   computeHmacSignature,
   buildWebhookPayload,
   decryptWebhookSecret,
-  WEBHOOK_REDIRECT_MODE,
+  postToPinnedHttpsUrl,
   MAX_RETRIES,
   BASE_DELAY_MS,
 } from "@chat/config/webhook-utils.js";
@@ -97,18 +97,25 @@ async function performWebhookDelivery(
 
     const body = buildWebhookPayload(event, payload);
 
-    const response = await fetch(endpoint.url, {
+    // Resolve + pin the validated public address; never follow redirects.
+    const response = await postToPinnedHttpsUrl(endpoint.url, {
       method: "POST",
       headers: { ...headers, "X-Idempotency-Key": idempotencyKey },
       body,
-      redirect: WEBHOOK_REDIRECT_MODE,
-      signal: AbortSignal.timeout(10000),
+      timeoutMs: 10000,
     });
 
     responseStatus = response.status;
-    responseBody = await response.text().catch(() => null);
+    responseBody = response.truncated ? null : response.body;
 
-    if (response.status >= 200 && response.status < 300) {
+    if (response.truncated) {
+      deliveryStatus = "failed";
+      deliveryError = "Response size exceeds limit";
+      await supabase
+        .from("webhook_endpoints")
+        .update({ last_failure_at: new Date().toISOString(), last_error: deliveryError })
+        .eq("id", webhookId);
+    } else if (response.status >= 200 && response.status < 300) {
       await supabase
         .from("webhook_endpoints")
         .update({ last_success_at: new Date().toISOString() })

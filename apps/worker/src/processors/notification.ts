@@ -1,6 +1,7 @@
 import { Worker, Job, Queue } from "bullmq";
 import { loadEnv } from "@chat/config/env-schema.js";
 import { logger } from "@chat/config/logger.js";
+import { postToPinnedHttpsUrl } from "@chat/config/webhook-utils.js";
 import { createSupabaseClient } from "../lib/supabase.js";
 
 export interface NotificationJobData {
@@ -92,7 +93,7 @@ async function deliverPush(
         data: { url: data.link ?? "/", ...data.data },
       });
 
-      const response = await fetch(sub.endpoint, {
+      const response = await postToPinnedHttpsUrl(sub.endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -100,13 +101,13 @@ async function deliverPush(
           Authorization: `WebPush ${env.VAPID_PRIVATE_KEY}`,
         },
         body: payload,
-        signal: AbortSignal.timeout(5000),
+        timeoutMs: 5000,
       });
 
       if (response.status === 410) {
         await supabase.from("push_subscriptions").delete().eq("id", sub.id);
         logger.info({ userId: data.userId }, "Removed expired push subscription");
-      } else if (response.ok) {
+      } else if (response.status >= 200 && response.status < 300) {
         sentCount++;
       }
     } catch (err) {

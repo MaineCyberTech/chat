@@ -50,6 +50,10 @@ export default function SettingsPage() {
   const [locale, setLocale] = useState("en");
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [reauthEmailSent, setReauthEmailSent] = useState(false);
+  const [sendingReauth, setSendingReauth] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [triggerWords, setTriggerWords] = useState<
@@ -85,18 +89,40 @@ export default function SettingsPage() {
 
   async function handleDeleteAccount() {
     setDeleting(true);
+    setDeleteError(null);
     try {
-      await api.delete("/auth/account");
+      // Password accounts re-authenticate with the password; magic-link/OAuth
+      // accounts send no password and rely on a recent primary authentication.
+      await api.delete("/auth/account", deletePassword ? { password: deletePassword } : {});
       addToast({ title: t("settings.accountDeleted"), variant: "success", duration: 3000 });
       setTimeout(() => (window.location.href = "/sign-in"), 1500);
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t("settings.deleteFailed");
+      setDeleteError(message);
       addToast({
         title: t("common.error"),
-        description: t("settings.deleteFailed"),
+        description: message,
         variant: "error",
       });
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleSendDeletionReauthLink() {
+    if (!user?.email) {
+      setDeleteError(t("settings.deleteNoEmail"));
+      return;
+    }
+    setSendingReauth(true);
+    setDeleteError(null);
+    try {
+      await api.post("/auth/magic-link", { email: user.email });
+      setReauthEmailSent(true);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : t("settings.deleteReauthFailed"));
+    } finally {
+      setSendingReauth(false);
     }
   }
 
@@ -883,7 +909,12 @@ export default function SettingsPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setDeleteConfirmOpen(true)}
+                onClick={() => {
+                  setDeletePassword("");
+                  setDeleteError(null);
+                  setReauthEmailSent(false);
+                  setDeleteConfirmOpen(true);
+                }}
                 className="mt-2"
                 style={{ color: "var(--dnd-indicator)" }}
               >
@@ -962,6 +993,62 @@ export default function SettingsPage() {
               <p className="mt-2 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
                 {t("settings.deleteConfirmDesc")}
               </p>
+
+              <label
+                htmlFor="delete-account-password"
+                className="mt-4 block text-xs font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {t("settings.deletePasswordLabel")}
+              </label>
+              <input
+                id="delete-account-password"
+                type="password"
+                autoComplete="current-password"
+                value={deletePassword}
+                onChange={(event) => setDeletePassword(event.target.value)}
+                className="mt-1 w-full rounded-md border px-3 py-1.5 text-xs"
+                style={{
+                  borderColor: "var(--center-channel-color-20)",
+                  background: "var(--center-channel-bg)",
+                  color: "var(--center-channel-color)",
+                }}
+                placeholder={t("settings.deletePasswordPlaceholder")}
+              />
+
+              <div
+                className="mt-3 rounded-md p-2 text-xs"
+                style={{ background: "rgba(var(--center-channel-color-rgb), 0.05)" }}
+              >
+                <p style={{ color: "var(--text-tertiary)" }}>{t("settings.deleteMagicLinkHint")}</p>
+                <button
+                  type="button"
+                  onClick={handleSendDeletionReauthLink}
+                  disabled={sendingReauth}
+                  className="mt-1 font-medium underline disabled:opacity-50"
+                  style={{ color: "var(--link-color)" }}
+                >
+                  {sendingReauth
+                    ? t("settings.deleteSendingReauth")
+                    : t("settings.deleteSendReauth")}
+                </button>
+                {reauthEmailSent && (
+                  <p className="mt-1" style={{ color: "var(--online-indicator)" }} role="status">
+                    {t("settings.deleteReauthSent")}
+                  </p>
+                )}
+              </div>
+
+              {deleteError && (
+                <p
+                  className="mt-2 text-center text-xs"
+                  style={{ color: "var(--dnd-indicator)" }}
+                  role="alert"
+                >
+                  {deleteError}
+                </p>
+              )}
+
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   onClick={() => setDeleteConfirmOpen(false)}

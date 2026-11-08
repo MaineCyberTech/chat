@@ -95,4 +95,40 @@ describe("DELETE /account (GDPR erasure)", () => {
     expect(next).toHaveBeenCalledTimes(1);
     expect(res.status).not.toHaveBeenCalledWith(204);
   });
+
+  it("rejects a passwordless request when the session has no recent primary auth", async () => {
+    const handler = findHandler("delete", "/account");
+    const res = mockRes();
+    const next = vi.fn();
+
+    await handler({ ...req, body: {}, authenticatedAt: undefined }, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400 }));
+    expect(mockAdminClient.rpc).not.toHaveBeenCalled();
+  });
+
+  it("accepts a magic-link/OAuth session authenticated within the re-auth window", async () => {
+    const handler = findHandler("delete", "/account");
+    const res = mockRes();
+    const next = vi.fn();
+
+    await handler({ ...req, body: {}, authenticatedAt: Date.now() - 60_000 }, res, next);
+
+    expect(mockAdminClient.auth.signInWithPassword).not.toHaveBeenCalled();
+    expect(mockAdminClient.rpc).toHaveBeenCalledWith("gdpr_delete_user", {
+      target_user_id: "user-1",
+    });
+    expect(res.status).toHaveBeenCalledWith(204);
+  });
+
+  it("rejects a passwordless request when the primary auth is older than 10 minutes", async () => {
+    const handler = findHandler("delete", "/account");
+    const res = mockRes();
+    const next = vi.fn();
+
+    await handler({ ...req, body: {}, authenticatedAt: Date.now() - 11 * 60 * 1000 }, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400 }));
+    expect(mockAdminClient.rpc).not.toHaveBeenCalled();
+  });
 });

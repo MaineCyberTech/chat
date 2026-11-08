@@ -1,3 +1,5 @@
+import { api } from "@/lib/api";
+
 export interface PushSubscriptionJSON {
   endpoint: string;
   keys: {
@@ -41,12 +43,10 @@ export class PushClient {
 
   private async fetchVapidKey(): Promise<void> {
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      const res = await fetch(`${apiBase}/v1/notifications/push-subscriptions/vapid-key`);
-      if (res.ok) {
-        const data = await res.json();
-        this.vapidPublicKey = data.publicKey;
-      }
+      const data = await api.get<{ publicKey: string }>(
+        "/notifications/push-subscriptions/vapid-key",
+      );
+      this.vapidPublicKey = data.publicKey;
     } catch (err) {
       console.error("Failed to fetch VAPID key:", err);
     }

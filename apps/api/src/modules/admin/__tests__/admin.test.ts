@@ -64,6 +64,7 @@ function mockRes() {
   res.status = vi.fn(() => res) as any;
   res.json = vi.fn(() => res) as any;
   res.send = vi.fn(() => res) as any;
+  res.setHeader = vi.fn(() => res) as any;
   return res as any;
 }
 
@@ -281,6 +282,45 @@ describe("admin routes", () => {
       await handler(req, res, vi.fn());
 
       expect(chain.eq).toHaveBeenCalledWith("organization_id", "ws-1");
+    });
+  });
+
+  describe("GET /export/compliance", () => {
+    it("rejects a member of the target workspace even when admin elsewhere", async () => {
+      const handler = findHandler("get", "/export/compliance");
+      const req = mockReq({
+        adminWorkspaceIds: ["ws-admin-elsewhere"],
+        query: { workspace_id: "ws-target" },
+      });
+      const res = mockRes();
+      const next = vi.fn();
+
+      await handler(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 403 }));
+      expect(res.json).not.toHaveBeenCalled();
+    });
+
+    it("allows an admin of the target workspace to export it", async () => {
+      const chain = createChain({ data: [], error: null });
+      const { getSupabaseAdmin } = await import("../../../lib/supabase.js");
+      (getSupabaseAdmin as any).mockReturnValue({ from: vi.fn(() => chain) });
+
+      const handler = findHandler("get", "/export/compliance");
+      const req = mockReq({
+        adminWorkspaceIds: ["ws-target"],
+        query: { workspace_id: "ws-target" },
+      });
+      const res = mockRes();
+
+      await handler(req, res, vi.fn());
+
+      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "application/json");
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          export_meta: expect.objectContaining({ workspace_id: "ws-target" }),
+        }),
+      );
     });
   });
 

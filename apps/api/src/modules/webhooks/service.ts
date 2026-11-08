@@ -7,7 +7,7 @@ import {
   validateWebhookUrl,
   computeHmacSignature,
   buildWebhookPayload,
-  WEBHOOK_REDIRECT_MODE,
+  postToPinnedHttpsUrl,
   MAX_RETRIES,
   BASE_DELAY_MS,
 } from "@chat/config/webhook-utils.js";
@@ -225,68 +225,37 @@ export class WebhookService {
 
       const breakerName = `webhook:${endpoint.id}`;
 
-      const urlValidation = await validateWebhookUrl(endpoint.url);
-      if (!urlValidation.valid) {
-        logger.error("Webhook URL validation failed at delivery time", {
-          webhookId: endpoint.id,
-          error: urlValidation.error,
-        });
-        await admin
-          .from("webhook_endpoints")
-          .update({ last_failure_at: new Date().toISOString(), last_error: urlValidation.error })
-          .eq("id", endpoint.id);
-        return;
-      }
-
       const body = buildWebhookPayload(event, payload);
+      const MAX_RESPONSE_SIZE = 1024 * 1024;
 
       const res = await executeWithCircuitBreaker(
         breakerName,
         async () => {
-          const response = await fetch(endpoint.url, {
+          // `postToPinnedHttpsUrl` re-resolves A/AAAA, rejects private/reserved
+          // addresses and pins the validated address on the socket. It never
+          // follows redirects, so a 3xx below is a delivery failure.
+          return postToPinnedHttpsUrl(endpoint.url, {
             method: "POST",
             headers: {
               ...headers,
               "X-Idempotency-Key": idempotencyKey,
             },
             body,
-            redirect: WEBHOOK_REDIRECT_MODE,
-            signal: AbortSignal.timeout(10000),
+            timeoutMs: 10000,
+            maxResponseBytes: MAX_RESPONSE_SIZE,
           });
-          return response;
         },
         [],
         { timeout: 10000, errorThresholdPercentage: 50, resetTimeout: 30000 },
       );
 
       responseStatus = res.status;
+      responseBody = res.body;
 
-      // Limit response body size to prevent memory issues (1MB)
-      const MAX_RESPONSE_SIZE = 1024 * 1024;
-      const reader = res.body?.getReader();
-      if (reader) {
-        const chunks: Uint8Array[] = [];
-        let totalSize = 0;
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          totalSize += value.length;
-          if (totalSize > MAX_RESPONSE_SIZE) {
-            error = "Response size exceeds limit";
-            status = "failed";
-            break;
-          }
-          chunks.push(value);
-        }
-        if (status !== "failed") {
-          const decoder = new TextDecoder();
-          responseBody = decoder.decode(Buffer.concat(chunks));
-        }
-      } else {
-        responseBody = await res.text().catch(() => null);
-      }
-
-      if (res.status >= 200 && res.status < 300) {
+      if (res.truncated) {
+        error = "Response size exceeds limit";
+        status = "failed";
+      } else if (res.status >= 200 && res.status < 300) {
         await admin
           .from("webhook_endpoints")
           .update({ last_success_at: new Date().toISOString() })
