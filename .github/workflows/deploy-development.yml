@@ -31,7 +31,9 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Covers the 30-minute CI wait below (the e2e job alone takes ~17 minutes),
+    # the build-push wait, and the deploy/health-check steps.
+    timeout-minutes: 50
     # Development deployments run under the `development` GitHub Environment so
     # environment-scoped secrets and protection rules apply (CI-P2-006).
     environment:
@@ -44,26 +46,88 @@ jobs:
         run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
       - name: Wait for CI to complete
+        # ci.yml runs the full Playwright e2e suite after build. The 102-test
+        # suite takes ~13 minutes on a cold runner and the e2e job takes ~17
+        # minutes end-to-end, so the old 5-minute wait always timed out.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
         run: |
-          set -e
-          echo "Waiting for CI workflow for commit ${{ github.sha }}..."
-          for i in $(seq 1 30); do
-            STATUS=$(curl -sf -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=${{ github.sha }}&per_page=1" \
-              | jq -r '.workflow_runs[0].conclusion // "null"')
-            if [ "$STATUS" = "success" ]; then
-              echo "CI completed successfully."
-              exit 0
-            elif [ "$STATUS" != "null" ] && [ -n "$STATUS" ]; then
-              # Fail closed: only a completed `success` may deploy. A cancelled,
-              # skipped, neutral or failed CI run must never unlock a deploy.
-              echo "ERROR: CI completed with non-success status: $STATUS"
-              exit 1
+          set -euo pipefail
+          API="https://api.github.com/repos/$REPO"
+          MAX_ATTEMPTS=180  # 180 x 10s = 30 minutes, enough for the ~17m e2e job
+          RUN_ID=""
+          STATUS="not-found"
+          COMPLETED_JOBS=0
+          TOTAL_JOBS=0
+          echo "Waiting for ci.yml workflow for commit $SHA (up to 30 minutes)..."
+
+          for i in $(seq 1 "$MAX_ATTEMPTS"); do
+            if [ -z "$RUN_ID" ]; then
+              RUNS=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+                "$API/actions/workflows/ci.yml/runs?head_sha=$SHA&event=push&per_page=100") || {
+                echo "ERROR: Unable to query ci.yml workflow runs for commit $SHA."
+                exit 1
+              }
+              RUN_ID=$(printf '%s' "$RUNS" | jq -r --arg sha "$SHA" \
+                '[.workflow_runs[] | select(.head_sha == $sha and .event == "push")] | sort_by(.id) | last | .id // empty')
+              if [ -z "$RUN_ID" ]; then
+                echo "Attempt $i/$MAX_ATTEMPTS - ci.yml run not created yet"
+                sleep 10
+                continue
+              fi
             fi
-            echo "Attempt $i/30 - CI status: $STATUS"
+
+            RUN=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+              "$API/actions/runs/$RUN_ID") || {
+              echo "ERROR: Unable to read ci.yml run $RUN_ID."
+              exit 1
+            }
+            STATUS=$(printf '%s' "$RUN" | jq -r '.status // "unknown"')
+            CONCLUSION=$(printf '%s' "$RUN" | jq -r '.conclusion // empty')
+
+            JOBS=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+              "$API/actions/runs/$RUN_ID/jobs?per_page=100") || {
+              echo "ERROR: Unable to read jobs for ci.yml run $RUN_ID."
+              exit 1
+            }
+            TOTAL_JOBS=$(printf '%s' "$JOBS" | jq '.jobs | length')
+            COMPLETED_JOBS=$(printf '%s' "$JOBS" | jq '[.jobs[] | select(.status == "completed")] | length')
+
+            if [ "$STATUS" = "completed" ]; then
+              if [ "$CONCLUSION" != "success" ]; then
+                FAILED_JOBS=$(printf '%s' "$JOBS" | jq -r \
+                  '[.jobs[] | select(.conclusion != "success" and .conclusion != "skipped") | "\(.name) (\(.conclusion))"] | join(", ")')
+                echo "ERROR: ci.yml run $RUN_ID completed with conclusion '$CONCLUSION' (expected success)."
+                echo "Non-success jobs: ${FAILED_JOBS:-none reported}"
+                echo "Run: https://github.com/$REPO/actions/runs/$RUN_ID"
+                exit 1
+              fi
+
+              # Fail closed: a green workflow conclusion is only trusted when the
+              # long-running e2e gate actually ran and succeeded (not skipped).
+              E2E_CONCLUSION=$(printf '%s' "$JOBS" | jq -r \
+                '[.jobs[] | select(.name == "e2e" or (.name | endswith("/ e2e"))) | .conclusion] | first // empty')
+              if [ "$E2E_CONCLUSION" != "success" ]; then
+                echo "ERROR: ci.yml run $RUN_ID is green but the required e2e job is '${E2E_CONCLUSION:-missing}'."
+                echo "Run: https://github.com/$REPO/actions/runs/$RUN_ID"
+                exit 1
+              fi
+
+              echo "CI completed successfully, including the e2e job."
+              exit 0
+            fi
+
+            echo "Attempt $i/$MAX_ATTEMPTS - CI status: $STATUS ($COMPLETED_JOBS/$TOTAL_JOBS jobs completed)"
             sleep 10
           done
-          echo "ERROR: Timed out waiting for CI to complete"
+
+          echo "ERROR: Timed out after 30 minutes waiting for ci.yml to complete for $SHA."
+          echo "Last status: $STATUS; run: ${RUN_ID:-not found}; completed jobs: $COMPLETED_JOBS/$TOTAL_JOBS"
+          if [ -n "$RUN_ID" ]; then
+            echo "Run: https://github.com/$REPO/actions/runs/$RUN_ID"
+          fi
           exit 1
 
       - name: Wait for build-push to complete
