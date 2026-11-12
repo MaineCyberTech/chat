@@ -19,6 +19,8 @@ on:
 permissions:
   contents: read
   packages: write
+  # Needed to read Actions workflow runs (deploy gate / deployment audit).
+  actions: read
 
 concurrency:
   group: deploy-prod-${{ github.ref }}
