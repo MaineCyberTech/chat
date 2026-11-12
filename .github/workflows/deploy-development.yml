@@ -15,6 +15,8 @@ on:
 permissions:
   contents: read
   packages: write
+  # Needed to read Actions workflow runs when gating on ci.yml/build-push.yml.
+  actions: read
 
 concurrency:
   group: deploy-dev-${{ github.ref }}
