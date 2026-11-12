@@ -911,7 +911,6 @@ All quick wins implemented. See `docs/audits/ux-audit/new/20260709-032614/` for 
 
 Run `git log --oneline --since="2026-06-20"` for the full commit history or see `CHANGELOG.md`.
 
-
 ---
 
 ## Kestrel GitHub access
