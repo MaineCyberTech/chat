@@ -51,9 +51,9 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.6",
     "eslint": "^9.22.0",
     "typescript": "^5.8.0",
-    "rimraf": "^6.0.0"
+    "rimraf": "^6.1.4"
   }
 }
